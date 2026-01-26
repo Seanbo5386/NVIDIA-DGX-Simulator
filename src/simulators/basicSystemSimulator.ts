@@ -172,7 +172,7 @@ Swap:       33554432           0    33554432`;
    */
   private handleDmidecode(parsed: ParsedCommand, _context: CommandContext): CommandResult {
     const hasTypeFlag = this.hasAnyFlag(parsed, ['t']);
-    const type = parsed.positionalArgs[0];
+    const type = parsed.flags.get('t'); // Get the value of -t flag
 
     if (hasTypeFlag && type === 'bios') {
       const output = `# dmidecode 3.2
