@@ -51,6 +51,7 @@ export const AVAILABLE_COMMANDS: string[] = [
   'dcgmi',
   'nvsm',
   'nvlink-audit',
+  'nv-fabricmanager',
 
   // System
   'ls', 'cat', 'grep', 'cd', 'pwd', 'clear', 'help', 'exit',
@@ -143,6 +144,13 @@ export const COMMAND_SUBCOMMANDS: Record<string, string[]> = {
   'mlxfwmanager': [
     '--query', '-q', '--online-query', '-u', '--update', '-d', '-y', '-h',
   ],
+  'nv-fabricmanager': [
+    'status', 'query', 'start', 'stop', 'restart', 'config', 'diag', 'topo',
+  ],
+  'ibnetdiscover': [
+    '-l', '--list', '-g', '--grouping', '-s', '--switch', '-H', '--Hca_list',
+    '-S', '--Switch_list', '-p', '--ports', '-V', '--version', '-h', '--help',
+  ],
 };
 
 /**
@@ -160,6 +168,8 @@ export const COMMON_FLAGS: Record<string, string[]> = {
   'ibstat': ['-p', '-s', '-v'],
   'mlxconfig': ['-d', '-q', '-y'],
   'mlxlink': ['-d', '-p', '-m', '-c'],
+  'nv-fabricmanager': ['-h', '--help', '-v', '--version'],
+  'ibnetdiscover': ['-l', '-g', '-H', '-S', '-p', '-V', '-h'],
 };
 
 /**

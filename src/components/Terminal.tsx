@@ -18,6 +18,7 @@ import { PciToolsSimulator } from '@/simulators/pciToolsSimulator';
 import { BenchmarkSimulator } from '@/simulators/benchmarkSimulator';
 import { StorageSimulator } from '@/simulators/storageSimulator';
 import { NvlinkAuditSimulator } from '@/simulators/nvlinkAuditSimulator';
+import { FabricManagerSimulator } from '@/simulators/fabricManagerSimulator';
 import { useSimulationStore } from '@/store/simulationStore';
 import { scenarioContextManager } from '@/store/scenarioContext';
 import { ScenarioValidator } from '@/utils/scenarioValidator';
@@ -63,6 +64,7 @@ export const Terminal: React.FC<TerminalProps> = ({ className = '' }) => {
   const benchmarkSimulator = useRef(new BenchmarkSimulator());
   const storageSimulator = useRef(new StorageSimulator());
   const nvlinkAuditSimulator = useRef(new NvlinkAuditSimulator());
+  const fabricManagerSimulator = useRef(new FabricManagerSimulator());
 
   const currentContext = useRef<CommandContext>({
     currentNode: selectedNode || cluster.nodes[0]?.id || 'dgx-00',
@@ -360,6 +362,12 @@ export const Terminal: React.FC<TerminalProps> = ({ className = '' }) => {
             break;
           }
 
+          case 'ibnetdiscover': {
+            const parsed = parseCommand(cmdLine);
+            result = infinibandSimulator.current.executeIbnetdiscover(parsed, currentContext.current);
+            break;
+          }
+
           case 'sinfo': {
             const parsed = parseCommand(cmdLine);
             result = slurmSimulator.current.executeSinfo(parsed, currentContext.current);
@@ -501,6 +509,12 @@ export const Terminal: React.FC<TerminalProps> = ({ className = '' }) => {
           case 'nvlink-audit': {
             const parsed = parseCommand(cmdLine);
             result = nvlinkAuditSimulator.current.execute(parsed, currentContext.current);
+            break;
+          }
+
+          case 'nv-fabricmanager': {
+            const parsed = parseCommand(cmdLine);
+            result = fabricManagerSimulator.current.execute(parsed, currentContext.current);
             break;
           }
 

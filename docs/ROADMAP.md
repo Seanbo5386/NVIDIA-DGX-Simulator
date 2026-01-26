@@ -144,8 +144,8 @@ Adaptive Learn:   ████████████████████�
 - [ ] Add all nvidia-smi query fields (100+ metrics)
 - [ ] Implement dcgmi policy management
 - [ ] Add ipmitool SOL (Serial-Over-LAN) simulation
-- [ ] Implement ibnetdiscover for full fabric topology
-- [ ] Add nv-fabricmanager CLI simulation
+- [x] Implement ibnetdiscover for full fabric topology (infinibandSimulator.ts)
+- [x] Add nv-fabricmanager CLI simulation (fabricManagerSimulator.ts)
 
 **Missing Commands**: ✓ COMPLETE
 - [x] `nvlink-audit` - NVLink diagnostic tool
