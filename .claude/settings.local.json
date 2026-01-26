@@ -16,7 +16,8 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: NVIDIA DGX Datacenter Simulator\n\nA comprehensive training tool for NVIDIA DCA certification preparation,\nfeaturing interactive labs, command simulation, and scenario-based learning.\n\nFeatures:\n- Simulated terminal with nvidia-smi, dcgmi, slurm, and other DGX tools\n- Interactive lab scenarios across all 5 DCA exam domains\n- Real-time GPU metrics visualization\n- Fault injection for troubleshooting practice\n- Exam preparation mode with practice questions\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git remote add:*)",
       "Bash(git branch:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nReorganize project structure: clean up root directory\n\n- Delete historical/session files \\(SESSION_SUMMARY.md, DOMAIN5_XID79_FIX.md\\)\n- Delete redundant files \\(PROJECT_SUMMARY.md - covered by README\\)\n- Merge TODO.md + ROADMAP.md into docs/ROADMAP.md\n- Move documentation to organized structure:\n  - docs/USAGE.md \\(user guide\\)\n  - docs/development/implementation-plan.md\n  - docs/reference/command-specification.md\n  - docs/testing/scenario-checklist.md\n- Add test-results.txt to .gitignore\n- Root now contains only README.md for cleaner structure\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }
