@@ -1,4 +1,90 @@
-import { COMMAND_METADATA, type CommandMetadata } from './commandMetadata';
+import { COMMAND_METADATA, type CommandMetadata, getCommandMetadata } from './commandMetadata';
+
+/**
+ * Common command errors and their explanations
+ */
+interface ErrorExplanation {
+  pattern: RegExp;
+  explanation: string;
+  suggestion: string;
+  docLink?: string;
+}
+
+const ERROR_EXPLANATIONS: ErrorExplanation[] = [
+  {
+    pattern: /command not found/i,
+    explanation: 'The command you entered is not recognized.',
+    suggestion: 'Check the spelling or type "help" to see available commands.',
+  },
+  {
+    pattern: /permission denied/i,
+    explanation: 'This operation requires elevated privileges.',
+    suggestion: 'Try running with sudo (in production) or check your user permissions.',
+  },
+  {
+    pattern: /device not found|no device/i,
+    explanation: 'The specified device does not exist or is not accessible.',
+    suggestion: 'Verify the device path using nvidia-smi, lspci, or mst status.',
+  },
+  {
+    pattern: /MST driver not loaded/i,
+    explanation: 'Mellanox Software Tools (MST) driver is not initialized.',
+    suggestion: 'Run "mst start" before using mlx* or InfiniBand commands.',
+    docLink: 'https://docs.nvidia.com/networking/display/MFTv4230/MST+Commands',
+  },
+  {
+    pattern: /invalid option|unrecognized option/i,
+    explanation: 'The flag or option you used is not valid for this command.',
+    suggestion: 'Use "--help" to see available options for this command.',
+  },
+  {
+    pattern: /missing.*argument|required.*argument/i,
+    explanation: 'A required argument was not provided.',
+    suggestion: 'Check the command syntax using "<command> --help".',
+  },
+  {
+    pattern: /GPU.*error|XID.*error/i,
+    explanation: 'A GPU hardware or driver error was detected.',
+    suggestion: 'Check dmesg and nvidia-smi -q for detailed error information.',
+    docLink: 'https://docs.nvidia.com/datacenter/tesla/xid-errors/',
+  },
+  {
+    pattern: /ECC.*error/i,
+    explanation: 'Memory error correction detected issues.',
+    suggestion: 'Monitor with dcgmi health and consider GPU replacement if errors persist.',
+    docLink: 'https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/',
+  },
+  {
+    pattern: /thermal|temperature|throttl/i,
+    explanation: 'Temperature threshold exceeded, causing performance throttling.',
+    suggestion: 'Check cooling systems and GPU fan status with nvidia-smi -q.',
+  },
+  {
+    pattern: /NVLink.*error|nvlink.*inactive/i,
+    explanation: 'NVLink interconnect issue detected.',
+    suggestion: 'Run nvlink-audit or nvidia-smi nvlink --status for diagnostics.',
+  },
+  {
+    pattern: /InfiniBand|port.*down|link.*down/i,
+    explanation: 'InfiniBand fabric connectivity issue.',
+    suggestion: 'Check cable connections and use ibstat, iblinkinfo for diagnostics.',
+  },
+  {
+    pattern: /SLURM.*error|job.*failed/i,
+    explanation: 'Slurm job scheduler encountered an issue.',
+    suggestion: 'Check job logs with sacct and node status with sinfo.',
+  },
+  {
+    pattern: /container.*not found|image.*not found/i,
+    explanation: 'The container or image specified does not exist.',
+    suggestion: 'Pull the image first with "docker pull" or "ngc registry image list".',
+  },
+  {
+    pattern: /out of memory|OOM/i,
+    explanation: 'GPU or system ran out of memory.',
+    suggestion: 'Reduce batch size, use gradient checkpointing, or check for memory leaks.',
+  },
+];
 
 /**
  * Calculate Levenshtein distance between two strings
@@ -275,4 +361,214 @@ export function formatCommandList(): string {
   }
 
   return lines.join('\n');
+}
+
+/**
+ * Enhanced error feedback with explanation and suggestions
+ */
+export interface EnhancedErrorFeedback {
+  originalError: string;
+  explanation: string;
+  suggestion: string;
+  documentationLink?: string;
+  relatedCommands?: string[];
+  formatted: string;
+}
+
+/**
+ * Get enhanced error feedback for a command error
+ */
+export function getEnhancedErrorFeedback(
+  command: string,
+  errorMessage: string
+): EnhancedErrorFeedback | null {
+  // Find matching error pattern
+  for (const errorExp of ERROR_EXPLANATIONS) {
+    if (errorExp.pattern.test(errorMessage)) {
+      const lines: string[] = [];
+
+      lines.push(`\n\x1b[1;33m╔══════════════════════════════════════════════════════════╗\x1b[0m`);
+      lines.push(`\x1b[1;33m║  COMMAND ERROR                                           ║\x1b[0m`);
+      lines.push(`\x1b[1;33m╚══════════════════════════════════════════════════════════╝\x1b[0m`);
+      lines.push('');
+      lines.push(`\x1b[1mWhat happened:\x1b[0m`);
+      lines.push(`  ${errorExp.explanation}`);
+      lines.push('');
+      lines.push(`\x1b[1;32mSuggestion:\x1b[0m`);
+      lines.push(`  ${errorExp.suggestion}`);
+
+      if (errorExp.docLink) {
+        lines.push('');
+        lines.push(`\x1b[1;36mDocumentation:\x1b[0m`);
+        lines.push(`  ${errorExp.docLink}`);
+      }
+
+      // Get related commands from metadata
+      const cmdMetadata = getCommandMetadata(command.split(' ')[0]);
+      if (cmdMetadata?.relatedCommands) {
+        lines.push('');
+        lines.push(`\x1b[1mRelated commands:\x1b[0m`);
+        lines.push(`  ${cmdMetadata.relatedCommands.map(c => `\x1b[36m${c}\x1b[0m`).join(', ')}`);
+      }
+
+      lines.push('');
+
+      return {
+        originalError: errorMessage,
+        explanation: errorExp.explanation,
+        suggestion: errorExp.suggestion,
+        documentationLink: errorExp.docLink,
+        relatedCommands: cmdMetadata?.relatedCommands,
+        formatted: lines.join('\n'),
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Format an output diff for scenario validation
+ */
+export function formatOutputDiff(
+  actual: string,
+  expected: string,
+  label?: string
+): string {
+  const actualLines = actual.split('\n');
+  const expectedLines = expected.split('\n');
+  const lines: string[] = [];
+
+  lines.push(`\n\x1b[1;35m╔══════════════════════════════════════════════════════════╗\x1b[0m`);
+  lines.push(`\x1b[1;35m║  ${(label || 'OUTPUT COMPARISON').padEnd(56)}║\x1b[0m`);
+  lines.push(`\x1b[1;35m╚══════════════════════════════════════════════════════════╝\x1b[0m`);
+  lines.push('');
+
+  const maxLines = Math.max(actualLines.length, expectedLines.length);
+
+  for (let i = 0; i < maxLines && i < 10; i++) { // Limit to 10 lines for readability
+    const actualLine = actualLines[i] || '';
+    const expectedLine = expectedLines[i] || '';
+
+    if (actualLine === expectedLine) {
+      lines.push(`  \x1b[32m✓\x1b[0m ${actualLine}`);
+    } else {
+      lines.push(`  \x1b[31m✗ Actual:   ${actualLine}\x1b[0m`);
+      lines.push(`  \x1b[33m  Expected: ${expectedLine}\x1b[0m`);
+    }
+  }
+
+  if (maxLines > 10) {
+    lines.push(`  ... and ${maxLines - 10} more lines`);
+  }
+
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+/**
+ * Get contextual hint based on command and current step
+ */
+export function getContextualHint(
+  command: string,
+  stepObjectives: string[],
+  attemptCount: number
+): string | null {
+  // After 3 attempts, provide more specific hints
+  if (attemptCount < 3) {
+    return null;
+  }
+
+  const cmdMetadata = getCommandMetadata(command);
+  if (!cmdMetadata) {
+    return null;
+  }
+
+  const lines: string[] = [];
+  lines.push(`\n\x1b[1;33m💡 Hint:\x1b[0m`);
+
+  // Suggest common usage
+  if (cmdMetadata.examples.length > 0) {
+    lines.push(`  Try: \x1b[36m${cmdMetadata.examples[0].command}\x1b[0m`);
+  }
+
+  // Point out common mistakes
+  if (cmdMetadata.commonMistakes && cmdMetadata.commonMistakes.length > 0) {
+    lines.push(`  Common mistake: ${cmdMetadata.commonMistakes[0]}`);
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Generate learning feedback for completed step
+ */
+export function generateStepCompletionFeedback(
+  stepTitle: string,
+  commandsUsed: string[],
+  timeTaken: number
+): string {
+  const lines: string[] = [];
+
+  lines.push(`\n\x1b[1;32m╔══════════════════════════════════════════════════════════╗\x1b[0m`);
+  lines.push(`\x1b[1;32m║  ✓ STEP COMPLETED                                        ║\x1b[0m`);
+  lines.push(`\x1b[1;32m╚══════════════════════════════════════════════════════════╝\x1b[0m`);
+  lines.push('');
+  lines.push(`\x1b[1m${stepTitle}\x1b[0m`);
+  lines.push('');
+  lines.push(`Commands used: ${commandsUsed.length}`);
+  lines.push(`Time taken: ${Math.round(timeTaken / 1000)}s`);
+  lines.push('');
+
+  // Provide learning reinforcement
+  const uniqueCommands = [...new Set(commandsUsed.map(c => c.split(' ')[0]))];
+  if (uniqueCommands.length > 0) {
+    lines.push(`\x1b[1mKey commands practiced:\x1b[0m`);
+    for (const cmd of uniqueCommands.slice(0, 5)) {
+      const metadata = getCommandMetadata(cmd);
+      if (metadata) {
+        lines.push(`  \x1b[36m${cmd}\x1b[0m - ${metadata.shortDescription}`);
+      }
+    }
+  }
+
+  lines.push('');
+  lines.push(`\x1b[33mTip: Use "explain <command>" to learn more about any command.\x1b[0m`);
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+/**
+ * Validate command syntax and provide helpful feedback
+ */
+export function validateCommandSyntax(command: string): {
+  valid: boolean;
+  feedback?: string;
+} {
+  const parts = command.trim().split(/\s+/);
+  const baseCmd = parts[0];
+
+  // Check for empty command
+  if (!baseCmd) {
+    return { valid: false, feedback: 'No command entered.' };
+  }
+
+  // Check for known command
+  const metadata = getCommandMetadata(baseCmd);
+  if (!metadata) {
+    // Try to suggest similar commands
+    const suggestions = findSimilarCommands(baseCmd);
+    if (suggestions.length > 0) {
+      return {
+        valid: false,
+        feedback: `Unknown command "${baseCmd}". Did you mean: ${suggestions.join(', ')}?`,
+      };
+    }
+    return { valid: false, feedback: `Unknown command "${baseCmd}".` };
+  }
+
+  // Basic syntax validation passed
+  return { valid: true };
 }

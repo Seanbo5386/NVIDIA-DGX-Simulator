@@ -17,6 +17,7 @@ import { BasicSystemSimulator } from '@/simulators/basicSystemSimulator';
 import { PciToolsSimulator } from '@/simulators/pciToolsSimulator';
 import { BenchmarkSimulator } from '@/simulators/benchmarkSimulator';
 import { StorageSimulator } from '@/simulators/storageSimulator';
+import { NvlinkAuditSimulator } from '@/simulators/nvlinkAuditSimulator';
 import { useSimulationStore } from '@/store/simulationStore';
 import { scenarioContextManager } from '@/store/scenarioContext';
 import { ScenarioValidator } from '@/utils/scenarioValidator';
@@ -61,6 +62,7 @@ export const Terminal: React.FC<TerminalProps> = ({ className = '' }) => {
   const pciToolsSimulator = useRef(new PciToolsSimulator());
   const benchmarkSimulator = useRef(new BenchmarkSimulator());
   const storageSimulator = useRef(new StorageSimulator());
+  const nvlinkAuditSimulator = useRef(new NvlinkAuditSimulator());
 
   const currentContext = useRef<CommandContext>({
     currentNode: selectedNode || cluster.nodes[0]?.id || 'dgx-00',
@@ -414,7 +416,8 @@ export const Terminal: React.FC<TerminalProps> = ({ className = '' }) => {
           case 'mlxconfig':
           case 'mlxlink':
           case 'mlxcables':
-          case 'mlxup': {
+          case 'mlxup':
+          case 'mlxfwmanager': {
             const parsed = parseCommand(cmdLine);
             result = mellanoxSimulator.current.execute(parsed, currentContext.current);
             break;
@@ -480,6 +483,24 @@ export const Terminal: React.FC<TerminalProps> = ({ className = '' }) => {
           case 'systemctl': {
             const parsed = parseCommand(cmdLine);
             result = basicSystemSimulator.current.execute(parsed, currentContext.current);
+            break;
+          }
+
+          case 'hostnamectl': {
+            const parsed = parseCommand(cmdLine);
+            result = basicSystemSimulator.current.execute(parsed, currentContext.current);
+            break;
+          }
+
+          case 'timedatectl': {
+            const parsed = parseCommand(cmdLine);
+            result = basicSystemSimulator.current.execute(parsed, currentContext.current);
+            break;
+          }
+
+          case 'nvlink-audit': {
+            const parsed = parseCommand(cmdLine);
+            result = nvlinkAuditSimulator.current.execute(parsed, currentContext.current);
             break;
           }
 

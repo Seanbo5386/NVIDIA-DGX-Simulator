@@ -50,6 +50,18 @@ export class BasicSystemSimulator extends BaseSimulator {
           usage: 'systemctl [action] <service>',
           examples: ['systemctl status nvsm-core', 'systemctl start nvsm-core', 'systemctl restart nvsm-core'],
         },
+        {
+          name: 'hostnamectl',
+          description: 'Query or change system hostname',
+          usage: 'hostnamectl [status|set-hostname <name>]',
+          examples: ['hostnamectl', 'hostnamectl status', 'hostnamectl set-hostname dgx-01'],
+        },
+        {
+          name: 'timedatectl',
+          description: 'Query or change system time settings',
+          usage: 'timedatectl [status|set-timezone <tz>|set-ntp <bool>]',
+          examples: ['timedatectl', 'timedatectl status', 'timedatectl set-timezone UTC'],
+        },
       ],
     };
   }
@@ -88,6 +100,10 @@ export class BasicSystemSimulator extends BaseSimulator {
         return this.handleDmesg(parsed, context);
       case 'systemctl':
         return this.handleSystemctl(parsed, context);
+      case 'hostnamectl':
+        return this.handleHostnamectl(parsed, context);
+      case 'timedatectl':
+        return this.handleTimedatectl(parsed, context);
       default:
         return this.createError(`Unknown system command: ${parsed.baseCommand}`);
     }
@@ -335,5 +351,92 @@ Available types: bios, memory, processor`);
     }
 
     return this.createError('Usage: systemctl [status|start|stop|restart] <service>');
+  }
+
+  /**
+   * Handle hostnamectl command
+   * Query or change system hostname
+   */
+  private handleHostnamectl(parsed: ParsedCommand, context: CommandContext): CommandResult {
+    const action = parsed.subcommands[0] || 'status';
+    const hostname = context.currentNode || 'dgx-00';
+
+    if (action === 'status' || action === undefined) {
+      const output = `   Static hostname: ${hostname}
+         Icon name: computer-server
+           Chassis: server
+        Machine ID: 1234567890abcdef1234567890abcdef
+           Boot ID: abcdef1234567890abcdef1234567890
+  Operating System: Ubuntu 22.04.3 LTS
+            Kernel: Linux 5.15.0-91-generic
+      Architecture: x86-64
+   Hardware Vendor: NVIDIA
+    Hardware Model: DGX A100
+  Firmware Version: 1.2.3`;
+      return this.createSuccess(output);
+    }
+
+    if (action === 'set-hostname') {
+      const newHostname = parsed.subcommands[1] || parsed.positionalArgs[0];
+      if (!newHostname) {
+        return this.createError('hostnamectl: missing hostname argument');
+      }
+      return this.createSuccess(''); // Silent success
+    }
+
+    return this.createError('Usage: hostnamectl [status|set-hostname <name>]');
+  }
+
+  /**
+   * Handle timedatectl command
+   * Query or change system time settings
+   */
+  private handleTimedatectl(parsed: ParsedCommand, context: CommandContext): CommandResult {
+    const action = parsed.subcommands[0] || 'status';
+    const now = new Date();
+
+    if (action === 'status' || action === undefined) {
+      const output = `               Local time: ${now.toLocaleString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })} UTC
+           Universal time: ${now.toUTCString()}
+                 RTC time: ${now.toUTCString()}
+                Time zone: UTC (UTC, +0000)
+System clock synchronized: yes
+              NTP service: active
+          RTC in local TZ: no`;
+      return this.createSuccess(output);
+    }
+
+    if (action === 'set-timezone') {
+      const tz = parsed.subcommands[1] || parsed.positionalArgs[0];
+      if (!tz) {
+        return this.createError('timedatectl: missing timezone argument');
+      }
+      return this.createSuccess(''); // Silent success
+    }
+
+    if (action === 'set-ntp') {
+      const enabled = parsed.subcommands[1] || parsed.positionalArgs[0];
+      if (!enabled) {
+        return this.createError('timedatectl: missing boolean argument');
+      }
+      return this.createSuccess(''); // Silent success
+    }
+
+    if (action === 'list-timezones') {
+      const output = `Africa/Abidjan
+Africa/Cairo
+America/Chicago
+America/Los_Angeles
+America/New_York
+Asia/Shanghai
+Asia/Tokyo
+Europe/London
+Europe/Paris
+Pacific/Auckland
+UTC`;
+      return this.createSuccess(output);
+    }
+
+    return this.createError('Usage: timedatectl [status|set-timezone <tz>|set-ntp <bool>|list-timezones]');
   }
 }

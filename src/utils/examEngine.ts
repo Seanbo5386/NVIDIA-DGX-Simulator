@@ -1,6 +1,261 @@
 import type { ExamQuestion, ExamBreakdown, DomainPerformance, DomainId } from '@/types/scenarios';
 
 /**
+ * Exam modes for different study scenarios
+ */
+export type ExamMode =
+  | 'full-practice'    // 90 min, 60 questions, domain-weighted
+  | 'quick-quiz'       // 15 min, 15 questions
+  | 'domain-test'      // All questions from one domain
+  | 'weak-area-focus'  // Auto-generated from performance history
+  | 'review-mode';     // Review previous attempt's wrong answers
+
+/**
+ * Configuration for each exam mode
+ */
+export interface ExamModeConfig {
+  mode: ExamMode;
+  name: string;
+  description: string;
+  questionCount: number;
+  timeLimitMinutes: number;
+  shuffleQuestions: boolean;
+  showExplanations: 'never' | 'after-answer' | 'after-exam';
+  domain?: DomainId;  // For domain-test mode
+  weakDomains?: DomainId[];  // For weak-area-focus mode
+  reviewQuestionIds?: string[];  // For review mode
+}
+
+/**
+ * Predefined exam mode configurations
+ */
+export const EXAM_MODE_CONFIGS: Record<ExamMode, Omit<ExamModeConfig, 'domain' | 'weakDomains' | 'reviewQuestionIds'>> = {
+  'full-practice': {
+    mode: 'full-practice',
+    name: 'Full Practice Exam',
+    description: 'Complete 60-question exam with domain weighting (90 minutes)',
+    questionCount: 60,
+    timeLimitMinutes: 90,
+    shuffleQuestions: true,
+    showExplanations: 'after-exam',
+  },
+  'quick-quiz': {
+    mode: 'quick-quiz',
+    name: 'Quick Quiz',
+    description: 'Fast 15-question review across all domains (15 minutes)',
+    questionCount: 15,
+    timeLimitMinutes: 15,
+    shuffleQuestions: true,
+    showExplanations: 'after-answer',
+  },
+  'domain-test': {
+    mode: 'domain-test',
+    name: 'Domain Focus',
+    description: 'All questions from a single domain (no time limit)',
+    questionCount: -1,  // Will be set based on domain
+    timeLimitMinutes: 0,  // No limit
+    shuffleQuestions: true,
+    showExplanations: 'after-answer',
+  },
+  'weak-area-focus': {
+    mode: 'weak-area-focus',
+    name: 'Weak Area Focus',
+    description: 'Questions from domains where you scored below 70%',
+    questionCount: 20,
+    timeLimitMinutes: 30,
+    shuffleQuestions: true,
+    showExplanations: 'after-answer',
+  },
+  'review-mode': {
+    mode: 'review-mode',
+    name: 'Review Mistakes',
+    description: 'Review questions you answered incorrectly',
+    questionCount: -1,  // Will be set based on mistakes
+    timeLimitMinutes: 0,  // No limit
+    shuffleQuestions: false,
+    showExplanations: 'after-answer',
+  },
+};
+
+/**
+ * Domain names and their descriptions
+ */
+export const DOMAIN_INFO: Record<DomainId, { name: string; weight: number; description: string }> = {
+  domain1: {
+    name: 'Platform Bring-Up',
+    weight: 31,
+    description: 'Hardware verification, BIOS, BMC, drivers, and POST procedures',
+  },
+  domain2: {
+    name: 'Accelerator Configuration',
+    weight: 5,
+    description: 'GPU configuration, MIG, NVLink, and accelerator setup',
+  },
+  domain3: {
+    name: 'Base Infrastructure',
+    weight: 19,
+    description: 'Slurm, containers, storage, and network configuration',
+  },
+  domain4: {
+    name: 'Validation & Testing',
+    weight: 33,
+    description: 'DCGM, benchmarks, health checks, and performance validation',
+  },
+  domain5: {
+    name: 'Troubleshooting',
+    weight: 12,
+    description: 'Error diagnosis, XID codes, thermal issues, and problem resolution',
+  },
+};
+
+/**
+ * Select questions based on exam mode
+ */
+export function selectQuestionsForMode(
+  allQuestions: ExamQuestion[],
+  config: ExamModeConfig
+): ExamQuestion[] {
+  let selectedQuestions: ExamQuestion[];
+
+  switch (config.mode) {
+    case 'full-practice':
+      selectedQuestions = selectExamQuestions(allQuestions, config.questionCount);
+      break;
+
+    case 'quick-quiz':
+      // Quick quiz: proportional sampling from all domains
+      selectedQuestions = selectExamQuestions(allQuestions, config.questionCount);
+      break;
+
+    case 'domain-test':
+      // All questions from the specified domain
+      if (!config.domain) {
+        throw new Error('Domain must be specified for domain-test mode');
+      }
+      selectedQuestions = allQuestions.filter(q => q.domain === config.domain);
+      break;
+
+    case 'weak-area-focus':
+      // Questions from weak domains
+      if (!config.weakDomains || config.weakDomains.length === 0) {
+        // Default to domain4 and domain5 if no weak areas specified
+        config.weakDomains = ['domain4', 'domain5'];
+      }
+      const weakQuestions = allQuestions.filter(q =>
+        config.weakDomains!.includes(q.domain)
+      );
+      selectedQuestions = shuffleArray(weakQuestions).slice(0, config.questionCount);
+      break;
+
+    case 'review-mode':
+      // Questions that were answered incorrectly
+      if (!config.reviewQuestionIds || config.reviewQuestionIds.length === 0) {
+        return [];
+      }
+      const reviewSet = new Set(config.reviewQuestionIds);
+      selectedQuestions = allQuestions.filter(q => reviewSet.has(q.id));
+      break;
+
+    default:
+      selectedQuestions = selectExamQuestions(allQuestions, 35);
+  }
+
+  // Shuffle if configured
+  if (config.shuffleQuestions && config.mode !== 'review-mode') {
+    selectedQuestions = shuffleArray(selectedQuestions);
+  }
+
+  return selectedQuestions;
+}
+
+/**
+ * Create exam configuration for a specific mode
+ */
+export function createExamConfig(
+  mode: ExamMode,
+  options?: {
+    domain?: DomainId;
+    weakDomains?: DomainId[];
+    reviewQuestionIds?: string[];
+  }
+): ExamModeConfig {
+  const baseConfig = EXAM_MODE_CONFIGS[mode];
+
+  return {
+    ...baseConfig,
+    domain: options?.domain,
+    weakDomains: options?.weakDomains,
+    reviewQuestionIds: options?.reviewQuestionIds,
+  };
+}
+
+/**
+ * Get questions that were answered incorrectly from an exam breakdown
+ */
+export function getIncorrectQuestionIds(breakdown: ExamBreakdown): string[] {
+  return breakdown.questionResults
+    .filter(r => !r.correct)
+    .map(r => r.questionId);
+}
+
+/**
+ * Get domains below a threshold score
+ */
+export function getWeakDomainsFromHistory(
+  breakdowns: ExamBreakdown[],
+  threshold: number = 70
+): DomainId[] {
+  // Aggregate scores across all exams
+  const domainScores: Record<DomainId, { total: number; correct: number }> = {
+    domain1: { total: 0, correct: 0 },
+    domain2: { total: 0, correct: 0 },
+    domain3: { total: 0, correct: 0 },
+    domain4: { total: 0, correct: 0 },
+    domain5: { total: 0, correct: 0 },
+  };
+
+  breakdowns.forEach(breakdown => {
+    (Object.keys(breakdown.byDomain) as DomainId[]).forEach(domain => {
+      const perf = breakdown.byDomain[domain];
+      domainScores[domain].total += perf.questionsTotal;
+      domainScores[domain].correct += perf.questionsCorrect;
+    });
+  });
+
+  // Find domains below threshold
+  const weakDomains: DomainId[] = [];
+  (Object.keys(domainScores) as DomainId[]).forEach(domain => {
+    const stats = domainScores[domain];
+    if (stats.total > 0) {
+      const percentage = (stats.correct / stats.total) * 100;
+      if (percentage < threshold) {
+        weakDomains.push(domain);
+      }
+    }
+  });
+
+  return weakDomains;
+}
+
+/**
+ * Format time remaining for display
+ */
+export function formatTime(seconds: number): string {
+  if (seconds <= 0) return '0:00';
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Calculate estimated time per question
+ */
+export function getEstimatedTimePerQuestion(totalQuestions: number, timeLimitMinutes: number): number {
+  if (timeLimitMinutes <= 0) return 0;
+  return Math.floor((timeLimitMinutes * 60) / totalQuestions);
+}
+
+/**
  * Loads exam questions from JSON file
  */
 export async function loadExamQuestions(): Promise<ExamQuestion[]> {

@@ -1386,6 +1386,175 @@ export const COMMAND_METADATA: Record<string, CommandMetadata> = {
       'Not checking for thermal throttling in results',
     ],
   },
+
+  'hostnamectl': {
+    name: 'hostnamectl',
+    category: 'system-info',
+    shortDescription: 'Query or change system hostname and related settings',
+    longDescription: 'hostnamectl is used to query and change system hostname and related settings. It shows static hostname, machine ID, boot ID, operating system, kernel version, architecture, and hardware information.',
+    syntax: 'hostnamectl [status|set-hostname <name>]',
+    difficulty: 'beginner',
+    domains: ['domain1'],
+
+    commonFlags: [
+      { flag: 'status', description: 'Show current hostname and system info (default)', example: 'hostnamectl status' },
+      { flag: 'set-hostname <name>', description: 'Set the system hostname', example: 'hostnamectl set-hostname dgx-01' },
+    ],
+
+    examples: [
+      {
+        command: 'hostnamectl',
+        description: 'Display current hostname and system information',
+      },
+      {
+        command: 'hostnamectl set-hostname dgx-01',
+        description: 'Set the system hostname to dgx-01',
+      },
+    ],
+
+    whenToUse: 'Use hostnamectl to verify system identity during cluster setup, check hardware vendor/model information, or set hostnames during node configuration.',
+
+    relatedCommands: ['timedatectl', 'systemctl', 'uname'],
+
+    commonMistakes: [
+      'Forgetting that hostname changes may require service restarts',
+      'Not updating /etc/hosts after changing hostname',
+      'Using special characters in hostnames that cause DNS issues',
+    ],
+  },
+
+  'timedatectl': {
+    name: 'timedatectl',
+    category: 'system-info',
+    shortDescription: 'Query or change system time and date settings',
+    longDescription: 'timedatectl is used to query and change system clock and timezone settings. It can enable/disable NTP synchronization, set timezone, and show detailed time information.',
+    syntax: 'timedatectl [status|set-timezone <tz>|set-ntp <bool>|list-timezones]',
+    difficulty: 'beginner',
+    domains: ['domain1'],
+
+    commonFlags: [
+      { flag: 'status', description: 'Show current time settings (default)', example: 'timedatectl status' },
+      { flag: 'set-timezone <tz>', description: 'Set the system timezone', example: 'timedatectl set-timezone UTC' },
+      { flag: 'set-ntp <bool>', description: 'Enable or disable NTP synchronization', example: 'timedatectl set-ntp true' },
+      { flag: 'list-timezones', description: 'List available timezones', example: 'timedatectl list-timezones' },
+    ],
+
+    examples: [
+      {
+        command: 'timedatectl',
+        description: 'Display current time, timezone, and NTP status',
+      },
+      {
+        command: 'timedatectl set-timezone UTC',
+        description: 'Set timezone to UTC (recommended for datacenter servers)',
+      },
+      {
+        command: 'timedatectl set-ntp true',
+        description: 'Enable NTP time synchronization',
+      },
+    ],
+
+    whenToUse: 'Use timedatectl to ensure time synchronization across cluster nodes, verify NTP is enabled, and set consistent timezones for log correlation.',
+
+    relatedCommands: ['hostnamectl', 'systemctl', 'chronyc'],
+
+    commonMistakes: [
+      'Not enabling NTP on cluster nodes, causing time drift',
+      'Using local timezone instead of UTC in datacenter environments',
+      'Forgetting to verify NTP sync status after configuration',
+    ],
+  },
+
+  'mlxfwmanager': {
+    name: 'mlxfwmanager',
+    category: 'firmware',
+    shortDescription: 'Firmware manager for Mellanox/NVIDIA network devices',
+    longDescription: 'mlxfwmanager is the primary tool for managing firmware on Mellanox/NVIDIA ConnectX adapters and BlueField DPUs. It can query current firmware, check for updates, and perform firmware upgrades.',
+    syntax: 'mlxfwmanager [OPTIONS]',
+    difficulty: 'intermediate',
+    domains: ['domain1', 'domain5'],
+
+    commonFlags: [
+      { flag: '--query', description: 'Query firmware version of all devices', example: 'mlxfwmanager --query' },
+      { flag: '-d <device>', description: 'Target specific device', example: 'mlxfwmanager -d /dev/mst/mt4119_pciconf0 --query' },
+      { flag: '--online-query', description: 'Check for available online updates', example: 'mlxfwmanager --online-query' },
+      { flag: '-u', description: 'Update firmware', example: 'mlxfwmanager -u' },
+      { flag: '--force', description: 'Force update even if same version', example: 'mlxfwmanager -u --force' },
+    ],
+
+    examples: [
+      {
+        command: 'mlxfwmanager --query',
+        description: 'List all Mellanox devices with their firmware versions',
+      },
+      {
+        command: 'mlxfwmanager --online-query',
+        description: 'Check if firmware updates are available online',
+      },
+      {
+        command: 'mlxfwmanager -u -y',
+        description: 'Update firmware on all devices (with auto-confirm)',
+      },
+    ],
+
+    whenToUse: 'Use mlxfwmanager to verify InfiniBand HCA firmware versions, check for updates before cluster deployment, and perform firmware upgrades during maintenance windows.',
+
+    relatedCommands: ['mst', 'mlxconfig', 'mlxlink', 'ibstat'],
+
+    commonMistakes: [
+      'Updating firmware without first running mst start',
+      'Not rebooting after firmware update',
+      'Updating firmware during active workloads',
+      'Not checking compatibility with OFED driver version',
+    ],
+  },
+
+  'nvlink-audit': {
+    name: 'nvlink-audit',
+    category: 'diagnostics',
+    shortDescription: 'NVLink fabric diagnostic and audit tool',
+    longDescription: 'nvlink-audit performs comprehensive diagnostics on the NVLink fabric connecting GPUs. It verifies link status, checks for errors, tests bandwidth, and validates topology connectivity.',
+    syntax: 'nvlink-audit [OPTIONS]',
+    difficulty: 'advanced',
+    domains: ['domain4', 'domain5'],
+
+    commonFlags: [
+      { flag: '-v, --verbose', description: 'Show detailed per-link information', example: 'nvlink-audit --verbose' },
+      { flag: '-i, --id <gpu>', description: 'Audit specific GPU only', example: 'nvlink-audit -i 0' },
+      { flag: '--check-all', description: 'Run all diagnostics including bandwidth test', example: 'nvlink-audit --check-all' },
+      { flag: '--report <format>', description: 'Output format (json)', example: 'nvlink-audit --report json' },
+    ],
+
+    examples: [
+      {
+        command: 'nvlink-audit',
+        description: 'Run basic NVLink audit on all GPUs',
+      },
+      {
+        command: 'nvlink-audit --verbose',
+        description: 'Show detailed link-by-link status',
+      },
+      {
+        command: 'nvlink-audit --check-all',
+        description: 'Run comprehensive diagnostics with bandwidth testing',
+      },
+      {
+        command: 'nvlink-audit --report json',
+        description: 'Generate JSON report for automated processing',
+      },
+    ],
+
+    whenToUse: 'Use nvlink-audit to diagnose multi-GPU communication issues, verify NVLink fabric health after hardware changes, and validate topology before running distributed training workloads.',
+
+    relatedCommands: ['nvidia-smi nvlink', 'nvidia-smi topo', 'nccl-test', 'dcgmi diag'],
+
+    commonMistakes: [
+      'Not running with --verbose when troubleshooting specific link issues',
+      'Ignoring warnings about degraded links that still show as active',
+      'Not correlating results with nvidia-smi nvlink output',
+      'Running during active GPU workloads which can affect results',
+    ],
+  },
 };
 
 /**

@@ -41,6 +41,12 @@ export class MellanoxSimulator extends BaseSimulator {
           usage: 'mlxup -d <device> <-q|--online|--img <file>>',
           examples: ['mlxup -d /dev/mst/mt4119_pciconf0 -q', 'mlxup -d /dev/mst/mt4119_pciconf0 --online'],
         },
+        {
+          name: 'mlxfwmanager',
+          description: 'Firmware manager for Mellanox/NVIDIA devices',
+          usage: 'mlxfwmanager [OPTIONS]',
+          examples: ['mlxfwmanager', 'mlxfwmanager --query', 'mlxfwmanager -d /dev/mst/mt4119_pciconf0 --query'],
+        },
       ],
     };
   }
@@ -70,6 +76,8 @@ export class MellanoxSimulator extends BaseSimulator {
         return this.handleMLXCables(parsed, context);
       case 'mlxup':
         return this.handleMLXUp(parsed, context);
+      case 'mlxfwmanager':
+        return this.handleMLXFwManager(parsed, context);
       default:
         return this.createError(`Unknown Mellanox tool: ${tool}`);
     }
@@ -494,5 +502,122 @@ export class MellanoxSimulator extends BaseSimulator {
     }
 
     return this.createError('Usage: mlxup -d <device> <-q|--online|--img <file>>');
+  }
+
+  // mlxfwmanager - Firmware manager for Mellanox/NVIDIA devices
+  private handleMLXFwManager(parsed: ParsedCommand, context: CommandContext): CommandResult {
+    if (!this.mstStarted) {
+      return this.createError('Error: MST driver not loaded. Run "mst start" first.');
+    }
+
+    const node = this.getNode(context);
+    if (!node) {
+      return this.createError('Error: Unable to determine current node');
+    }
+
+    const showHelp = this.hasAnyFlag(parsed, ['h', 'help']);
+    if (showHelp) {
+      let output = 'mlxfwmanager - Firmware manager for Mellanox/NVIDIA devices\n\n';
+      output += 'Usage: mlxfwmanager [OPTIONS]\n\n';
+      output += 'Options:\n';
+      output += '  -d <device>     Operate on specific device\n';
+      output += '  --query         Query firmware information\n';
+      output += '  --online-query  Query available online updates\n';
+      output += '  -u              Update firmware\n';
+      output += '  --force         Force update even if same version\n';
+      output += '  -y              Assume yes to all prompts\n';
+      output += '  -h, --help      Show this help message\n';
+      return this.createSuccess(output);
+    }
+
+    const devicePath = this.getFlagString(parsed, ['d']);
+    const doQuery = this.hasAnyFlag(parsed, ['query']) || parsed.subcommands.includes('query');
+    const onlineQuery = this.hasAnyFlag(parsed, ['online-query']);
+    const doUpdate = this.hasAnyFlag(parsed, ['u']);
+
+    // Build list of devices to query
+    let devices: any[] = [];
+
+    if (devicePath) {
+      // Find specific device
+      const hca = node.hcas.find(h => h.devicePath === devicePath);
+      const dpu = node.dpus.find(d => d.devicePath === devicePath);
+      if (hca) devices.push({ type: 'HCA', ...hca });
+      else if (dpu) devices.push({ type: 'DPU', ...dpu });
+      else {
+        return this.createError(`Error: Device ${devicePath} not found`);
+      }
+    } else {
+      // All devices
+      node.hcas.forEach(hca => devices.push({ type: 'HCA', ...hca }));
+      node.dpus.forEach(dpu => devices.push({ type: 'DPU', ...dpu }));
+    }
+
+    if (doQuery || (!onlineQuery && !doUpdate)) {
+      // Query firmware
+      let output = '\nQuerying Mellanox devices firmware ...\n\n';
+      output += '-------------------------------------------------------------\n';
+      output += '  Device #     Device Type    Part Number     PSID             Firmware\n';
+      output += '-------------------------------------------------------------\n';
+
+      devices.forEach((device, idx) => {
+        const deviceType = device.type === 'HCA' ? device.caType : 'BlueField-2';
+        const partNum = device.type === 'HCA' ? 'MCX755106AS-HEAT' : 'MBF2M516A-CENAT';
+        const psid = device.type === 'HCA' ? 'MT_0000000889' : 'MT_0000000664';
+        output += `  ${idx + 1}            ${deviceType.padEnd(15)} ${partNum.padEnd(16)} ${psid.padEnd(17)} ${device.firmwareVersion}\n`;
+      });
+
+      output += '-------------------------------------------------------------\n';
+      output += `\n  Number of devices: ${devices.length}\n`;
+
+      return this.createSuccess(output);
+    }
+
+    if (onlineQuery) {
+      // Online query
+      let output = '\nQuerying Mellanox devices (online) ...\n\n';
+      output += '-------------------------------------------------------------\n';
+      output += '  Device #    Current FW      Available FW    Status\n';
+      output += '-------------------------------------------------------------\n';
+
+      devices.forEach((device, idx) => {
+        const currentFw = device.firmwareVersion;
+        const availableFw = '28.39.1002'; // Simulated latest version
+        const status = currentFw === availableFw ? 'Up to date' : 'Update available';
+        const statusColor = currentFw === availableFw ? '\x1b[32m' : '\x1b[33m';
+        output += `  ${idx + 1}            ${currentFw.padEnd(16)} ${availableFw.padEnd(16)} ${statusColor}${status}\x1b[0m\n`;
+      });
+
+      output += '-------------------------------------------------------------\n';
+
+      return this.createSuccess(output);
+    }
+
+    if (doUpdate) {
+      // Firmware update (simulated)
+      const force = this.hasAnyFlag(parsed, ['force']);
+      const assumeYes = this.hasAnyFlag(parsed, ['y']);
+
+      let output = '\nStarting firmware update ...\n\n';
+
+      devices.forEach((device, idx) => {
+        output += `Device ${idx + 1}: ${device.devicePath}\n`;
+        output += `  Current FW: ${device.firmwareVersion}\n`;
+        output += `  Target FW:  28.39.1002\n`;
+
+        if (!force && device.firmwareVersion === '28.39.1002') {
+          output += `  \x1b[33mSkipped: Already at latest version\x1b[0m\n\n`;
+        } else {
+          output += `  Downloading image... Done\n`;
+          output += `  Burning firmware [████████████████████] 100%\n`;
+          output += `  \x1b[32mSuccess: Firmware updated\x1b[0m\n`;
+          output += `  \x1b[33mNote: Reboot required to activate new firmware\x1b[0m\n\n`;
+        }
+      });
+
+      return this.createSuccess(output);
+    }
+
+    return this.createError('Usage: mlxfwmanager [--query|--online-query|-u] [-d <device>]');
   }
 }

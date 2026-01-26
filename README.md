@@ -310,27 +310,38 @@ Common GPU XID errors you'll encounter:
 
 ## 🛣️ Roadmap
 
+### Recently Completed
+- [x] NVSM simulator with hierarchical navigation
+- [x] Mellanox tools (mlxconfig, mlxlink, mlxcables, mlxtrace)
+- [x] Slurm commands (sinfo, squeue, scontrol, sbatch, scancel)
+- [x] Docker/NGC/Singularity/Enroot commands
+- [x] BCM (Base Command Manager) simulator
+- [x] Interactive lab scenarios with step-by-step guidance (15 labs)
+- [x] Practice exam with timed questions (53 questions)
+- [x] Fault injection system for troubleshooting practice
+- [x] Multi-node NCCL test simulation
+- [x] HPL benchmark simulation
+
+### In Progress
+- [ ] Expand practice exam to 150+ questions
+- [ ] Additional lab scenarios (target: 30+)
+- [ ] Enhanced feedback system with "did you mean?" suggestions
+- [ ] Domain-specific study modes
+
 ### Coming Soon
-- [ ] NVSM simulator with hierarchical navigation
-- [ ] Mellanox tools (mlxconfig, mlxlink, mlxcables)
-- [ ] Slurm commands (sinfo, squeue, scontrol)
-- [ ] Docker/NGC commands
-- [ ] BCM (Base Command Manager) simulator
-- [ ] Interactive lab scenarios with step-by-step guidance
-- [ ] Practice exam with timed questions
-- [ ] Fault injection system for troubleshooting practice
-- [ ] Multi-node NCCL test simulation
-- [ ] Fabric topology visualization (D3.js)
+- [ ] D3.js topology visualization
 - [ ] Tab completion for commands
 - [ ] Command history search (Ctrl+R)
+- [ ] Adaptive learning system
+- [ ] Progress analytics dashboard
 
 ### Future Enhancements
 - WebSocket support for multi-user scenarios
 - Collaborative training sessions
 - Achievement/badge system for completed labs
-- Progress tracking and analytics
 - Custom scenario creation
 - API for integration with LMS platforms
+- Instructor dashboard
 
 ## 🤝 Contributing
 
