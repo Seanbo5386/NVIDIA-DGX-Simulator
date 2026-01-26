@@ -219,10 +219,10 @@ Adaptive Learn:   ████████████████████�
 - [x] Split terminal view (terminalSplitManager.ts, SplitPane.tsx)
 - [x] Terminal themes (10 themes: NVIDIA, Dark, Light, Solarized, Monokai, Dracula, Nord, Gruvbox, One Dark)
 
-#### 3.4 Interactive Diagrams
-- [ ] MIG partitioning visual configurator
+#### 3.4 Interactive Diagrams (PARTIAL)
+- [x] MIG partitioning visual configurator (MIGConfigurator.tsx)
 - [ ] Drag-and-drop cluster builder
-- [ ] Visual Slurm job placement
+- [x] Visual Slurm job placement (SlurmJobVisualizer.tsx)
 - [ ] InfiniBand cable tracing tool
 
 ---
