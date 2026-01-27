@@ -6,7 +6,6 @@ import {
   getStudyRecommendations,
   type LearnerProfile,
   type DomainPerformance,
-  type QuestionPerformance,
 } from '../utils/adaptiveLearning';
 import { DOMAIN_INFO, type DomainId } from '../utils/certificationResources';
 

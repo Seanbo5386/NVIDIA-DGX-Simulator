@@ -6,8 +6,8 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import type { GPU, MIGInstance } from '@/types/hardware';
-import { Cpu, Layers, Check, X, AlertTriangle, Plus, Trash2 } from 'lucide-react';
+import type { GPU } from '@/types/hardware';
+import { Layers, Check, X, AlertTriangle, Plus, Trash2 } from 'lucide-react';
 
 interface MIGConfiguratorProps {
   gpu: GPU;
@@ -48,7 +48,7 @@ export const MIGConfigurator: React.FC<MIGConfiguratorProps> = ({
 }) => {
   const [isEnabled, setIsEnabled] = useState(gpu.migMode);
   const [instances, setInstances] = useState<ConfiguredInstance[]>([]);
-  const [selectedProfile, setSelectedProfile] = useState<MIGProfile | null>(null);
+  const [_selectedProfile, setSelectedProfile] = useState<MIGProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Calculate total slices used

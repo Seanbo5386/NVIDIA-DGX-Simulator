@@ -306,7 +306,7 @@ export class InfiniBandSimulator extends BaseSimulator {
   /**
    * ibnetdiscover - Discover InfiniBand fabric topology
    */
-  executeIbnetdiscover(parsed: ParsedCommand, context: CommandContext): CommandResult {
+  executeIbnetdiscover(parsed: ParsedCommand, _context: CommandContext): CommandResult {
     if (this.hasAnyFlag(parsed, ['help', 'h'])) {
       let output = `Usage: ibnetdiscover [options]\n`;
       output += `Options:\n`;
@@ -375,7 +375,7 @@ export class InfiniBandSimulator extends BaseSimulator {
           const nodesOnLeaf = nodes.slice(i * 4, (i + 1) * 4);
           nodesOnLeaf.forEach((node, nodeIdx) => {
             node.hcas.forEach((hca, hcaIdx) => {
-              output += `[${numSpineSwitches + nodeIdx * 8 + hcaIdx + 1}]\t"${hca.guid}"[1]\t\t# "${node.hostname}" HCA-${hcaIdx}\n`;
+              output += `[${numSpineSwitches + nodeIdx * 8 + hcaIdx + 1}]\t"${hca.ports[0]?.guid}"[1]\t\t# "${node.hostname}" HCA-${hcaIdx}\n`;
             });
           });
         }
@@ -388,14 +388,14 @@ export class InfiniBandSimulator extends BaseSimulator {
       output += `# Channel Adapters (HCAs)\n`;
       nodes.forEach((node, nodeIdx) => {
         node.hcas.forEach((hca, hcaIdx) => {
-          output += `Ca\t${hca.numPorts} "${hca.guid}"\t# "${node.hostname}/${hca.nodeDescription}"\n`;
+          output += `Ca\t${hca.ports.length} "${hca.ports[0]?.guid}"\t# "${node.hostname}/${hca.caType}"\n`;
 
           if (showPorts) {
             hca.ports.forEach(port => {
               const leafIdx = Math.floor(nodeIdx / 4);
               const switchGuid = `0x${(0x2000 + leafIdx).toString(16).padStart(16, '0')}`;
               const switchPort = (nodeIdx % 4) * 8 + hcaIdx + 1;
-              output += `[${port.portNumber}](${hca.guid})\t"${switchGuid}"[${switchPort}]\t\t# lid ${port.baseLid} lmc 0 "${node.hostname}" ${port.state}\n`;
+              output += `[${port.portNumber}](${hca.ports[0]?.guid})\t"${switchGuid}"[${switchPort}]\t\t# lid ${port.lid} lmc 0 "${node.hostname}" ${port.state}\n`;
             });
           }
           output += '\n';
@@ -408,7 +408,7 @@ export class InfiniBandSimulator extends BaseSimulator {
     output += `# Summary:\n`;
     output += `#   ${nodes.reduce((sum, n) => sum + n.hcas.length, 0)} HCAs\n`;
     output += `#   ${Math.ceil(nodes.length / 4) + 2} Switches\n`;
-    output += `#   ${nodes.reduce((sum, n) => sum + n.hcas.reduce((s, h) => s + h.numPorts, 0), 0)} Ports\n`;
+    output += `#   ${nodes.reduce((sum, n) => sum + n.hcas.reduce((s, h) => s + h.ports.length, 0), 0)} Ports\n`;
     output += `#\n`;
 
     return this.createSuccess(output);

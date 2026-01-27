@@ -596,7 +596,7 @@ export class MellanoxSimulator extends BaseSimulator {
     if (doUpdate) {
       // Firmware update (simulated)
       const force = this.hasAnyFlag(parsed, ['force']);
-      const assumeYes = this.hasAnyFlag(parsed, ['y']);
+      // const assumeYes = this.hasAnyFlag(parsed, ['y']); // Reserved for interactive mode
 
       let output = '\nStarting firmware update ...\n\n';
 

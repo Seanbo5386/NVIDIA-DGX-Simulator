@@ -10,7 +10,7 @@
 import React, { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Target, Award, AlertTriangle, CheckCircle, BarChart2 } from 'lucide-react';
 import { useLearningStore } from '@/store/learningStore';
-import type { DomainId, ExamBreakdown } from '@/types/scenarios';
+import type { DomainId } from '@/types/scenarios';
 
 interface PerformanceBenchmarkProps {
   className?: string;
@@ -133,7 +133,7 @@ export const PerformanceBenchmark: React.FC<PerformanceBenchmarkProps> = ({
     if (examAttempts.length === 0) return [];
 
     return examAttempts.map((attempt, index) => {
-      const overallScore = (attempt.correct / attempt.total) * 100;
+      const overallScore = attempt.percentage;
 
       // Calculate percentile for this score
       let percentile = 5;
@@ -148,7 +148,7 @@ export const PerformanceBenchmark: React.FC<PerformanceBenchmarkProps> = ({
         attempt: index + 1,
         score: Math.round(overallScore),
         percentile,
-        date: new Date(attempt.date || Date.now()).toLocaleDateString(),
+        date: new Date().toLocaleDateString(),
       };
     });
   }, [examAttempts]);

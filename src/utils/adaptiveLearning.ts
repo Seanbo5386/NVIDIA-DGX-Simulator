@@ -509,7 +509,6 @@ export function getStudyRecommendations(
   domainWeights: Record<DomainId, number>
 ): string[] {
   const recommendations: string[] = [];
-  const now = Date.now();
 
   // Check review queue
   const queue = getReviewQueue(profile.questionHistory);

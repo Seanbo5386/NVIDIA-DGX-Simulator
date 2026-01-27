@@ -89,7 +89,7 @@ export class NvlinkAuditSimulator extends BaseSimulator {
     // System Overview
     output += '=== System Overview ===\n';
     output += `Total GPUs: ${node.gpus.length}\n`;
-    output += `NVSwitches: ${node.nvswitches?.length || 0}\n`;
+    output += `NVSwitches: ${(node as any).nvswitches?.length || 0}\n`;
     output += `Architecture: DGX A100 (SXM4)\n`;
     output += `NVLink Version: 3.0\n`;
     output += `Links per GPU: 12\n\n`;
@@ -138,9 +138,9 @@ export class NvlinkAuditSimulator extends BaseSimulator {
     output += '\n' + '-'.repeat(78) + '\n';
 
     // NVSwitch Status
-    if (node.nvswitches && node.nvswitches.length > 0) {
+    if ((node as any).nvswitches && (node as any).nvswitches.length > 0) {
       output += '\n=== NVSwitch Status ===\n';
-      node.nvswitches.forEach((nvswitch: any, idx: number) => {
+      (node as any).nvswitches.forEach((nvswitch: any, idx: number) => {
         const status = nvswitch.status || 'Healthy';
         const statusColor = status === 'Healthy' ? '\x1b[32m' : '\x1b[31m';
         output += `NVSwitch ${idx}: ${statusColor}${status}\x1b[0m\n`;
@@ -207,7 +207,7 @@ export class NvlinkAuditSimulator extends BaseSimulator {
         host: node.hostname,
         timestamp: new Date().toISOString(),
         totalGpus: node.gpus.length,
-        nvswitches: node.nvswitches?.length || 0,
+        nvswitches: (node as any).nvswitches?.length || 0,
         status: hasErrors ? 'ERROR' : hasWarnings ? 'WARNING' : 'HEALTHY',
         gpus: gpusToAudit.map(gpu => ({
           id: gpu.id,

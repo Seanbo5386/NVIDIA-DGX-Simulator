@@ -391,7 +391,7 @@ Available types: bios, memory, processor`);
    * Handle timedatectl command
    * Query or change system time settings
    */
-  private handleTimedatectl(parsed: ParsedCommand, context: CommandContext): CommandResult {
+  private handleTimedatectl(parsed: ParsedCommand, _context: CommandContext): CommandResult {
     const action = parsed.subcommands[0] || 'status';
     const now = new Date();
 

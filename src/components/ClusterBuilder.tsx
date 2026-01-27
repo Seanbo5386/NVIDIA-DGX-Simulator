@@ -7,7 +7,7 @@
 
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import type { DGXNode } from '@/types/hardware';
-import { Server, Plus, Trash2, Link, Settings, Save, RotateCcw, Move, Cpu, Network } from 'lucide-react';
+import { Server, Plus, Trash2, Link, Save, RotateCcw, Move, Cpu, Network } from 'lucide-react';
 
 interface ClusterBuilderProps {
   initialNodes?: DGXNode[];
@@ -60,7 +60,7 @@ export const ClusterBuilder: React.FC<ClusterBuilderProps> = ({
   className = '',
 }) => {
   const [nodes, setNodes] = useState<NodeTemplate[]>(() =>
-    initialNodes.map((n, i) => ({
+    initialNodes.map((n) => ({
       id: n.id,
       type: (n.systemType as NodeTemplate['type']) || 'DGX-A100',
       hostname: n.hostname,
@@ -82,7 +82,6 @@ export const ClusterBuilder: React.FC<ClusterBuilderProps> = ({
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
   const [draggedNode, setDraggedNode] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [showSettings, setShowSettings] = useState(false);
 
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -207,7 +206,7 @@ export const ClusterBuilder: React.FC<ClusterBuilderProps> = ({
 
   // Reset to initial state
   const handleReset = useCallback(() => {
-    setNodes(initialNodes.map((n, i) => ({
+    setNodes(initialNodes.map((n) => ({
       id: n.id,
       type: (n.systemType as NodeTemplate['type']) || 'DGX-A100',
       hostname: n.hostname,

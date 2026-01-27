@@ -3,24 +3,14 @@ import { render, screen } from '@testing-library/react';
 import { NVSwitchTopology } from '../NVSwitchTopology';
 import type { DGXNode, GPU } from '@/types/hardware';
 
-// Mock D3
+// Mock D3 with chainable selection methods
 vi.mock('d3', () => {
-  const mockSelection = {
-    selectAll: vi.fn(() => mockSelection),
-    select: vi.fn(() => mockSelection),
-    remove: vi.fn(() => mockSelection),
-    data: vi.fn(() => mockSelection),
-    enter: vi.fn(() => mockSelection),
-    append: vi.fn(() => mockSelection),
-    attr: vi.fn(() => mockSelection),
-    style: vi.fn(() => mockSelection),
-    text: vi.fn(() => mockSelection),
-    on: vi.fn(() => mockSelection),
-    each: vi.fn(() => mockSelection),
-    transition: vi.fn(() => mockSelection),
-    delay: vi.fn(() => mockSelection),
-    duration: vi.fn(() => mockSelection),
-  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mockSelection: any = {};
+  const methods = ['selectAll', 'select', 'remove', 'data', 'enter', 'append', 'attr', 'style', 'text', 'on', 'each', 'transition', 'delay', 'duration'];
+  methods.forEach(method => {
+    mockSelection[method] = vi.fn(() => mockSelection);
+  });
 
   return {
     select: vi.fn(() => mockSelection),

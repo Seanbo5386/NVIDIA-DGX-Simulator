@@ -9,14 +9,16 @@ vi.mock('@/store/learningStore', () => ({
   useLearningStore: vi.fn(),
 }));
 
+const mockUseLearningStore = useLearningStore as unknown as ReturnType<typeof vi.fn>;
+
 describe('PerformanceBenchmark', () => {
-  const createMockDomainProgress = (overrides: Partial<Record<DomainId, { questionsAttempted: number; questionsCorrect: number }>> = {}) => {
+  const createMockDomainProgress = (overrides: Partial<Record<DomainId, { domainId: DomainId; questionsAttempted: number; questionsCorrect: number; labsCompleted: number; labsTotal: number; lastStudied: number; studyTimeSeconds: number }>> = {}) => {
     const defaults = {
-      domain1: { questionsAttempted: 20, questionsCorrect: 15, labsCompleted: 2, labsTotal: 5, lastStudied: Date.now(), studyTimeSeconds: 3600 },
-      domain2: { questionsAttempted: 10, questionsCorrect: 8, labsCompleted: 1, labsTotal: 3, lastStudied: Date.now(), studyTimeSeconds: 1800 },
-      domain3: { questionsAttempted: 15, questionsCorrect: 10, labsCompleted: 3, labsTotal: 5, lastStudied: Date.now(), studyTimeSeconds: 2400 },
-      domain4: { questionsAttempted: 25, questionsCorrect: 18, labsCompleted: 4, labsTotal: 6, lastStudied: Date.now(), studyTimeSeconds: 4200 },
-      domain5: { questionsAttempted: 12, questionsCorrect: 6, labsCompleted: 2, labsTotal: 4, lastStudied: Date.now(), studyTimeSeconds: 2000 },
+      domain1: { domainId: 'domain1' as DomainId, questionsAttempted: 20, questionsCorrect: 15, labsCompleted: 2, labsTotal: 5, lastStudied: Date.now(), studyTimeSeconds: 3600 },
+      domain2: { domainId: 'domain2' as DomainId, questionsAttempted: 10, questionsCorrect: 8, labsCompleted: 1, labsTotal: 3, lastStudied: Date.now(), studyTimeSeconds: 1800 },
+      domain3: { domainId: 'domain3' as DomainId, questionsAttempted: 15, questionsCorrect: 10, labsCompleted: 3, labsTotal: 5, lastStudied: Date.now(), studyTimeSeconds: 2400 },
+      domain4: { domainId: 'domain4' as DomainId, questionsAttempted: 25, questionsCorrect: 18, labsCompleted: 4, labsTotal: 6, lastStudied: Date.now(), studyTimeSeconds: 4200 },
+      domain5: { domainId: 'domain5' as DomainId, questionsAttempted: 12, questionsCorrect: 6, labsCompleted: 2, labsTotal: 4, lastStudied: Date.now(), studyTimeSeconds: 2000 },
     };
 
     return { ...defaults, ...overrides };
@@ -29,7 +31,7 @@ describe('PerformanceBenchmark', () => {
       getReadinessScore: () => 0.65,
     };
 
-    (useLearningStore as ReturnType<typeof vi.fn>).mockImplementation((selector) => {
+    mockUseLearningStore.mockImplementation((selector: unknown) => {
       const store = { ...defaultStore, ...overrides };
       if (typeof selector === 'function') {
         return selector(store);
@@ -85,7 +87,7 @@ describe('PerformanceBenchmark', () => {
     it('should show weak areas when user is below average', () => {
       mockLearningStore({
         domainProgress: createMockDomainProgress({
-          domain5: { questionsAttempted: 20, questionsCorrect: 8, labsCompleted: 1, labsTotal: 4, lastStudied: Date.now(), studyTimeSeconds: 1000 },
+          domain5: { domainId: 'domain5' as DomainId, questionsAttempted: 20, questionsCorrect: 8, labsCompleted: 1, labsTotal: 4, lastStudied: Date.now(), studyTimeSeconds: 1000 },
         }),
       });
 
@@ -99,7 +101,7 @@ describe('PerformanceBenchmark', () => {
     it('should show strong areas when user is above average', () => {
       mockLearningStore({
         domainProgress: createMockDomainProgress({
-          domain2: { questionsAttempted: 20, questionsCorrect: 18, labsCompleted: 3, labsTotal: 3, lastStudied: Date.now(), studyTimeSeconds: 3600 },
+          domain2: { domainId: 'domain2' as DomainId, questionsAttempted: 20, questionsCorrect: 18, labsCompleted: 3, labsTotal: 3, lastStudied: Date.now(), studyTimeSeconds: 3600 },
         }),
       });
 

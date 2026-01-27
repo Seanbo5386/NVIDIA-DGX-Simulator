@@ -242,7 +242,7 @@ export const useLearningStore = create<LearningState>()(
         };
 
         // Update streak
-        const { streak, isNewDay } = updateStreak(lastStudyDate, currentStreak);
+        const { streak, isNewDay: _isNewDay } = updateStreak(lastStudyDate, currentStreak);
 
         set(state => ({
           activeSession: null,

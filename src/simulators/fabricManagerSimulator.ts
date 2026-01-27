@@ -20,7 +20,7 @@ export class FabricManagerSimulator extends BaseSimulator {
       version: '535.104.05',
       description: 'NVIDIA Fabric Manager CLI',
       commands: [
-        'nv-fabricmanager',
+        { name: 'nv-fabricmanager', description: 'NVIDIA Fabric Manager CLI' },
       ],
     };
   }
@@ -35,7 +35,7 @@ export class FabricManagerSimulator extends BaseSimulator {
       return this.showVersion();
     }
 
-    const subcommand = parsed.args[0];
+    const subcommand = parsed.subcommands[0];
 
     switch (subcommand) {
       case 'status':
@@ -55,7 +55,7 @@ export class FabricManagerSimulator extends BaseSimulator {
       case 'topo':
         return this.executeTopo(parsed, context);
       default:
-        if (parsed.args.length === 0) {
+        if (parsed.subcommands.length === 0) {
           return this.showHelp();
         }
         return this.createError(`Unknown subcommand: ${subcommand}\nRun 'nv-fabricmanager --help' for usage.`);
@@ -96,7 +96,7 @@ export class FabricManagerSimulator extends BaseSimulator {
     return state.cluster.nodes.find(n => n.id === context.currentNode);
   }
 
-  private executeStatus(parsed: ParsedCommand, context: CommandContext): CommandResult {
+  private executeStatus(_parsed: ParsedCommand, context: CommandContext): CommandResult {
     const node = this.getNode(context);
     if (!node) {
       return this.createError('Error: Unable to determine current node');
@@ -104,7 +104,7 @@ export class FabricManagerSimulator extends BaseSimulator {
 
     const gpuCount = node.gpus.length;
     const nvswitchCount = gpuCount >= 8 ? 6 : (gpuCount >= 4 ? 2 : 0);
-    const healthyNvlinks = node.gpus.reduce((sum, g) => sum + g.nvlinks.filter(l => l.state === 'active').length, 0);
+    const healthyNvlinks = node.gpus.reduce((sum, g) => sum + g.nvlinks.filter(l => l.status === 'Active').length, 0);
     const totalNvlinks = node.gpus.reduce((sum, g) => sum + g.nvlinks.length, 0);
 
     let output = `\x1b[1mNVIDIA Fabric Manager Status\x1b[0m\n`;
@@ -125,7 +125,8 @@ export class FabricManagerSimulator extends BaseSimulator {
     output += `  Topology:             ${gpuCount === 8 ? 'Fully Connected (NVSwitch)' : 'Direct NVLink'}\n\n`;
 
     output += `\x1b[1mHealth Status:\x1b[0m\n`;
-    const allHealthy = healthyNvlinks === totalNvlinks && node.gpus.every(g => g.healthStatus === 'OK');
+    const healthyGpus = node.gpus.every(g => g.healthStatus === 'OK');
+    const allHealthy = healthyNvlinks === totalNvlinks && healthyGpus;
     output += `  Overall:              ${allHealthy ? '\x1b[32mHealthy\x1b[0m' : '\x1b[33mDegraded\x1b[0m'}\n`;
     output += `  Last Health Check:    ${new Date().toISOString()}\n`;
     output += `  Errors Detected:      ${allHealthy ? '0' : Math.floor(Math.random() * 5) + 1}\n`;
@@ -134,7 +135,7 @@ export class FabricManagerSimulator extends BaseSimulator {
   }
 
   private executeQuery(parsed: ParsedCommand, context: CommandContext): CommandResult {
-    const queryType = parsed.args[1];
+    const queryType = parsed.subcommands[1];
 
     switch (queryType) {
       case 'nvswitch':
@@ -202,7 +203,7 @@ export class FabricManagerSimulator extends BaseSimulator {
     output += `GPU Topology:\n`;
     node.gpus.forEach(gpu => {
       const nvlinkCount = gpu.nvlinks.length;
-      const activeNvlinks = gpu.nvlinks.filter(l => l.state === 'active').length;
+      const activeNvlinks = gpu.nvlinks.filter(l => l.status === 'Active').length;
       output += `  GPU ${gpu.id}: ${gpu.type} - ${activeNvlinks}/${nvlinkCount} NVLinks active\n`;
     });
 
@@ -235,16 +236,16 @@ export class FabricManagerSimulator extends BaseSimulator {
 
     node.gpus.forEach(gpu => {
       gpu.nvlinks.forEach((link, linkIdx) => {
-        const state = link.state === 'active' ? '\x1b[32mActive\x1b[0m ' : '\x1b[31mInactive\x1b[0m';
+        const state = link.status === 'Active' ? '\x1b[32mActive\x1b[0m ' : '\x1b[31mInactive\x1b[0m';
         const speed = 'NVLink4';
-        const bandwidth = link.state === 'active' ? `${link.bandwidth}GB/s` : 'N/A';
-        const remoteGpu = link.remoteGpuId ?? 'NVSwitch';
+        const bandwidth = link.status === 'Active' ? `${link.speed}GB/s` : 'N/A';
+        const remoteGpu = 'NVSwitch';
         output += `  ${gpu.id} |   ${linkIdx}  | ${state} | ${speed.padEnd(9)} | ${String(remoteGpu).padEnd(10)} | ${bandwidth}\n`;
       });
     });
 
     const totalLinks = node.gpus.reduce((sum, g) => sum + g.nvlinks.length, 0);
-    const activeLinks = node.gpus.reduce((sum, g) => sum + g.nvlinks.filter(l => l.state === 'active').length, 0);
+    const activeLinks = node.gpus.reduce((sum, g) => sum + g.nvlinks.filter(l => l.status === 'Active').length, 0);
     output += `\n`;
     output += `Total NVLinks: ${totalLinks}\n`;
     output += `Active NVLinks: ${activeLinks}\n`;
@@ -253,7 +254,7 @@ export class FabricManagerSimulator extends BaseSimulator {
     return this.createSuccess(output);
   }
 
-  private executeStart(parsed: ParsedCommand, context: CommandContext): CommandResult {
+  private executeStart(_parsed: ParsedCommand, _context: CommandContext): CommandResult {
     return this.createSuccess(`Starting NVIDIA Fabric Manager...\n` +
       `Initializing NVSwitch fabric...\n` +
       `Discovering GPUs...\n` +
@@ -261,13 +262,13 @@ export class FabricManagerSimulator extends BaseSimulator {
       `\x1b[32mNVIDIA Fabric Manager started successfully.\x1b[0m\n`);
   }
 
-  private executeStop(parsed: ParsedCommand, context: CommandContext): CommandResult {
+  private executeStop(_parsed: ParsedCommand, _context: CommandContext): CommandResult {
     return this.createSuccess(`Stopping NVIDIA Fabric Manager...\n` +
       `Shutting down NVLink connections...\n` +
       `\x1b[33mNVIDIA Fabric Manager stopped.\x1b[0m\n`);
   }
 
-  private executeRestart(parsed: ParsedCommand, context: CommandContext): CommandResult {
+  private executeRestart(_parsed: ParsedCommand, _context: CommandContext): CommandResult {
     return this.createSuccess(`Restarting NVIDIA Fabric Manager...\n` +
       `Stopping service...\n` +
       `Waiting for cleanup...\n` +
@@ -276,8 +277,8 @@ export class FabricManagerSimulator extends BaseSimulator {
       `\x1b[32mNVIDIA Fabric Manager restarted successfully.\x1b[0m\n`);
   }
 
-  private executeConfig(parsed: ParsedCommand, context: CommandContext): CommandResult {
-    const configOption = parsed.args[1];
+  private executeConfig(parsed: ParsedCommand, _context: CommandContext): CommandResult {
+    const configOption = parsed.subcommands[1];
 
     if (configOption === 'show' || !configOption) {
       let output = `\x1b[1mFabric Manager Configuration\x1b[0m\n`;
@@ -306,7 +307,7 @@ export class FabricManagerSimulator extends BaseSimulator {
     return this.createError(`Unknown config option: ${configOption}\nUse 'nv-fabricmanager config show' to display configuration.`);
   }
 
-  private executeDiag(parsed: ParsedCommand, context: CommandContext): CommandResult {
+  private executeDiag(_parsed: ParsedCommand, context: CommandContext): CommandResult {
     const node = this.getNode(context);
     if (!node) {
       return this.createError('Error: Unable to determine current node');
@@ -335,7 +336,7 @@ export class FabricManagerSimulator extends BaseSimulator {
     // Check NVLink
     output += `\x1b[1m[3/5] Checking NVLink Connections\x1b[0m\n`;
     const totalLinks = node.gpus.reduce((sum, g) => sum + g.nvlinks.length, 0);
-    const activeLinks = node.gpus.reduce((sum, g) => sum + g.nvlinks.filter(l => l.state === 'active').length, 0);
+    const activeLinks = node.gpus.reduce((sum, g) => sum + g.nvlinks.filter(l => l.status === 'Active').length, 0);
     output += `  Total Links: ${totalLinks}\n`;
     output += `  Active Links: ${activeLinks}\n`;
     output += `  Status: ${activeLinks === totalLinks ? '\x1b[32mAll Links Active\x1b[0m' : '\x1b[33mSome Links Inactive\x1b[0m'}\n\n`;
@@ -361,7 +362,7 @@ export class FabricManagerSimulator extends BaseSimulator {
     return this.createSuccess(output);
   }
 
-  private executeTopo(parsed: ParsedCommand, context: CommandContext): CommandResult {
+  private executeTopo(_parsed: ParsedCommand, context: CommandContext): CommandResult {
     const node = this.getNode(context);
     if (!node) {
       return this.createError('Error: Unable to determine current node');

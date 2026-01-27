@@ -341,7 +341,7 @@ export const InfiniBandTopology: React.FC<InfiniBandTopologyProps> = ({
           onHCAClick(dgxId, d.data as InfiniBandHCA);
         }
       })
-      .on('mouseover', function(event, d) {
+      .on('mouseover', function(_event, d) {
         setHoveredNode(d);
         d3.select(this).select('circle').attr('stroke-width', 3);
       })
@@ -382,7 +382,7 @@ export const InfiniBandTopology: React.FC<InfiniBandTopologyProps> = ({
           onNodeClick(d.id);
         }
       })
-      .on('mouseover', function(event, d) {
+      .on('mouseover', function(_event, d) {
         setHoveredNode(d);
         d3.select(this).select('rect').attr('stroke-width', 4);
       })
@@ -478,7 +478,7 @@ export const InfiniBandTopology: React.FC<InfiniBandTopologyProps> = ({
               <div className="text-gray-300">{(hoveredNode.data as InfiniBandHCA).ports.length}</div>
               <div className="text-gray-400">Port Status:</div>
               <div className="text-gray-300">
-                {(hoveredNode.data as InfiniBandHCA).ports.map((p, i) =>
+                {(hoveredNode.data as InfiniBandHCA).ports.map((p) =>
                   `P${p.portNumber}: ${p.state}`
                 ).join(', ')}
               </div>

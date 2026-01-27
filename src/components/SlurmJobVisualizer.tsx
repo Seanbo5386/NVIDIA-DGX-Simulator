@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import type { DGXNode, GPU } from '@/types/hardware';
+import type { DGXNode } from '@/types/hardware';
 import { Server, Cpu, Play, Clock, AlertCircle, CheckCircle, Users } from 'lucide-react';
 
 interface SlurmJobVisualizerProps {
@@ -127,7 +127,6 @@ export const SlurmJobVisualizer: React.FC<SlurmJobVisualizerProps> = ({
   className = '',
 }) => {
   const [selectedJob, setSelectedJob] = useState<SlurmJob | null>(null);
-  const [showPending, setShowPending] = useState(true);
 
   const jobs = useMemo(() => generateSlurmJobs(nodes), [nodes]);
 
@@ -209,9 +208,9 @@ export const SlurmJobVisualizer: React.FC<SlurmJobVisualizerProps> = ({
                   <Server className="w-4 h-4 text-gray-400" />
                   <span className="text-sm font-medium text-gray-200">{node.hostname}</span>
                   <span className={`text-xs px-2 py-0.5 rounded ${
-                    node.slurmState === 'allocated' ? 'bg-green-900 text-green-200' :
-                    node.slurmState === 'mixed' ? 'bg-yellow-900 text-yellow-200' :
+                    node.slurmState === 'alloc' ? 'bg-green-900 text-green-200' :
                     node.slurmState === 'idle' ? 'bg-gray-700 text-gray-300' :
+                    node.slurmState === 'drain' ? 'bg-yellow-900 text-yellow-200' :
                     'bg-red-900 text-red-200'
                   }`}>
                     {node.slurmState}

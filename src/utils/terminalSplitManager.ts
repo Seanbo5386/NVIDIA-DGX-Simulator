@@ -398,7 +398,7 @@ export function canClosePane(state: TerminalSplitState): boolean {
  * Reset to single pane layout
  */
 export function resetLayout(
-  state: TerminalSplitState,
+  _state: TerminalSplitState,
   terminalId: string
 ): TerminalSplitState {
   return createSplitState(terminalId);

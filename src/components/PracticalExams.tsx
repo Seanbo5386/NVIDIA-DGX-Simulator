@@ -1,12 +1,10 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-  PRACTICAL_EXAMS,
   createPracticalExamSession,
   startChallenge,
   evaluateCommand,
   completeChallenge,
   calculateExamResult,
-  getExamById,
   getExamsByDomain,
   getAllPracticalExams,
   formatExamTime,
@@ -16,7 +14,7 @@ import {
   type PracticalExamSession,
   type ChallengeResult,
   type PracticalChallenge,
-  type ExamResult,
+  type PracticalExamResult,
 } from '../utils/practicalExamEngine';
 
 interface PracticalExamsProps {
@@ -52,7 +50,7 @@ export const PracticalExams: React.FC<PracticalExamsProps> = ({
   const [challengeResult, setChallengeResult] = useState<ChallengeResult | null>(null);
   const [commandInput, setCommandInput] = useState('');
   const [commandHistory, setCommandHistory] = useState<Array<{ command: string; output: string }>>([]);
-  const [examResult, setExamResult] = useState<ExamResult | null>(null);
+  const [examResult, setPracticalExamResult] = useState<PracticalExamResult | null>(null);
   const [hintsUsed, setHintsUsed] = useState(0);
   const [showHint, setShowHint] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
@@ -87,7 +85,7 @@ export const PracticalExams: React.FC<PracticalExamsProps> = ({
       };
       setSession(updatedSession);
       const result = calculateExamResult(updatedSession);
-      setExamResult(result);
+      setPracticalExamResult(result);
       setViewMode('result');
     }
   }, [session, challengeResult, currentChallenge]);
@@ -185,7 +183,7 @@ export const PracticalExams: React.FC<PracticalExamsProps> = ({
       };
       setSession(completedSession);
       const result = calculateExamResult(completedSession);
-      setExamResult(result);
+      setPracticalExamResult(result);
       setViewMode('result');
     } else {
       // Next challenge
@@ -224,7 +222,7 @@ export const PracticalExams: React.FC<PracticalExamsProps> = ({
     setSession(null);
     setCurrentChallenge(null);
     setChallengeResult(null);
-    setExamResult(null);
+    setPracticalExamResult(null);
     setCommandHistory([]);
     setHintsUsed(0);
     setShowHint(null);
@@ -392,7 +390,7 @@ export const PracticalExams: React.FC<PracticalExamsProps> = ({
 
           <div style={styles.scenarioBox}>
             <h4>Scenario</h4>
-            <pre style={styles.scenarioText}>{currentChallenge.scenario}</pre>
+            <pre style={styles.scenarioText}>{currentChallenge.description}</pre>
           </div>
 
           <div style={styles.objectivesBox}>
@@ -492,7 +490,7 @@ export const PracticalExams: React.FC<PracticalExamsProps> = ({
 
           <div style={styles.feedbackBox}>
             <h4>Feedback</h4>
-            {examResult.feedback.map((fb, index) => (
+            {examResult.feedback.map((fb: string, index: number) => (
               <p key={index} style={styles.feedbackItem}>
                 {fb}
               </p>
@@ -503,7 +501,7 @@ export const PracticalExams: React.FC<PracticalExamsProps> = ({
             <div style={styles.recommendationsBox}>
               <h4>Recommendations</h4>
               <ul>
-                {examResult.recommendations.map((rec, index) => (
+                {examResult.recommendations.map((rec: string, index: number) => (
                   <li key={index} style={styles.recommendationItem}>
                     {rec}
                   </li>

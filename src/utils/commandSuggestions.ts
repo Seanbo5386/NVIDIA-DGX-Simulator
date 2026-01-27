@@ -472,7 +472,7 @@ export function formatOutputDiff(
  */
 export function getContextualHint(
   command: string,
-  stepObjectives: string[],
+  _stepObjectives: string[],
   attemptCount: number
 ): string | null {
   // After 3 attempts, provide more specific hints

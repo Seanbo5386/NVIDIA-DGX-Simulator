@@ -246,7 +246,7 @@ export const NVSwitchTopology: React.FC<NVSwitchTopologyProps> = ({
         event.stopPropagation();
         handleNodeClick(d);
       })
-      .on('mouseover', function(event, d) {
+      .on('mouseover', function(_event, d) {
         setHoveredNode(d);
         d3.select(this).select('rect').attr('stroke-width', 4);
       })

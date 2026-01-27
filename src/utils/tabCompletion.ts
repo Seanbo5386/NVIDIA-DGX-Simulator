@@ -8,8 +8,6 @@
  * - File path completion (simulated)
  */
 
-import { COMMAND_METADATA, type CommandMetadata } from './commandMetadata';
-
 // ============================================================================
 // TYPES
 // ============================================================================

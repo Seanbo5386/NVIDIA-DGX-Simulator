@@ -50,7 +50,7 @@ export const TopologyViewer: React.FC<TopologyViewerProps> = ({
   const [selectedGPU, setSelectedGPU] = useState<GPU | null>(null);
   const [showFaultPanel, setShowFaultPanel] = useState(false);
   const [dataFlowActive, setDataFlowActive] = useState(false);
-  const [dataFlowPath, setDataFlowPath] = useState<number[]>([0, 7]);
+  const [dataFlowPath, _setDataFlowPath] = useState<number[]>([0, 7]);
 
   const { addXIDError, updateGPU } = useSimulationStore();
 
@@ -61,7 +61,7 @@ export const TopologyViewer: React.FC<TopologyViewerProps> = ({
     setShowFaultPanel(true);
   }, []);
 
-  const handleFaultInject = useCallback((gpuId: number, faultType: string) => {
+  const handleFaultInject = useCallback((_gpuId: number, faultType: string) => {
     if (!selectedNodeId) return;
 
     if (faultType === 'xid') {

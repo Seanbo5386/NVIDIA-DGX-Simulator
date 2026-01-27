@@ -7,8 +7,8 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import type { DGXNode, InfiniBandHCA } from '@/types/hardware';
-import { Cable, Search, AlertTriangle, CheckCircle, XCircle, ArrowRight, Zap } from 'lucide-react';
+import type { DGXNode } from '@/types/hardware';
+import { Cable, Search, AlertTriangle, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
 
 interface IBCableTracerProps {
   nodes: DGXNode[];
@@ -56,10 +56,10 @@ const generateCables = (nodes: DGXNode[]): CableInfo[] => {
         cables.push({
           id: `cable-${cableId++}`,
           sourceNode: nodes[i].id,
-          sourceHCA: nodes[i].hcas[c]?.nodeDescription || `mlx5_${c}`,
+          sourceHCA: nodes[i].hcas[c]?.caType || `mlx5_${c}`,
           sourcePort: 1,
           destNode: nodes[j].id,
-          destHCA: nodes[j].hcas[c]?.nodeDescription || `mlx5_${c}`,
+          destHCA: nodes[j].hcas[c]?.caType || `mlx5_${c}`,
           destPort: 1,
           cableType: isOptical ? 'optical' : 'copper',
           length: isOptical ? Math.floor(Math.random() * 50) + 10 : Math.floor(Math.random() * 5) + 1,

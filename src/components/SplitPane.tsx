@@ -30,16 +30,16 @@ export function SplitPane({
   onSplit,
   onClose,
   onSelectPane,
-  onResize,
+  onResize: _onResize,
   renderPane,
   containerWidth = 100,
   containerHeight = 100,
   showControls = true,
-  minPaneSize = 10,
+  minPaneSize: _minPaneSize = 10,
 }: SplitPaneProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const [resizing, setResizing] = useState(false);
+  const [_resizing, _setResizing] = useState(false);
   const [hoveredPane, setHoveredPane] = useState<string | null>(null);
 
   // Update container size on mount and resize

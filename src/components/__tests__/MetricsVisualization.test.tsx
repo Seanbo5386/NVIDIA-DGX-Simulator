@@ -148,28 +148,25 @@ describe('ClusterHeatmap', () => {
     state: 'Active',
     physicalState: 'LinkUp',
     rate: 400,
-    width: '4x',
+    lid: portNumber,
+    guid: `0x${portNumber.toString(16).padStart(16, '0')}`,
     linkLayer: 'InfiniBand',
-    smLid: 1,
-    baseLid: portNumber,
-    txBytes: 1000000,
-    rxBytes: 1000000,
-    txPackets: 10000,
-    rxPackets: 10000,
-    symbolErrors: 0,
+    errors: {
+      symbolErrors: 0,
+      linkDowned: 0,
+      portRcvErrors: 0,
+      portXmitDiscards: 0,
+      portXmitWait: 0,
+    },
   });
 
   const createMockHCA = (id: number): InfiniBandHCA => ({
-    guid: `0x${id.toString(16).padStart(16, '0')}`,
-    caType: 'MT4125',
-    numPorts: 2,
-    firmwareVersion: '22.35.1012',
-    driverVersion: 'MLNX_OFED-5.8',
-    ports: [createMockPort(1), createMockPort(2)],
+    id,
+    devicePath: `/dev/infiniband/umad${id}`,
     pciAddress: `0000:${(0xc1 + id).toString(16)}:00.0`,
-    boardId: 'MT_0000000001',
-    sysImageGuid: `0x${(id + 1).toString(16).padStart(16, '0')}`,
-    nodeDescription: `mlx5_${id}`,
+    caType: 'ConnectX-7',
+    firmwareVersion: '22.35.1012',
+    ports: [createMockPort(1), createMockPort(2)],
   });
 
   const mockNodes: DGXNode[] = [
@@ -223,7 +220,7 @@ describe('ClusterHeatmap', () => {
       nvidiaDriverVersion: '535.104.05',
       cudaVersion: '12.2',
       healthStatus: 'OK',
-      slurmState: 'allocated',
+      slurmState: 'alloc',
     },
   ];
 
@@ -402,28 +399,25 @@ describe('PerformanceComparison', () => {
     state: 'Active',
     physicalState: 'LinkUp',
     rate: 400,
-    width: '4x',
+    lid: portNumber,
+    guid: `0x${portNumber.toString(16).padStart(16, '0')}`,
     linkLayer: 'InfiniBand',
-    smLid: 1,
-    baseLid: portNumber,
-    txBytes: 1000000,
-    rxBytes: 1000000,
-    txPackets: 10000,
-    rxPackets: 10000,
-    symbolErrors: 0,
+    errors: {
+      symbolErrors: 0,
+      linkDowned: 0,
+      portRcvErrors: 0,
+      portXmitDiscards: 0,
+      portXmitWait: 0,
+    },
   });
 
   const createMockHCA = (id: number): InfiniBandHCA => ({
-    guid: `0x${id.toString(16).padStart(16, '0')}`,
-    caType: 'MT4125',
-    numPorts: 2,
-    firmwareVersion: '22.35.1012',
-    driverVersion: 'MLNX_OFED-5.8',
-    ports: [createMockPort(1), createMockPort(2)],
+    id,
+    devicePath: `/dev/infiniband/umad${id}`,
     pciAddress: `0000:${(0xc1 + id).toString(16)}:00.0`,
-    boardId: 'MT_0000000001',
-    sysImageGuid: `0x${(id + 1).toString(16).padStart(16, '0')}`,
-    nodeDescription: `mlx5_${id}`,
+    caType: 'ConnectX-7',
+    firmwareVersion: '22.35.1012',
+    ports: [createMockPort(1), createMockPort(2)],
   });
 
   const mockNodes: DGXNode[] = [

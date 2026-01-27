@@ -3,21 +3,14 @@ import { render, screen } from '@testing-library/react';
 import { InfiniBandTopology } from '../InfiniBandTopology';
 import type { DGXNode, GPU, InfiniBandHCA, InfiniBandPort } from '@/types/hardware';
 
-// Mock D3
+// Mock D3 with chainable selection methods
 vi.mock('d3', () => {
-  const mockSelection = {
-    selectAll: vi.fn(() => mockSelection),
-    select: vi.fn(() => mockSelection),
-    remove: vi.fn(() => mockSelection),
-    data: vi.fn(() => mockSelection),
-    enter: vi.fn(() => mockSelection),
-    append: vi.fn(() => mockSelection),
-    attr: vi.fn(() => mockSelection),
-    style: vi.fn(() => mockSelection),
-    text: vi.fn(() => mockSelection),
-    on: vi.fn(() => mockSelection),
-    each: vi.fn(() => mockSelection),
-  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mockSelection: any = {};
+  const methods = ['selectAll', 'select', 'remove', 'data', 'enter', 'append', 'attr', 'style', 'text', 'on', 'each'];
+  methods.forEach(method => {
+    mockSelection[method] = vi.fn(() => mockSelection);
+  });
 
   return {
     select: vi.fn(() => mockSelection),
@@ -28,33 +21,30 @@ describe('InfiniBandTopology', () => {
   const createMockPort = (portNumber: number, state: 'Active' | 'Down' = 'Active'): InfiniBandPort => ({
     portNumber,
     state,
-    physicalState: state === 'Active' ? 'LinkUp' : 'Disabled',
+    physicalState: state === 'Active' ? 'LinkUp' : 'LinkDown',
     rate: 400,
-    width: '4x',
+    lid: portNumber,
+    guid: `0x${portNumber.toString(16).padStart(16, '0')}`,
     linkLayer: 'InfiniBand',
-    smLid: 1,
-    baseLid: portNumber,
-    txBytes: 1000000,
-    rxBytes: 1000000,
-    txPackets: 10000,
-    rxPackets: 10000,
-    symbolErrors: 0,
+    errors: {
+      symbolErrors: 0,
+      linkDowned: 0,
+      portRcvErrors: 0,
+      portXmitDiscards: 0,
+      portXmitWait: 0,
+    },
   });
 
   const createMockHCA = (id: number, portsActive: boolean = true): InfiniBandHCA => ({
-    guid: `0x${id.toString(16).padStart(16, '0')}`,
-    caType: 'MT4125',
-    numPorts: 2,
+    id,
+    devicePath: `/dev/infiniband/umad${id}`,
+    pciAddress: `0000:${(0xc1 + id).toString(16)}:00.0`,
+    caType: 'ConnectX-7',
     firmwareVersion: '22.35.1012',
-    driverVersion: 'MLNX_OFED-5.8',
     ports: [
       createMockPort(1, portsActive ? 'Active' : 'Down'),
       createMockPort(2, portsActive ? 'Active' : 'Down'),
     ],
-    pciAddress: `0000:${(0xc1 + id).toString(16)}:00.0`,
-    boardId: `MT_0000000001`,
-    sysImageGuid: `0x${(id + 1).toString(16).padStart(16, '0')}`,
-    nodeDescription: `mlx5_${id}`,
   });
 
   const createMockGPU = (id: number): GPU => ({

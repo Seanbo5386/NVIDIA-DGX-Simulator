@@ -39,7 +39,7 @@ export const TERMINAL_OPTIONS = {
   allowTransparency: false,
   theme: TERMINAL_THEME,
   cols: 120,  // Fixed width - standard terminal size
-  rows: 40,   // Fixed rows
+  // rows is not set - FitAddon will calculate dynamically
   scrollback: 5000,
   convertEol: true,
   cursorStyle: 'block',

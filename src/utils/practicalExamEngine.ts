@@ -5,9 +5,7 @@
  * real-world scenarios with partial credit scoring.
  */
 
-import type { DomainId, Scenario, FaultInjectionConfig } from '@/types/scenarios';
-import type { ValidationResult } from '@/types/validation';
-import { DOMAINS } from '@/types/scenarios';
+import type { DomainId, FaultInjectionConfig } from '@/types/scenarios';
 
 // ============================================================================
 // TYPES

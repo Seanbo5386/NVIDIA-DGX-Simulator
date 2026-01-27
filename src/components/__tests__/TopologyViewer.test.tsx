@@ -4,27 +4,19 @@ import { TopologyViewer } from '../TopologyViewer';
 import type { DGXNode } from '@/types/hardware';
 
 // Mock D3 to avoid SVG rendering issues in tests
-vi.mock('d3', () => ({
-  select: vi.fn(() => ({
-    selectAll: vi.fn(() => ({
-      remove: vi.fn(),
-      data: vi.fn(() => ({
-        enter: vi.fn(() => ({
-          append: vi.fn(() => ({
-            attr: vi.fn(function() { return this; }),
-            style: vi.fn(function() { return this; }),
-            text: vi.fn(function() { return this; }),
-            on: vi.fn(function() { return this; }),
-            each: vi.fn(function() { return this; }),
-          })),
-        })),
-      })),
-    })),
-    attr: vi.fn(function() { return this; }),
-    append: vi.fn(function() { return this; }),
-  })),
-  range: vi.fn((n: number) => Array.from({ length: n }, (_, i) => i)),
-}));
+vi.mock('d3', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mockChain: any = {};
+  const methods = ['attr', 'style', 'text', 'on', 'each', 'append', 'selectAll', 'remove', 'data', 'enter'];
+  methods.forEach(method => {
+    mockChain[method] = vi.fn(() => mockChain);
+  });
+
+  return {
+    select: vi.fn(() => mockChain),
+    range: vi.fn((n: number) => Array.from({ length: n }, (_, i) => i)),
+  };
+});
 
 // Mock the child topology components
 vi.mock('../NVSwitchTopology', () => ({

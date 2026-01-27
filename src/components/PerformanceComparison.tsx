@@ -18,7 +18,7 @@ import {
   ReferenceLine,
   Cell,
 } from 'recharts';
-import type { DGXNode, GPU } from '@/types/hardware';
+import type { DGXNode } from '@/types/hardware';
 import { AlertTriangle, CheckCircle, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface PerformanceComparisonProps {
