@@ -29,7 +29,7 @@ export async function loadScenarioFromFile(scenarioId: string): Promise<Scenario
       'domain2-gpu-power': '/src/data/scenarios/domain2/gpu-power-optimization.json',
       'domain2-bluefield-dpu': '/src/data/scenarios/domain2/bluefield-dpu-config.json',
 
-      // Domain 3: Base Infrastructure (9 scenarios)
+      // Domain 3: Base Infrastructure (11 scenarios)
       'domain3-slurm-config': '/src/data/scenarios/domain3/slurm-configuration.json',
       'domain3-containers': '/src/data/scenarios/domain3/container-runtime.json',
       'domain3-storage': '/src/data/scenarios/domain3/storage-validation.json',
@@ -39,8 +39,10 @@ export async function loadScenarioFromFile(scenarioId: string): Promise<Scenario
       'domain3-pyxis-advanced': '/src/data/scenarios/domain3/pyxis-enroot-advanced.json',
       'domain3-lustre-validation': '/src/data/scenarios/domain3/lustre-client-validation.json',
       'domain3-nfs-tuning': '/src/data/scenarios/domain3/nfs-performance-tuning.json',
+      'domain3-bcm-ha': '/src/data/scenarios/domain3/bcm-high-availability.json',
+      'domain3-k8s-gpu-operator': '/src/data/scenarios/domain3/kubernetes-gpu-operator.json',
 
-      // Domain 4: Validation & Testing (11 scenarios)
+      // Domain 4: Validation & Testing (12 scenarios)
       'domain4-dcgmi-diag': '/src/data/scenarios/domain4/dcgmi-diagnostics.json',
       'domain4-nccl-test': '/src/data/scenarios/domain4/nccl-testing.json',
       'domain4-cluster-health': '/src/data/scenarios/domain4/cluster-health.json',
@@ -52,6 +54,7 @@ export async function loadScenarioFromFile(scenarioId: string): Promise<Scenario
       'domain4-ai-validation': '/src/data/scenarios/domain4/ai-training-validation.json',
       'domain4-ecc-investigation': '/src/data/scenarios/domain4/ecc-error-investigation.json',
       'domain4-gpu-reset': '/src/data/scenarios/domain4/gpu-reset-recovery.json',
+      'domain4-hpl-optimization': '/src/data/scenarios/domain4/hpl-benchmark-optimization.json',
 
       // Domain 5: Troubleshooting (10 scenarios)
       'domain5-xid-errors': '/src/data/scenarios/domain5/xid-error-analysis.json',
