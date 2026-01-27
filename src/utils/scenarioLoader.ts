@@ -6,7 +6,7 @@ import { useSimulationStore } from '@/store/simulationStore';
  */
 export async function loadScenarioFromFile(scenarioId: string): Promise<Scenario | null> {
   try {
-    // Map scenario IDs to their file paths - ALL 42 scenarios
+    // Map scenario IDs to their file paths - ALL 53 scenarios
     const scenarioFiles: Record<string, string> = {
       // Domain 1: Platform Bring-Up (11 scenarios)
       'domain1-server-post': '/src/data/scenarios/domain1/server-post-verification.json',
@@ -251,12 +251,12 @@ export async function initializeScenario(scenarioId: string): Promise<boolean> {
 }
 
 /**
- * Gets all available scenarios grouped by domain (47 total)
+ * Gets all available scenarios grouped by domain (53 total)
  */
 export function getAllScenarios(): Record<string, string[]> {
   return {
     domain1: [
-      'domain1-hw-inventory',      // NEW: Beginner hardware inventory
+      'domain1-hw-inventory',      // Beginner hardware inventory
       'domain1-server-post',
       'domain1-bmc-config',
       'domain1-driver-install',
@@ -286,6 +286,8 @@ export function getAllScenarios(): Record<string, string[]> {
       'domain3-pyxis-advanced',
       'domain3-lustre-validation',
       'domain3-nfs-tuning',
+      'domain3-bcm-ha',             // BCM High Availability
+      'domain3-k8s-gpu-operator',   // Kubernetes GPU Operator
     ],
     domain4: [
       'domain4-dcgmi-diag',
@@ -297,8 +299,10 @@ export function getAllScenarios(): Record<string, string[]> {
       'domain4-gpu-bandwidth',
       'domain4-ib-stress',
       'domain4-ai-validation',
-      'domain4-ecc-investigation',  // NEW: ECC error investigation
-      'domain4-gpu-reset',          // NEW: GPU reset and recovery
+      'domain4-ecc-investigation',  // ECC error investigation
+      'domain4-gpu-reset',          // GPU reset and recovery
+      'domain4-hpl-optimization',   // HPL benchmark optimization
+      'domain4-nccl-tuning',        // NCCL bandwidth tuning
     ],
     domain5: [
       'domain5-xid-errors',
@@ -309,14 +313,16 @@ export function getAllScenarios(): Record<string, string[]> {
       'domain5-container-gpu',
       'domain5-memory-leak',
       'domain5-driver-mismatch',
-      'domain5-sel-analysis',       // NEW: SEL log analysis
-      'domain5-critical-xid',       // NEW: Critical XID response
+      'domain5-sel-analysis',       // SEL log analysis
+      'domain5-critical-xid',       // Critical XID response
+      'domain5-xid-nvlink',         // NVLink XID troubleshooting
+      'domain5-xid-hardware',       // Hardware XID failures
     ],
   };
 }
 
 /**
- * Gets scenario metadata without loading full content (47 scenarios)
+ * Gets scenario metadata without loading full content (53 scenarios)
  */
 export function getScenarioMetadata(scenarioId: string): { title: string; difficulty: string; estimatedTime: number } | null {
   const metadata: Record<string, { title: string; difficulty: string; estimatedTime: number }> = {
@@ -341,7 +347,7 @@ export function getScenarioMetadata(scenarioId: string): { title: string; diffic
     'domain2-gpu-power': { title: 'GPU Clock and Power Optimization', difficulty: 'intermediate', estimatedTime: 35 },
     'domain2-bluefield-dpu': { title: 'BlueField DPU Configuration and Mode Switching', difficulty: 'advanced', estimatedTime: 55 },
 
-    // Domain 3: Base Infrastructure (9 scenarios)
+    // Domain 3: Base Infrastructure (11 scenarios)
     'domain3-slurm-config': { title: 'Slurm Workload Manager Configuration', difficulty: 'intermediate', estimatedTime: 40 },
     'domain3-containers': { title: 'GPU-Enabled Container Runtime Setup', difficulty: 'intermediate', estimatedTime: 40 },
     'domain3-storage': { title: 'HPC Storage System Validation', difficulty: 'intermediate', estimatedTime: 35 },
@@ -351,8 +357,10 @@ export function getScenarioMetadata(scenarioId: string): { title: string; diffic
     'domain3-pyxis-advanced': { title: 'Advanced Pyxis and Enroot Integration', difficulty: 'advanced', estimatedTime: 50 },
     'domain3-lustre-validation': { title: 'Lustre Client Configuration and Validation', difficulty: 'intermediate', estimatedTime: 35 },
     'domain3-nfs-tuning': { title: 'NFS Performance Tuning for GPU Workloads', difficulty: 'intermediate', estimatedTime: 30 },
+    'domain3-bcm-ha': { title: 'BCM High Availability Configuration', difficulty: 'advanced', estimatedTime: 50 },
+    'domain3-k8s-gpu-operator': { title: 'Kubernetes GPU Operator Deployment', difficulty: 'advanced', estimatedTime: 55 },
 
-    // Domain 4: Validation & Testing (11 scenarios)
+    // Domain 4: Validation & Testing (13 scenarios)
     'domain4-dcgmi-diag': { title: 'DCGM Diagnostics and Health Monitoring', difficulty: 'intermediate', estimatedTime: 45 },
     'domain4-nccl-test': { title: 'NCCL Communication Testing and Validation', difficulty: 'advanced', estimatedTime: 63 },
     'domain4-cluster-health': { title: 'Comprehensive Cluster Health Validation', difficulty: 'advanced', estimatedTime: 100 },
@@ -364,8 +372,10 @@ export function getScenarioMetadata(scenarioId: string): { title: string; diffic
     'domain4-ai-validation': { title: 'End-to-End AI Training Validation', difficulty: 'advanced', estimatedTime: 70 },
     'domain4-ecc-investigation': { title: 'ECC Error Investigation and Row Remapping', difficulty: 'advanced', estimatedTime: 50 },
     'domain4-gpu-reset': { title: 'GPU Reset and Recovery Procedures', difficulty: 'intermediate', estimatedTime: 37 },
+    'domain4-hpl-optimization': { title: 'HPL Benchmark Performance Optimization', difficulty: 'advanced', estimatedTime: 50 },
+    'domain4-nccl-tuning': { title: 'NCCL Bandwidth Tuning and Collective Optimization', difficulty: 'advanced', estimatedTime: 55 },
 
-    // Domain 5: Troubleshooting (10 scenarios)
+    // Domain 5: Troubleshooting (12 scenarios)
     'domain5-xid-errors': { title: 'XID Error Analysis and Resolution', difficulty: 'advanced', estimatedTime: 65 },
     'domain5-thermal': { title: 'GPU Thermal Issue Troubleshooting', difficulty: 'intermediate', estimatedTime: 65 },
     'domain5-xid-triage': { title: 'Comprehensive XID Error Triage', difficulty: 'advanced', estimatedTime: 70 },
@@ -376,6 +386,8 @@ export function getScenarioMetadata(scenarioId: string): { title: string; diffic
     'domain5-driver-mismatch': { title: 'Driver Version Mismatch Resolution', difficulty: 'intermediate', estimatedTime: 35 },
     'domain5-sel-analysis': { title: 'System Event Log (SEL) Analysis', difficulty: 'intermediate', estimatedTime: 40 },
     'domain5-critical-xid': { title: 'Critical XID Error Response (43, 48, 63, 74, 79)', difficulty: 'advanced', estimatedTime: 50 },
+    'domain5-xid-nvlink': { title: 'NVLink XID Error Troubleshooting (72, 74, 76-78)', difficulty: 'advanced', estimatedTime: 45 },
+    'domain5-xid-hardware': { title: 'Hardware XID Error Response (27, 43, 54, 79)', difficulty: 'advanced', estimatedTime: 50 },
   };
 
   return metadata[scenarioId] || null;
