@@ -23,7 +23,10 @@
       "Bash(node -e:*)",
       "Bash(npx tsc:*)",
       "Bash(git checkout:*)",
-      "Bash(for dir in \"C:\\\\Users\\\\Seanbo\\\\Documents\\\\Projects\\\\Antigravity-Projects\\\\DC-Sim-011126\\\\src\\\\data\\\\scenarios\"/*)"
+      "Bash(for dir in \"C:\\\\Users\\\\Seanbo\\\\Documents\\\\Projects\\\\Antigravity-Projects\\\\DC-Sim-011126\\\\src\\\\data\\\\scenarios\"/*)",
+      "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && head -20 {}')",
+      "Bash(ls:*)",
+      "Bash(xargs:*)"
     ]
   }
 }

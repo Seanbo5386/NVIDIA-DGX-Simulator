@@ -128,6 +128,9 @@ export class PciToolsSimulator extends BaseSimulator {
    * Handle journalctl command
    * System logs with GPU fault state integration
    * Per spec Section 7.1: journalctl kernel log simulation with fault state
+   *
+   * Critical for NCP-AII exam - detecting XID errors in system logs
+   * Supports: -b (boot), -k (kernel), -u <unit>, -p <priority>, --since, grep filters
    */
   private handleJournalctl(parsed: ParsedCommand, context: CommandContext): CommandResult {
     const cluster = useSimulationStore.getState().cluster;
@@ -138,20 +141,47 @@ export class PciToolsSimulator extends BaseSimulator {
     }
 
     const now = new Date();
-    let logs = `-- Logs begin at Mon 2024-01-15 08:00:00 UTC, end at ${now.toUTCString()} --\n`;
-    logs += `Jan 15 08:00:01 ${node.hostname} systemd[1]: Starting Initialize hardware monitoring sensors...\n`;
-    logs += `Jan 15 08:00:02 ${node.hostname} kernel: Linux version 5.15.0-91-generic\n`;
-    logs += `Jan 15 08:00:03 ${node.hostname} kernel: NVIDIA driver loaded successfully\n`;
-    logs += `Jan 15 08:00:05 ${node.hostname} systemd[1]: Started NVIDIA Persistence Daemon\n`;
+    const rawCommand = parsed.raw || '';
+
+    // Check for grep patterns in the command
+    const grepXid = rawCommand.includes('grep -i xid') || rawCommand.includes('grep xid');
+    const grepNvrm = rawCommand.includes('grep -i nvrm') || rawCommand.includes('grep NVRM');
+    const grepNvidia = rawCommand.includes('grep -i nvidia');
+    const grepFallen = rawCommand.includes('grep -i fallen');
+
+    // Build log entries
+    const logEntries: string[] = [];
+
+    // Header
+    logEntries.push(`-- Logs begin at Mon 2024-01-15 08:00:00 UTC, end at ${now.toUTCString()} --`);
+
+    // Boot messages
+    logEntries.push(`Jan 15 08:00:01 ${node.hostname} systemd[1]: Starting Initialize hardware monitoring sensors...`);
+    logEntries.push(`Jan 15 08:00:02 ${node.hostname} kernel: Linux version 5.15.0-91-generic (buildd@lcy02-amd64-030)`);
+    logEntries.push(`Jan 15 08:00:02 ${node.hostname} kernel: Command line: BOOT_IMAGE=/boot/vmlinuz root=UUID=1234-5678`);
+    logEntries.push(`Jan 15 08:00:03 ${node.hostname} kernel: NVRM: loading NVIDIA UNIX x86_64 Kernel Module  535.129.03`);
+    logEntries.push(`Jan 15 08:00:03 ${node.hostname} kernel: nvidia-nvlink: Nvlink Core is being initialized`);
+    logEntries.push(`Jan 15 08:00:04 ${node.hostname} kernel: nvidia-uvm: Loaded the UVM driver, major device number 235`);
+    logEntries.push(`Jan 15 08:00:05 ${node.hostname} systemd[1]: Started NVIDIA Persistence Daemon.`);
+    logEntries.push(`Jan 15 08:00:05 ${node.hostname} nvidia-persistenced: Started (15847)`);
+
+    // GPU initialization messages
+    for (let i = 0; i < 8; i++) {
+      const pciAddr = `0000:${(0x10 + i).toString(16).padStart(2, '0')}:00.0`;
+      logEntries.push(`Jan 15 08:00:0${6 + Math.floor(i/2)} ${node.hostname} kernel: NVRM: GPU ${pciAddr}: GPU Ready`);
+    }
 
     // Check for XID errors in GPU state - cross-tool fault propagation
     let hasErrors = false;
+    const errorEntries: string[] = [];
 
     node.gpus.forEach(gpu => {
+      const pciAddr = gpu.pciAddress || `${(0x10 + gpu.id).toString(16).padStart(2, '0')}:00.0`;
+
       // Add XID error entries
       if (gpu.xidErrors && gpu.xidErrors.length > 0) {
         hasErrors = true;
-        gpu.xidErrors.slice(-3).forEach(xid => {
+        gpu.xidErrors.forEach(xid => {
           const timeStr = new Date(xid.timestamp).toLocaleString('en-US', {
             month: 'short',
             day: '2-digit',
@@ -159,7 +189,23 @@ export class PciToolsSimulator extends BaseSimulator {
             minute: '2-digit',
             second: '2-digit'
           });
-          logs += `${timeStr} ${node.hostname} kernel: NVRM: Xid (PCI:0000:${gpu.pciAddress}): ${xid.code}, ${xid.description}\n`;
+
+          // Main XID message
+          errorEntries.push(`${timeStr} ${node.hostname} kernel: NVRM: Xid (PCI:0000:${pciAddr}): ${xid.code}, ${xid.description}`);
+
+          // Additional context for critical XID codes
+          if (xid.code === 79) {
+            errorEntries.push(`${timeStr} ${node.hostname} kernel: NVRM: GPU at 0000:${pciAddr} has fallen off the bus.`);
+            errorEntries.push(`${timeStr} ${node.hostname} kernel: NVRM: A GPU crash dump has been created.`);
+          } else if (xid.code === 74) {
+            errorEntries.push(`${timeStr} ${node.hostname} kernel: NVRM: NVLink: Fatal error detected on link`);
+          } else if (xid.code === 48) {
+            errorEntries.push(`${timeStr} ${node.hostname} kernel: NVRM: GPU ${gpu.id}: DBE (double-bit error) ECC error detected`);
+          } else if (xid.code === 63) {
+            errorEntries.push(`${timeStr} ${node.hostname} kernel: NVRM: GPU ${gpu.id}: Row remapping resources exhausted`);
+          } else if (xid.code === 43) {
+            errorEntries.push(`${timeStr} ${node.hostname} kernel: NVRM: GPU ${gpu.id}: GPU exception (Xid 43) - GPU likely hung`);
+          }
         });
       }
 
@@ -173,7 +219,7 @@ export class PciToolsSimulator extends BaseSimulator {
           minute: '2-digit',
           second: '2-digit'
         });
-        logs += `${timeStr} ${node.hostname} kernel: NVRM: GPU at ${gpu.pciAddress}: temperature (${gpu.temperature}C) has reached slowdown threshold\n`;
+        errorEntries.push(`${timeStr} ${node.hostname} kernel: NVRM: GPU at 0000:${pciAddr}: temperature (${gpu.temperature}C) has reached slowdown threshold`);
       }
 
       // Add ECC errors
@@ -187,38 +233,94 @@ export class PciToolsSimulator extends BaseSimulator {
           second: '2-digit'
         });
         if (gpu.eccErrors.doubleBit > 0) {
-          logs += `${timeStr} ${node.hostname} kernel: NVRM: GPU at ${gpu.pciAddress}: DOUBLE-BIT ECC error detected (count: ${gpu.eccErrors.doubleBit})\n`;
+          errorEntries.push(`${timeStr} ${node.hostname} kernel: NVRM: GPU at 0000:${pciAddr}: DOUBLE-BIT ECC error detected (count: ${gpu.eccErrors.doubleBit})`);
         }
         if (gpu.eccErrors.singleBit > 0) {
-          logs += `${timeStr} ${node.hostname} kernel: NVRM: GPU at ${gpu.pciAddress}: single-bit ECC error corrected (count: ${gpu.eccErrors.singleBit})\n`;
+          errorEntries.push(`${timeStr} ${node.hostname} kernel: NVRM: GPU at 0000:${pciAddr}: single-bit ECC error corrected (count: ${gpu.eccErrors.singleBit})`);
         }
       }
     });
 
+    // Add error entries to main log
+    logEntries.push(...errorEntries);
+
     if (!hasErrors) {
-      logs += `Jan 15 08:00:06 ${node.hostname} systemd[1]: Reached target Multi-User System\n`;
-      logs += `Jan 15 08:00:10 ${node.hostname} kernel: All GPUs initialized successfully\n`;
+      logEntries.push(`Jan 15 08:00:10 ${node.hostname} systemd[1]: Reached target Multi-User System.`);
+      logEntries.push(`Jan 15 08:00:10 ${node.hostname} kernel: All 8 GPUs initialized successfully`);
+    }
+
+    // Handle grep filters first (piped output)
+    if (grepXid || grepNvrm) {
+      const filtered = logEntries.filter(line =>
+        line.includes('Xid') || line.includes('NVRM:')
+      );
+      return this.createSuccess(filtered.length > 0 ? filtered.join('\n') : '');
+    }
+
+    if (grepNvidia) {
+      const filtered = logEntries.filter(line =>
+        line.toLowerCase().includes('nvidia') || line.includes('NVRM')
+      );
+      return this.createSuccess(filtered.length > 0 ? filtered.join('\n') : '');
+    }
+
+    if (grepFallen) {
+      const filtered = logEntries.filter(line => line.includes('fallen'));
+      return this.createSuccess(filtered.length > 0 ? filtered.join('\n') : '');
     }
 
     // Check for flags to filter output
     const showBoot = this.hasAnyFlag(parsed, ['b']);
     const showKernel = this.hasAnyFlag(parsed, ['k']);
-    const showErrors = this.hasAnyFlag(parsed, ['p']) && parsed.positionalArgs.includes('err');
+    const unitFlag = parsed.flags.get('u');
+    const priorityFlag = parsed.flags.get('p');
     const noArgs = parsed.subcommands.length === 0 && parsed.positionalArgs.length === 0 && parsed.flags.size === 0;
 
-    if (showBoot || showKernel || noArgs) {
-      return this.createSuccess(logs);
+    // Filter by unit (-u)
+    if (unitFlag && typeof unitFlag === 'string') {
+      if (unitFlag.includes('nvidia') || unitFlag.includes('gpu')) {
+        const filtered = logEntries.filter(line =>
+          line.includes('nvidia') || line.includes('NVRM') || line.includes('GPU')
+        );
+        return this.createSuccess(filtered.join('\n'));
+      }
+      if (unitFlag === 'slurm' || unitFlag === 'slurmctld' || unitFlag === 'slurmd') {
+        return this.createSuccess(`-- Logs begin at Mon 2024-01-15 08:00:00 UTC --
+Jan 15 08:00:05 ${node.hostname} systemd[1]: Starting Slurm node daemon...
+Jan 15 08:00:06 ${node.hostname} slurmd[2341]: slurmd: slurmd version 23.02.6 started
+Jan 15 08:00:06 ${node.hostname} slurmd[2341]: slurmd: Slurmd started with gres/gpu count: 8
+Jan 15 08:00:07 ${node.hostname} systemd[1]: Started Slurm node daemon.`);
+      }
     }
 
-    if (showErrors) {
-      // Filter to errors only
-      const errorLines = logs.split('\n').filter(line =>
-        line.includes('NVRM:') || line.includes('error') || line.includes('Error') || line.includes('DOUBLE-BIT')
+    // Filter by priority (-p)
+    if (priorityFlag === 'err' || priorityFlag === 'error' || priorityFlag === '3') {
+      const filtered = logEntries.filter(line =>
+        line.includes('NVRM:') ||
+        line.includes('error') ||
+        line.includes('Error') ||
+        line.includes('DOUBLE-BIT') ||
+        line.includes('Xid') ||
+        line.includes('fallen')
       );
-      const output = errorLines.length > 0 ? errorLines.join('\n') : 'No errors found';
-      return this.createSuccess(output);
+      return this.createSuccess(filtered.length > 0 ? filtered.join('\n') : 'No errors found');
     }
 
-    return this.createError('Usage: journalctl [-b] [-k] [-p err]');
+    if (priorityFlag === 'warning' || priorityFlag === 'warn' || priorityFlag === '4') {
+      const filtered = logEntries.filter(line =>
+        line.includes('warning') ||
+        line.includes('Warning') ||
+        line.includes('slowdown') ||
+        line.includes('single-bit')
+      );
+      return this.createSuccess(filtered.length > 0 ? filtered.join('\n') : 'No warnings found');
+    }
+
+    if (showBoot || showKernel || noArgs) {
+      return this.createSuccess(logEntries.join('\n'));
+    }
+
+    // Default - show all logs
+    return this.createSuccess(logEntries.join('\n'));
   }
 }

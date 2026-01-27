@@ -41,6 +41,57 @@ export const XID_ERRORS: XIDError[] = [
     relatedCommands: ['nvidia-smi -q', 'dcgmi diag -r 1', 'dmesg | grep -i xid']
   },
   {
+    code: 23,
+    name: 'GPU Shared Memory Exception',
+    severity: 'Warning',
+    category: 'Application',
+    description: 'GPU detected a shared memory access violation or exception.',
+    cause: 'Application accessed shared memory incorrectly, often due to out-of-bounds access in CUDA kernel or race conditions.',
+    action: [
+      'Debug CUDA kernel shared memory access patterns',
+      'Use compute-sanitizer to identify race conditions',
+      'Check for shared memory bank conflicts',
+      'Verify kernel launch parameters and block dimensions',
+      'Review __shared__ variable declarations'
+    ],
+    examRelevance: 'Medium',
+    relatedCommands: ['compute-sanitizer', 'cuda-memcheck', 'nvidia-smi']
+  },
+  {
+    code: 24,
+    name: 'GPU Exception During Kernel Launch',
+    severity: 'Warning',
+    category: 'Application',
+    description: 'An exception occurred while launching a GPU kernel.',
+    cause: 'Invalid kernel launch parameters, resource exhaustion, or driver issue. May indicate too many threads per block or insufficient resources.',
+    action: [
+      'Check kernel launch configuration (grid/block dimensions)',
+      'Verify sufficient GPU resources available',
+      'Review CUDA occupancy calculator for optimal config',
+      'Check for CUDA API errors before launch',
+      'Run with CUDA_LAUNCH_BLOCKING=1 for debugging'
+    ],
+    examRelevance: 'Medium',
+    relatedCommands: ['nvidia-smi -q', 'compute-sanitizer']
+  },
+  {
+    code: 27,
+    name: 'GPU Memory Interface Error',
+    severity: 'Critical',
+    category: 'Memory',
+    description: 'Error at the GPU memory interface level - communication between GPU core and VRAM failed.',
+    cause: 'Hardware defect in memory controller, memory bus issue, or severe overheating affecting memory interface.',
+    action: [
+      'Check GPU temperature immediately: nvidia-smi -q -d TEMPERATURE',
+      'Run memory diagnostics: dcgmi diag -r 3',
+      'Check ECC error counters: nvidia-smi -q -d ECC',
+      'If persistent, GPU REPLACEMENT likely required',
+      'Document error for RMA process'
+    ],
+    examRelevance: 'High',
+    relatedCommands: ['nvidia-smi -q -d ECC', 'dcgmi diag -r 3', 'nvidia-smi -q -d TEMPERATURE']
+  },
+  {
     code: 31,
     name: 'GPU Memory Page Fault',
     severity: 'Warning',
@@ -136,6 +187,24 @@ export const XID_ERRORS: XIDError[] = [
     ],
     examRelevance: 'High',
     relatedCommands: ['nvidia-smi -q -d ECC', 'dcgmi diag -r 3', 'nvsm show health']
+  },
+  {
+    code: 54,
+    name: 'Hardware Watchdog Timeout',
+    severity: 'Critical',
+    category: 'Hardware',
+    description: 'GPU hardware watchdog detected a timeout - GPU unresponsive to internal health checks.',
+    cause: 'GPU hang at hardware level, severe thermal throttling, power delivery issue, or hardware failure. More severe than XID 43.',
+    action: [
+      'Check GPU temperature: nvidia-smi -q -d TEMPERATURE',
+      'Check system event log: ipmitool sel list',
+      'Verify power delivery to GPU',
+      'Attempt GPU reset: nvidia-smi --gpu-reset (may not work)',
+      'Node reboot likely required',
+      'If recurring, GPU REPLACEMENT required'
+    ],
+    examRelevance: 'High',
+    relatedCommands: ['nvidia-smi -q -d TEMPERATURE', 'ipmitool sel list', 'nvidia-smi --gpu-reset']
   },
   {
     code: 56,
@@ -248,6 +317,23 @@ export const XID_ERRORS: XIDError[] = [
     relatedCommands: ['nvidia-smi']
   },
   {
+    code: 72,
+    name: 'NVLink Flow Control Error',
+    severity: 'Warning',
+    category: 'NVLink',
+    description: 'NVLink flow control credits exhausted or flow control protocol error.',
+    cause: 'NVLink congestion, fabric manager issue, or link degradation. May indicate network-level problems in multi-GPU communication.',
+    action: [
+      'Check NVLink status: nvidia-smi nvlink -s',
+      'Monitor NVLink error counters: nvidia-smi nvlink -e',
+      'Verify fabric manager is running: systemctl status nv-fabricmanager',
+      'Check for bandwidth bottlenecks in multi-GPU workloads',
+      'May indicate early link degradation - monitor closely'
+    ],
+    examRelevance: 'Medium',
+    relatedCommands: ['nvidia-smi nvlink -s', 'nvidia-smi nvlink -e', 'systemctl status nv-fabricmanager']
+  },
+  {
     code: 74,
     name: 'NVLink Error',
     severity: 'Critical',
@@ -263,6 +349,57 @@ export const XID_ERRORS: XIDError[] = [
     ],
     examRelevance: 'High',
     relatedCommands: ['nvidia-smi nvlink -s', 'nvidia-smi nvlink -e', 'nvidia-smi topo -m']
+  },
+  {
+    code: 76,
+    name: 'NVLink Training Error',
+    severity: 'Critical',
+    category: 'NVLink',
+    description: 'NVLink failed to complete link training - link cannot establish connection.',
+    cause: 'Physical NVLink connection problem, NVLink bridge damage, or GPU hardware failure affecting NVLink interface.',
+    action: [
+      'Check physical NVLink bridge/cable connections',
+      'Reseat GPUs and NVLink bridges',
+      'Check nvidia-smi topo -m for missing links',
+      'Run dcgmi diag -r 2 for NVLink diagnostics',
+      'If persistent, NVLink bridge or GPU replacement required'
+    ],
+    examRelevance: 'High',
+    relatedCommands: ['nvidia-smi topo -m', 'nvidia-smi nvlink -s', 'dcgmi diag -r 2']
+  },
+  {
+    code: 77,
+    name: 'NVLink Timeout',
+    severity: 'Critical',
+    category: 'NVLink',
+    description: 'NVLink operation timed out - communication between GPUs failed.',
+    cause: 'NVLink link failure, severe congestion, or hardware fault preventing GPU-to-GPU communication.',
+    action: [
+      'Check NVLink error counters: nvidia-smi nvlink -e',
+      'Verify fabric manager status',
+      'Check for thermal issues on NVSwitch/GPUs',
+      'Restart fabric manager: systemctl restart nv-fabricmanager',
+      'May require node reboot'
+    ],
+    examRelevance: 'High',
+    relatedCommands: ['nvidia-smi nvlink -e', 'systemctl restart nv-fabricmanager']
+  },
+  {
+    code: 78,
+    name: 'NVLink ECC Error',
+    severity: 'Critical',
+    category: 'NVLink',
+    description: 'Uncorrectable ECC error on NVLink data path.',
+    cause: 'Hardware failure in NVLink fabric, potentially NVSwitch or GPU NVLink interface failure.',
+    action: [
+      'Check NVLink error counters: nvidia-smi nvlink -e',
+      'Identify affected link and GPUs',
+      'Run comprehensive diagnostics: dcgmi diag -r 3',
+      'Check NVSwitch health if applicable',
+      'Hardware replacement likely required'
+    ],
+    examRelevance: 'High',
+    relatedCommands: ['nvidia-smi nvlink -e', 'dcgmi diag -r 3', 'nvsm show health']
   },
   {
     code: 79,
