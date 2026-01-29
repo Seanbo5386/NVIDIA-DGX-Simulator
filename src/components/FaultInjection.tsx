@@ -320,7 +320,7 @@ export const FaultInjection: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-3">
             <select
               value={workloadPattern}
-              onChange={(e) => setWorkloadPattern(e.target.value as any)}
+              onChange={(e) => setWorkloadPattern(e.target.value as 'idle' | 'inference' | 'training' | 'stress')}
               className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 focus:outline-none focus:border-nvidia-green"
             >
               <option value="idle">Idle (5% utilization)</option>

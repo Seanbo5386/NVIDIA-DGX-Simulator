@@ -28,7 +28,14 @@ type MetricType = 'utilization' | 'temperature' | 'power' | 'memory';
 
 export const MetricsChart: React.FC<MetricsChartProps> = ({ nodeId, gpuId }) => {
   const [selectedMetric, setSelectedMetric] = useState<MetricType>('utilization');
-  const [chartData, setChartData] = useState<any[]>([]);
+  interface ChartDataPoint {
+    time: string;
+    utilization: number;
+    temperature: number;
+    power: number;
+    memory: number;
+  }
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
 
   useEffect(() => {
     // Update chart data every second

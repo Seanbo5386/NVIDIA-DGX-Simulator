@@ -255,7 +255,7 @@ export const PerformanceComparison: React.FC<PerformanceComparisonProps> = ({
                 borderRadius: '0.5rem',
               }}
               labelStyle={{ color: '#E5E7EB' }}
-              formatter={(value: number, name: string, props: any) => {
+              formatter={(value: number, name: string, props: { payload: { efficiency: number } }) => {
                 if (name === 'actual') {
                   return [
                     <span key="value">
