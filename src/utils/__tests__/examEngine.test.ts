@@ -206,6 +206,7 @@ describe('Exam Engine - Core Functions', () => {
         totalPoints: 100,
         earnedPoints: 75,
         percentage: 75,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         byDomain: {} as any,
         questionResults: [],
         timeSpent: 0,
@@ -219,6 +220,7 @@ describe('Exam Engine - Core Functions', () => {
         totalPoints: 100,
         earnedPoints: 50,
         percentage: 50,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         byDomain: {} as any,
         questionResults: [],
         timeSpent: 0,
@@ -232,6 +234,7 @@ describe('Exam Engine - Core Functions', () => {
         totalPoints: 100,
         earnedPoints: 75,
         percentage: 75,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         byDomain: {} as any,
         questionResults: [],
         timeSpent: 0,
@@ -453,6 +456,7 @@ describe('Exam Engine - Exam Modes', () => {
         totalPoints: 10,
         earnedPoints: 5,
         percentage: 50,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         byDomain: {} as any,
         questionResults: [
           { questionId: 'q1', correct: true, userAnswer: 0, correctAnswer: 0, points: 1 },
@@ -473,6 +477,7 @@ describe('Exam Engine - Exam Modes', () => {
         totalPoints: 10,
         earnedPoints: 10,
         percentage: 100,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         byDomain: {} as any,
         questionResults: [
           { questionId: 'q1', correct: true, userAnswer: 0, correctAnswer: 0, points: 1 },

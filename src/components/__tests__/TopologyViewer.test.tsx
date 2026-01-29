@@ -20,7 +20,7 @@ vi.mock('d3', () => {
 
 // Mock the child topology components
 vi.mock('../NVSwitchTopology', () => ({
-  NVSwitchTopology: ({ node, onGPUClick }: any) => (
+  NVSwitchTopology: ({ node, onGPUClick }: { node: DGXNode; onGPUClick?: (gpu: DGXNode['gpus'][0]) => void }) => (
     <div data-testid="nvswitch-topology">
       <span>NVSwitch Topology for {node.id}</span>
       <button onClick={() => onGPUClick?.(node.gpus[0])} data-testid="gpu-click">
@@ -31,7 +31,7 @@ vi.mock('../NVSwitchTopology', () => ({
 }));
 
 vi.mock('../InfiniBandTopology', () => ({
-  InfiniBandTopology: ({ nodes, selectedNodeId, onNodeClick }: any) => (
+  InfiniBandTopology: ({ nodes, selectedNodeId, onNodeClick }: { nodes: DGXNode[]; selectedNodeId?: string; onNodeClick?: (nodeId: string) => void }) => (
     <div data-testid="infiniband-topology">
       <span>InfiniBand Topology - {nodes.length} nodes</span>
       {selectedNodeId && <span>Selected: {selectedNodeId}</span>}
@@ -43,7 +43,7 @@ vi.mock('../InfiniBandTopology', () => ({
 }));
 
 vi.mock('../TopologyGraph', () => ({
-  TopologyGraph: ({ node }: any) => (
+  TopologyGraph: ({ node }: { node: DGXNode }) => (
     <div data-testid="nvlink-topology">
       <span>NVLink Topology for {node.id}</span>
     </div>

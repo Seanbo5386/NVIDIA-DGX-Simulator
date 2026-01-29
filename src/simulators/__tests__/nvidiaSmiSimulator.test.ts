@@ -255,6 +255,7 @@ describe('NvidiaSmiSimulator', () => {
             hcas: [],
           }],
         },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
       const parsed = parse('nvidia-smi');
