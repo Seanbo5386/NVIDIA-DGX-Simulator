@@ -14,8 +14,39 @@ import { useNetworkAnimation, AnimationLink } from '@/hooks/useNetworkAnimation'
 import { useSimulationStore } from '@/store/simulationStore';
 import { NetworkNodeDetail, NetworkNodeType } from './NetworkNodeDetail';
 
+export interface FabricTierConfig {
+  spineCount: number;
+  leafCount: number;
+  spineToLeafBandwidth: 100 | 200 | 400 | 800; // Gb/s (EDR, HDR, NDR, XDR)
+  leafToHostBandwidth: 100 | 200 | 400 | 800;
+}
+
+const DEFAULT_FABRIC_CONFIG: FabricTierConfig = {
+  spineCount: 2,
+  leafCount: 4,
+  spineToLeafBandwidth: 400, // NDR
+  leafToHostBandwidth: 200, // HDR
+};
+
+// Helper to convert bandwidth to line width
+const bandwidthToWidth = (bandwidth: number): number => {
+  if (bandwidth >= 800) return 6; // XDR
+  if (bandwidth >= 400) return 4; // NDR
+  if (bandwidth >= 200) return 3; // HDR
+  return 2; // EDR
+};
+
+// Helper to get bandwidth label
+const bandwidthLabel = (bandwidth: number): string => {
+  if (bandwidth >= 800) return 'XDR 800 Gb/s';
+  if (bandwidth >= 400) return 'NDR 400 Gb/s';
+  if (bandwidth >= 200) return 'HDR 200 Gb/s';
+  return 'EDR 100 Gb/s';
+};
+
 interface InfiniBandMapProps {
   cluster: ClusterConfig;
+  fabricConfig?: FabricTierConfig;
 }
 
 interface FabricNode {
@@ -34,7 +65,10 @@ interface FabricLink {
   speed: string;
 }
 
-export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({ cluster }) => {
+export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
+  cluster,
+  fabricConfig = DEFAULT_FABRIC_CONFIG,
+}) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const particleGroupRef = useRef<SVGGElement | null>(null);
   const isRunning = useSimulationStore((state) => state.isRunning);
@@ -45,16 +79,16 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({ cluster }) => {
     const links: AnimationLink[] = [];
     const width = 1000;
 
-    // Spine positions
-    const spineCount = 2;
+    // Spine positions (use config)
+    const spineCount = fabricConfig.spineCount;
     const spineNodes = Array.from({ length: spineCount }, (_, i) => ({
       id: `spine-${i}`,
       x: (width / (spineCount + 1)) * (i + 1),
       y: 80,
     }));
 
-    // Leaf positions
-    const leafCount = Math.min(cluster.nodes.length, 4);
+    // Leaf positions (use config, capped by cluster size)
+    const leafCount = Math.min(cluster.nodes.length, fabricConfig.leafCount);
     const leafNodes = Array.from({ length: leafCount }, (_, i) => ({
       id: `leaf-${i}`,
       x: (width / (leafCount + 1)) * (i + 1),
@@ -71,7 +105,7 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({ cluster }) => {
       utilization: node.gpus.reduce((sum, g) => sum + g.utilization, 0) / node.gpus.length,
     }));
 
-    // Spine to Leaf links
+    // Spine to Leaf links (higher bandwidth backbone)
     spineNodes.forEach((spine) => {
       leafNodes.forEach((leaf) => {
         links.push({
@@ -106,7 +140,7 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({ cluster }) => {
     });
 
     return links;
-  }, [cluster]);
+  }, [cluster, fabricConfig]);
 
   const { particles } = useNetworkAnimation({
     enabled: isRunning,
@@ -128,12 +162,12 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({ cluster }) => {
       .attr('height', height)
       .attr('viewBox', `0 0 ${width} ${height}`);
 
-    // Create fabric topology
+    // Create fabric topology using config
     const nodes: FabricNode[] = [];
     const links: FabricLink[] = [];
 
-    // Spine switches (top tier)
-    const spineCount = 2;
+    // Spine switches (top tier) - use config
+    const spineCount = fabricConfig.spineCount;
     for (let i = 0; i < spineCount; i++) {
       nodes.push({
         id: `spine-${i}`,
@@ -145,8 +179,8 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({ cluster }) => {
       });
     }
 
-    // Leaf switches (middle tier)
-    const leafCount = Math.min(cluster.nodes.length, 4);
+    // Leaf switches (middle tier) - use config, capped by cluster size
+    const leafCount = Math.min(cluster.nodes.length, fabricConfig.leafCount);
     for (let i = 0; i < leafCount; i++) {
       nodes.push({
         id: `leaf-${i}`,
@@ -186,7 +220,7 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({ cluster }) => {
           source: spine,
           target: leaf,
           status: 'active',
-          speed: 'HDR 200 Gb/s',
+          speed: bandwidthLabel(fabricConfig.spineToLeafBandwidth),
         });
       });
     });
@@ -200,7 +234,7 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({ cluster }) => {
           source: leaf,
           target: host,
           status: host.status === 'active' ? 'active' : 'down',
-          speed: 'HDR 200 Gb/s',
+          speed: bandwidthLabel(fabricConfig.leafToHostBandwidth),
         });
       }
     });
@@ -218,7 +252,13 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({ cluster }) => {
       .attr('x2', (d) => d.target.x)
       .attr('y2', (d) => d.target.y)
       .attr('stroke', (d) => (d.status === 'active' ? '#10B981' : '#EF4444'))
-      .attr('stroke-width', 2)
+      .attr('stroke-width', (d) => {
+        // Spine-to-leaf links are thicker (higher bandwidth)
+        const isBackbone = d.source.type === 'spine' || d.target.type === 'spine';
+        return isBackbone
+          ? bandwidthToWidth(fabricConfig.spineToLeafBandwidth)
+          : bandwidthToWidth(fabricConfig.leafToHostBandwidth);
+      })
       .attr('stroke-dasharray', (d) => (d.status === 'active' ? '0' : '5,5'))
       .attr('opacity', 0.5)
       .append('title')
@@ -364,7 +404,7 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({ cluster }) => {
 
     // Add particle container group for animations
     particleGroupRef.current = svg.append('g').attr('class', 'particles').node();
-  }, [cluster]);
+  }, [cluster, fabricConfig]);
 
   // Particle animation render effect
   useEffect(() => {
@@ -459,8 +499,8 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({ cluster }) => {
 
       <div className="mt-3 text-xs text-gray-400">
         <p>• Click on any node to see detailed information</p>
-        <p>• Fat-tree topology: 2 spine switches, {Math.min(cluster.nodes.length, 4)} leaf switches</p>
-        <p>• Full mesh between spine and leaf tiers for maximum bandwidth</p>
+        <p>• Fat-tree topology: {fabricConfig.spineCount} spine, {Math.min(cluster.nodes.length, fabricConfig.leafCount)} leaf switches</p>
+        <p>• Spine↔Leaf: {bandwidthLabel(fabricConfig.spineToLeafBandwidth)} | Leaf↔Host: {bandwidthLabel(fabricConfig.leafToHostBandwidth)}</p>
       </div>
     </div>
   );
