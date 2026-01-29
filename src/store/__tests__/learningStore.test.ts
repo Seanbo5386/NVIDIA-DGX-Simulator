@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useLearningStore } from '../learningStore';
-import { act } from '@testing-library/react';
 
 // Mock localStorage
 const localStorageMock = (() => {

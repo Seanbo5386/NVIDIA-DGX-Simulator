@@ -13,8 +13,10 @@ export interface CommandContext {
   /** Command history */
   history: string[];
   /** Optional scenario context for isolated state */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   scenarioContext?: any; // Will be ScenarioContext when imported to avoid circular deps
   /** Optional cluster config override (for isolated execution) */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   cluster?: any; // ClusterConfig
 }
 

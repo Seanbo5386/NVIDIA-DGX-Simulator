@@ -423,9 +423,10 @@ export class NvsmSimulator extends BaseSimulator {
     const args = parts.slice(1);
 
     switch (verb) {
-      case 'cd':
+      case 'cd': {
         const cdResult = this.changeDirectory(args[0] || '', node);
         return { ...cdResult, prompt: this.getPrompt() };
+      }
 
       case 'show':
         if (args[0] === 'health') {

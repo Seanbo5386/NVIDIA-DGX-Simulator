@@ -117,7 +117,7 @@ describe('Exam Engine - Core Functions', () => {
     it('should shuffle questions', () => {
       const questions = createSampleQuestions();
       const selected1 = selectExamQuestions(questions, 5);
-      const selected2 = selectExamQuestions(questions, 5);
+      selectExamQuestions(questions, 5); // Call again for randomness check
 
       // With random shuffling, order should sometimes differ
       // (This test may occasionally fail due to randomness)

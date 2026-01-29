@@ -13,7 +13,8 @@ export interface StateChange {
   timestamp: number;
   nodeId?: string;
   gpuId?: number;
-  data: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any; // Flexible data payload for various state change types
   command?: string;
   description?: string;
 }

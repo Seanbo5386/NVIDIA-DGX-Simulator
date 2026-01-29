@@ -16,6 +16,7 @@ export interface StateSnapshot {
   cluster: ClusterConfig;
   timestamp: number;
   scenarioId?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>;
 }
 
@@ -23,6 +24,7 @@ export interface StateChange {
   type: 'gpu-update' | 'node-update' | 'job-update' | 'fault-injection';
   nodeId?: string;
   gpuId?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   updates: any;
   timestamp: number;
   command?: string;
@@ -168,6 +170,7 @@ export class StateManager {
   /**
    * Compare two snapshots and return differences
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   compareSnapshots(snapshotId1: string, snapshotId2: string): any {
     const snapshot1 = this.snapshots.get(snapshotId1);
     const snapshot2 = this.snapshots.get(snapshotId2);
@@ -222,7 +225,9 @@ export class StateManager {
 
   // Private helper methods
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private compareNodes(cluster1: ClusterConfig, cluster2: ClusterConfig): any {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const changes: any[] = [];
 
     // Compare node counts

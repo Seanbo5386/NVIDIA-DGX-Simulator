@@ -460,7 +460,8 @@ export const useSimulationStore = create<SimulationState>()(
       clearStepValidation: (scenarioId, stepId) => {
         const state = get();
         const key = `${scenarioId}-${stepId}`;
-        const { [key]: _unused, ...rest } = state.stepValidation;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { [key]: _removed, ...rest } = state.stepValidation;
 
         set({
           stepValidation: rest,

@@ -20,6 +20,7 @@ export interface FaultInjectionConfig {
   gpuId?: number;
   type: FaultType;
   severity: 'warning' | 'critical';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   parameters?: Record<string, any>;
 }
 
@@ -48,6 +49,7 @@ export interface ValidationRule {
 
   // For state-check: function name to call on cluster state
   stateCheck?: 'gpu-healthy' | 'nvlink-active' | 'slurm-online' | 'temperature-normal' | 'ecc-cleared';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   stateParams?: Record<string, any>;
 
   // For time-limit: max seconds allowed
@@ -126,6 +128,7 @@ export interface ScenarioStep {
       type: 'command' | 'output' | 'state' | 'sequence';
       pattern?: string | RegExp;
       commandPattern?: string;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       stateCheck?: (context: any) => boolean;
       sequence?: string[];
       errorMessage?: string;

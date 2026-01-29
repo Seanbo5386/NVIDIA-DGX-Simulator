@@ -522,11 +522,12 @@ export class SlurmSimulator extends BaseSimulator {
           case 't': // time used
             comparison = a.time.localeCompare(b.time);
             break;
-          case 's': // start time
+          case 's': { // start time
             const aStart = a.startTime?.getTime() || 0;
             const bStart = b.startTime?.getTime() || 0;
             comparison = aStart - bStart;
             break;
+          }
           case 'p': // priority
             comparison = a.priority - b.priority;
             break;
@@ -894,7 +895,7 @@ export class SlurmSimulator extends BaseSimulator {
 
       if (state) {
         const newState = state === 'resume' ? 'idle' : state;
-        simState.setSlurmState(nodeName, newState as any, reason);
+        simState.setSlurmState(nodeName, newState as 'idle' | 'allocated' | 'mixed' | 'down' | 'drain' | 'maint', reason);
       }
 
       return this.createSuccess(`Node ${nodeName} updated successfully`);
