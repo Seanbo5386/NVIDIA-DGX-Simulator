@@ -91,7 +91,8 @@ export function ExamWorkspace({ onClose }: ExamWorkspaceProps) {
     return () => {
       examTimer?.stop();
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Intentionally run once on mount
 
   const handleTimeExpired = () => {
     // Auto-submit exam when time expires

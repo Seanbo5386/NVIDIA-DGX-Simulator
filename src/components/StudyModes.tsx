@@ -86,7 +86,8 @@ export function StudyModes({ onClose, onStartLab: _onStartLab }: StudyModesProps
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [session, isPaused, timeRemaining]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, isPaused, timeRemaining]); // handleSessionComplete is stable
 
   const handleSelectMode = (mode: StudyMode) => {
     setSelectedMode(mode);

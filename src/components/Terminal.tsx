@@ -823,7 +823,8 @@ export const Terminal: React.FC<TerminalProps> = ({ className = '' }) => {
       term.dispose();
       setIsTerminalReady(false);
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Terminal initialization runs once on mount
 
   // Lab Feedback - display messages when labs start/complete
   useLabFeedback(xtermRef.current, isTerminalReady, selectedNode || 'dgx-00');

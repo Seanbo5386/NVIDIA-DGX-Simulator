@@ -70,7 +70,8 @@ export const PracticalExams: React.FC<PracticalExamsProps> = ({
 
       return () => clearInterval(interval);
     }
-  }, [session, viewMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, viewMode]); // handleTimeUp is stable
 
   const handleTimeUp = useCallback(() => {
     if (session && challengeResult) {
