@@ -3,12 +3,15 @@
  *
  * Visualizes InfiniBand fat-tree topology using D3.js.
  * Shows switches (leaf/spine) and HCAs with link health.
+ * Includes live data flow animations when simulation is running.
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
 import type { ClusterConfig } from '@/types/hardware';
 import { Network } from 'lucide-react';
+import { useNetworkAnimation, AnimationLink } from '@/hooks/useNetworkAnimation';
+import { useSimulationStore } from '@/store/simulationStore';
 
 interface InfiniBandMapProps {
   cluster: ClusterConfig;
@@ -32,6 +35,81 @@ interface FabricLink {
 
 export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({ cluster }) => {
   const svgRef = useRef<SVGSVGElement>(null);
+  const particleGroupRef = useRef<SVGGElement | null>(null);
+  const isRunning = useSimulationStore((state) => state.isRunning);
+
+  // Calculate animation links from fabric topology
+  const animationLinks: AnimationLink[] = useMemo(() => {
+    const links: AnimationLink[] = [];
+    const width = 1000;
+
+    // Spine positions
+    const spineCount = 2;
+    const spineNodes = Array.from({ length: spineCount }, (_, i) => ({
+      id: `spine-${i}`,
+      x: (width / (spineCount + 1)) * (i + 1),
+      y: 80,
+    }));
+
+    // Leaf positions
+    const leafCount = Math.min(cluster.nodes.length, 4);
+    const leafNodes = Array.from({ length: leafCount }, (_, i) => ({
+      id: `leaf-${i}`,
+      x: (width / (leafCount + 1)) * (i + 1),
+      y: 250,
+    }));
+
+    // Host positions
+    const nodeSpacing = width / (cluster.nodes.length + 1);
+    const hostNodes = cluster.nodes.map((node, idx) => ({
+      id: node.id,
+      x: nodeSpacing * (idx + 1),
+      y: 450,
+      active: node.hcas.some((hca) => hca.ports.some((p) => p.state === 'Active')),
+      utilization: node.gpus.reduce((sum, g) => sum + g.utilization, 0) / node.gpus.length,
+    }));
+
+    // Spine to Leaf links
+    spineNodes.forEach((spine) => {
+      leafNodes.forEach((leaf) => {
+        links.push({
+          id: `${spine.id}-${leaf.id}`,
+          sourceX: spine.x,
+          sourceY: spine.y,
+          targetX: leaf.x,
+          targetY: leaf.y,
+          active: true,
+          utilization: 30 + Math.random() * 40, // Simulated backbone traffic
+          bidirectional: true,
+        });
+      });
+    });
+
+    // Leaf to Host links
+    hostNodes.forEach((host, idx) => {
+      const leafIdx = Math.floor(idx / Math.ceil(hostNodes.length / leafNodes.length));
+      const leaf = leafNodes[Math.min(leafIdx, leafNodes.length - 1)];
+      if (leaf) {
+        links.push({
+          id: `${leaf.id}-${host.id}`,
+          sourceX: leaf.x,
+          sourceY: leaf.y,
+          targetX: host.x,
+          targetY: host.y,
+          active: host.active,
+          utilization: host.active ? host.utilization : 0,
+          bidirectional: true,
+        });
+      }
+    });
+
+    return links;
+  }, [cluster]);
+
+  const { particles } = useNetworkAnimation({
+    enabled: isRunning,
+    links: animationLinks,
+  });
 
   useEffect(() => {
     if (!svgRef.current) return;
@@ -252,7 +330,36 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({ cluster }) => {
       .attr('font-size', '14px')
       .attr('font-weight', 'bold')
       .text('Host Tier');
+
+    // Add particle container group for animations
+    particleGroupRef.current = svg.append('g').attr('class', 'particles').node();
   }, [cluster]);
+
+  // Particle animation render effect
+  useEffect(() => {
+    if (!particleGroupRef.current) return;
+
+    const group = d3.select(particleGroupRef.current);
+
+    // Data join for particles
+    const particleSelection = group
+      .selectAll<SVGCircleElement, (typeof particles)[0]>('circle')
+      .data(particles, (d) => d.id);
+
+    // Enter new particles
+    particleSelection
+      .enter()
+      .append('circle')
+      .attr('r', (d) => d.size || 4)
+      .attr('fill', (d) => d.color)
+      .attr('opacity', 0.8)
+      .merge(particleSelection)
+      .attr('cx', (d) => d.x)
+      .attr('cy', (d) => d.y);
+
+    // Remove old particles
+    particleSelection.exit().remove();
+  }, [particles]);
 
   const totalLinks = cluster.nodes.length;
   const activeLinks = cluster.nodes.filter((n) =>
@@ -272,6 +379,15 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({ cluster }) => {
       </div>
 
       <svg ref={svgRef} className="w-full bg-gray-900 rounded-lg" />
+
+      {/* Animation status indicator */}
+      <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
+        <div
+          className={`w-2 h-2 rounded-full ${isRunning ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`}
+        />
+        {isRunning ? 'Live data flow' : 'Paused'}
+        {isRunning && <span>({particles.length} active flows)</span>}
+      </div>
 
       <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
         <div className="flex items-center gap-2">
