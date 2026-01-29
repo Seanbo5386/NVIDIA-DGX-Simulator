@@ -3,12 +3,15 @@
  *
  * Visualizes GPU NVLink topology using D3.js.
  * Shows GPU nodes and their interconnections with health status.
+ * Includes live data flow animations when simulation is running.
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
 import type { DGXNode } from '@/types/hardware';
 import { Network } from 'lucide-react';
+import { useNetworkAnimation, AnimationLink } from '@/hooks/useNetworkAnimation';
+import { useSimulationStore } from '@/store/simulationStore';
 
 interface TopologyGraphProps {
   node: DGXNode;
@@ -33,6 +36,47 @@ interface GraphLink {
 
 export const TopologyGraph: React.FC<TopologyGraphProps> = ({ node }) => {
   const svgRef = useRef<SVGSVGElement>(null);
+  const particleGroupRef = useRef<SVGGElement | null>(null);
+  const isRunning = useSimulationStore((state) => state.isRunning);
+
+  // Calculate animation links from GPU NVLink connections
+  const animationLinks: AnimationLink[] = useMemo(() => {
+    const links: AnimationLink[] = [];
+    const nodePositions = node.gpus.map((gpu, idx) => ({
+      id: gpu.id,
+      x: (idx % 4) * 180 + 120,
+      y: Math.floor(idx / 4) * 250 + 120,
+    }));
+
+    for (let i = 0; i < node.gpus.length; i++) {
+      for (let j = i + 1; j < node.gpus.length; j++) {
+        const shouldConnect =
+          Math.floor(i / 4) === Math.floor(j / 4) || j === i + 1 || j === i + 4;
+        if (shouldConnect && node.gpus[i].nvlinks.length > 0) {
+          const link = node.gpus[i].nvlinks[Math.min(i, node.gpus[i].nvlinks.length - 1)];
+          const avgUtil = (node.gpus[i].utilization + node.gpus[j].utilization) / 2;
+
+          links.push({
+            id: `nvlink-${i}-${j}`,
+            sourceX: nodePositions[i].x,
+            sourceY: nodePositions[i].y,
+            targetX: nodePositions[j].x,
+            targetY: nodePositions[j].y,
+            active: link.status === 'Active',
+            utilization: avgUtil,
+            bidirectional: true,
+          });
+        }
+      }
+    }
+
+    return links;
+  }, [node]);
+
+  const { particles } = useNetworkAnimation({
+    enabled: isRunning,
+    links: animationLinks,
+  });
 
   useEffect(() => {
     if (!svgRef.current) return;
@@ -173,7 +217,36 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({ node }) => {
       .on('mouseout', function () {
         d3.select(this).select('circle').attr('r', 35).attr('opacity', 0.9);
       });
+
+    // Add particle container group for animations
+    particleGroupRef.current = svg.append('g').attr('class', 'particles').node();
   }, [node]);
+
+  // Particle animation render effect
+  useEffect(() => {
+    if (!particleGroupRef.current) return;
+
+    const group = d3.select(particleGroupRef.current);
+
+    // Data join for particles
+    const particleSelection = group
+      .selectAll<SVGCircleElement, (typeof particles)[0]>('circle')
+      .data(particles, (d) => d.id);
+
+    // Enter new particles
+    particleSelection
+      .enter()
+      .append('circle')
+      .attr('r', (d) => d.size || 4)
+      .attr('fill', (d) => d.color)
+      .attr('opacity', 0.8)
+      .merge(particleSelection)
+      .attr('cx', (d) => d.x)
+      .attr('cy', (d) => d.y);
+
+    // Remove old particles
+    particleSelection.exit().remove();
+  }, [particles]);
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
@@ -183,6 +256,15 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({ node }) => {
       </div>
 
       <svg ref={svgRef} className="w-full bg-gray-900 rounded-lg" />
+
+      {/* Animation status indicator */}
+      <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
+        <div
+          className={`w-2 h-2 rounded-full ${isRunning ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`}
+        />
+        {isRunning ? 'Live data flow' : 'Paused'}
+        {isRunning && <span>({particles.length} active flows)</span>}
+      </div>
 
       <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
         <div className="flex items-center gap-2">
