@@ -11,6 +11,7 @@ import { BaseSimulator } from './BaseSimulator';
 import type { CommandContext, CommandResult } from '@/types/commands';
 import type { ParsedCommand } from '@/utils/commandParser';
 import { useSimulationStore } from '@/store/simulationStore';
+import type { GPU, DGXNode } from '@/types/hardware';
 
 export class BenchmarkSimulator extends BaseSimulator {
   constructor() {
@@ -249,14 +250,14 @@ ${efficiency < 0.80 ? '\n\x1b[33mNote: Efficiency below 80% may indicate:\n  - S
     }
 
     // Simulate stress test - ramp up utilization and temperature
-    const originalState = gpusToTest.map((gpu: any) => ({
+    const originalState = gpusToTest.map((gpu: GPU) => ({
       utilization: gpu.utilization,
       temperature: gpu.temperature,
       powerDraw: gpu.powerDraw,
     }));
 
     // Set to stress levels
-    gpusToTest.forEach((gpu: any) => {
+    gpusToTest.forEach((gpu: GPU) => {
       gpu.utilization = 100;
       gpu.temperature = Math.min(85, gpu.temperature + 30);
       gpu.powerDraw = gpu.powerLimit * 0.95; // Near power limit
@@ -270,7 +271,7 @@ Testing ${gpusToTest.length} GPU(s) for ${duration} seconds
 
 `;
 
-    gpusToTest.forEach((gpu: any, idx: number) => {
+    gpusToTest.forEach((gpu: GPU, idx: number) => {
       output += `GPU ${idx}: ${gpu.name}\n`;
       output += `  Temperature: ${gpu.temperature.toFixed(1)}°C\n`;
       output += `  Power: ${gpu.powerDraw.toFixed(0)}W / ${gpu.powerLimit}W\n`;
@@ -288,7 +289,7 @@ Testing ${gpusToTest.length} GPU(s) for ${duration} seconds
     }
 
     // Check for thermal issues
-    const thermalIssues = gpusToTest.filter((gpu: any) => gpu.temperature > 83);
+    const thermalIssues = gpusToTest.filter((gpu: GPU) => gpu.temperature > 83);
     const status = thermalIssues.length === 0 ? '\x1b[32mPASSED\x1b[0m' : '\x1b[33mWARNING\x1b[0m';
 
     output += `\n==========================\n`;
@@ -300,7 +301,7 @@ Testing ${gpusToTest.length} GPU(s) for ${duration} seconds
       output += `Check cooling and GPU placement.\n\n`;
     }
 
-    gpusToTest.forEach((gpu: any, idx: number) => {
+    gpusToTest.forEach((gpu: GPU, idx: number) => {
       const avgTemp = (gpu.temperature + originalState[idx].temperature) / 2;
       output += `GPU ${idx} Results:\n`;
       output += `  Avg Temperature: ${avgTemp.toFixed(1)}°C\n`;
@@ -310,7 +311,7 @@ Testing ${gpusToTest.length} GPU(s) for ${duration} seconds
 
     // Reset GPUs to original state after test
     setTimeout(() => {
-      gpusToTest.forEach((gpu: any, idx: number) => {
+      gpusToTest.forEach((gpu: GPU, idx: number) => {
         gpu.utilization = originalState[idx].utilization;
         gpu.temperature = originalState[idx].temperature;
         gpu.powerDraw = originalState[idx].powerDraw;
@@ -320,9 +321,9 @@ Testing ${gpusToTest.length} GPU(s) for ${duration} seconds
     return this.createSuccess(output);
   }
 
-  private getNode(context: CommandContext) {
+  private getNode(context: CommandContext): DGXNode | undefined {
     const state = useSimulationStore.getState();
-    return state.cluster.nodes.find((n: any) => n.id === context.currentNode) || state.cluster.nodes[0];
+    return state.cluster.nodes.find((n: DGXNode) => n.id === context.currentNode) || state.cluster.nodes[0];
   }
 
   private calculateNCCLBandwidth(sizeBytes: number, _gpuCount: number, systemType: string): number {

@@ -1,6 +1,17 @@
 import type { CommandResult, CommandContext, ParsedCommand, SimulatorMetadata } from '@/types/commands';
 import { BaseSimulator } from './BaseSimulator';
 import { useSimulationStore } from '@/store/simulationStore';
+import type { GPU, DGXNode, XIDError } from '@/types/hardware';
+
+// Extended node type for NVSwitch support (not in base DGXNode type)
+interface ExtendedDGXNode extends DGXNode {
+  nvswitches?: Array<{
+    status?: string;
+    firmwareVersion?: string;
+    temperature?: number;
+    activePorts?: number;
+  }>;
+}
 
 /**
  * NvlinkAuditSimulator
@@ -89,7 +100,7 @@ export class NvlinkAuditSimulator extends BaseSimulator {
     // System Overview
     output += '=== System Overview ===\n';
     output += `Total GPUs: ${node.gpus.length}\n`;
-    output += `NVSwitches: ${(node as any).nvswitches?.length || 0}\n`;
+    output += `NVSwitches: ${(node as ExtendedDGXNode).nvswitches?.length || 0}\n`;
     output += `Architecture: DGX A100 (SXM4)\n`;
     output += `NVLink Version: 3.0\n`;
     output += `Links per GPU: 12\n\n`;
@@ -138,9 +149,10 @@ export class NvlinkAuditSimulator extends BaseSimulator {
     output += '\n' + '-'.repeat(78) + '\n';
 
     // NVSwitch Status
-    if ((node as any).nvswitches && (node as any).nvswitches.length > 0) {
+    const extNode = node as ExtendedDGXNode;
+    if (extNode.nvswitches && extNode.nvswitches.length > 0) {
       output += '\n=== NVSwitch Status ===\n';
-      (node as any).nvswitches.forEach((nvswitch: any, idx: number) => {
+      extNode.nvswitches.forEach((nvswitch, idx: number) => {
         const status = nvswitch.status || 'Healthy';
         const statusColor = status === 'Healthy' ? '\x1b[32m' : '\x1b[31m';
         output += `NVSwitch ${idx}: ${statusColor}${status}\x1b[0m\n`;
@@ -207,7 +219,7 @@ export class NvlinkAuditSimulator extends BaseSimulator {
         host: node.hostname,
         timestamp: new Date().toISOString(),
         totalGpus: node.gpus.length,
-        nvswitches: (node as any).nvswitches?.length || 0,
+        nvswitches: (node as ExtendedDGXNode).nvswitches?.length || 0,
         status: hasErrors ? 'ERROR' : hasWarnings ? 'WARNING' : 'HEALTHY',
         gpus: gpusToAudit.map(gpu => ({
           id: gpu.id,
@@ -224,7 +236,7 @@ export class NvlinkAuditSimulator extends BaseSimulator {
   /**
    * Get NVLink status for a specific GPU
    */
-  private getGpuNvlinkStatus(gpu: any): {
+  private getGpuNvlinkStatus(gpu: GPU & { nvlinkActive?: boolean }): {
     overallStatus: string;
     activeLinks: number;
     totalErrors: number;
@@ -243,7 +255,7 @@ export class NvlinkAuditSimulator extends BaseSimulator {
     let totalErrors = 0;
 
     // Check if GPU has NVLink errors from fault injection
-    const hasNvlinkFault = gpu.nvlinkActive === false || (gpu.xidErrors && gpu.xidErrors.some((e: any) => e.code === 74));
+    const hasNvlinkFault = gpu.nvlinkActive === false || (gpu.xidErrors && gpu.xidErrors.some((e: XIDError) => e.code === 74));
 
     for (let i = 0; i < 12; i++) {
       // Simulate link status - some links go to other GPUs, some to NVSwitches
@@ -287,7 +299,7 @@ export class NvlinkAuditSimulator extends BaseSimulator {
   /**
    * Verify topology connectivity
    */
-  private verifyTopology(node: any): {
+  private verifyTopology(node: DGXNode): {
     fullMesh: boolean;
     switchRouting: boolean;
     bandwidthSymmetry: boolean;
@@ -296,15 +308,18 @@ export class NvlinkAuditSimulator extends BaseSimulator {
     const missingLinks: string[] = [];
 
     // Check if any GPU has NVLink issues
-    const hasNvlinkFaults = node.gpus.some((gpu: any) =>
-      gpu.nvlinkActive === false ||
-      (gpu.xidErrors && gpu.xidErrors.some((e: any) => e.code === 74))
-    );
+    type ExtendedGPU = GPU & { nvlinkActive?: boolean };
+    const hasNvlinkFaults = node.gpus.some((gpu) => {
+      const extGpu = gpu as ExtendedGPU;
+      return extGpu.nvlinkActive === false ||
+        (gpu.xidErrors && gpu.xidErrors.some((e: XIDError) => e.code === 74));
+    });
 
     if (hasNvlinkFaults) {
       // Find which links are affected
-      node.gpus.forEach((gpu: any) => {
-        if (gpu.nvlinkActive === false) {
+      node.gpus.forEach((gpu) => {
+        const extGpu = gpu as ExtendedGPU;
+        if (extGpu.nvlinkActive === false) {
           missingLinks.push(`GPU${gpu.id} isolated`);
         }
       });

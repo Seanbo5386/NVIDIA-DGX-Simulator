@@ -182,25 +182,25 @@ export class NvsmSimulator extends BaseSimulator {
       // Link speed check
       const linkSpeedStatus = gpu.healthStatus === 'Critical' ? 'Critical' :
         gpu.healthStatus === 'Warning' ? 'Warning' : 'Healthy';
-      checks.push(this.formatHealthCheck(`GPU link speed [${pciAddr}]`, linkSpeedStatus as any));
+      checks.push(this.formatHealthCheck(`GPU link speed [${pciAddr}]`, linkSpeedStatus as 'Healthy' | 'Warning' | 'Critical'));
       if (linkSpeedStatus === 'Healthy') healthy++;
       total++;
 
       // Link width check
-      checks.push(this.formatHealthCheck(`GPU link width [${pciAddr}][x16]`, linkSpeedStatus as any));
+      checks.push(this.formatHealthCheck(`GPU link width [${pciAddr}][x16]`, linkSpeedStatus as 'Healthy' | 'Warning' | 'Critical'));
       if (linkSpeedStatus === 'Healthy') healthy++;
       total++;
 
       // Temperature check
       const tempStatus = gpu.temperature > 90 ? 'Critical' : gpu.temperature > 80 ? 'Warning' : 'Healthy';
-      checks.push(this.formatHealthCheck(`GPU temperature [GPU${idx}]`, tempStatus as any));
+      checks.push(this.formatHealthCheck(`GPU temperature [GPU${idx}]`, tempStatus as 'Healthy' | 'Warning' | 'Critical'));
       if (tempStatus === 'Healthy') healthy++;
       total++;
 
       // ECC check
       const eccStatus = gpu.eccErrors.doubleBit > 0 ? 'Critical' :
         gpu.eccErrors.singleBit > 100 ? 'Warning' : 'Healthy';
-      checks.push(this.formatHealthCheck(`GPU ECC status [GPU${idx}]`, eccStatus as any));
+      checks.push(this.formatHealthCheck(`GPU ECC status [GPU${idx}]`, eccStatus as 'Healthy' | 'Warning' | 'Critical'));
       if (eccStatus === 'Healthy') healthy++;
       total++;
 
@@ -209,7 +209,7 @@ export class NvsmSimulator extends BaseSimulator {
       const xidStatus = (gpu.xidErrors && gpu.xidErrors.length > 0)
         ? (gpu.xidErrors.some(x => x.severity === 'Critical') ? 'Critical' : 'Warning')
         : 'Healthy';
-      checks.push(this.formatHealthCheck(`GPU XID error check [GPU${idx}]`, xidStatus as any));
+      checks.push(this.formatHealthCheck(`GPU XID error check [GPU${idx}]`, xidStatus as 'Healthy' | 'Warning' | 'Critical'));
       if (xidStatus === 'Healthy') healthy++;
       total++;
     });
@@ -223,7 +223,7 @@ export class NvsmSimulator extends BaseSimulator {
       gpu.nvlinks.forEach((link, linkIdx) => {
         const linkStatus = link.status === 'Active' ? 'Healthy' :
           link.status === 'Down' ? 'Critical' : 'Warning';
-        checks.push(this.formatHealthCheck(`NVLink ${linkIdx} status [GPU${idx}]`, linkStatus as any));
+        checks.push(this.formatHealthCheck(`NVLink ${linkIdx} status [GPU${idx}]`, linkStatus as 'Healthy' | 'Warning' | 'Critical'));
         if (linkStatus === 'Healthy') healthy++;
         total++;
       });
@@ -233,7 +233,7 @@ export class NvsmSimulator extends BaseSimulator {
     node.hcas.forEach((hca) => {
       hca.ports.forEach((port) => {
         const portStatus = port.state === 'Active' ? 'Healthy' : 'Warning';
-        checks.push(this.formatHealthCheck(`InfiniBand port ${port.portNumber} [${hca.caType}]`, portStatus as any));
+        checks.push(this.formatHealthCheck(`InfiniBand port ${port.portNumber} [${hca.caType}]`, portStatus as 'Healthy' | 'Warning' | 'Critical'));
         if (portStatus === 'Healthy') healthy++;
         total++;
       });

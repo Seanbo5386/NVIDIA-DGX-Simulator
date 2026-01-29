@@ -1,6 +1,7 @@
 import type { CommandResult, CommandContext, ParsedCommand, SimulatorMetadata } from '@/types/commands';
 import { BaseSimulator } from './BaseSimulator';
 import { useSimulationStore } from '@/store/simulationStore';
+import type { BlueFieldDPU, HCA } from '@/types/hardware';
 
 export class MellanoxSimulator extends BaseSimulator {
   private mstStarted: boolean = false;
@@ -190,7 +191,7 @@ export class MellanoxSimulator extends BaseSimulator {
     }
 
     // Check if device exists in node (check DPUs first as they are the main target for mlxconfig)
-    let device: any = node.dpus.find(d => d.devicePath === deviceName);
+    let device: BlueFieldDPU | HCA | undefined = node.dpus.find(d => d.devicePath === deviceName);
 
     if (!device) {
       // Search by ID or other identifiers if full path not given
@@ -536,7 +537,7 @@ export class MellanoxSimulator extends BaseSimulator {
     const doUpdate = this.hasAnyFlag(parsed, ['u']);
 
     // Build list of devices to query
-    const devices: any[] = [];
+    const devices: Array<{ type: string } & (HCA | BlueFieldDPU)> = [];
 
     if (devicePath) {
       // Find specific device
