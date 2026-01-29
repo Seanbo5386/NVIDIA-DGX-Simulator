@@ -209,6 +209,9 @@ export const Dashboard: React.FC = () => {
   const cluster = useSimulationStore(state => state.cluster);
   const selectedNode = useSimulationStore(state => state.selectedNode);
   const isRunning = useSimulationStore(state => state.isRunning);
+  const requestedVisualizationView = useSimulationStore(state => state.requestedVisualizationView);
+  const setRequestedVisualizationView = useSimulationStore(state => state.setRequestedVisualizationView);
+  const storeActiveScenario = useSimulationStore(state => state.activeScenario);
   const [activeView, setActiveView] = useState<DashboardView>('overview');
   const [selectedGPU, setSelectedGPU] = useState<string>('GPU0');
   const [activeScenario, setActiveScenario] = useState<VisualizationContext | null>(null);
@@ -226,6 +229,22 @@ export const Dashboard: React.FC = () => {
       }
     }
   };
+
+  // Listen for visualization view requests from LabWorkspace
+  useEffect(() => {
+    if (requestedVisualizationView) {
+      setActiveView(requestedVisualizationView);
+      // Also set the active scenario context if there's an active lab
+      if (storeActiveScenario) {
+        const context = getVisualizationContext(storeActiveScenario.id);
+        if (context) {
+          setActiveScenario(context);
+        }
+      }
+      // Clear the request
+      setRequestedVisualizationView(null);
+    }
+  }, [requestedVisualizationView, storeActiveScenario, setRequestedVisualizationView]);
 
   const currentNode = cluster.nodes.find(n => n.id === selectedNode) || cluster.nodes[0];
 

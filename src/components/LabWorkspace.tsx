@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useSimulationStore } from '@/store/simulationStore';
-import { X, ChevronRight, Check, HelpCircle, Clock, Lightbulb, CheckCircle, Circle } from 'lucide-react';
+import { X, ChevronRight, Check, HelpCircle, Clock, Lightbulb, CheckCircle, Circle, Eye } from 'lucide-react';
 import { HintManager } from '@/utils/hintManager';
 import { commandTracker } from '@/utils/commandValidator';
+import { getVisualizationContext } from '@/utils/scenarioVisualizationMap';
 
 interface LabWorkspaceProps {
   onClose: () => void;
@@ -16,7 +17,8 @@ export function LabWorkspace({ onClose }: LabWorkspaceProps) {
     completeScenarioStep,
     revealHint: revealHintAction,
     stepValidation,
-    validationConfig
+    validationConfig,
+    setRequestedVisualizationView
   } = useSimulationStore();
   const [showHints, setShowHints] = useState<Record<string, number>>({});
 
@@ -36,6 +38,11 @@ export function LabWorkspace({ onClose }: LabWorkspaceProps) {
   // Evaluate hints using HintManager
   const hintEvaluation = currentStepProgress
     ? HintManager.getAvailableHints(currentStep, currentStepProgress)
+    : null;
+
+  // Get visualization context for this scenario
+  const visualizationContext = activeScenario
+    ? getVisualizationContext(activeScenario.id)
     : null;
 
   const handleExit = () => {
@@ -119,11 +126,27 @@ export function LabWorkspace({ onClose }: LabWorkspaceProps) {
       <div className="flex-1 overflow-y-auto p-6">
         {/* Current Step */}
         <div className="mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="bg-green-500 text-black rounded-full w-8 h-8 flex items-center justify-center font-bold">
-              {currentStepIndex + 1}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="bg-green-500 text-black rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                {currentStepIndex + 1}
+              </div>
+              <h3 className="text-lg font-bold text-white">{currentStep.title}</h3>
             </div>
-            <h3 className="text-lg font-bold text-white">{currentStep.title}</h3>
+            {/* View in Visualization button */}
+            {visualizationContext && (
+              <button
+                onClick={() => {
+                  const view = visualizationContext.primaryView === 'network' ? 'network' : 'topology';
+                  setRequestedVisualizationView(view);
+                }}
+                className="flex items-center gap-2 px-3 py-1.5 text-xs bg-purple-900/50 text-purple-300 rounded hover:bg-purple-900 transition-colors"
+                title="View related visualization"
+              >
+                <Eye className="w-3 h-3" />
+                View in {visualizationContext.primaryView === 'network' ? 'InfiniBand Fabric' : 'NVLink Topology'}
+              </button>
+            )}
           </div>
 
           <p className="text-gray-300 mb-4 leading-relaxed">{currentStep.description}</p>

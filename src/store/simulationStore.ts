@@ -31,6 +31,9 @@ interface SimulationState {
   stepValidation: Record<string, ValidationResult>; // key: "scenarioId-stepId"
   validationConfig: ValidationConfig;
 
+  // Visualization navigation state
+  requestedVisualizationView: 'topology' | 'network' | null;
+
   // Actions
   setCluster: (cluster: ClusterConfig) => void;
   selectNode: (nodeId: string) => void;
@@ -74,6 +77,9 @@ interface SimulationState {
   resetSimulation: () => void;
   setSimulationSpeed: (speed: number) => void;
 
+  // Visualization navigation
+  setRequestedVisualizationView: (view: 'topology' | 'network' | null) => void;
+
   // Persistence
   exportCluster: () => string;
   importCluster: (json: string) => void;
@@ -109,6 +115,9 @@ export const useSimulationStore = create<SimulationState>()(
         showProgress: true,
         soundEffects: false,
       },
+
+      // Visualization navigation
+      requestedVisualizationView: null,
 
       // Actions
       setCluster: (cluster) => set({ cluster }),
@@ -559,6 +568,9 @@ export const useSimulationStore = create<SimulationState>()(
       }),
 
       setSimulationSpeed: (speed) => set({ simulationSpeed: speed }),
+
+      // Visualization navigation
+      setRequestedVisualizationView: (view) => set({ requestedVisualizationView: view }),
 
       exportCluster: () => {
         const state = get();
