@@ -54,12 +54,20 @@ function App() {
       metricsSimulator.start((updater) => {
         const store = useSimulationStore.getState();
         store.cluster.nodes.forEach(node => {
-          const updatedGPUs = updater(node.gpus);
-          updatedGPUs.forEach((gpu, idx) => {
+          const updated = updater({ gpus: node.gpus, hcas: node.hcas });
+
+          // Update GPUs
+          updated.gpus.forEach((gpu, idx) => {
             if (JSON.stringify(gpu) !== JSON.stringify(node.gpus[idx])) {
               store.updateGPU(node.id, gpu.id, gpu);
             }
           });
+
+          // Update HCAs (InfiniBand port errors)
+          const hcasChanged = JSON.stringify(updated.hcas) !== JSON.stringify(node.hcas);
+          if (hcasChanged) {
+            store.updateHCAs(node.id, updated.hcas);
+          }
         });
       }, 1000);
     } else {
@@ -246,7 +254,7 @@ function App() {
         )}
 
         {currentView === 'labs' && (
-          <div className="p-6">
+          <div className="p-6 h-full overflow-auto">
             <div className="max-w-6xl mx-auto">
               {/* Fault Injection System */}
               <FaultInjection />

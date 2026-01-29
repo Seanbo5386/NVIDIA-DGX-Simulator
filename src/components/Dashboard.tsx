@@ -5,6 +5,7 @@ import type { GPU, HealthStatus } from '@/types/hardware';
 import { MetricsChart } from './MetricsChart';
 import { TopologyGraph } from './TopologyGraph';
 import { InfiniBandMap } from './InfiniBandMap';
+import { FabricHealthSummary } from './FabricHealthSummary';
 import { MetricsHistory } from '@/utils/metricsHistory';
 import { VisualContextPanel } from './VisualContextPanel';
 import {
@@ -502,20 +503,25 @@ export const Dashboard: React.FC = () => {
 
       {/* InfiniBand Fabric Tab */}
       {activeView === 'network' && (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          <div className="lg:col-span-3">
-            <InfiniBandMap
-              cluster={cluster}
-              highlightedNodes={activeScenario?.highlightedNodes}
-              highlightedSwitches={activeScenario?.highlightedSwitches}
-            />
-          </div>
-          <div className="lg:col-span-1">
-            <VisualContextPanel
-              activeScenario={activeScenario}
-              currentView="network"
-              onLaunchScenario={handleLaunchScenario}
-            />
+        <div className="space-y-4">
+          {/* Fabric Health Summary - spans full width */}
+          <FabricHealthSummary cluster={cluster} />
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <div className="lg:col-span-3">
+              <InfiniBandMap
+                cluster={cluster}
+                highlightedNodes={activeScenario?.highlightedNodes}
+                highlightedSwitches={activeScenario?.highlightedSwitches}
+              />
+            </div>
+            <div className="lg:col-span-1">
+              <VisualContextPanel
+                activeScenario={activeScenario}
+                currentView="network"
+                onLaunchScenario={handleLaunchScenario}
+              />
+            </div>
           </div>
         </div>
       )}

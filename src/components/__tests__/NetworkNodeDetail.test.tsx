@@ -39,6 +39,14 @@ describe('NetworkNodeDetail', () => {
       id: 'spine-0',
       switchType: 'spine',
       status: 'active',
+      portCount: 8,
+      activePortCount: 8,
+      bandwidth: 'NDR 400 Gb/s',
+      connectedNodes: ['Leaf 1', 'Leaf 2', 'Leaf 3', 'Leaf 4'],
+      throughput: 950,
+      temperature: 52,
+      model: 'NVIDIA QM9700 (NDR)',
+      firmwareVersion: '29.2008.1234',
     },
   };
 
@@ -99,15 +107,21 @@ describe('NetworkNodeDetail', () => {
   it('should render switch details', () => {
     render(<NetworkNodeDetail node={mockSwitchNode} onClose={() => {}} />);
 
-    expect(screen.getByText('Spine Switch')).toBeInTheDocument();
+    expect(screen.getByText('Core Backbone Switch')).toBeInTheDocument();
     expect(screen.getByText('Active')).toBeInTheDocument();
+    expect(screen.getByText('NVIDIA QM9700 (NDR)')).toBeInTheDocument();
+    expect(screen.getByText('52°C')).toBeInTheDocument();
+    expect(screen.getByText('950 GB/s')).toBeInTheDocument();
+    expect(screen.getByText('Leaf 1')).toBeInTheDocument();
   });
 
   it('should render host details', () => {
     render(<NetworkNodeDetail node={mockHostNode} onClose={() => {}} />);
 
     expect(screen.getByText('dgx-01.cluster')).toBeInTheDocument();
-    expect(screen.getByText('8 GPUs')).toBeInTheDocument();
+    expect(screen.getByText('GPUs')).toBeInTheDocument();
+    expect(screen.getByText('8')).toBeInTheDocument();
+    expect(screen.getByText('HCAs')).toBeInTheDocument();
   });
 
   it('should show fault injection buttons when onInjectFault is provided', () => {

@@ -1,15 +1,30 @@
-import type { GPU } from '@/types/hardware';
+import type { GPU, InfiniBandHCA } from '@/types/hardware';
+
+export interface MetricsUpdate {
+  gpus: GPU[];
+  hcas: InfiniBandHCA[];
+}
 
 export class MetricsSimulator {
   private intervalId: number | null = null;
   private isRunning: boolean = false;
 
-  start(updateCallback: (updater: (gpus: GPU[]) => GPU[]) => void, interval: number = 1000) {
+  start(updateCallback: (updater: (data: { gpus: GPU[]; hcas: InfiniBandHCA[] }) => MetricsUpdate) => void, interval: number = 1000) {
     if (this.isRunning) return;
 
     this.isRunning = true;
     this.intervalId = window.setInterval(() => {
-      updateCallback((gpus) => this.updateMetrics(gpus));
+      updateCallback((data) => this.updateMetrics(data));
+    }, interval);
+  }
+
+  // Legacy method for backwards compatibility
+  startGpuOnly(updateCallback: (updater: (gpus: GPU[]) => GPU[]) => void, interval: number = 1000) {
+    if (this.isRunning) return;
+
+    this.isRunning = true;
+    this.intervalId = window.setInterval(() => {
+      updateCallback((gpus) => this.updateGpuMetrics(gpus));
     }, interval);
   }
 
@@ -21,7 +36,50 @@ export class MetricsSimulator {
     this.isRunning = false;
   }
 
-  private updateMetrics(gpus: GPU[]): GPU[] {
+  private updateMetrics(data: { gpus: GPU[]; hcas: InfiniBandHCA[] }): MetricsUpdate {
+    return {
+      gpus: this.updateGpuMetrics(data.gpus),
+      hcas: this.updateHcaMetrics(data.hcas),
+    };
+  }
+
+  private updateHcaMetrics(hcas: InfiniBandHCA[]): InfiniBandHCA[] {
+    return hcas.map((hca) => ({
+      ...hca,
+      ports: hca.ports.map((port) => {
+        // Only accumulate errors on active ports
+        if (port.state !== 'Active') return port;
+
+        // Simulate occasional errors (rare events, ~2% chance per tick)
+        if (Math.random() < 0.02) {
+          const errorType = Math.floor(Math.random() * 4);
+          const newErrors = { ...port.errors };
+
+          switch (errorType) {
+            case 0:
+              newErrors.symbolErrors += Math.floor(Math.random() * 3) + 1;
+              break;
+            case 1:
+              newErrors.portRcvErrors += 1;
+              break;
+            case 2:
+              newErrors.portXmitWait += Math.floor(Math.random() * 10) + 1;
+              break;
+            case 3:
+              newErrors.portXmitDiscards += Math.floor(Math.random() * 2) + 1;
+              break;
+            // linkDowned only if major fault, not during normal simulation
+          }
+
+          return { ...port, errors: newErrors };
+        }
+
+        return port;
+      }),
+    }));
+  }
+
+  private updateGpuMetrics(gpus: GPU[]): GPU[] {
     return gpus.map((gpu) => {
       // Simulate realistic GPU utilization changes
       const utilizationChange = (Math.random() - 0.5) * 10;
@@ -126,9 +184,13 @@ export class MetricsSimulator {
         };
 
       case 'thermal':
+        // Apply thermal throttling immediately - same formula as updateMetrics
+        const thermalTemp = 85;
+        const throttledClocks = Math.round(1410 - (thermalTemp - 70) * 10); // 1260 MHz
         return {
           ...gpu,
-          temperature: 85,
+          temperature: thermalTemp,
+          clocksSM: throttledClocks,
           healthStatus: 'Warning',
         };
 

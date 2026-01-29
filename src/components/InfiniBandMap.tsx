@@ -8,7 +8,7 @@
 
 import React, { useEffect, useRef, useMemo, useState } from 'react';
 import * as d3 from 'd3';
-import type { ClusterConfig } from '@/types/hardware';
+import type { ClusterConfig, DGXNode } from '@/types/hardware';
 import { Network } from 'lucide-react';
 import { useNetworkAnimation, AnimationLink } from '@/hooks/useNetworkAnimation';
 import { useSimulationStore } from '@/store/simulationStore';
@@ -44,6 +44,26 @@ const bandwidthLabel = (bandwidth: number): string => {
   return 'EDR 100 Gb/s';
 };
 
+// Helper to determine link color based on host port errors
+const getLinkColor = (
+  host: DGXNode | undefined,
+  baseStatus: 'active' | 'down'
+): string => {
+  if (baseStatus === 'down' || !host) return '#EF4444'; // Red for down
+
+  // Sum errors across all HCA ports
+  const totalErrors = host.hcas.reduce((sum, hca) =>
+    sum + hca.ports.reduce((portSum, port) =>
+      portSum + port.errors.symbolErrors + port.errors.portRcvErrors + port.errors.linkDowned, 0
+    ), 0
+  );
+
+  if (totalErrors === 0) return '#10B981'; // Green - healthy
+  if (totalErrors < 10) return '#EAB308';  // Yellow - minor errors
+  if (totalErrors < 50) return '#F97316';  // Orange - moderate errors
+  return '#EF4444';                         // Red - high errors
+};
+
 interface InfiniBandMapProps {
   cluster: ClusterConfig;
   fabricConfig?: FabricTierConfig;
@@ -75,8 +95,24 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const particleGroupRef = useRef<SVGGElement | null>(null);
+  const detailPanelRef = useRef<HTMLDivElement>(null);
   const isRunning = useSimulationStore((state) => state.isRunning);
   const [selectedNode, setSelectedNode] = useState<NetworkNodeType | null>(null);
+
+  // Close panel when clicking anywhere outside of it
+  useEffect(() => {
+    if (!selectedNode) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (detailPanelRef.current && !detailPanelRef.current.contains(event.target as Node)) {
+        setSelectedNode(null);
+      }
+    };
+
+    // Use mousedown for immediate response
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [selectedNode]);
 
   // Calculate animation links from fabric topology
   const animationLinks: AnimationLink[] = useMemo(() => {
@@ -243,7 +279,7 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
       }
     });
 
-    // Draw links
+    // Draw links with error-based coloring
     const linkGroup = svg.append('g').attr('class', 'links');
 
     linkGroup
@@ -255,18 +291,51 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
       .attr('y1', (d) => d.source.y)
       .attr('x2', (d) => d.target.x)
       .attr('y2', (d) => d.target.y)
-      .attr('stroke', (d) => (d.status === 'active' ? '#10B981' : '#EF4444'))
+      .attr('stroke', (d) => {
+        // For host links, check host's port errors
+        if (d.target.type === 'host') {
+          const hostNode = cluster.nodes.find(n => n.id === d.target.id);
+          return getLinkColor(hostNode, d.status);
+        }
+        // Spine-leaf links use simple status
+        return d.status === 'active' ? '#10B981' : '#EF4444';
+      })
       .attr('stroke-width', (d) => {
-        // Spine-to-leaf links are thicker (higher bandwidth)
         const isBackbone = d.source.type === 'spine' || d.target.type === 'spine';
         return isBackbone
           ? bandwidthToWidth(fabricConfig.spineToLeafBandwidth)
           : bandwidthToWidth(fabricConfig.leafToHostBandwidth);
       })
       .attr('stroke-dasharray', (d) => (d.status === 'active' ? '0' : '5,5'))
-      .attr('opacity', 0.5)
+      .attr('opacity', (d) => {
+        // Highlight degraded links slightly
+        if (d.target.type === 'host') {
+          const hostNode = cluster.nodes.find(n => n.id === d.target.id);
+          const totalErrors = hostNode?.hcas.reduce((sum, hca) =>
+            sum + hca.ports.reduce((portSum, port) =>
+              portSum + port.errors.symbolErrors + port.errors.portRcvErrors, 0
+            ), 0
+          ) || 0;
+          return totalErrors > 0 ? 0.8 : 0.5;
+        }
+        return 0.5;
+      })
       .append('title')
-      .text((d) => `${d.source.label} → ${d.target.label}\nStatus: ${d.status}\nSpeed: ${d.speed}`);
+      .text((d) => {
+        let tooltip = `${d.source.label} → ${d.target.label}\nStatus: ${d.status}\nSpeed: ${d.speed}`;
+        if (d.target.type === 'host') {
+          const hostNode = cluster.nodes.find(n => n.id === d.target.id);
+          if (hostNode) {
+            const totalErrors = hostNode.hcas.reduce((sum, hca) =>
+              sum + hca.ports.reduce((portSum, port) =>
+                portSum + port.errors.symbolErrors + port.errors.portRcvErrors, 0
+              ), 0
+            );
+            tooltip += `\nPort Errors: ${totalErrors}`;
+          }
+        }
+        return tooltip;
+      });
 
     // Draw nodes
     const nodeGroup = svg.append('g').attr('class', 'nodes');
@@ -392,12 +461,53 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
       .on('click', function (event, d) {
         event.stopPropagation();
         if (d.type === 'spine' || d.type === 'leaf') {
+          // Calculate connected nodes based on switch type
+          const connectedNodes: string[] = [];
+          let portCount: number;
+          let bandwidth: string;
+
+          if (d.type === 'spine') {
+            // Spine connects to all leaf switches
+            portCount = leafCount * 2; // 2 ports per leaf connection for redundancy
+            bandwidth = bandwidthLabel(fabricConfig.spineToLeafBandwidth);
+            for (let i = 0; i < leafCount; i++) {
+              connectedNodes.push(`Leaf ${i + 1}`);
+            }
+          } else {
+            // Leaf connects to hosts and spines
+            const hostsPerLeaf = Math.ceil(hostNodes.length / leafNodes.length);
+            const leafIdx = parseInt(d.id.split('-')[1]);
+            const startHost = leafIdx * hostsPerLeaf;
+            const endHost = Math.min(startHost + hostsPerLeaf, hostNodes.length);
+
+            portCount = spineCount + hostsPerLeaf; // Uplinks to spines + downlinks to hosts
+            bandwidth = bandwidthLabel(fabricConfig.leafToHostBandwidth);
+
+            for (let i = startHost; i < endHost; i++) {
+              if (hostNodes[i]) {
+                connectedNodes.push(hostNodes[i].label.replace('dgx-', ''));
+              }
+            }
+          }
+
           setSelectedNode({
             type: 'switch',
             data: {
               id: d.id,
               switchType: d.type,
               status: d.status === 'active' ? 'active' : 'down',
+              portCount,
+              activePortCount: d.status === 'active' ? portCount : 0,
+              bandwidth,
+              connectedNodes,
+              throughput: d.type === 'spine'
+                ? 800 + Math.floor(Math.random() * 400)  // Spine: 800-1200 GB/s
+                : 200 + Math.floor(Math.random() * 200), // Leaf: 200-400 GB/s
+              temperature: 45 + Math.floor(Math.random() * 15), // 45-60°C
+              model: d.type === 'spine'
+                ? 'NVIDIA QM9700 (NDR)'
+                : 'NVIDIA QM8700 (HDR)',
+              firmwareVersion: '29.2008.1234',
             },
           });
         } else if (d.type === 'host') {
@@ -499,14 +609,16 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
 
         {/* Network Node Detail Panel */}
         {selectedNode && (
-          <NetworkNodeDetail
-            node={selectedNode}
-            onClose={() => setSelectedNode(null)}
-            onInjectFault={(faultType) => {
-              console.log('Inject fault:', faultType, 'on', selectedNode);
-              // TODO: Wire to simulation store for fault injection
-            }}
-          />
+          <div ref={detailPanelRef}>
+            <NetworkNodeDetail
+              node={selectedNode}
+              onClose={() => setSelectedNode(null)}
+              onInjectFault={(faultType) => {
+                console.log('Inject fault:', faultType, 'on', selectedNode);
+                // TODO: Wire to simulation store for fault injection
+              }}
+            />
+          </div>
         )}
       </div>
 
@@ -519,26 +631,30 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
         {isRunning && <span>({particles.length} active flows)</span>}
       </div>
 
-      <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+      <div className="mt-4 grid grid-cols-2 md:grid-cols-6 gap-3 text-sm">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-blue-500 rounded" />
-          <span className="text-gray-300">Spine Switch</span>
+          <span className="text-gray-300">Spine</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-purple-500" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }} />
-          <span className="text-gray-300">Leaf Switch</span>
+          <span className="text-gray-300">Leaf</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-green-500 rounded-full" />
-          <span className="text-gray-300">Active Host</span>
+          <span className="text-gray-300">Host</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-0.5 bg-green-500" />
-          <span className="text-gray-300">Active Link</span>
+          <div className="w-4 h-0.5 bg-green-500" />
+          <span className="text-gray-300">Healthy</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-0.5 bg-red-500" style={{ borderTop: '2px dashed' }} />
-          <span className="text-gray-300">Down Link</span>
+          <div className="w-4 h-0.5 bg-yellow-500" />
+          <span className="text-gray-300">Errors</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-0.5 bg-red-500" style={{ borderTop: '2px dashed' }} />
+          <span className="text-gray-300">Down</span>
         </div>
       </div>
 

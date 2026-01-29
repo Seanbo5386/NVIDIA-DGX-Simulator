@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { ClusterConfig, GPU, HealthStatus, XIDError } from '@/types/hardware';
+import type { ClusterConfig, GPU, HealthStatus, XIDError, InfiniBandHCA } from '@/types/hardware';
 import type { Scenario, ScenarioProgress, ExamState, ExamBreakdown } from '@/types/scenarios';
 import type { ValidationResult, ValidationConfig } from '@/types/validation';
 import { createDefaultCluster } from '@/utils/clusterFactory';
@@ -38,6 +38,7 @@ interface SimulationState {
   setCluster: (cluster: ClusterConfig) => void;
   selectNode: (nodeId: string) => void;
   updateGPU: (nodeId: string, gpuId: number, updates: Partial<GPU>) => void;
+  updateHCAs: (nodeId: string, hcas: InfiniBandHCA[]) => void;
   updateNodeHealth: (nodeId: string, health: HealthStatus) => void;
   addXIDError: (nodeId: string, gpuId: number, error: XIDError) => void;
   setMIGMode: (nodeId: string, gpuId: number, enabled: boolean) => void;
@@ -135,6 +136,17 @@ export const useSimulationStore = create<SimulationState>()(
                   gpu.id === gpuId ? { ...gpu, ...updates } : gpu
                 ),
               }
+              : node
+          ),
+        },
+      })),
+
+      updateHCAs: (nodeId, hcas) => set((state) => ({
+        cluster: {
+          ...state.cluster,
+          nodes: state.cluster.nodes.map(node =>
+            node.id === nodeId
+              ? { ...node, hcas }
               : node
           ),
         },
