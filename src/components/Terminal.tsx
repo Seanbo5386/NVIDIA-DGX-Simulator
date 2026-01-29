@@ -42,7 +42,7 @@ interface TerminalProps {
 export const Terminal: React.FC<TerminalProps> = ({ className = '' }) => {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
-  const [_currentCommand, setCurrentCommand] = useState('');
+  const [, setCurrentCommand] = useState('');
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [isTerminalReady, setIsTerminalReady] = useState(false);

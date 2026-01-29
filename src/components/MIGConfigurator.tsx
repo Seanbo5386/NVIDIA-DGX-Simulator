@@ -48,7 +48,7 @@ export const MIGConfigurator: React.FC<MIGConfiguratorProps> = ({
 }) => {
   const [isEnabled, setIsEnabled] = useState(gpu.migMode);
   const [instances, setInstances] = useState<ConfiguredInstance[]>([]);
-  const [_selectedProfile, setSelectedProfile] = useState<MIGProfile | null>(null);
+  const [, setSelectedProfile] = useState<MIGProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Calculate total slices used

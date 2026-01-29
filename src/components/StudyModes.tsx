@@ -44,13 +44,13 @@ const MODE_ICONS: Record<StudyMode, React.ReactNode> = {
 export function StudyModes({ onClose, onStartLab: _onStartLab }: StudyModesProps) {
   const [view, setView] = useState<'select' | 'domain-select' | 'session' | 'flashcards' | 'results'>('select');
   const [selectedMode, setSelectedMode] = useState<StudyMode | null>(null);
-  const [_selectedDomain, setSelectedDomain] = useState<DomainId | null>(null);
+  const [, setSelectedDomain] = useState<DomainId | null>(null);
   const [allQuestions, setAllQuestions] = useState<ExamQuestion[]>([]);
   const [session, setSession] = useState<StudySession | null>(null);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isCardFlipped, setIsCardFlipped] = useState(false);
-  const [commandsUsed, _setCommandsUsed] = useState<string[]>([]);
+  const [commandsUsed] = useState<string[]>([]);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
 
