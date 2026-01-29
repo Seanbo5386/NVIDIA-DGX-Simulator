@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   getVisualizationContext,
   getRelatedScenarios,
-  VisualizationContext,
   SCENARIO_VIZ_MAP,
 } from '../scenarioVisualizationMap';
 

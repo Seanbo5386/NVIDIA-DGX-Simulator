@@ -6,6 +6,11 @@ import { MetricsChart } from './MetricsChart';
 import { TopologyGraph } from './TopologyGraph';
 import { InfiniBandMap } from './InfiniBandMap';
 import { MetricsHistory } from '@/utils/metricsHistory';
+import { VisualContextPanel } from './VisualContextPanel';
+import {
+  getVisualizationContext,
+  VisualizationContext,
+} from '@/utils/scenarioVisualizationMap';
 
 const HealthIndicator: React.FC<{ status: HealthStatus }> = ({ status }) => {
   const config = {
@@ -206,6 +211,21 @@ export const Dashboard: React.FC = () => {
   const isRunning = useSimulationStore(state => state.isRunning);
   const [activeView, setActiveView] = useState<DashboardView>('overview');
   const [selectedGPU, setSelectedGPU] = useState<string>('GPU0');
+  const [activeScenario, setActiveScenario] = useState<VisualizationContext | null>(null);
+
+  // Handler for launching a scenario from the context panel
+  const handleLaunchScenario = (scenarioId: string) => {
+    const context = getVisualizationContext(scenarioId);
+    if (context) {
+      setActiveScenario(context);
+      // Switch to the appropriate view based on the scenario's primary view
+      if (context.primaryView === 'topology' || context.primaryView === 'both') {
+        setActiveView('topology');
+      } else if (context.primaryView === 'network') {
+        setActiveView('network');
+      }
+    }
+  };
 
   const currentNode = cluster.nodes.find(n => n.id === selectedNode) || cluster.nodes[0];
 
@@ -342,15 +362,33 @@ export const Dashboard: React.FC = () => {
 
       {/* NVLink Topology Tab */}
       {activeView === 'topology' && (
-        <div>
-          <TopologyGraph node={currentNode} />
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <div className="lg:col-span-3">
+            <TopologyGraph node={currentNode} />
+          </div>
+          <div className="lg:col-span-1">
+            <VisualContextPanel
+              activeScenario={activeScenario}
+              currentView="topology"
+              onLaunchScenario={handleLaunchScenario}
+            />
+          </div>
         </div>
       )}
 
       {/* InfiniBand Fabric Tab */}
       {activeView === 'network' && (
-        <div>
-          <InfiniBandMap cluster={cluster} />
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <div className="lg:col-span-3">
+            <InfiniBandMap cluster={cluster} />
+          </div>
+          <div className="lg:col-span-1">
+            <VisualContextPanel
+              activeScenario={activeScenario}
+              currentView="network"
+              onLaunchScenario={handleLaunchScenario}
+            />
+          </div>
         </div>
       )}
     </div>
