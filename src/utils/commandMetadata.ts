@@ -1555,6 +1555,53 @@ export const COMMAND_METADATA: Record<string, CommandMetadata> = {
       'Running during active GPU workloads which can affect results',
     ],
   },
+
+  'clusterkit': {
+    name: 'clusterkit',
+    category: 'diagnostics',
+    shortDescription: 'Comprehensive node assessment tool',
+    longDescription: 'ClusterKit is a comprehensive node assessment tool that validates GPU health, network connectivity, storage, firmware versions, and driver compatibility. It performs system-wide checks and provides a detailed health report.',
+    syntax: 'clusterkit <subcommand> [OPTIONS]',
+    difficulty: 'intermediate',
+    domains: ['domain4'],
+
+    examples: [
+      {
+        command: 'clusterkit assess',
+        description: 'Run full node assessment across all categories',
+      },
+      {
+        command: 'clusterkit check gpu',
+        description: 'Run GPU-specific health checks',
+      },
+      {
+        command: 'clusterkit check network',
+        description: 'Verify InfiniBand connectivity and performance',
+      },
+      {
+        command: 'clusterkit check storage',
+        description: 'Validate filesystem and storage configuration',
+      },
+      {
+        command: 'clusterkit check firmware',
+        description: 'Check firmware versions across all components',
+      },
+      {
+        command: 'clusterkit check drivers',
+        description: 'Verify driver compatibility and versions',
+      },
+    ],
+
+    whenToUse: 'Use clusterkit for comprehensive node validation after installation, pre-deployment checks, periodic health assessments, and troubleshooting multi-component issues.',
+
+    relatedCommands: ['dcgmi health', 'nvidia-smi', 'ibstat', 'mlxfwmanager'],
+
+    commonMistakes: [
+      'Not addressing warnings in the assessment report',
+      'Running assessment during active workloads which may affect results',
+      'Ignoring specific category failures in the overall report',
+    ],
+  },
 };
 
 /**
