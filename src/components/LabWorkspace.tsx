@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSimulationStore } from '@/store/simulationStore';
 import { X, ChevronRight, Check, HelpCircle, Clock, Lightbulb, CheckCircle, Circle, Eye } from 'lucide-react';
 import { HintManager } from '@/utils/hintManager';
@@ -7,6 +7,22 @@ import { getVisualizationContext } from '@/utils/scenarioVisualizationMap';
 
 interface LabWorkspaceProps {
   onClose: () => void;
+}
+
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    if (media.matches !== matches) {
+      setMatches(media.matches);
+    }
+    const listener = () => setMatches(media.matches);
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
+  }, [matches, query]);
+
+  return matches;
 }
 
 export function LabWorkspace({ onClose }: LabWorkspaceProps) {
@@ -18,9 +34,12 @@ export function LabWorkspace({ onClose }: LabWorkspaceProps) {
     revealHint: revealHintAction,
     stepValidation,
     validationConfig,
-    setRequestedVisualizationView
+    setRequestedVisualizationView,
+    labPanelVisible,
+    setLabPanelVisible
   } = useSimulationStore();
   const [showHints, setShowHints] = useState<Record<string, number>>({});
+  const isSmallScreen = useMediaQuery('(max-width: 1279px)');
 
   if (!activeScenario) {
     return null;
@@ -86,7 +105,21 @@ export function LabWorkspace({ onClose }: LabWorkspaceProps) {
   const isStepCompleted = currentStepProgress?.completed || false;
 
   return (
-    <div className="fixed inset-y-0 left-0 z-40 w-[600px] bg-gray-900 shadow-2xl flex flex-col border-r border-green-500 overflow-hidden">
+    <>
+      {/* Backdrop for small screens */}
+      {isSmallScreen && labPanelVisible && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 transition-opacity duration-300"
+          onClick={() => setLabPanelVisible(false)}
+        />
+      )}
+
+      {/* Lab Panel */}
+      <div
+        className={`fixed inset-y-0 left-0 z-40 w-[600px] bg-gray-900 shadow-2xl flex flex-col border-r border-green-500 overflow-hidden transition-transform duration-300 ease-in-out ${
+          isSmallScreen && !labPanelVisible ? '-translate-x-full' : 'translate-x-0'
+        }`}
+      >
       {/* Header */}
       <div className="bg-gray-800 px-6 py-4 border-b border-gray-700 flex items-center justify-between">
         <div>
@@ -524,5 +557,6 @@ export function LabWorkspace({ onClose }: LabWorkspaceProps) {
         </p>
       </div>
     </div>
+    </>
   );
 }
