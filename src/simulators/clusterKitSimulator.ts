@@ -71,12 +71,12 @@ export class ClusterKitSimulator extends BaseSimulator {
     return handler(parsed, context) as CommandResult;
   }
 
-  private getTargetNode(parsed: ParsedCommand, _context: CommandContext): any {
+  private getTargetNode(parsed: ParsedCommand, context: CommandContext): any {
     const cluster = useSimulationStore.getState().cluster;
-    const nodeFlag = parsed.flags.get('node');
+    const nodeFlag = parsed.flags.get('node') || context.currentNode;
 
     if (nodeFlag) {
-      const node = cluster.nodes.find((n: any) => n.id === nodeFlag);
+      const node = cluster.nodes.find((n: any) => n.id === nodeFlag || n.hostname === nodeFlag);
       if (!node) {
         throw new Error(`Node ${nodeFlag} not found in cluster`);
       }
@@ -148,15 +148,16 @@ export class ClusterKitSimulator extends BaseSimulator {
     output += `Timestamp: ${assessment.timestamp.toISOString()}\n`;
     output += `Overall Health: ${assessment.overallHealth.toUpperCase()}\n\n`;
 
-    if (verbose) {
-      output += `Detailed Checks:\n`;
-      Object.entries(assessment.checks).forEach(([category, result]) => {
-        output += `  ${category}: ${result.status} - ${result.message}\n`;
-        if (result.details) {
-          result.details.forEach(detail => output += `    - ${detail}\n`);
-        }
-      });
-    }
+    // Always show check summary
+    Object.entries(assessment.checks).forEach(([category, result]) => {
+      const icon = result.status === 'pass' ? '✓' : result.status === 'warning' ? '⚠' : '✗';
+      output += `${icon} ${category.toUpperCase()}: ${result.message}\n`;
+
+      // Only show details in verbose mode
+      if (verbose && result.details) {
+        result.details.forEach(detail => output += `  - ${detail}\n`);
+      }
+    });
 
     return output;
   }
