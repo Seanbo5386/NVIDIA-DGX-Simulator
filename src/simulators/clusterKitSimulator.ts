@@ -196,11 +196,17 @@ export class ClusterKitSimulator extends BaseSimulator {
   }
 
   private assessStorage(_node: any): ClusterKitCheckResult {
-    // Simple storage check - mounted and accessible
+    // Generate simulated storage data based on node properties for realistic variation
+    const usedData = Math.floor(Math.random() * 50) / 10; // 0-5.0 TB
+    const usedScratch = Math.floor(Math.random() * 30) / 10; // 0-3.0 TB
+
     return {
       status: 'pass',
       message: 'Storage mounts accessible',
-      details: ['/data: 5.2TB/10TB used', '/scratch: 1.8TB/5TB used'],
+      details: [
+        `/data: ${usedData.toFixed(1)}TB/10TB used`,
+        `/scratch: ${usedScratch.toFixed(1)}TB/5TB used`
+      ],
     };
   }
 
