@@ -225,6 +225,7 @@ function App() {
             <span className="font-medium">Simulator</span>
           </button>
           <button
+            data-testid="nav-labs"
             onClick={() => setCurrentView('labs')}
             className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${currentView === 'labs'
               ? 'border-nvidia-green text-nvidia-green'
@@ -254,7 +255,7 @@ function App() {
         )}
 
         {currentView === 'labs' && (
-          <div className="p-6 h-full overflow-auto">
+          <div data-testid="labs-list" className="p-6 h-full overflow-auto">
             <div className="max-w-6xl mx-auto">
               {/* Fault Injection System */}
               <FaultInjection />

@@ -14,15 +14,15 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onClose }) => {
     }, []);
 
     return (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+        <div data-testid="welcome-screen" className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
             {/* Background Backdrop with Blur and Overlay */}
             <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
 
             {/* Main Content Container */}
-            <div className={`relative z-10 w-full max-w-5xl bg-gray-900/90 border border-gray-700/50 rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-700 delay-100 ${isVisible ? 'translate-y-0 scale-100' : 'translate-y-10 scale-95'}`}>
+            <div className={`relative z-10 w-full max-w-5xl max-h-[90vh] bg-gray-900/90 border border-gray-700/50 rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-700 delay-100 flex flex-col ${isVisible ? 'translate-y-0 scale-100' : 'translate-y-10 scale-95'}`}>
 
                 {/* Header Section */}
-                <div className="relative overflow-hidden bg-gradient-to-r from-black to-gray-900 p-10 text-center border-b border-gray-800">
+                <div className="relative overflow-hidden bg-gradient-to-r from-black to-gray-900 p-10 text-center border-b border-gray-800 flex-shrink-0">
                     {/* Decorative NVIDIA Green Glow */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-1 bg-nvidia-green shadow-[0_0_20px_rgba(118,185,0,0.6)]" />
 
@@ -42,7 +42,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onClose }) => {
                 </div>
 
                 {/* Content Section */}
-                <div className="p-8 md:p-10 grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="p-8 md:p-10 grid grid-cols-1 md:grid-cols-2 gap-10 overflow-y-auto flex-1">
 
                     {/* Left Column: Mission & Description */}
                     <div className="space-y-6">
@@ -89,7 +89,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onClose }) => {
                 </div>
 
                 {/* Footer / Action */}
-                <div className="bg-gray-900 border-t border-gray-800 p-8 flex justify-center">
+                <div className="bg-gray-900 border-t border-gray-800 p-8 flex justify-center flex-shrink-0">
                     <button
                         onClick={() => {
                             setIsVisible(false);

@@ -123,6 +123,7 @@ export function LabWorkspace({ onClose }: LabWorkspaceProps) {
 
       {/* Lab Panel */}
       <div
+        data-testid="lab-workspace"
         className={`fixed inset-y-0 left-0 z-40 w-[90vw] max-w-[500px] sm:w-[500px] lg:w-[600px] bg-gray-900 shadow-2xl flex flex-col border-r border-green-500 overflow-hidden transition-transform duration-300 ease-in-out ${
           isSmallScreen && !labPanelVisible ? '-translate-x-full' : 'translate-x-0'
         }`}

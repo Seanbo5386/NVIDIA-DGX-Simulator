@@ -846,7 +846,7 @@ export const Terminal: React.FC<TerminalProps> = ({ className = '' }) => {
   useLabFeedback(xtermRef.current, isTerminalReady, selectedNode || 'dgx-00');
 
   return (
-    <div className={`terminal-container ${className}`}>
+    <div data-testid="terminal" className={`terminal-container ${className}`}>
       <div className="terminal-node-indicator px-3 py-1.5 bg-gray-800 border-b border-gray-700 text-xs font-mono flex items-center gap-2">
         <span className="text-gray-400">Terminal connected to:</span>
         <span className="text-green-400 font-semibold">{connectedNode}</span>
