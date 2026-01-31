@@ -264,7 +264,7 @@ export class InfiniBandSimulator extends BaseSimulator {
   }
 
   /**
-   * ibdiagnet - Full fabric diagnostic
+   * ibdiagnet - Full fabric diagnostic with optional signal quality metrics
    */
   executeIbdiagnet(parsed: ParsedCommand, context: CommandContext): CommandResult {
     if (this.hasAnyFlag(parsed, ['help', 'h'])) {
@@ -274,6 +274,8 @@ export class InfiniBandSimulator extends BaseSimulator {
       output += `  -t, --topo <file>    topology file\n`;
       output += `  -p, --port <num>     port number\n`;
       output += `  --skip <checks>      skip specific checks\n`;
+      output += `  --detailed           show detailed signal quality metrics\n`;
+      output += `  --signal-quality     show signal quality metrics\n`;
       output += `  -V, --version        show version\n`;
       output += `  -h, --help           show this help\n`;
       return this.createSuccess(output);
@@ -288,17 +290,49 @@ export class InfiniBandSimulator extends BaseSimulator {
       return this.createError('Error: No HCA found');
     }
 
-    const output = `\n-I- Using port 1 as the local port\n` +
+    const detailed = this.hasAnyFlag(parsed, ['detailed', 'd', 'signal-quality']);
+
+    let output = `\n-I- Using port 1 as the local port\n` +
       `-I- Discovering ... \n` +
       `-I- Discovering done\n` +
       `-I- # of nodes: ${node.hcas.length}\n` +
       `-I- # of links: ${node.hcas.length}\n` +
       `-I- # of CAs: ${node.hcas.length}\n` +
       `-I- # of switches: 0\n` +
-      `-I- Checking fabric health...\n` +
-      `-I- Fabric health check completed\n` +
-      `-I- No errors found\n` +
-      `-I- See report in /tmp/ibdiagnet2\n`;
+      `-I- Checking fabric health...\n`;
+
+    if (detailed) {
+      output += `-I- Running signal quality checks...\n\n`;
+      output += `Cable Validation Report - ${node.hostname}\n`;
+      output += `${'='.repeat(60)}\n\n`;
+
+      node.hcas.forEach((hca: any, idx: number) => {
+        output += `Port ${idx + 1}: ${hca.ports[0]?.guid || 'unknown'}\n`;
+        output += `  Cable Type: ${hca.cableType || 'QSFP-DD AOC'}\n`;
+        output += `  Cable Length: ${hca.cableLength || '5m'}\n`;
+        output += `  Link State: ${hca.ports[0]?.state || 'Active'}\n`;
+        output += `  Link Speed: 400 Gb/s (HDR)\n`;
+
+        // Add signal quality metrics
+        const rxPower = -2.5 + (Math.random() * 0.5); // -2.5 to -2.0 dBm
+        const txPower = -1.8 + (Math.random() * 0.3); // -1.8 to -1.5 dBm
+        const ber = Math.random() * 1e-12; // Bit Error Rate
+        const snr = 25 + Math.random() * 5; // Signal-to-Noise Ratio 25-30 dB
+
+        output += `\n  Signal Quality Metrics:\n`;
+        output += `    RX Power: ${rxPower.toFixed(2)} dBm (Normal: -3.0 to -1.5)\n`;
+        output += `    TX Power: ${txPower.toFixed(2)} dBm (Normal: -2.0 to -1.0)\n`;
+        output += `    Bit Error Rate: ${ber.toExponential(2)} (Threshold: < 1e-9)\n`;
+        output += `    SNR: ${snr.toFixed(1)} dB (Normal: > 20 dB)\n`;
+        output += `    Eye Opening: 95% (Normal: > 80%)\n`;
+        output += `    Status: ${rxPower > -3 && ber < 1e-9 && snr > 20 ? '✓ PASS' : '✗ FAIL'}\n`;
+        output += `\n`;
+      });
+    }
+
+    output += `-I- Fabric health check completed\n`;
+    output += `-I- No errors found\n`;
+    output += `-I- See report in /tmp/ibdiagnet2\n`;
 
     return this.createSuccess(output);
   }
