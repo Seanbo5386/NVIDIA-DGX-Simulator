@@ -49,8 +49,30 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const particleGroupRef = useRef<SVGGElement | null>(null);
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  const nodeDataRef = useRef(node); // Ref to access current node data in click handlers
   const isRunning = useSimulationStore((state) => state.isRunning);
   const [selectedNode, setSelectedNode] = useState<NetworkNodeType | null>(null);
+
+  // Keep ref updated with latest node data
+  useEffect(() => {
+    nodeDataRef.current = node;
+  }, [node]);
+
+  // Close panel when clicking anywhere outside of it
+  useEffect(() => {
+    if (!selectedNode) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (detailPanelRef.current && !detailPanelRef.current.contains(event.target as Node)) {
+        setSelectedNode(null);
+      }
+    };
+
+    // Use mousedown for immediate response
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [selectedNode]);
 
   // Get layout for this system type
   const layout = useMemo(() => getLayoutForSystem(node.systemType), [node.systemType]);
@@ -93,6 +115,49 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
     links: animationLinks,
   });
 
+  // Memoize static layout data to prevent unnecessary recalculations
+  const { nodes, links, nvSwitchPositions } = useMemo(() => {
+    const width = 800;
+    const height = 500;
+    const gpuPos = calculateGPUPositions(layout, width, height);
+    const nvSwitchPos = calculateNVSwitchPositions(layout, width, height);
+
+    // Create nodes for each GPU using layout positions
+    const nodeList: GraphNode[] = node.gpus.map((gpu, idx) => {
+      const pos = gpuPos.find((p) => p.gpuIndex === idx) || { x: 100, y: 100 };
+      return {
+        id: gpu.id,
+        name: `GPU ${idx}`,
+        health: gpu.healthStatus,
+        utilization: gpu.utilization,
+        temperature: gpu.temperature,
+        x: pos.x,
+        y: pos.y,
+      };
+    });
+
+    // Create links using layout's NVLink connections
+    const linkList: GraphLink[] = layout.nvLinkConnections.map((conn) => {
+      const sourceNode = nodeList.find((n) => n.id === conn.from);
+      const targetNode = nodeList.find((n) => n.id === conn.to);
+      if (!sourceNode || !targetNode) return null;
+
+      const sourceGpu = node.gpus[conn.from];
+      const linkStatus = sourceGpu?.nvlinks.some((l) => l.status === 'Active') ? 'Active' : 'Down';
+      const bandwidth = sourceGpu?.nvlinks[0]?.speed || 900;
+
+      return {
+        source: sourceNode,
+        target: targetNode,
+        status: linkStatus,
+        bandwidth: `${bandwidth} GB/s`,
+      };
+    }).filter((link): link is GraphLink => link !== null);
+
+    return { nodes: nodeList, links: linkList, nvSwitchPositions: nvSwitchPos };
+  }, [node.gpus, layout]);
+
+  // Initial SVG setup - only runs when layout changes, NOT on every node data update
   useEffect(() => {
     if (!svgRef.current) return;
 
@@ -108,43 +173,7 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
       .attr('height', height)
       .attr('viewBox', `0 0 ${width} ${height}`);
 
-    // Get accurate positions from layout
-    const gpuPositions = calculateGPUPositions(layout, width, height);
-    const nvSwitchPositions = calculateNVSwitchPositions(layout, width, height);
-
-    // Create nodes for each GPU using layout positions
-    const nodes: GraphNode[] = node.gpus.map((gpu, idx) => {
-      const pos = gpuPositions.find((p) => p.gpuIndex === idx) || { x: 100, y: 100 };
-      return {
-        id: gpu.id,
-        name: `GPU ${idx}`,
-        health: gpu.healthStatus,
-        utilization: gpu.utilization,
-        temperature: gpu.temperature,
-        x: pos.x,
-        y: pos.y,
-      };
-    });
-
-    // Create links using layout's NVLink connections
-    const links: GraphLink[] = layout.nvLinkConnections.map((conn) => {
-      const sourceNode = nodes.find((n) => n.id === conn.from);
-      const targetNode = nodes.find((n) => n.id === conn.to);
-      if (!sourceNode || !targetNode) return null;
-
-      const sourceGpu = node.gpus[conn.from];
-      const linkStatus = sourceGpu?.nvlinks.some((l) => l.status === 'Active') ? 'Active' : 'Down';
-      const bandwidth = sourceGpu?.nvlinks[0]?.speed || 900;
-
-      return {
-        source: sourceNode,
-        target: targetNode,
-        status: linkStatus,
-        bandwidth: `${bandwidth} GB/s`,
-      };
-    }).filter((link): link is GraphLink => link !== null);
-
-    // Draw links
+    // Draw links using memoized data
     const linkGroup = svg.append('g').attr('class', 'links');
 
     linkGroup
@@ -345,7 +374,8 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
       })
       .on('click', function (event, d) {
         event.stopPropagation();
-        const gpu = node.gpus.find((g) => g.id === d.id);
+        // Use ref to get current GPU data without triggering re-render
+        const gpu = nodeDataRef.current.gpus.find((g) => g.id === d.id);
         if (gpu) {
           setSelectedNode({ type: 'gpu', data: gpu });
         }
@@ -356,7 +386,7 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
 
     // Add particle container group for animations
     particleGroupRef.current = svg.append('g').attr('class', 'particles').node();
-  }, [node, layout, highlightedGpus, highlightedLinks]);
+  }, [nodes, links, nvSwitchPositions, layout, highlightedGpus, highlightedLinks]);
 
   // Particle animation render effect
   useEffect(() => {
@@ -395,7 +425,7 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
 
       {/* Network Node Detail Panel - positioned relative to main container */}
       {selectedNode && (
-        <div onClick={(e) => e.stopPropagation()}>
+        <div ref={detailPanelRef}>
           <NetworkNodeDetail
             node={selectedNode}
             onClose={() => setSelectedNode(null)}
