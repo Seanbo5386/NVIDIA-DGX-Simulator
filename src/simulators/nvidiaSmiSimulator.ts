@@ -337,6 +337,29 @@ export class NvidiaSmiSimulator extends BaseSimulator {
     }
 
     // Default: show basic GPU listing
+    // Handle -i flag for filtering specific GPU in default view
+    const defaultGpuIdStr = this.getFlagString(parsed, ['i', 'id']);
+    if (defaultGpuIdStr) {
+      const validationError = this.validateGpuIndex(defaultGpuIdStr, node);
+      if (validationError) {
+        return validationError;
+      }
+      const targetGpuId = parseInt(defaultGpuIdStr);
+      const targetGpu = node.gpus.find(g => g.id === targetGpuId);
+      if (targetGpu && this.hasGPUFallenOffBus(targetGpu)) {
+        return this.createError(
+          `Unable to query GPU ${targetGpuId}: GPU has fallen off the bus (XID 79).\n` +
+          `Check 'dmesg | grep -i xid' for details. GPU reset or system reboot may be required.`
+        );
+      }
+      // Show just the specified GPU
+      const filteredGPUs = node.gpus.filter(g => g.id === targetGpuId && !this.hasGPUFallenOffBus(g));
+      return {
+        output: this.formatDefault(filteredGPUs, node.gpus.length),
+        exitCode: 0,
+      };
+    }
+
     // Filter out GPUs that have fallen off the bus (XID 79)
     const visibleGPUs = node.gpus.filter(gpu => !this.hasGPUFallenOffBus(gpu));
     return {
@@ -415,6 +438,20 @@ export class NvidiaSmiSimulator extends BaseSimulator {
     const formatValue = this.getFlagString(parsed, ['format']) || 'csv';
     const isNoHeader = formatValue.includes('noheader');
 
+    // Validate all fields first - check for invalid metrics
+    const invalidFields: string[] = [];
+    for (const field of fieldList) {
+      if (!this.isValidQueryField(field)) {
+        invalidFields.push(field);
+      }
+    }
+    if (invalidFields.length > 0) {
+      return this.createError(
+        `Invalid or unsupported query field(s): ${invalidFields.join(', ')}\n` +
+        `Run 'nvidia-smi --help-query-gpu' for a list of valid fields.`
+      );
+    }
+
     // Build header row
     const headers = fieldList.map(f => {
       // Convert field name to display header (remove dots, capitalize)
@@ -433,6 +470,33 @@ export class NvidiaSmiSimulator extends BaseSimulator {
     }
 
     return this.createSuccess(output);
+  }
+
+  /**
+   * Check if a query field is valid/supported
+   */
+  private isValidQueryField(field: string): boolean {
+    const validFields = new Set([
+      'driver_version', 'cuda_version', 'vbios_version', 'serial',
+      'gpu_name', 'name', 'gpu_uuid', 'uuid', 'index', 'gpu_bus_id', 'pci.bus_id',
+      'mig.mode.current', 'mig.mode.pending',
+      'memory.total', 'memory.used', 'memory.free', 'memory.reserved',
+      'utilization.gpu', 'utilization.memory',
+      'temperature.gpu', 'temperature.memory',
+      'power.draw', 'power.limit', 'power.default_limit', 'power.max_limit',
+      'clocks.current.graphics', 'clocks.current.sm', 'clocks.current.memory',
+      'clocks.max.graphics', 'clocks.max.sm', 'clocks.max.memory',
+      'pcie.link.gen.current', 'pcie.link.gen.max',
+      'pcie.link.width.current', 'pcie.link.width.max',
+      'fan.speed', 'pstate', 'compute_mode', 'persistence_mode',
+      'ecc.mode.current', 'ecc.errors.corrected.volatile.total',
+      'ecc.errors.uncorrected.volatile.total', 'retired_pages.pending',
+      'retired_pages.sbe', 'retired_pages.dbe',
+      'timestamp',
+      'nvlink.link0.state', 'nvlink.link1.state', 'nvlink.link2.state',
+      'nvlink.link3.state', 'nvlink.link4.state', 'nvlink.link5.state',
+    ]);
+    return validFields.has(field.toLowerCase());
   }
 
   /**
