@@ -541,4 +541,80 @@ export abstract class BaseSimulator {
     if (!parsed?.flags) return false;
     return flags.some(flag => parsed.flags.has(flag));
   }
+
+  // ============================================
+  // Input Validation Utilities
+  // ============================================
+
+  /**
+   * Validate a GPU index is within valid range
+   * @param index - GPU index to validate
+   * @param maxGpus - Maximum number of GPUs
+   * @returns Validation result with error message if invalid
+   */
+  protected validateGpuIndex(index: number, maxGpus: number): { valid: boolean; error?: string } {
+    if (isNaN(index) || !Number.isInteger(index)) {
+      return { valid: false, error: `Invalid GPU index: ${index}. Must be an integer.` };
+    }
+    if (index < 0 || index >= maxGpus) {
+      return { valid: false, error: `Invalid GPU index: ${index}. Valid range is 0-${maxGpus - 1}.` };
+    }
+    return { valid: true };
+  }
+
+  /**
+   * Validate a string represents a positive integer
+   * @param value - String value to validate
+   * @param name - Name of the parameter for error messages
+   * @returns Validation result with parsed value if valid
+   */
+  protected validatePositiveInt(value: string, name: string = 'Value'): { valid: boolean; error?: string; value?: number } {
+    const num = parseInt(value, 10);
+    if (isNaN(num)) {
+      return { valid: false, error: `Invalid number: '${value}'` };
+    }
+    if (num < 0) {
+      return { valid: false, error: `${name} must be positive: ${num}` };
+    }
+    return { valid: true, value: num };
+  }
+
+  /**
+   * Validate a value is one of a set of valid options
+   * @param value - Value to validate
+   * @param validValues - Array of valid values
+   * @param name - Name of the parameter for error messages
+   * @returns Validation result with error message if invalid
+   */
+  protected validateInSet<T>(value: T, validValues: T[], name: string): { valid: boolean; error?: string } {
+    if (!validValues.includes(value)) {
+      return {
+        valid: false,
+        error: `Invalid ${name}: '${value}'. Valid options: ${validValues.join(', ')}`
+      };
+    }
+    return { valid: true };
+  }
+
+  /**
+   * Check for unknown flags and return an error if found
+   * @param parsed - Parsed command
+   * @param knownFlags - Set of known flag names
+   * @param commandName - Command name for error message
+   * @returns Error CommandResult if unknown flags found, null otherwise
+   */
+  protected checkUnknownFlags(
+    parsed: ParsedCommand,
+    knownFlags: Set<string>,
+    commandName: string
+  ): CommandResult | null {
+    if (!parsed?.flags) return null;
+    for (const flag of parsed.flags.keys()) {
+      if (!knownFlags.has(flag)) {
+        const flagStr = flag.length === 1 ? `-${flag}` : `--${flag}`;
+        return this.createError(`${commandName}: unrecognized option '${flagStr}'\nTry '${commandName} --help' for more information.`);
+      }
+    }
+    return null;
+  }
 }

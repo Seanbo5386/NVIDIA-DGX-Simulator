@@ -190,4 +190,112 @@ describe('BaseSimulator', () => {
       expect(metadata.commands.length).toBe(1);
     });
   });
+
+  describe('Input Validation Utilities', () => {
+    it('validateGpuIndex rejects negative numbers', () => {
+      const result = simulator['validateGpuIndex'](-1, 8);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain('Invalid GPU index: -1');
+      expect(result.error).toContain('0-7');
+    });
+
+    it('validateGpuIndex rejects out of range', () => {
+      const result = simulator['validateGpuIndex'](8, 8);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain('Invalid GPU index: 8');
+    });
+
+    it('validateGpuIndex accepts valid index', () => {
+      expect(simulator['validateGpuIndex'](0, 8)).toEqual({ valid: true });
+      expect(simulator['validateGpuIndex'](7, 8)).toEqual({ valid: true });
+    });
+
+    it('validateGpuIndex rejects NaN', () => {
+      const result = simulator['validateGpuIndex'](NaN, 8);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain('Must be an integer');
+    });
+
+    it('validatePositiveInt rejects non-numeric strings', () => {
+      const result = simulator['validatePositiveInt']('abc');
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Invalid number: 'abc'");
+    });
+
+    it('validatePositiveInt rejects negative numbers', () => {
+      const result = simulator['validatePositiveInt']('-5', 'Count');
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain('Count must be positive: -5');
+    });
+
+    it('validatePositiveInt accepts valid numbers', () => {
+      const result = simulator['validatePositiveInt']('42');
+      expect(result.valid).toBe(true);
+      expect(result.value).toBe(42);
+    });
+
+    it('validatePositiveInt accepts zero', () => {
+      const result = simulator['validatePositiveInt']('0');
+      expect(result.valid).toBe(true);
+      expect(result.value).toBe(0);
+    });
+
+    it('validateInSet rejects invalid values', () => {
+      const result = simulator['validateInSet']('invalid', ['a', 'b', 'c'], 'option');
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Invalid option: 'invalid'");
+      expect(result.error).toContain('a, b, c');
+    });
+
+    it('validateInSet accepts valid values', () => {
+      const result = simulator['validateInSet']('b', ['a', 'b', 'c'], 'option');
+      expect(result.valid).toBe(true);
+    });
+
+    it('checkUnknownFlags returns null for known flags', () => {
+      const parsed: ParsedCommand = {
+        baseCommand: 'test',
+        subcommands: [],
+        positionalArgs: [],
+        flags: new Map([['verbose', true], ['help', true]]),
+        rawArgs: ['--verbose', '--help'],
+        raw: 'test --verbose --help',
+      };
+      const knownFlags = new Set(['verbose', 'help', 'debug']);
+      const result = simulator['checkUnknownFlags'](parsed, knownFlags, 'test');
+      expect(result).toBeNull();
+    });
+
+    it('checkUnknownFlags returns error for unknown flags', () => {
+      const parsed: ParsedCommand = {
+        baseCommand: 'test',
+        subcommands: [],
+        positionalArgs: [],
+        flags: new Map([['unknown', true]]),
+        rawArgs: ['--unknown'],
+        raw: 'test --unknown',
+      };
+      const knownFlags = new Set(['verbose', 'help']);
+      const result = simulator['checkUnknownFlags'](parsed, knownFlags, 'test');
+      expect(result).not.toBeNull();
+      expect(result?.exitCode).toBe(1);
+      expect(result?.output).toContain('unrecognized option');
+      expect(result?.output).toContain('--unknown');
+    });
+
+    it('checkUnknownFlags handles short flags correctly', () => {
+      const parsed: ParsedCommand = {
+        baseCommand: 'test',
+        subcommands: [],
+        positionalArgs: [],
+        flags: new Map([['x', true]]),
+        rawArgs: ['-x'],
+        raw: 'test -x',
+      };
+      const knownFlags = new Set(['verbose', 'help']);
+      const result = simulator['checkUnknownFlags'](parsed, knownFlags, 'test');
+      expect(result).not.toBeNull();
+      expect(result?.output).toContain('-x');
+    });
+  });
 });
