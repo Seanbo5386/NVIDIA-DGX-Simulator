@@ -152,13 +152,22 @@ export class FabricManagerSimulator extends BaseSimulator {
         return this.queryTopology(context);
       case 'nvlink':
         return this.queryNvlink(context);
-      default: {
+      case undefined:
+      case '': {
+        // No query type specified - show help
         let output = `Query types:\n`;
         output += `  nvswitch   - Query NVSwitch status\n`;
         output += `  topology   - Query fabric topology\n`;
         output += `  nvlink     - Query NVLink status\n\n`;
         output += `Usage: nv-fabricmanager query <type>\n`;
         return this.createSuccess(output);
+      }
+      default: {
+        // Invalid query type - return error
+        return this.createError(
+          `Invalid query type: '${queryType}'\n` +
+          `Valid query types: nvswitch, topology, nvlink`
+        );
       }
     }
   }
