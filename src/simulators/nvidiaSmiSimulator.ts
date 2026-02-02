@@ -289,7 +289,7 @@ export class NvidiaSmiSimulator extends BaseSimulator {
       let targetGpuId: number | undefined = undefined;
 
       if (gpuIdStr) {
-        const validationError = this.validateGpuIndex(gpuIdStr, node);
+        const validationError = this.validateGpuIndexString(gpuIdStr, node);
         if (validationError) {
           return validationError;
         }
@@ -310,7 +310,7 @@ export class NvidiaSmiSimulator extends BaseSimulator {
       let targetGpuId: number | undefined = undefined;
 
       if (gpuIdStr) {
-        const validationError = this.validateGpuIndex(gpuIdStr, node);
+        const validationError = this.validateGpuIndexString(gpuIdStr, node);
         if (validationError) {
           return validationError;
         }
@@ -340,7 +340,7 @@ export class NvidiaSmiSimulator extends BaseSimulator {
     // Handle -i flag for filtering specific GPU in default view
     const defaultGpuIdStr = this.getFlagString(parsed, ['i', 'id']);
     if (defaultGpuIdStr) {
-      const validationError = this.validateGpuIndex(defaultGpuIdStr, node);
+      const validationError = this.validateGpuIndexString(defaultGpuIdStr, node);
       if (validationError) {
         return validationError;
       }
@@ -384,7 +384,7 @@ export class NvidiaSmiSimulator extends BaseSimulator {
    * Validate GPU index from -i/--id flag
    * Returns error result if invalid, null if valid
    */
-  private validateGpuIndex(gpuIdStr: string, node: DGXNode): CommandResult | null {
+  private validateGpuIndexString(gpuIdStr: string, node: DGXNode): CommandResult | null {
     const maxGpuIndex = node.gpus.length - 1;
 
     // Check for non-numeric input
@@ -1120,7 +1120,7 @@ export class NvidiaSmiSimulator extends BaseSimulator {
     }
 
     // Validate GPU ID using centralized validation
-    const validationError = this.validateGpuIndex(gpuIdStr, node);
+    const validationError = this.validateGpuIndexString(gpuIdStr, node);
     if (validationError) {
       return validationError;
     }
