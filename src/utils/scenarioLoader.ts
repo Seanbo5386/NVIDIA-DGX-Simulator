@@ -20,6 +20,9 @@ export async function loadScenarioFromFile(scenarioId: string): Promise<Scenario
       'domain1-fabric-manager': '/src/data/scenarios/domain1/fabric-manager-setup.json',
       'domain1-driver-rollback': '/src/data/scenarios/domain1/driver-rollback.json',
       'domain1-hw-inventory': '/src/data/scenarios/domain1/hardware-inventory-validation.json',
+      'domain1-firmware-update': '/src/data/scenarios/domain1/firmware-update-procedure.json',
+      'domain1-bmc-ipmi': '/src/data/scenarios/domain1/bmc-ipmi-configuration.json',
+      'domain1-network-bonding': '/src/data/scenarios/domain1/network-bonding.json',
 
       // Domain 2: Accelerator Configuration (6 scenarios)
       'domain2-mig-setup': '/src/data/scenarios/domain2/mig-configuration.json',
@@ -41,6 +44,8 @@ export async function loadScenarioFromFile(scenarioId: string): Promise<Scenario
       'domain3-nfs-tuning': '/src/data/scenarios/domain3/nfs-performance-tuning.json',
       'domain3-bcm-ha': '/src/data/scenarios/domain3/bcm-high-availability.json',
       'domain3-k8s-gpu-operator': '/src/data/scenarios/domain3/kubernetes-gpu-operator.json',
+      'domain3-slurm-gres': '/src/data/scenarios/domain3/slurm-gres-configuration.json',
+      'domain3-dcgm-policy': '/src/data/scenarios/domain3/dcgm-policy-setup.json',
 
       // Domain 4: Validation & Testing (12 scenarios)
       'domain4-dcgmi-diag': '/src/data/scenarios/domain4/dcgmi-diagnostics.json',
@@ -56,6 +61,8 @@ export async function loadScenarioFromFile(scenarioId: string): Promise<Scenario
       'domain4-gpu-reset': '/src/data/scenarios/domain4/gpu-reset-recovery.json',
       'domain4-hpl-optimization': '/src/data/scenarios/domain4/hpl-benchmark-optimization.json',
       'domain4-nccl-tuning': '/src/data/scenarios/domain4/nccl-bandwidth-tuning.json',
+      'domain4-multinode-nccl': '/src/data/scenarios/domain4/multi-node-nccl-test.json',
+      'domain4-gpudirect-rdma': '/src/data/scenarios/domain4/gpudirect-rdma-verify.json',
 
       // Domain 5: Troubleshooting (12 scenarios)
       'domain5-xid-errors': '/src/data/scenarios/domain5/xid-error-analysis.json',
@@ -70,6 +77,8 @@ export async function loadScenarioFromFile(scenarioId: string): Promise<Scenario
       'domain5-critical-xid': '/src/data/scenarios/domain5/critical-xid-response.json',
       'domain5-xid-nvlink': '/src/data/scenarios/domain5/xid-nvlink-troubleshooting.json',
       'domain5-xid-hardware': '/src/data/scenarios/domain5/xid-hardware-failures.json',
+      'domain5-physical-inspection': '/src/data/scenarios/domain5/physical-inspection.json',
+      'domain5-cable-diagnostics': '/src/data/scenarios/domain5/cable-diagnostics.json',
     };
 
     const filePath = scenarioFiles[scenarioId];
@@ -267,6 +276,9 @@ export function getAllScenarios(): Record<string, string[]> {
       'domain1-uefi-validation',
       'domain1-fabric-manager',
       'domain1-driver-rollback',
+      'domain1-firmware-update',    // Firmware Update Procedure
+      'domain1-bmc-ipmi',           // BMC/IPMI Configuration
+      'domain1-network-bonding',    // Network Bonding and InfiniBand
     ],
     domain2: [
       'domain2-mig-setup',
@@ -288,6 +300,8 @@ export function getAllScenarios(): Record<string, string[]> {
       'domain3-nfs-tuning',
       'domain3-bcm-ha',             // BCM High Availability
       'domain3-k8s-gpu-operator',   // Kubernetes GPU Operator
+      'domain3-slurm-gres',         // Slurm GRES Configuration
+      'domain3-dcgm-policy',        // DCGM Policy Setup
     ],
     domain4: [
       'domain4-dcgmi-diag',
@@ -303,6 +317,8 @@ export function getAllScenarios(): Record<string, string[]> {
       'domain4-gpu-reset',          // GPU reset and recovery
       'domain4-hpl-optimization',   // HPL benchmark optimization
       'domain4-nccl-tuning',        // NCCL bandwidth tuning
+      'domain4-multinode-nccl',     // Multi-Node NCCL Bandwidth Test
+      'domain4-gpudirect-rdma',     // GPUDirect RDMA Verification
     ],
     domain5: [
       'domain5-xid-errors',
@@ -317,6 +333,8 @@ export function getAllScenarios(): Record<string, string[]> {
       'domain5-critical-xid',       // Critical XID response
       'domain5-xid-nvlink',         // NVLink XID troubleshooting
       'domain5-xid-hardware',       // Hardware XID failures
+      'domain5-physical-inspection', // Physical Hardware Inspection
+      'domain5-cable-diagnostics',  // InfiniBand Cable Diagnostics
     ],
   };
 }
@@ -338,6 +356,9 @@ export function getScenarioMetadata(scenarioId: string): { title: string; diffic
     'domain1-uefi-validation': { title: 'UEFI BIOS Settings Validation for DGX', difficulty: 'intermediate', estimatedTime: 30 },
     'domain1-fabric-manager': { title: 'Fabric Manager Configuration and Validation', difficulty: 'advanced', estimatedTime: 45 },
     'domain1-driver-rollback': { title: 'GPU Driver Rollback Procedures', difficulty: 'advanced', estimatedTime: 35 },
+    'domain1-firmware-update': { title: 'GPU and NIC Firmware Update Procedure', difficulty: 'intermediate', estimatedTime: 20 },
+    'domain1-bmc-ipmi': { title: 'BMC and IPMI Configuration', difficulty: 'intermediate', estimatedTime: 15 },
+    'domain1-network-bonding': { title: 'Network Bonding and InfiniBand Configuration', difficulty: 'intermediate', estimatedTime: 20 },
 
     // Domain 2: Accelerator Configuration (6 scenarios)
     'domain2-mig-setup': { title: 'Multi-Instance GPU (MIG) Configuration', difficulty: 'advanced', estimatedTime: 40 },
@@ -359,6 +380,8 @@ export function getScenarioMetadata(scenarioId: string): { title: string; diffic
     'domain3-nfs-tuning': { title: 'NFS Performance Tuning for GPU Workloads', difficulty: 'intermediate', estimatedTime: 30 },
     'domain3-bcm-ha': { title: 'BCM High Availability Configuration', difficulty: 'advanced', estimatedTime: 50 },
     'domain3-k8s-gpu-operator': { title: 'Kubernetes GPU Operator Deployment', difficulty: 'advanced', estimatedTime: 55 },
+    'domain3-slurm-gres': { title: 'Configure Slurm GRES for GPU Scheduling', difficulty: 'intermediate', estimatedTime: 15 },
+    'domain3-dcgm-policy': { title: 'Configure DCGM Monitoring Policies', difficulty: 'intermediate', estimatedTime: 15 },
 
     // Domain 4: Validation & Testing (13 scenarios)
     'domain4-dcgmi-diag': { title: 'DCGM Diagnostics and Health Monitoring', difficulty: 'intermediate', estimatedTime: 45 },
@@ -374,6 +397,8 @@ export function getScenarioMetadata(scenarioId: string): { title: string; diffic
     'domain4-gpu-reset': { title: 'GPU Reset and Recovery Procedures', difficulty: 'intermediate', estimatedTime: 37 },
     'domain4-hpl-optimization': { title: 'HPL Benchmark Performance Optimization', difficulty: 'advanced', estimatedTime: 50 },
     'domain4-nccl-tuning': { title: 'NCCL Bandwidth Tuning and Collective Optimization', difficulty: 'advanced', estimatedTime: 55 },
+    'domain4-multinode-nccl': { title: 'Multi-Node NCCL Bandwidth Test', difficulty: 'advanced', estimatedTime: 25 },
+    'domain4-gpudirect-rdma': { title: 'GPUDirect RDMA Verification', difficulty: 'advanced', estimatedTime: 30 },
 
     // Domain 5: Troubleshooting (12 scenarios)
     'domain5-xid-errors': { title: 'XID Error Analysis and Resolution', difficulty: 'advanced', estimatedTime: 65 },
@@ -388,6 +413,8 @@ export function getScenarioMetadata(scenarioId: string): { title: string; diffic
     'domain5-critical-xid': { title: 'Critical XID Error Response (43, 48, 63, 74, 79)', difficulty: 'advanced', estimatedTime: 50 },
     'domain5-xid-nvlink': { title: 'NVLink XID Error Troubleshooting (72, 74, 76-78)', difficulty: 'advanced', estimatedTime: 45 },
     'domain5-xid-hardware': { title: 'Hardware XID Error Response (27, 43, 54, 79)', difficulty: 'advanced', estimatedTime: 50 },
+    'domain5-physical-inspection': { title: 'Physical Hardware Inspection Checklist', difficulty: 'beginner', estimatedTime: 20 },
+    'domain5-cable-diagnostics': { title: 'InfiniBand Cable Diagnostics', difficulty: 'intermediate', estimatedTime: 25 },
   };
 
   return metadata[scenarioId] || null;
