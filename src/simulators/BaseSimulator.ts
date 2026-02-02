@@ -486,6 +486,7 @@ export abstract class BaseSimulator {
     flags: string[],
     defaultValue?: string | boolean
   ): string | boolean | undefined {
+    if (!parsed?.flags) return defaultValue;
     for (const flag of flags) {
       if (parsed.flags.has(flag)) {
         return parsed.flags.get(flag);
@@ -537,6 +538,7 @@ export abstract class BaseSimulator {
    * @returns true if any flag is present
    */
   protected hasAnyFlag(parsed: ParsedCommand, flags: string[]): boolean {
+    if (!parsed?.flags) return false;
     return flags.some(flag => parsed.flags.has(flag));
   }
 }

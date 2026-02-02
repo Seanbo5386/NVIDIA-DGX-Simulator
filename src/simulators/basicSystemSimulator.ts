@@ -127,6 +127,11 @@ export class BasicSystemSimulator extends BaseSimulator {
   }
 
   execute(parsed: ParsedCommand, context: CommandContext): CommandResult {
+    // Handle empty/invalid parsed commands
+    if (!parsed?.flags) {
+      return this.createSuccess('');
+    }
+
     // Handle --version flag (global)
     if (this.hasAnyFlag(parsed, ['version', 'v'])) {
       return this.handleVersion();
