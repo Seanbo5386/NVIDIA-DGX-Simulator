@@ -265,26 +265,29 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
     const progress = Math.round(((currentStepIndex + 1) / selectedLesson.steps.length) * 100);
 
     return (
-      <div style={styles.tutorialContainer}>
+      <div className="flex flex-col h-full min-h-[500px]">
         {/* Progress bar */}
-        <div style={styles.progressHeader}>
-          <div style={styles.progressInfo}>
-            <span style={styles.stepCounter}>
+        <div className="mb-5">
+          <div className="flex justify-between mb-2">
+            <span className="text-nvidia-green font-bold text-sm">
               Step {currentStepIndex + 1} of {selectedLesson.steps.length}
             </span>
-            <span style={styles.tutorialLessonTitle}>{selectedLesson.title}</span>
+            <span className="text-gray-500 text-sm">{selectedLesson.title}</span>
           </div>
-          <div style={styles.progressBarContainer}>
-            <div style={{ ...styles.progressBar, width: `${progress}%` }} />
+          <div className="h-2 bg-gray-700 rounded overflow-hidden">
+            <div
+              className="h-full bg-nvidia-green transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
           </div>
         </div>
 
         {/* Step content */}
-        <div style={styles.stepContent}>
-          <h3 style={styles.stepTitle}>{step.title}</h3>
+        <div className="flex-1 bg-gray-800 rounded-lg p-6 mb-5 overflow-auto">
+          <h3 className="m-0 mb-4 text-white text-xl">{step.title}</h3>
 
           {/* Step type badge */}
-          <div style={styles.stepTypeBadge}>
+          <div className="inline-block px-3 py-1 bg-gray-700 rounded text-xs text-gray-400 mb-5">
             {step.type === 'concept' && '📖 Concept'}
             {step.type === 'command' && '💻 Hands-On'}
             {step.type === 'quiz' && '❓ Quiz'}
@@ -293,17 +296,17 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
           </div>
 
           {/* Main content */}
-          <div style={styles.stepDescription}>
+          <div className="text-gray-300 text-base leading-7 mb-5">
             {step.content.split('\n').map((line, i) => (
-              <p key={i} style={{ margin: '8px 0' }}>{line}</p>
+              <p key={i} className="my-2">{line}</p>
             ))}
           </div>
 
           {/* Tips if any */}
           {step.tips && step.tips.length > 0 && (
-            <div style={styles.tipsBox}>
+            <div className="bg-green-900/30 border border-green-800 rounded-md p-4 mb-5 text-sm">
               <strong>💡 Tips:</strong>
-              <ul style={styles.tipsList}>
+              <ul className="mt-2.5 mb-0 pl-5 text-gray-400">
                 {step.tips.map((tip, i) => (
                   <li key={i}>{tip}</li>
                 ))}
@@ -313,43 +316,39 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
 
           {/* Command input for 'command' type */}
           {step.type === 'command' && (
-            <div style={styles.commandSection}>
-              <div style={styles.commandInputWrapper}>
-                <span style={styles.prompt}>$</span>
+            <div className="mt-5">
+              <div className="flex items-center bg-black rounded-md p-1 mb-2.5">
+                <span className="text-nvidia-green font-mono text-base px-2.5 font-bold">$</span>
                 <input
                   type="text"
                   value={commandInput}
                   onChange={(e) => setCommandInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCommandSubmit()}
                   placeholder="Type your command here..."
-                  style={styles.commandInput}
+                  className="flex-1 bg-transparent border-none text-white font-mono text-sm p-2.5 outline-none"
                   autoFocus
                 />
-                <button onClick={handleCommandSubmit} style={styles.executeButton}>
+                <button onClick={handleCommandSubmit} className="px-5 py-2.5 bg-nvidia-green border-none rounded text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors">
                   Execute
                 </button>
               </div>
 
               {step.commandHint && (
-                <div style={styles.hintText}>
+                <div className="text-gray-500 text-sm mb-4">
                   💡 Hint: {step.commandHint}
                 </div>
               )}
 
               {/* Command output */}
               {commandOutput && (
-                <div style={styles.outputBox}>
-                  <pre style={styles.outputText}>{commandOutput}</pre>
+                <div className="bg-black rounded-md p-4 mb-4 max-h-52 overflow-auto">
+                  <pre className="m-0 text-gray-300 font-mono text-sm whitespace-pre-wrap">{commandOutput}</pre>
                 </div>
               )}
 
               {/* Feedback */}
               {stepFeedback && (
-                <div style={{
-                  ...styles.feedbackBox,
-                  backgroundColor: stepFeedback.success ? '#1b4d1b' : '#4d1b1b',
-                  borderColor: stepFeedback.success ? '#4CAF50' : '#F44336',
-                }}>
+                <div className={`p-4 rounded-md border text-sm ${stepFeedback.success ? 'bg-green-900/50 border-green-500' : 'bg-red-900/50 border-red-500'}`}>
                   {stepFeedback.success ? '✅' : '❌'} {stepFeedback.message}
                 </div>
               )}
@@ -358,37 +357,41 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
 
           {/* Quiz for 'quiz' type */}
           {step.type === 'quiz' && step.quizChoices && (
-            <div style={styles.quizSection}>
-              <p style={styles.quizQuestion}>{step.quizQuestion}</p>
-              <div style={styles.quizChoices}>
-                {step.quizChoices.map((choice, i) => (
-                  <button
-                    key={i}
-                    onClick={() => !showQuizResult && setQuizAnswer(i)}
-                    style={{
-                      ...styles.quizChoice,
-                      ...(quizAnswer === i ? styles.quizChoiceSelected : {}),
-                      ...(showQuizResult && i === step.quizCorrectIndex ? styles.quizChoiceCorrect : {}),
-                      ...(showQuizResult && quizAnswer === i && i !== step.quizCorrectIndex ? styles.quizChoiceWrong : {}),
-                    }}
-                    disabled={showQuizResult}
-                  >
-                    {String.fromCharCode(65 + i)}. {choice}
-                  </button>
-                ))}
+            <div className="mt-5">
+              <p className="text-white text-base mb-5">{step.quizQuestion}</p>
+              <div className="flex flex-col gap-2.5">
+                {step.quizChoices.map((choice, i) => {
+                  let choiceClasses = "p-4 bg-gray-700 border-2 border-gray-600 rounded-md text-white text-left cursor-pointer text-sm transition-all hover:border-gray-500";
+                  if (quizAnswer === i && !showQuizResult) {
+                    choiceClasses = "p-4 bg-gray-700 border-2 border-nvidia-green rounded-md text-white text-left cursor-pointer text-sm";
+                  }
+                  if (showQuizResult && i === step.quizCorrectIndex) {
+                    choiceClasses = "p-4 bg-green-900/50 border-2 border-green-500 rounded-md text-white text-left text-sm";
+                  }
+                  if (showQuizResult && quizAnswer === i && i !== step.quizCorrectIndex) {
+                    choiceClasses = "p-4 bg-red-900/50 border-2 border-red-500 rounded-md text-white text-left text-sm";
+                  }
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => !showQuizResult && setQuizAnswer(i)}
+                      className={choiceClasses}
+                      disabled={showQuizResult}
+                    >
+                      {String.fromCharCode(65 + i)}. {choice}
+                    </button>
+                  );
+                })}
               </div>
 
               {!showQuizResult && quizAnswer !== null && (
-                <button onClick={handleQuizSubmit} style={styles.submitQuizButton}>
+                <button onClick={handleQuizSubmit} className="mt-5 px-8 py-3 bg-nvidia-green border-none rounded-md text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors">
                   Submit Answer
                 </button>
               )}
 
               {showQuizResult && (
-                <div style={{
-                  ...styles.quizExplanation,
-                  borderColor: quizAnswer === step.quizCorrectIndex ? '#4CAF50' : '#F44336',
-                }}>
+                <div className={`mt-5 p-4 rounded-md border bg-gray-800 ${quizAnswer === step.quizCorrectIndex ? 'border-green-500' : 'border-red-500'}`}>
                   {quizAnswer === step.quizCorrectIndex ? '✅ Correct!' : '❌ Incorrect'}
                   <p>{step.quizExplanation}</p>
                 </div>
@@ -398,14 +401,14 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
 
           {/* Observe type - auto-execute and show output */}
           {step.type === 'observe' && (
-            <div style={styles.commandSection}>
-              <div style={styles.observeLabel}>👁️ Observe the following command output:</div>
-              <div style={styles.commandDisplay}>
-                <code style={styles.commandCode}>{step.expectedCommand}</code>
+            <div className="mt-5">
+              <div className="text-nvidia-green text-sm font-bold mb-4">👁️ Observe the following command output:</div>
+              <div className="bg-black rounded-md p-4 mb-4">
+                <code className="text-nvidia-green font-mono text-sm">{step.expectedCommand}</code>
               </div>
               {commandOutput ? (
-                <div style={styles.outputBox}>
-                  <pre style={styles.outputText}>{commandOutput}</pre>
+                <div className="bg-black rounded-md p-4 mb-4 max-h-52 overflow-auto">
+                  <pre className="m-0 text-gray-300 font-mono text-sm whitespace-pre-wrap">{commandOutput}</pre>
                 </div>
               ) : (
                 <button
@@ -420,13 +423,13 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
                       }
                     }
                   }}
-                  style={styles.executeButton}
+                  className="px-5 py-2.5 bg-nvidia-green border-none rounded text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors"
                 >
                   Run Command
                 </button>
               )}
               {commandOutput && (
-                <button onClick={advanceStep} style={styles.continueButton}>
+                <button onClick={advanceStep} className="mt-5 px-8 py-3 bg-nvidia-green border-none rounded-md text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors">
                   Continue →
                 </button>
               )}
@@ -435,10 +438,10 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
 
           {/* Practice type - free-form practice */}
           {step.type === 'practice' && (
-            <div style={styles.commandSection}>
-              <div style={styles.practiceLabel}>🔧 Practice on your own:</div>
-              <div style={styles.commandInputWrapper}>
-                <span style={styles.prompt}>$</span>
+            <div className="mt-5">
+              <div className="text-orange-500 text-sm font-bold mb-4">🔧 Practice on your own:</div>
+              <div className="flex items-center bg-black rounded-md p-1 mb-2.5">
+                <span className="text-nvidia-green font-mono text-base px-2.5 font-bold">$</span>
                 <input
                   type="text"
                   value={commandInput}
@@ -457,7 +460,7 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
                     }
                   }}
                   placeholder="Try the commands yourself..."
-                  style={styles.commandInput}
+                  className="flex-1 bg-transparent border-none text-white font-mono text-sm p-2.5 outline-none"
                   autoFocus
                 />
                 <button
@@ -472,7 +475,7 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
                       }
                     }
                   }}
-                  style={styles.executeButton}
+                  className="px-5 py-2.5 bg-nvidia-green border-none rounded text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors"
                 >
                   Execute
                 </button>
@@ -480,12 +483,12 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
 
               {/* Command output */}
               {commandOutput && (
-                <div style={styles.outputBox}>
-                  <pre style={styles.outputText}>{commandOutput}</pre>
+                <div className="bg-black rounded-md p-4 mb-4 max-h-52 overflow-auto">
+                  <pre className="m-0 text-gray-300 font-mono text-sm whitespace-pre-wrap">{commandOutput}</pre>
                 </div>
               )}
 
-              <button onClick={advanceStep} style={{ ...styles.continueButton, marginTop: '20px' }}>
+              <button onClick={advanceStep} className="mt-5 px-8 py-3 bg-nvidia-green border-none rounded-md text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors">
                 Continue →
               </button>
             </div>
@@ -493,29 +496,26 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
 
           {/* Concept type - just show continue button */}
           {step.type === 'concept' && (
-            <button onClick={advanceStep} style={styles.continueButton}>
+            <button onClick={advanceStep} className="mt-5 px-8 py-3 bg-nvidia-green border-none rounded-md text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors">
               Continue →
             </button>
           )}
         </div>
 
         {/* Navigation */}
-        <div style={styles.tutorialNav}>
+        <div className="flex justify-between gap-2.5">
           <button
             onClick={goBackStep}
             disabled={currentStepIndex === 0}
-            style={{
-              ...styles.navButton,
-              opacity: currentStepIndex === 0 ? 0.5 : 1,
-            }}
+            className={`px-6 py-3 bg-gray-700 border-none rounded-md text-white cursor-pointer text-sm hover:bg-gray-600 transition-colors ${currentStepIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             ← Previous
           </button>
-          <button onClick={goBack} style={styles.exitButton}>
+          <button onClick={goBack} className="px-6 py-3 bg-gray-600 border-none rounded-md text-gray-400 cursor-pointer text-sm hover:bg-gray-500 transition-colors">
             Exit Lesson
           </button>
           {step.type !== 'command' && step.type !== 'quiz' && currentStepIndex < selectedLesson.steps.length - 1 && (
-            <button onClick={advanceStep} style={styles.navButton}>
+            <button onClick={advanceStep} className="px-6 py-3 bg-gray-700 border-none rounded-md text-white cursor-pointer text-sm hover:bg-gray-600 transition-colors">
               Next →
             </button>
           )}
@@ -525,7 +525,7 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
                 completeLesson(selectedLesson.id, selectedModule?.id || '');
                 goBack();
               }}
-              style={styles.completeButton}
+              className="px-6 py-3 bg-green-600 border-none rounded-md text-white font-bold cursor-pointer text-sm hover:bg-green-500 transition-colors"
             >
               Complete Lesson ✓
             </button>
@@ -536,23 +536,23 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
   };
 
   return (
-    <div style={styles.container}>
+    <div className="bg-gray-900 text-gray-200 rounded-lg max-w-6xl mx-auto font-sans min-h-[600px] flex flex-col">
       {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerLeft}>
+      <div className="flex justify-between items-center p-5 border-b border-gray-700">
+        <div className="flex items-center gap-4">
           {viewState !== 'paths' && (
-            <button onClick={goBack} style={styles.backButton}>
+            <button onClick={goBack} className="px-4 py-2 bg-gray-700 border-none rounded text-gray-500 cursor-pointer text-sm hover:bg-gray-600 transition-colors">
               ← Back
             </button>
           )}
           <div>
-            <h2 style={styles.title}>
+            <h2 className="m-0 text-nvidia-green text-2xl font-semibold">
               {viewState === 'paths' && 'Learning Paths'}
               {viewState === 'modules' && selectedPath?.title}
               {viewState === 'lessons' && selectedModule?.title}
               {viewState === 'tutorial' && selectedLesson?.title}
             </h2>
-            <p style={styles.subtitle}>
+            <p className="mt-1 mb-0 text-gray-500 text-sm">
               {viewState === 'paths' && 'Structured learning for NCP-AII certification'}
               {viewState === 'modules' && `${selectedPath?.modules.length} modules • ${selectedPath?.examWeight}% of exam`}
               {viewState === 'lessons' && `${selectedModule?.lessons.length} lessons`}
@@ -561,41 +561,41 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
           </div>
         </div>
         {onClose && (
-          <button onClick={onClose} style={styles.closeButton}>
+          <button onClick={onClose} className="bg-transparent border-none text-gray-500 text-3xl cursor-pointer leading-none px-2.5 hover:text-gray-300 transition-colors">
             ×
           </button>
         )}
       </div>
 
       {/* Content */}
-      <div style={styles.content}>
+      <div className="p-5 flex-1 overflow-auto">
         {/* Paths Overview */}
         {viewState === 'paths' && (
           <>
             {/* Stats overview */}
-            <div style={styles.statsRow}>
-              <div style={styles.statBox}>
-                <div style={styles.statValue}>{totalStats.totalPaths}</div>
-                <div style={styles.statLabel}>Learning Paths</div>
+            <div className="grid grid-cols-4 gap-4 mb-6">
+              <div className="bg-gray-800/50 rounded-lg p-5 text-center">
+                <div className="text-3xl font-bold text-nvidia-green">{totalStats.totalPaths}</div>
+                <div className="text-xs text-gray-500 mt-1">Learning Paths</div>
               </div>
-              <div style={styles.statBox}>
-                <div style={styles.statValue}>{totalStats.totalLessons}</div>
-                <div style={styles.statLabel}>Total Lessons</div>
+              <div className="bg-gray-800/50 rounded-lg p-5 text-center">
+                <div className="text-3xl font-bold text-nvidia-green">{totalStats.totalLessons}</div>
+                <div className="text-xs text-gray-500 mt-1">Total Lessons</div>
               </div>
-              <div style={styles.statBox}>
-                <div style={styles.statValue}>{completedLessons.size}</div>
-                <div style={styles.statLabel}>Completed</div>
+              <div className="bg-gray-800/50 rounded-lg p-5 text-center">
+                <div className="text-3xl font-bold text-nvidia-green">{completedLessons.size}</div>
+                <div className="text-xs text-gray-500 mt-1">Completed</div>
               </div>
-              <div style={styles.statBox}>
-                <div style={styles.statValue}>{totalStats.totalEstimatedMinutes}m</div>
-                <div style={styles.statLabel}>Est. Time</div>
+              <div className="bg-gray-800/50 rounded-lg p-5 text-center">
+                <div className="text-3xl font-bold text-nvidia-green">{totalStats.totalEstimatedMinutes}m</div>
+                <div className="text-xs text-gray-500 mt-1">Est. Time</div>
               </div>
             </div>
 
             {/* Reset progress button - only show if there's progress to reset */}
             {completedLessons.size > 0 && (
-              <div style={styles.resetProgressRow}>
-                <button onClick={resetProgress} style={styles.resetButton}>
+              <div className="flex justify-end mb-4">
+                <button onClick={resetProgress} className="px-4 py-2 bg-transparent border border-gray-600 rounded text-gray-500 cursor-pointer text-xs hover:border-gray-500 hover:text-gray-400 transition-all">
                   Reset Progress
                 </button>
               </div>
@@ -603,10 +603,10 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
 
             {/* Recommended next lesson */}
             {recommendedNext && (
-              <div style={styles.recommendedCard}>
-                <div style={styles.recommendedBadge}>📌 Continue Learning</div>
-                <h3 style={styles.recommendedTitle}>{recommendedNext.lesson.title}</h3>
-                <p style={styles.recommendedMeta}>
+              <div className="bg-green-900/30 border border-nvidia-green rounded-lg p-5 mb-6">
+                <div className="text-nvidia-green text-xs font-bold mb-2.5">📌 Continue Learning</div>
+                <h3 className="m-0 mb-2 text-white text-lg">{recommendedNext.lesson.title}</h3>
+                <p className="text-gray-500 text-sm m-0 mb-4">
                   {recommendedNext.path.title} → {recommendedNext.module.title}
                 </p>
                 <button
@@ -615,7 +615,7 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
                     setSelectedModule(recommendedNext.module);
                     startLesson(recommendedNext.lesson);
                   }}
-                  style={styles.startButton}
+                  className="px-5 py-2.5 bg-nvidia-green border-none rounded text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors"
                 >
                   Resume Learning
                 </button>
@@ -623,48 +623,50 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
             )}
 
             {/* Learning paths grid */}
-            <div style={styles.pathsGrid}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {Object.values(LEARNING_PATHS).map(path => {
                 const progress = pathsProgress.get(path.id);
                 const domain = DOMAINS[path.domainId];
 
                 return (
-                  <div key={path.id} style={styles.pathCard} onClick={() => selectPath(path)}>
-                    <div style={styles.pathHeader}>
-                      <div style={{
-                        ...styles.domainBadge,
-                        backgroundColor: getDomainColor(path.domainId),
-                      }}>
+                  <div
+                    key={path.id}
+                    className="bg-gray-800 rounded-lg p-5 cursor-pointer border border-gray-700 hover:border-nvidia-green hover:shadow-lg transition-all"
+                    onClick={() => selectPath(path)}
+                  >
+                    <div className="flex justify-between items-center mb-3">
+                      <div
+                        className="px-2.5 py-1 rounded text-xs font-bold text-white"
+                        style={{ backgroundColor: getDomainColor(path.domainId) }}
+                      >
                         {domain.title.split(':')[0]}
                       </div>
-                      <span style={styles.examWeight}>{path.examWeight}%</span>
+                      <span className="text-gray-500 text-sm font-bold">{path.examWeight}%</span>
                     </div>
-                    <h3 style={styles.pathTitle}>{path.title}</h3>
-                    <p style={styles.pathDescription}>{path.description}</p>
+                    <h3 className="m-0 mb-2.5 text-white text-lg">{path.title}</h3>
+                    <p className="text-gray-500 text-sm m-0 mb-4 leading-relaxed">{path.description}</p>
 
-                    <div style={styles.pathStats}>
+                    <div className="flex gap-4 text-sm text-gray-600 mb-3">
                       <span>{path.modules.length} modules</span>
                       <span>{path.totalEstimatedMinutes} min</span>
                     </div>
 
                     {/* Progress bar */}
-                    <div style={styles.pathProgress}>
-                      <div style={styles.progressBarBg}>
+                    <div className="mb-3">
+                      <div className="h-1.5 bg-gray-700 rounded-sm overflow-hidden mb-1.5">
                         <div
-                          style={{
-                            ...styles.progressBarFill,
-                            width: `${progress?.overallPercentage || 0}%`,
-                          }}
+                          className="h-full bg-nvidia-green transition-all duration-300"
+                          style={{ width: `${progress?.overallPercentage || 0}%` }}
                         />
                       </div>
-                      <span style={styles.progressText}>
+                      <span className="text-xs text-gray-500">
                         {progress?.completedLessons || 0}/{progress?.totalLessons || 0} lessons
                       </span>
                     </div>
 
-                    <div style={styles.skillsList}>
+                    <div className="flex flex-wrap gap-1.5">
                       {path.skills.slice(0, 3).map((skill, i) => (
-                        <span key={i} style={styles.skillTag}>{skill}</span>
+                        <span key={i} className="px-2 py-0.5 bg-gray-700 rounded-sm text-xs text-gray-400">{skill}</span>
                       ))}
                     </div>
                   </div>
@@ -676,7 +678,7 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
 
         {/* Modules view */}
         {viewState === 'modules' && selectedPath && (
-          <div style={styles.modulesList}>
+          <div className="flex flex-col gap-4">
             {selectedPath.modules.map((module, idx) => {
               const isLocked = !areModulePrerequisitesMet(module.id, completedModules);
               const isComplete = completedModules.has(module.id);
@@ -685,53 +687,39 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
               return (
                 <div
                   key={module.id}
-                  style={{
-                    ...styles.moduleCard,
-                    opacity: isLocked ? 0.6 : 1,
-                    cursor: isLocked ? 'not-allowed' : 'pointer',
-                  }}
+                  className={`flex items-center bg-gray-800 rounded-lg p-5 gap-5 ${isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-nvidia-green'} border border-gray-700 transition-colors`}
                   onClick={() => selectModule(module)}
                 >
-                  <div style={styles.moduleOrder}>
+                  <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center font-bold text-base text-nvidia-green shrink-0">
                     {isComplete ? '✓' : isLocked ? '🔒' : idx + 1}
                   </div>
-                  <div style={styles.moduleContent}>
-                    <h3 style={styles.moduleTitle}>
+                  <div className="flex-1">
+                    <h3 className="m-0 mb-2 text-white text-base">
                       {module.icon} {module.title}
                     </h3>
-                    <p style={styles.moduleDescription}>{module.description}</p>
-                    <div style={styles.moduleStats}>
+                    <p className="m-0 mb-2.5 text-gray-500 text-sm">{module.description}</p>
+                    <div className="text-sm text-gray-600 flex gap-4">
                       <span>{lessonsComplete}/{module.lessons.length} lessons</span>
                       {module.prerequisites && module.prerequisites.length > 0 && (
-                        <span style={styles.prereqBadge}>
+                        <span className="text-orange-500 text-xs">
                           Requires: {module.prerequisites.join(', ')}
                         </span>
                       )}
                     </div>
                   </div>
-                  <div style={styles.moduleProgress}>
-                    <div style={styles.circularProgress}>
+                  <div className="relative">
+                    <div className="relative flex items-center justify-center">
                       <svg width="50" height="50" viewBox="0 0 50 50">
+                        <circle cx="25" cy="25" r="20" fill="none" stroke="#374151" strokeWidth="4" />
                         <circle
-                          cx="25"
-                          cy="25"
-                          r="20"
-                          fill="none"
-                          stroke="#333"
-                          strokeWidth="4"
-                        />
-                        <circle
-                          cx="25"
-                          cy="25"
-                          r="20"
-                          fill="none"
-                          stroke="#76b900"
+                          cx="25" cy="25" r="20" fill="none"
+                          className="stroke-nvidia-green"
                           strokeWidth="4"
                           strokeDasharray={`${(lessonsComplete / module.lessons.length) * 125.6} 125.6`}
                           transform="rotate(-90 25 25)"
                         />
                       </svg>
-                      <span style={styles.circularText}>
+                      <span className="absolute text-xs font-bold text-nvidia-green">
                         {Math.round((lessonsComplete / module.lessons.length) * 100)}%
                       </span>
                     </div>
@@ -744,7 +732,7 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
 
         {/* Lessons view */}
         {viewState === 'lessons' && selectedModule && (
-          <div style={styles.lessonsList}>
+          <div className="flex flex-col gap-4">
             {selectedModule.lessons.map((lesson, idx) => {
               const isLocked = !areLessonPrerequisitesMet(lesson.id, completedLessons);
               const isComplete = completedLessons.has(lesson.id);
@@ -752,46 +740,42 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
               return (
                 <div
                   key={lesson.id}
-                  style={{
-                    ...styles.lessonCard,
-                    opacity: isLocked ? 0.6 : 1,
-                    borderLeftColor: isComplete ? '#4CAF50' : isLocked ? '#666' : '#76b900',
-                  }}
+                  className={`bg-gray-800 rounded-lg p-5 border-l-4 ${isComplete ? 'border-l-green-500' : isLocked ? 'border-l-gray-600' : 'border-l-nvidia-green'} ${isLocked ? 'opacity-60' : 'cursor-pointer hover:bg-gray-750'} transition-colors`}
                   onClick={() => !isLocked && startLesson(lesson)}
                 >
-                  <div style={styles.lessonHeader}>
-                    <div style={styles.lessonNumber}>
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center font-bold text-sm text-nvidia-green shrink-0">
                       {isComplete ? '✓' : isLocked ? '🔒' : idx + 1}
                     </div>
-                    <div style={styles.lessonInfo}>
-                      <h4 style={styles.lessonTitle}>{lesson.title}</h4>
-                      <p style={styles.lessonDescription}>{lesson.description}</p>
+                    <div className="flex-1">
+                      <h4 className="m-0 mb-1 text-white text-base">{lesson.title}</h4>
+                      <p className="m-0 text-gray-500 text-sm">{lesson.description}</p>
                     </div>
-                    <div style={styles.lessonMeta}>
-                      <span style={styles.difficultyBadge}>{lesson.difficulty}</span>
-                      <span style={styles.durationBadge}>{lesson.estimatedMinutes} min</span>
+                    <div className="flex gap-2.5">
+                      <span className="px-2 py-0.5 rounded-sm text-xs bg-gray-700 text-gray-400 capitalize">{lesson.difficulty}</span>
+                      <span className="px-2 py-0.5 rounded-sm text-xs bg-gray-700 text-nvidia-green">{lesson.estimatedMinutes} min</span>
                     </div>
                   </div>
 
-                  <div style={styles.lessonObjectives}>
+                  <div className="text-sm text-gray-500 mb-2.5">
                     <strong>Objectives:</strong>
-                    <ul>
+                    <ul className="mt-1 mb-0 pl-5">
                       {lesson.objectives.map((obj, i) => (
                         <li key={i}>{obj}</li>
                       ))}
                     </ul>
                   </div>
 
-                  <div style={styles.lessonCommands}>
+                  <div className="text-sm text-gray-500 mb-4 flex items-center gap-2 flex-wrap">
                     <strong>Commands:</strong>
                     {lesson.commands.map((cmd, i) => (
-                      <code key={i} style={styles.commandTag}>{cmd}</code>
+                      <code key={i} className="px-2 py-0.5 bg-black rounded-sm font-mono text-xs text-nvidia-green">{cmd}</code>
                     ))}
                   </div>
 
                   {!isLocked && !isComplete && (
                     <button
-                      style={styles.startLessonButton}
+                      className="px-5 py-2.5 bg-nvidia-green border-none rounded text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
                         startLesson(lesson);
@@ -802,7 +786,7 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
                   )}
                   {isComplete && (
                     <button
-                      style={{ ...styles.startLessonButton, backgroundColor: '#555' }}
+                      className="px-5 py-2.5 bg-gray-600 border-none rounded text-white font-bold cursor-pointer text-sm hover:bg-gray-500 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
                         startLesson(lesson);
@@ -835,634 +819,5 @@ function getDomainColor(domainId: DomainId): string {
   };
   return colors[domainId];
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    backgroundColor: '#1e1e1e',
-    color: '#e0e0e0',
-    borderRadius: '8px',
-    maxWidth: '1200px',
-    margin: '0 auto',
-    fontFamily: 'system-ui, -apple-system, sans-serif',
-    minHeight: '600px',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '20px',
-    borderBottom: '1px solid #333',
-  },
-  headerLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '15px',
-  },
-  backButton: {
-    padding: '8px 16px',
-    backgroundColor: '#333',
-    border: 'none',
-    borderRadius: '4px',
-    color: '#888',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
-  title: {
-    margin: 0,
-    color: '#76b900',
-    fontSize: '24px',
-  },
-  subtitle: {
-    margin: '5px 0 0 0',
-    color: '#888',
-    fontSize: '14px',
-  },
-  closeButton: {
-    background: 'none',
-    border: 'none',
-    color: '#888',
-    fontSize: '28px',
-    cursor: 'pointer',
-    lineHeight: 1,
-    padding: '0 10px',
-  },
-  content: {
-    padding: '20px',
-    flex: 1,
-    overflow: 'auto',
-  },
-  statsRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '15px',
-    marginBottom: '25px',
-  },
-  statBox: {
-    backgroundColor: '#2a2a2a',
-    padding: '20px',
-    borderRadius: '8px',
-    textAlign: 'center',
-  },
-  statValue: {
-    fontSize: '28px',
-    fontWeight: 'bold',
-    color: '#76b900',
-  },
-  statLabel: {
-    fontSize: '12px',
-    color: '#888',
-    marginTop: '5px',
-  },
-  resetProgressRow: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    marginBottom: '15px',
-  },
-  resetButton: {
-    padding: '8px 16px',
-    backgroundColor: 'transparent',
-    border: '1px solid #666',
-    borderRadius: '4px',
-    color: '#888',
-    cursor: 'pointer',
-    fontSize: '12px',
-    transition: 'all 0.2s',
-  },
-  recommendedCard: {
-    backgroundColor: '#1a3d1a',
-    border: '1px solid #76b900',
-    borderRadius: '8px',
-    padding: '20px',
-    marginBottom: '25px',
-  },
-  recommendedBadge: {
-    color: '#76b900',
-    fontSize: '12px',
-    fontWeight: 'bold',
-    marginBottom: '10px',
-  },
-  recommendedTitle: {
-    margin: '0 0 8px 0',
-    color: '#fff',
-    fontSize: '18px',
-  },
-  recommendedMeta: {
-    color: '#888',
-    fontSize: '14px',
-    margin: '0 0 15px 0',
-  },
-  startButton: {
-    padding: '10px 20px',
-    backgroundColor: '#76b900',
-    border: 'none',
-    borderRadius: '4px',
-    color: '#000',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
-  pathsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-    gap: '20px',
-  },
-  pathCard: {
-    backgroundColor: '#2a2a2a',
-    borderRadius: '8px',
-    padding: '20px',
-    cursor: 'pointer',
-    transition: 'transform 0.2s, box-shadow 0.2s',
-    border: '1px solid #333',
-  },
-  pathHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '12px',
-  },
-  domainBadge: {
-    padding: '4px 10px',
-    borderRadius: '4px',
-    fontSize: '11px',
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  examWeight: {
-    color: '#888',
-    fontSize: '14px',
-    fontWeight: 'bold',
-  },
-  pathTitle: {
-    margin: '0 0 10px 0',
-    color: '#fff',
-    fontSize: '18px',
-  },
-  pathDescription: {
-    color: '#888',
-    fontSize: '14px',
-    margin: '0 0 15px 0',
-    lineHeight: 1.5,
-  },
-  pathStats: {
-    display: 'flex',
-    gap: '15px',
-    fontSize: '13px',
-    color: '#666',
-    marginBottom: '12px',
-  },
-  pathProgress: {
-    marginBottom: '12px',
-  },
-  progressBarBg: {
-    height: '6px',
-    backgroundColor: '#333',
-    borderRadius: '3px',
-    overflow: 'hidden',
-    marginBottom: '6px',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#76b900',
-    transition: 'width 0.3s ease',
-  },
-  progressText: {
-    fontSize: '12px',
-    color: '#888',
-  },
-  skillsList: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '6px',
-  },
-  skillTag: {
-    padding: '3px 8px',
-    backgroundColor: '#333',
-    borderRadius: '3px',
-    fontSize: '11px',
-    color: '#aaa',
-  },
-  modulesList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '15px',
-  },
-  moduleCard: {
-    display: 'flex',
-    alignItems: 'center',
-    backgroundColor: '#2a2a2a',
-    borderRadius: '8px',
-    padding: '20px',
-    gap: '20px',
-    cursor: 'pointer',
-  },
-  moduleOrder: {
-    width: '40px',
-    height: '40px',
-    borderRadius: '50%',
-    backgroundColor: '#333',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: 'bold',
-    fontSize: '16px',
-    color: '#76b900',
-    flexShrink: 0,
-  },
-  moduleContent: {
-    flex: 1,
-  },
-  moduleTitle: {
-    margin: '0 0 8px 0',
-    color: '#fff',
-    fontSize: '16px',
-  },
-  moduleDescription: {
-    margin: '0 0 10px 0',
-    color: '#888',
-    fontSize: '14px',
-  },
-  moduleStats: {
-    fontSize: '13px',
-    color: '#666',
-    display: 'flex',
-    gap: '15px',
-  },
-  prereqBadge: {
-    color: '#f97316',
-    fontSize: '12px',
-  },
-  moduleProgress: {
-    position: 'relative',
-  },
-  circularProgress: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  circularText: {
-    position: 'absolute',
-    fontSize: '12px',
-    fontWeight: 'bold',
-    color: '#76b900',
-  },
-  lessonsList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '15px',
-  },
-  lessonCard: {
-    backgroundColor: '#2a2a2a',
-    borderRadius: '8px',
-    padding: '20px',
-    borderLeft: '4px solid #76b900',
-    cursor: 'pointer',
-  },
-  lessonHeader: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '15px',
-    marginBottom: '15px',
-  },
-  lessonNumber: {
-    width: '30px',
-    height: '30px',
-    borderRadius: '50%',
-    backgroundColor: '#333',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: 'bold',
-    fontSize: '14px',
-    color: '#76b900',
-    flexShrink: 0,
-  },
-  lessonInfo: {
-    flex: 1,
-  },
-  lessonTitle: {
-    margin: '0 0 5px 0',
-    color: '#fff',
-    fontSize: '16px',
-  },
-  lessonDescription: {
-    margin: 0,
-    color: '#888',
-    fontSize: '14px',
-  },
-  lessonMeta: {
-    display: 'flex',
-    gap: '10px',
-  },
-  difficultyBadge: {
-    padding: '3px 8px',
-    borderRadius: '3px',
-    fontSize: '11px',
-    backgroundColor: '#333',
-    color: '#aaa',
-    textTransform: 'capitalize',
-  },
-  durationBadge: {
-    padding: '3px 8px',
-    borderRadius: '3px',
-    fontSize: '11px',
-    backgroundColor: '#333',
-    color: '#76b900',
-  },
-  lessonObjectives: {
-    fontSize: '13px',
-    color: '#888',
-    marginBottom: '10px',
-  },
-  lessonCommands: {
-    fontSize: '13px',
-    color: '#888',
-    marginBottom: '15px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    flexWrap: 'wrap',
-  },
-  commandTag: {
-    padding: '2px 8px',
-    backgroundColor: '#1a1a1a',
-    borderRadius: '3px',
-    fontFamily: 'monospace',
-    fontSize: '12px',
-    color: '#76b900',
-  },
-  startLessonButton: {
-    padding: '10px 20px',
-    backgroundColor: '#76b900',
-    border: 'none',
-    borderRadius: '4px',
-    color: '#000',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
-  tutorialContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    minHeight: '500px',
-  },
-  progressHeader: {
-    marginBottom: '20px',
-  },
-  progressInfo: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: '8px',
-  },
-  stepCounter: {
-    color: '#76b900',
-    fontWeight: 'bold',
-    fontSize: '14px',
-  },
-  tutorialLessonTitle: {
-    color: '#888',
-    fontSize: '14px',
-  },
-  progressBarContainer: {
-    height: '8px',
-    backgroundColor: '#333',
-    borderRadius: '4px',
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: '#76b900',
-    transition: 'width 0.3s ease',
-  },
-  stepContent: {
-    flex: 1,
-    backgroundColor: '#2a2a2a',
-    borderRadius: '8px',
-    padding: '25px',
-    marginBottom: '20px',
-    overflow: 'auto',
-  },
-  stepTitle: {
-    margin: '0 0 15px 0',
-    color: '#fff',
-    fontSize: '20px',
-  },
-  stepTypeBadge: {
-    display: 'inline-block',
-    padding: '4px 12px',
-    backgroundColor: '#333',
-    borderRadius: '4px',
-    fontSize: '12px',
-    color: '#aaa',
-    marginBottom: '20px',
-  },
-  stepDescription: {
-    color: '#ccc',
-    fontSize: '15px',
-    lineHeight: 1.7,
-    marginBottom: '20px',
-  },
-  tipsBox: {
-    backgroundColor: '#1a3d1a',
-    border: '1px solid #2d5a2d',
-    borderRadius: '6px',
-    padding: '15px',
-    marginBottom: '20px',
-    fontSize: '14px',
-  },
-  tipsList: {
-    margin: '10px 0 0 0',
-    paddingLeft: '20px',
-    color: '#aaa',
-  },
-  commandSection: {
-    marginTop: '20px',
-  },
-  commandInputWrapper: {
-    display: 'flex',
-    alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-    borderRadius: '6px',
-    padding: '4px',
-    marginBottom: '10px',
-  },
-  prompt: {
-    color: '#76b900',
-    fontFamily: 'monospace',
-    fontSize: '16px',
-    padding: '0 10px',
-    fontWeight: 'bold',
-  },
-  commandInput: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    border: 'none',
-    color: '#fff',
-    fontFamily: 'monospace',
-    fontSize: '14px',
-    padding: '10px',
-    outline: 'none',
-  },
-  executeButton: {
-    padding: '10px 20px',
-    backgroundColor: '#76b900',
-    border: 'none',
-    borderRadius: '4px',
-    color: '#000',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
-  hintText: {
-    color: '#888',
-    fontSize: '13px',
-    marginBottom: '15px',
-  },
-  outputBox: {
-    backgroundColor: '#0a0a0a',
-    borderRadius: '6px',
-    padding: '15px',
-    marginBottom: '15px',
-    maxHeight: '200px',
-    overflow: 'auto',
-  },
-  outputText: {
-    margin: 0,
-    color: '#ccc',
-    fontFamily: 'monospace',
-    fontSize: '13px',
-    whiteSpace: 'pre-wrap',
-  },
-  feedbackBox: {
-    padding: '15px',
-    borderRadius: '6px',
-    border: '1px solid',
-    fontSize: '14px',
-  },
-  quizSection: {
-    marginTop: '20px',
-  },
-  quizQuestion: {
-    color: '#fff',
-    fontSize: '16px',
-    marginBottom: '20px',
-  },
-  quizChoices: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-  },
-  quizChoice: {
-    padding: '15px 20px',
-    backgroundColor: '#333',
-    border: '2px solid #444',
-    borderRadius: '6px',
-    color: '#fff',
-    textAlign: 'left',
-    cursor: 'pointer',
-    fontSize: '14px',
-    transition: 'all 0.2s',
-  },
-  quizChoiceSelected: {
-    borderColor: '#76b900',
-    backgroundColor: '#2a3a2a',
-  },
-  quizChoiceCorrect: {
-    borderColor: '#4CAF50',
-    backgroundColor: '#1b4d1b',
-  },
-  quizChoiceWrong: {
-    borderColor: '#F44336',
-    backgroundColor: '#4d1b1b',
-  },
-  submitQuizButton: {
-    marginTop: '20px',
-    padding: '12px 30px',
-    backgroundColor: '#76b900',
-    border: 'none',
-    borderRadius: '6px',
-    color: '#000',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
-  quizExplanation: {
-    marginTop: '20px',
-    padding: '15px',
-    borderRadius: '6px',
-    border: '1px solid',
-    backgroundColor: '#2a2a2a',
-  },
-  continueButton: {
-    marginTop: '20px',
-    padding: '12px 30px',
-    backgroundColor: '#76b900',
-    border: 'none',
-    borderRadius: '6px',
-    color: '#000',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
-  tutorialNav: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '10px',
-  },
-  navButton: {
-    padding: '12px 24px',
-    backgroundColor: '#333',
-    border: 'none',
-    borderRadius: '6px',
-    color: '#fff',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
-  exitButton: {
-    padding: '12px 24px',
-    backgroundColor: '#444',
-    border: 'none',
-    borderRadius: '6px',
-    color: '#888',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
-  completeButton: {
-    padding: '12px 24px',
-    backgroundColor: '#4CAF50',
-    border: 'none',
-    borderRadius: '6px',
-    color: '#fff',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
-  observeLabel: {
-    color: '#76b900',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    marginBottom: '15px',
-  },
-  commandDisplay: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: '6px',
-    padding: '15px',
-    marginBottom: '15px',
-  },
-  commandCode: {
-    color: '#76b900',
-    fontFamily: 'monospace',
-    fontSize: '14px',
-  },
-  practiceLabel: {
-    color: '#f97316',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    marginBottom: '15px',
-  },
-};
 
 export default LearningPaths;

@@ -59,7 +59,8 @@ describe('LearningPaths', () => {
       render(<LearningPaths />);
 
       const pathCard = screen.getByText('Platform Bring-Up Mastery');
-      fireEvent.click(pathCard.closest('div[style*="cursor: pointer"]')!);
+      // Use closest with Tailwind class selector (cursor-pointer)
+      fireEvent.click(pathCard.closest('.cursor-pointer')!);
 
       await waitFor(() => {
         // Module title includes emoji, so use partial match
@@ -71,7 +72,7 @@ describe('LearningPaths', () => {
       render(<LearningPaths />);
 
       const pathCard = screen.getByText('Platform Bring-Up Mastery');
-      fireEvent.click(pathCard.closest('div[style*="cursor: pointer"]')!);
+      fireEvent.click(pathCard.closest('.cursor-pointer')!);
 
       await waitFor(() => {
         expect(screen.getByText('← Back')).toBeInTheDocument();
@@ -83,7 +84,7 @@ describe('LearningPaths', () => {
 
       // Navigate to modules
       const pathCard = screen.getByText('Platform Bring-Up Mastery');
-      fireEvent.click(pathCard.closest('div[style*="cursor: pointer"]')!);
+      fireEvent.click(pathCard.closest('.cursor-pointer')!);
 
       await waitFor(() => {
         expect(screen.getByText('← Back')).toBeInTheDocument();

@@ -17,6 +17,9 @@ export default {
       fontFamily: {
         mono: ['JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', 'monospace'],
       },
+      stroke: {
+        'nvidia-green': '#76B900',
+      },
     },
   },
   plugins: [],
