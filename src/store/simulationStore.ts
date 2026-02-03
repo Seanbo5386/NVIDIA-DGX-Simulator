@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
 import type { ClusterConfig, GPU, HealthStatus, XIDError, InfiniBandHCA } from '@/types/hardware';
 import type { Scenario, ScenarioProgress, ExamState, ExamBreakdown } from '@/types/scenarios';
 import type { ValidationResult, ValidationConfig } from '@/types/validation';
@@ -93,7 +94,7 @@ interface SimulationState {
 
 export const useSimulationStore = create<SimulationState>()(
   persist(
-    (set, get) => ({
+    immer((set, get) => ({
       // Initial state
       cluster: createDefaultCluster(),
       selectedNode: null,
@@ -130,153 +131,98 @@ export const useSimulationStore = create<SimulationState>()(
 
       selectNode: (nodeId) => set({ selectedNode: nodeId }),
 
-      updateGPU: (nodeId, gpuId, updates) => set((state) => ({
-        cluster: {
-          ...state.cluster,
-          nodes: state.cluster.nodes.map(node =>
-            node.id === nodeId
-              ? {
-                ...node,
-                gpus: node.gpus.map(gpu =>
-                  gpu.id === gpuId ? { ...gpu, ...updates } : gpu
-                ),
-              }
-              : node
-          ),
-        },
-      })),
+      updateGPU: (nodeId, gpuId, updates) => set((state) => {
+        const node = state.cluster.nodes.find(n => n.id === nodeId);
+        if (node) {
+          const gpu = node.gpus.find(g => g.id === gpuId);
+          if (gpu) {
+            Object.assign(gpu, updates);
+          }
+        }
+      }),
 
-      updateHCAs: (nodeId, hcas) => set((state) => ({
-        cluster: {
-          ...state.cluster,
-          nodes: state.cluster.nodes.map(node =>
-            node.id === nodeId
-              ? { ...node, hcas }
-              : node
-          ),
-        },
-      })),
+      updateHCAs: (nodeId, hcas) => set((state) => {
+        const node = state.cluster.nodes.find(n => n.id === nodeId);
+        if (node) {
+          node.hcas = hcas;
+        }
+      }),
 
-      updateNodeHealth: (nodeId, health) => set((state) => ({
-        cluster: {
-          ...state.cluster,
-          nodes: state.cluster.nodes.map(node =>
-            node.id === nodeId ? { ...node, healthStatus: health } : node
-          ),
-        },
-      })),
+      updateNodeHealth: (nodeId, health) => set((state) => {
+        const node = state.cluster.nodes.find(n => n.id === nodeId);
+        if (node) {
+          node.healthStatus = health;
+        }
+      }),
 
-      addXIDError: (nodeId, gpuId, error) => set((state) => ({
-        cluster: {
-          ...state.cluster,
-          nodes: state.cluster.nodes.map(node =>
-            node.id === nodeId
-              ? {
-                ...node,
-                gpus: node.gpus.map(gpu =>
-                  gpu.id === gpuId
-                    ? { ...gpu, xidErrors: [...gpu.xidErrors, error] }
-                    : gpu
-                ),
-              }
-              : node
-          ),
-        },
-      })),
+      addXIDError: (nodeId, gpuId, error) => set((state) => {
+        const node = state.cluster.nodes.find(n => n.id === nodeId);
+        if (node) {
+          const gpu = node.gpus.find(g => g.id === gpuId);
+          if (gpu) {
+            gpu.xidErrors.push(error);
+          }
+        }
+      }),
 
-      setMIGMode: (nodeId, gpuId, enabled) => set((state) => ({
-        cluster: {
-          ...state.cluster,
-          nodes: state.cluster.nodes.map(node =>
-            node.id === nodeId
-              ? {
-                ...node,
-                gpus: node.gpus.map(gpu =>
-                  gpu.id === gpuId
-                    ? { ...gpu, migMode: enabled, migInstances: enabled ? gpu.migInstances : [] }
-                    : gpu
-                ),
-              }
-              : node
-          ),
-        },
-      })),
+      setMIGMode: (nodeId, gpuId, enabled) => set((state) => {
+        const node = state.cluster.nodes.find(n => n.id === nodeId);
+        if (node) {
+          const gpu = node.gpus.find(g => g.id === gpuId);
+          if (gpu) {
+            gpu.migMode = enabled;
+            gpu.migInstances = enabled ? gpu.migInstances : [];
+          }
+        }
+      }),
 
-      setSlurmState: (nodeId, state, reason) => set((prevState) => ({
-        cluster: {
-          ...prevState.cluster,
-          nodes: prevState.cluster.nodes.map(node =>
-            node.id === nodeId
-              ? { ...node, slurmState: state, slurmReason: reason }
-              : node
-          ),
-        },
-      })),
+      setSlurmState: (nodeId, slurmState, reason) => set((state) => {
+        const node = state.cluster.nodes.find(n => n.id === nodeId);
+        if (node) {
+          node.slurmState = slurmState;
+          node.slurmReason = reason;
+        }
+      }),
 
       // Cross-tool state synchronization
-      allocateGPUsForJob: (nodeId, gpuIds, jobId, targetUtilization = 85) => set((prevState) => ({
-        cluster: {
-          ...prevState.cluster,
-          nodes: prevState.cluster.nodes.map(node =>
-            node.id === nodeId
-              ? {
-                ...node,
-                gpus: node.gpus.map(gpu =>
-                  gpuIds.includes(gpu.id)
-                    ? {
-                      ...gpu,
-                      utilization: targetUtilization + (Math.random() * 10 - 5), // Add jitter
-                      memoryUsed: Math.floor(gpu.memoryTotal * (0.7 + Math.random() * 0.2)),
-                      powerDraw: gpu.powerLimit * (0.75 + Math.random() * 0.15),
-                      temperature: 65 + Math.random() * 15,
-                      allocatedJobId: jobId,
-                    }
-                    : gpu
-                ),
-              }
-              : node
-          ),
-        },
-      })),
+      allocateGPUsForJob: (nodeId, gpuIds, jobId, targetUtilization = 85) => set((state) => {
+        const node = state.cluster.nodes.find(n => n.id === nodeId);
+        if (node) {
+          for (const gpu of node.gpus) {
+            if (gpuIds.includes(gpu.id)) {
+              gpu.utilization = targetUtilization + (Math.random() * 10 - 5); // Add jitter
+              gpu.memoryUsed = Math.floor(gpu.memoryTotal * (0.7 + Math.random() * 0.2));
+              gpu.powerDraw = gpu.powerLimit * (0.75 + Math.random() * 0.15);
+              gpu.temperature = 65 + Math.random() * 15;
+              gpu.allocatedJobId = jobId;
+            }
+          }
+        }
+      }),
 
-      deallocateGPUsForJob: (jobId) => set((prevState) => ({
-        cluster: {
-          ...prevState.cluster,
-          nodes: prevState.cluster.nodes.map(node => ({
-            ...node,
-            gpus: node.gpus.map(gpu =>
-              gpu.allocatedJobId === jobId
-                ? {
-                  ...gpu,
-                  utilization: Math.random() * 5, // Idle utilization
-                  memoryUsed: Math.floor(gpu.memoryTotal * 0.01),
-                  powerDraw: gpu.powerLimit * 0.15,
-                  temperature: 35 + Math.random() * 10,
-                  allocatedJobId: undefined,
-                }
-                : gpu
-            ),
-          })),
-        },
-      })),
+      deallocateGPUsForJob: (jobId) => set((state) => {
+        for (const node of state.cluster.nodes) {
+          for (const gpu of node.gpus) {
+            if (gpu.allocatedJobId === jobId) {
+              gpu.utilization = Math.random() * 5; // Idle utilization
+              gpu.memoryUsed = Math.floor(gpu.memoryTotal * 0.01);
+              gpu.powerDraw = gpu.powerLimit * 0.15;
+              gpu.temperature = 35 + Math.random() * 10;
+              gpu.allocatedJobId = undefined;
+            }
+          }
+        }
+      }),
 
-      setClusterPowerLimit: (nodeId, limitWatts) => set((prevState) => ({
-        cluster: {
-          ...prevState.cluster,
-          nodes: prevState.cluster.nodes.map(node =>
-            node.id === nodeId
-              ? {
-                ...node,
-                clusterPowerLimit: limitWatts,
-                gpus: node.gpus.map(gpu => ({
-                  ...gpu,
-                  powerLimit: Math.min(gpu.powerLimit, limitWatts / node.gpus.length),
-                })),
-              }
-              : node
-          ),
-        },
-      })),
+      setClusterPowerLimit: (nodeId, limitWatts) => set((state) => {
+        const node = state.cluster.nodes.find(n => n.id === nodeId);
+        if (node) {
+          node.clusterPowerLimit = limitWatts;
+          for (const gpu of node.gpus) {
+            gpu.powerLimit = Math.min(gpu.powerLimit, limitWatts / node.gpus.length);
+          }
+        }
+      }),
 
       getClusterPowerLimit: (nodeId) => {
         const state = get();
@@ -286,195 +232,130 @@ export const useSimulationStore = create<SimulationState>()(
 
       // Scenario & Lab actions
       loadScenario: (scenario) => {
-        set({
-          activeScenario: scenario,
-          scenarioProgress: {
-            ...get().scenarioProgress,
-            [scenario.id]: {
-              scenarioId: scenario.id,
-              startTime: Date.now(),
+        set((state) => {
+          state.activeScenario = scenario;
+          state.scenarioProgress[scenario.id] = {
+            scenarioId: scenario.id,
+            startTime: Date.now(),
+            completed: false,
+            currentStepIndex: 0,
+            steps: scenario.steps.map(step => ({
+              stepId: step.id,
+              startTime: 0,
               completed: false,
-              currentStepIndex: 0,
-              steps: scenario.steps.map(step => ({
-                stepId: step.id,
-                startTime: 0,
-                completed: false,
-                validationsPassed: 0,
-                validationsTotal: step.validationRules?.length || 0,
-                hintsRevealed: 0,
-                commandsExecuted: [],
-                lastCommandTime: undefined,
-                failedAttempts: 0,
-                revealedHintIds: [],
-              })),
-              totalTimeSpent: 0,
-              hintsUsed: 0,
-              validationAttempts: 0,
-              validationFailures: 0,
-            }
+              validationsPassed: 0,
+              validationsTotal: step.validationRules?.length || 0,
+              hintsRevealed: 0,
+              commandsExecuted: [],
+              lastCommandTime: undefined,
+              failedAttempts: 0,
+              revealedHintIds: [],
+            })),
+            totalTimeSpent: 0,
+            hintsUsed: 0,
+            validationAttempts: 0,
+            validationFailures: 0,
+          };
+
+          // Start first step
+          const progress = state.scenarioProgress[scenario.id];
+          if (progress && progress.steps[0]) {
+            progress.steps[0].startTime = Date.now();
           }
         });
-
-        // Start first step
-        const progress = get().scenarioProgress[scenario.id];
-        if (progress && progress.steps[0]) {
-          progress.steps[0].startTime = Date.now();
-        }
       },
 
       startLab: (labId) => set({ activeLabId: labId }),
 
-      completeScenarioStep: (scenarioId, stepId) => {
-        const state = get();
+      completeScenarioStep: (scenarioId, stepId) => set((state) => {
         const progress = state.scenarioProgress[scenarioId];
-
         if (!progress) return;
 
         const stepIndex = progress.steps.findIndex(s => s.stepId === stepId);
         if (stepIndex === -1) return;
 
-        const updatedSteps = [...progress.steps];
-        updatedSteps[stepIndex] = {
-          ...updatedSteps[stepIndex],
-          completed: true,
-          endTime: Date.now(),
-        };
+        // Update the step
+        progress.steps[stepIndex].completed = true;
+        progress.steps[stepIndex].endTime = Date.now();
 
         // Start next step if exists
         const nextStepIndex = stepIndex + 1;
-        if (nextStepIndex < updatedSteps.length) {
-          updatedSteps[nextStepIndex].startTime = Date.now();
+        if (nextStepIndex < progress.steps.length) {
+          progress.steps[nextStepIndex].startTime = Date.now();
         }
 
         // Check if all steps completed
-        const allCompleted = updatedSteps.every(s => s.completed);
+        const allCompleted = progress.steps.every(s => s.completed);
 
-        set({
-          scenarioProgress: {
-            ...state.scenarioProgress,
-            [scenarioId]: {
-              ...progress,
-              steps: updatedSteps,
-              currentStepIndex: Math.min(nextStepIndex, updatedSteps.length - 1),
-              completed: allCompleted,
-              endTime: allCompleted ? Date.now() : undefined,
-            }
-          },
-          completedScenarios: allCompleted && !state.completedScenarios.includes(scenarioId)
-            ? [...state.completedScenarios, scenarioId]
-            : state.completedScenarios,
-        });
-      },
+        progress.currentStepIndex = Math.min(nextStepIndex, progress.steps.length - 1);
+        progress.completed = allCompleted;
+        if (allCompleted) {
+          progress.endTime = Date.now();
+        }
+
+        if (allCompleted && !state.completedScenarios.includes(scenarioId)) {
+          state.completedScenarios.push(scenarioId);
+        }
+      }),
 
       exitScenario: () => set({ activeScenario: null }),
 
       // Hint actions
-      revealHint: (scenarioId, stepId, hintId) => {
-        const state = get();
+      revealHint: (scenarioId, stepId, hintId) => set((state) => {
         const progress = state.scenarioProgress[scenarioId];
         if (!progress) return;
 
         const stepIndex = progress.steps.findIndex(s => s.stepId === stepId);
         if (stepIndex === -1) return;
 
-        const updatedSteps = [...progress.steps];
-        const step = updatedSteps[stepIndex];
+        const step = progress.steps[stepIndex];
 
         // Add hint ID to revealed list if not already there
         if (!step.revealedHintIds.includes(hintId)) {
-          updatedSteps[stepIndex] = {
-            ...step,
-            revealedHintIds: [...step.revealedHintIds, hintId],
-            hintsRevealed: step.hintsRevealed + 1,
-          };
-
-          set({
-            scenarioProgress: {
-              ...state.scenarioProgress,
-              [scenarioId]: {
-                ...progress,
-                steps: updatedSteps,
-                hintsUsed: progress.hintsUsed + 1,
-              }
-            }
-          });
+          step.revealedHintIds.push(hintId);
+          step.hintsRevealed += 1;
+          progress.hintsUsed += 1;
         }
-      },
+      }),
 
-      recordCommand: (scenarioId, stepId, command) => {
-        const state = get();
+      recordCommand: (scenarioId, stepId, command) => set((state) => {
         const progress = state.scenarioProgress[scenarioId];
         if (!progress) return;
 
         const stepIndex = progress.steps.findIndex(s => s.stepId === stepId);
         if (stepIndex === -1) return;
 
-        const updatedSteps = [...progress.steps];
-        const step = updatedSteps[stepIndex];
+        const step = progress.steps[stepIndex];
+        step.commandsExecuted.push(command);
+        step.lastCommandTime = Date.now();
+      }),
 
-        updatedSteps[stepIndex] = {
-          ...step,
-          commandsExecuted: [...step.commandsExecuted, command],
-          lastCommandTime: Date.now(),
-        };
-
-        set({
-          scenarioProgress: {
-            ...state.scenarioProgress,
-            [scenarioId]: {
-              ...progress,
-              steps: updatedSteps,
-            }
-          }
-        });
-      },
-
-      recordFailedAttempt: (scenarioId, stepId) => {
-        const state = get();
+      recordFailedAttempt: (scenarioId, stepId) => set((state) => {
         const progress = state.scenarioProgress[scenarioId];
         if (!progress) return;
 
         const stepIndex = progress.steps.findIndex(s => s.stepId === stepId);
         if (stepIndex === -1) return;
 
-        const updatedSteps = [...progress.steps];
-        const step = updatedSteps[stepIndex];
-
-        updatedSteps[stepIndex] = {
-          ...step,
-          failedAttempts: step.failedAttempts + 1,
-        };
-
-        set({
-          scenarioProgress: {
-            ...state.scenarioProgress,
-            [scenarioId]: {
-              ...progress,
-              steps: updatedSteps,
-              validationAttempts: progress.validationAttempts + 1,
-              validationFailures: progress.validationFailures + 1,
-            }
-          }
-        });
-      },
+        progress.steps[stepIndex].failedAttempts += 1;
+        progress.validationAttempts += 1;
+        progress.validationFailures += 1;
+      }),
 
       // Validation actions
       validateStep: (scenarioId, stepId, result) => {
-        const state = get();
         const key = `${scenarioId}-${stepId}`;
+        const currentState = get();
 
-        set({
-          stepValidation: {
-            ...state.stepValidation,
-            [key]: result,
-          },
+        set((state) => {
+          state.stepValidation[key] = result;
         });
 
         // Auto-advance if validation passed and config allows
-        if (result.passed && state.validationConfig.autoAdvance) {
+        if (result.passed && currentState.validationConfig.autoAdvance) {
           setTimeout(() => {
             get().completeScenarioStep(scenarioId, stepId);
-          }, state.validationConfig.autoAdvanceDelay);
+          }, currentState.validationConfig.autoAdvanceDelay);
         }
 
         // Record failed attempt if validation failed
@@ -483,65 +364,38 @@ export const useSimulationStore = create<SimulationState>()(
         }
       },
 
-      clearStepValidation: (scenarioId, stepId) => {
-        const state = get();
+      clearStepValidation: (scenarioId, stepId) => set((state) => {
         const key = `${scenarioId}-${stepId}`;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { [key]: _removed, ...rest } = state.stepValidation;
+        delete state.stepValidation[key];
+      }),
 
-        set({
-          stepValidation: rest,
-        });
-      },
-
-      updateValidationConfig: (config) => {
-        const state = get();
-        set({
-          validationConfig: {
-            ...state.validationConfig,
-            ...config,
-          },
-        });
-      },
+      updateValidationConfig: (config) => set((state) => {
+        Object.assign(state.validationConfig, config);
+      }),
 
       // Exam actions
-      startExam: (examId) => {
-        set({
-          activeExam: {
-            examId,
-            startTime: Date.now(),
-            timeRemaining: 90 * 60, // 90 minutes in seconds
-            answers: new Map(),
-            currentQuestionIndex: 0,
-            flaggedQuestions: new Set(),
-            answeredQuestions: new Set(),
-            submitted: false,
-          }
-        });
-      },
+      startExam: (examId) => set((state) => {
+        state.activeExam = {
+          examId,
+          startTime: Date.now(),
+          timeRemaining: 90 * 60, // 90 minutes in seconds
+          answers: new Map(),
+          currentQuestionIndex: 0,
+          flaggedQuestions: new Set(),
+          answeredQuestions: new Set(),
+          submitted: false,
+        };
+      }),
 
-      submitExamAnswer: (questionId, answer) => {
-        const state = get();
+      submitExamAnswer: (questionId, answer) => set((state) => {
         if (!state.activeExam) return;
-
-        const updatedAnswers = new Map(state.activeExam.answers);
-        updatedAnswers.set(questionId, answer);
-
-        const updatedAnswered = new Set(state.activeExam.answeredQuestions);
-        updatedAnswered.add(questionId);
-
-        set({
-          activeExam: {
-            ...state.activeExam,
-            answers: updatedAnswers,
-            answeredQuestions: updatedAnswered,
-          }
-        });
-      },
+        state.activeExam.answers.set(questionId, answer);
+        state.activeExam.answeredQuestions.add(questionId);
+      }),
 
       endExam: () => {
-        const state = get();
-        if (!state.activeExam) return null;
+        const currentState = get();
+        if (!currentState.activeExam) return null;
 
         // This will be implemented with actual scoring logic
         // For now, return a placeholder breakdown
@@ -557,15 +411,14 @@ export const useSimulationStore = create<SimulationState>()(
             domain5: { domainName: 'Troubleshooting', questionsTotal: 4, questionsCorrect: 0, percentage: 0, weight: 12 },
           },
           questionResults: [],
-          timeSpent: Math.floor((Date.now() - state.activeExam.startTime) / 1000),
+          timeSpent: Math.floor((Date.now() - currentState.activeExam.startTime) / 1000),
         };
 
-        set({
-          activeExam: {
-            ...state.activeExam,
-            submitted: true,
-            endTime: Date.now(),
-            breakdown,
+        set((state) => {
+          if (state.activeExam) {
+            state.activeExam.submitted = true;
+            state.activeExam.endTime = Date.now();
+            state.activeExam.breakdown = breakdown;
           }
         });
 
@@ -608,8 +461,10 @@ export const useSimulationStore = create<SimulationState>()(
 
       setLabPanelVisible: (visible: boolean) => set({ labPanelVisible: visible }),
 
-      toggleLabPanel: () => set((state) => ({ labPanelVisible: !state.labPanelVisible })),
-    }),
+      toggleLabPanel: () => set((state) => {
+        state.labPanelVisible = !state.labPanelVisible;
+      }),
+    })),
     {
       name: 'nvidia-simulator-storage',
       partialize: (state) => ({

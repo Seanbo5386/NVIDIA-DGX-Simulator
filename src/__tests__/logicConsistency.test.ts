@@ -654,13 +654,8 @@ describe('Category 3: Slurm ↔ GPU State Synchronization', () => {
 
   describe('3.2 Node State Affects Scheduling', () => {
     it('should show drained node in sinfo', () => {
-      // Update node to drained state
-      const state = useSimulationStore.getState();
-      const node = state.cluster.nodes.find((n) => n.id === 'dgx-00');
-      if (node) {
-        node.slurmState = 'drain';
-        node.slurmReason = 'maintenance';
-      }
+      // Update node to drained state using store action
+      useSimulationStore.getState().setSlurmState('dgx-00', 'drain', 'maintenance');
 
       const output = runCommand('sinfo');
       // Should show drained state
@@ -668,13 +663,8 @@ describe('Category 3: Slurm ↔ GPU State Synchronization', () => {
     });
 
     it('should show drain reason in scontrol', () => {
-      // Update node to drained state
-      const state = useSimulationStore.getState();
-      const node = state.cluster.nodes.find((n) => n.id === 'dgx-00');
-      if (node) {
-        node.slurmState = 'drain';
-        node.slurmReason = 'GPU maintenance';
-      }
+      // Update node to drained state using store action
+      useSimulationStore.getState().setSlurmState('dgx-00', 'drain', 'GPU maintenance');
 
       const output = runCommand('scontrol show node dgx-00');
       expect(output).toMatch(/State|Reason/i);
@@ -695,13 +685,8 @@ describe('Category 3: Slurm ↔ GPU State Synchronization', () => {
     it('should allow manual drain after GPU failure', () => {
       injectFault('dgx-00', 0, 'xid');
 
-      // User manually drains
-      const state = useSimulationStore.getState();
-      const node = state.cluster.nodes.find((n) => n.id === 'dgx-00');
-      if (node) {
-        node.slurmState = 'drain';
-        node.slurmReason = 'GPU 0 XID error';
-      }
+      // User manually drains using store action
+      useSimulationStore.getState().setSlurmState('dgx-00', 'drain', 'GPU 0 XID error');
 
       const output = runCommand('scontrol show node dgx-00');
       expect(output).toMatch(/State/i);

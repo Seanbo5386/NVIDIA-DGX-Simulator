@@ -11,6 +11,7 @@ import * as d3 from 'd3';
 import type { DGXNode } from '@/types/hardware';
 import { Network } from 'lucide-react';
 import { useNetworkAnimation, AnimationLink } from '@/hooks/useNetworkAnimation';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useSimulationStore } from '@/store/simulationStore';
 import { NetworkNodeDetail, NetworkNodeType } from './NetworkNodeDetail';
 import {
@@ -52,6 +53,7 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
   const detailPanelRef = useRef<HTMLDivElement>(null);
   const nodeDataRef = useRef(node); // Ref to access current node data in click handlers
   const isRunning = useSimulationStore((state) => state.isRunning);
+  const reducedMotion = useReducedMotion();
   const [selectedNode, setSelectedNode] = useState<NetworkNodeType | null>(null);
 
   // Keep ref updated with latest node data
@@ -110,8 +112,9 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
     return links;
   }, [node, layout]);
 
+  // Disable particle animations when user prefers reduced motion
   const { particles } = useNetworkAnimation({
-    enabled: isRunning,
+    enabled: isRunning && !reducedMotion,
     links: animationLinks,
   });
 
@@ -440,10 +443,10 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
       {/* Animation status indicator */}
       <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
         <div
-          className={`w-2 h-2 rounded-full ${isRunning ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`}
+          className={`w-2 h-2 rounded-full ${isRunning && !reducedMotion ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`}
         />
-        {isRunning ? 'Live data flow' : 'Paused'}
-        {isRunning && <span>({particles.length} active flows)</span>}
+        {reducedMotion ? 'Animations disabled (reduced motion)' : isRunning ? 'Live data flow' : 'Paused'}
+        {isRunning && !reducedMotion && <span>({particles.length} active flows)</span>}
       </div>
 
       <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">

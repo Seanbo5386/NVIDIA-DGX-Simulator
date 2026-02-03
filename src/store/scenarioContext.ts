@@ -7,6 +7,7 @@
 
 import type { ClusterConfig, GPU, DGXNode as Node, HealthStatus, XIDError } from '@/types/hardware';
 import { useSimulationStore } from './simulationStore';
+import { logger } from '@/utils/logger';
 
 /**
  * Base interface for all state changes
@@ -75,19 +76,19 @@ export class ScenarioContext {
    */
   updateGPU(nodeId: string, gpuId: number, updates: Partial<GPU>, command?: string): void {
     if (this.readonly) {
-      console.warn('Cannot update GPU in readonly context');
+      logger.warn('Cannot update GPU in readonly context');
       return;
     }
 
     const node = this.getNode(nodeId);
     if (!node) {
-      console.error(`Node ${nodeId} not found in scenario context`);
+      logger.error(`Node ${nodeId} not found in scenario context`);
       return;
     }
 
     const gpu = node.gpus.find((g: GPU) => g.id === gpuId);
     if (!gpu) {
-      console.error(`GPU ${gpuId} not found on node ${nodeId}`);
+      logger.error(`GPU ${gpuId} not found on node ${nodeId}`);
       return;
     }
 
@@ -111,13 +112,13 @@ export class ScenarioContext {
    */
   updateNodeHealth(nodeId: string, health: HealthStatus, command?: string): void {
     if (this.readonly) {
-      console.warn('Cannot update node health in readonly context');
+      logger.warn('Cannot update node health in readonly context');
       return;
     }
 
     const node = this.getNode(nodeId);
     if (!node) {
-      console.error(`Node ${nodeId} not found in scenario context`);
+      logger.error(`Node ${nodeId} not found in scenario context`);
       return;
     }
 
@@ -138,13 +139,13 @@ export class ScenarioContext {
    */
   addXIDError(nodeId: string, gpuId: number, error: XIDError, command?: string): void {
     if (this.readonly) {
-      console.warn('Cannot add XID error in readonly context');
+      logger.warn('Cannot add XID error in readonly context');
       return;
     }
 
     const gpu = this.getGPU(nodeId, gpuId);
     if (!gpu) {
-      console.error(`GPU ${gpuId} not found on node ${nodeId}`);
+      logger.error(`GPU ${gpuId} not found on node ${nodeId}`);
       return;
     }
 
@@ -169,13 +170,13 @@ export class ScenarioContext {
    */
   setMIGMode(nodeId: string, gpuId: number, enabled: boolean, command?: string): void {
     if (this.readonly) {
-      console.warn('Cannot set MIG mode in readonly context');
+      logger.warn('Cannot set MIG mode in readonly context');
       return;
     }
 
     const gpu = this.getGPU(nodeId, gpuId);
     if (!gpu) {
-      console.error(`GPU ${gpuId} not found on node ${nodeId}`);
+      logger.error(`GPU ${gpuId} not found on node ${nodeId}`);
       return;
     }
 
@@ -202,13 +203,13 @@ export class ScenarioContext {
    */
   setSlurmState(nodeId: string, state: 'idle' | 'alloc' | 'drain' | 'down', reason?: string, command?: string): void {
     if (this.readonly) {
-      console.warn('Cannot set Slurm state in readonly context');
+      logger.warn('Cannot set Slurm state in readonly context');
       return;
     }
 
     const node = this.getNode(nodeId);
     if (!node) {
-      console.error(`Node ${nodeId} not found in scenario context`);
+      logger.error(`Node ${nodeId} not found in scenario context`);
       return;
     }
 
@@ -247,7 +248,7 @@ export class ScenarioContext {
    */
   applyToGlobalState(): void {
     if (this.readonly) {
-      console.warn('Cannot apply changes from readonly context');
+      logger.warn('Cannot apply changes from readonly context');
       return;
     }
 
@@ -287,11 +288,11 @@ export class ScenarioContext {
           break;
 
         default:
-          console.warn(`Unknown mutation type: ${mutation.type}`);
+          logger.warn(`Unknown mutation type: ${mutation.type}`);
       }
     });
 
-    console.log(`Applied ${this.mutations.length} mutations from scenario ${this.scenarioId} to global state`);
+    logger.debug(`Applied ${this.mutations.length} mutations from scenario ${this.scenarioId} to global state`);
   }
 
   /**
@@ -299,14 +300,14 @@ export class ScenarioContext {
    */
   reset(): void {
     if (this.readonly) {
-      console.warn('Cannot reset readonly context');
+      logger.warn('Cannot reset readonly context');
       return;
     }
 
     const store = useSimulationStore.getState();
     this.isolatedCluster = structuredClone(store.cluster);
     this.mutations = [];
-    console.log(`Reset scenario context ${this.scenarioId}`);
+    logger.debug(`Reset scenario context ${this.scenarioId}`);
   }
 
   /**
@@ -380,7 +381,7 @@ export class ScenarioContextManager {
   createContext(scenarioId: string, baseCluster?: ClusterConfig): ScenarioContext {
     const context = new ScenarioContext(scenarioId, baseCluster);
     this.contexts.set(scenarioId, context);
-    console.log(`Created scenario context: ${scenarioId}`);
+    logger.debug(`Created scenario context: ${scenarioId}`);
     return context;
   }
 
@@ -407,7 +408,7 @@ export class ScenarioContextManager {
    */
   setActiveContext(scenarioId: string | null): void {
     this.activeContextId = scenarioId;
-    console.log(`Active scenario context: ${scenarioId || 'none'}`);
+    logger.debug(`Active scenario context: ${scenarioId || 'none'}`);
   }
 
   /**
@@ -426,7 +427,7 @@ export class ScenarioContextManager {
     if (deleted && this.activeContextId === scenarioId) {
       this.activeContextId = null;
     }
-    console.log(`Deleted scenario context: ${scenarioId}`);
+    logger.debug(`Deleted scenario context: ${scenarioId}`);
     return deleted;
   }
 
@@ -436,7 +437,7 @@ export class ScenarioContextManager {
   clearAll(): void {
     this.contexts.clear();
     this.activeContextId = null;
-    console.log('Cleared all scenario contexts');
+    logger.debug('Cleared all scenario contexts');
   }
 
   /**
