@@ -32,12 +32,14 @@ The NVIDIA AI Infrastructure Certification Simulator provides realistic, hands-o
 ## ✨ Features
 
 ### 🖥️ Realistic Terminal Emulation
+
 - Full xterm.js-powered terminal with ANSI color support
 - Command history (↑/↓ arrows)
 - Accurate output formatting matching real NVIDIA tools
 - Tab completion (coming soon)
 
 ### 📊 Real-Time Dashboard
+
 - Live GPU metrics (utilization, memory, temperature, power)
 - Cluster health monitoring
 - Per-node GPU status cards
@@ -47,6 +49,7 @@ The NVIDIA AI Infrastructure Certification Simulator provides realistic, hands-o
 ### 🔧 Comprehensive Tool Simulation
 
 #### nvidia-smi
+
 - GPU listing and detailed queries
 - MIG mode enable/disable
 - MIG instance creation/deletion
@@ -55,6 +58,7 @@ The NVIDIA AI Infrastructure Certification Simulator provides realistic, hands-o
 - ECC error reporting
 
 #### dcgmi (Data Center GPU Manager)
+
 - GPU discovery
 - Diagnostic modes (short/medium/long)
 - Health monitoring
@@ -62,6 +66,7 @@ The NVIDIA AI Infrastructure Certification Simulator provides realistic, hands-o
 - Statistics collection
 
 #### ipmitool
+
 - BMC sensor readings
 - LAN configuration
 - Chassis power control
@@ -70,6 +75,7 @@ The NVIDIA AI Infrastructure Certification Simulator provides realistic, hands-o
 - SEL (System Event Log)
 
 #### InfiniBand Tools
+
 - `ibstat` - HCA status and port information
 - `ibporterrors` - Error counter monitoring
 - `iblinkinfo` - Fabric link discovery
@@ -77,12 +83,14 @@ The NVIDIA AI Infrastructure Certification Simulator provides realistic, hands-o
 - `ibdiagnet` - Full fabric diagnostics
 
 ### 📚 Learning Resources
+
 - XID error reference guide
 - Command documentation with examples
 - Quick start tutorials
 - Exam domain coverage guides
 
 ### 💾 State Management
+
 - Persistent cluster configuration
 - Export/import cluster state as JSON
 - Simulation controls (play/pause/reset)
@@ -109,7 +117,7 @@ npm install
 npm run dev
 ```
 
-The simulator will open at `http://localhost:3000`
+The simulator will open at `http://localhost:5173`
 
 ### Building for Production
 
@@ -172,77 +180,82 @@ Use the Dashboard to select which DGX node you're working on. The terminal autom
 
 ### GPU Management
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `nvidia-smi` | Display GPU status | `nvidia-smi` |
-| `nvidia-smi -q` | Detailed GPU query | `nvidia-smi -q -i 0` |
-| `nvidia-smi -i <id> -mig 1` | Enable MIG mode | `nvidia-smi -i 0 -mig 1` |
-| `nvidia-smi mig -lgip` | List MIG profiles | `nvidia-smi mig -lgip` |
-| `nvidia-smi mig -cgi <ids>` | Create GPU instances | `nvidia-smi mig -i 0 -cgi 19,19,19 -C` |
-| `nvidia-smi mig -lgi` | List GPU instances | `nvidia-smi mig -lgi` |
-| `nvidia-smi mig -dgi` | Destroy GPU instances | `nvidia-smi mig -i 0 -dgi` |
-| `nvidia-smi -pl <watts>` | Set power limit | `nvidia-smi -i 0 -pl 350` |
-| `nvidia-smi nvlink --status` | NVLink status | `nvidia-smi nvlink --status` |
-| `nvidia-smi topo -m` | Topology matrix | `nvidia-smi topo -m` |
+| Command                      | Description           | Example                                |
+| ---------------------------- | --------------------- | -------------------------------------- |
+| `nvidia-smi`                 | Display GPU status    | `nvidia-smi`                           |
+| `nvidia-smi -q`              | Detailed GPU query    | `nvidia-smi -q -i 0`                   |
+| `nvidia-smi -i <id> -mig 1`  | Enable MIG mode       | `nvidia-smi -i 0 -mig 1`               |
+| `nvidia-smi mig -lgip`       | List MIG profiles     | `nvidia-smi mig -lgip`                 |
+| `nvidia-smi mig -cgi <ids>`  | Create GPU instances  | `nvidia-smi mig -i 0 -cgi 19,19,19 -C` |
+| `nvidia-smi mig -lgi`        | List GPU instances    | `nvidia-smi mig -lgi`                  |
+| `nvidia-smi mig -dgi`        | Destroy GPU instances | `nvidia-smi mig -i 0 -dgi`             |
+| `nvidia-smi -pl <watts>`     | Set power limit       | `nvidia-smi -i 0 -pl 350`              |
+| `nvidia-smi nvlink --status` | NVLink status         | `nvidia-smi nvlink --status`           |
+| `nvidia-smi topo -m`         | Topology matrix       | `nvidia-smi topo -m`                   |
 
 ### DCGM (Data Center GPU Manager)
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `dcgmi discovery -l` | List GPUs | `dcgmi discovery -l` |
-| `dcgmi diag --mode <1-3>` | Run diagnostics | `dcgmi diag --mode 2` |
-| `dcgmi health --check` | Check GPU health | `dcgmi health --check` |
-| `dcgmi group -c <name>` | Create GPU group | `dcgmi group -c my-group` |
+| Command                   | Description      | Example                   |
+| ------------------------- | ---------------- | ------------------------- |
+| `dcgmi discovery -l`      | List GPUs        | `dcgmi discovery -l`      |
+| `dcgmi diag --mode <1-3>` | Run diagnostics  | `dcgmi diag --mode 2`     |
+| `dcgmi health --check`    | Check GPU health | `dcgmi health --check`    |
+| `dcgmi group -c <name>`   | Create GPU group | `dcgmi group -c my-group` |
 
 ### BMC Management (ipmitool)
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `ipmitool sensor list` | Read all sensors | `ipmitool sensor list` |
-| `ipmitool mc info` | BMC firmware info | `ipmitool mc info` |
-| `ipmitool chassis status` | Power state | `ipmitool chassis status` |
-| `ipmitool chassis power cycle` | Power cycle | `ipmitool chassis power cycle` |
-| `ipmitool lan print` | LAN configuration | `ipmitool lan print 1` |
-| `ipmitool user list` | List BMC users | `ipmitool user list 1` |
+| Command                        | Description       | Example                        |
+| ------------------------------ | ----------------- | ------------------------------ |
+| `ipmitool sensor list`         | Read all sensors  | `ipmitool sensor list`         |
+| `ipmitool mc info`             | BMC firmware info | `ipmitool mc info`             |
+| `ipmitool chassis status`      | Power state       | `ipmitool chassis status`      |
+| `ipmitool chassis power cycle` | Power cycle       | `ipmitool chassis power cycle` |
+| `ipmitool lan print`           | LAN configuration | `ipmitool lan print 1`         |
+| `ipmitool user list`           | List BMC users    | `ipmitool user list 1`         |
 
 ### InfiniBand Tools
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `ibstat` | Port status | `ibstat` |
-| `ibporterrors` | Error counters | `ibporterrors` |
-| `iblinkinfo` | Fabric link info | `iblinkinfo -v` |
-| `perfquery` | Performance counters | `perfquery` |
-| `ibdiagnet` | Full fabric diagnostic | `ibdiagnet` |
+| Command        | Description            | Example         |
+| -------------- | ---------------------- | --------------- |
+| `ibstat`       | Port status            | `ibstat`        |
+| `ibporterrors` | Error counters         | `ibporterrors`  |
+| `iblinkinfo`   | Fabric link info       | `iblinkinfo -v` |
+| `perfquery`    | Performance counters   | `perfquery`     |
+| `ibdiagnet`    | Full fabric diagnostic | `ibdiagnet`     |
 
 ## 🧪 Interactive Labs
 
 The simulator includes guided labs covering all 5 NCP-AII exam domains:
 
 ### Domain 1: Systems and Server Bring-Up (31%)
+
 - DGX SuperPOD Initial Deployment
 - Firmware Upgrade Workflow
 - Cable Validation
 - Power and Cooling Validation
 
 ### Domain 2: Physical Layer Management (5%)
+
 - BlueField DPU Configuration
 - MIG Partitioning
 - Advanced MIG Scenarios
 
 ### Domain 3: Control Plane Installation (19%)
+
 - BCM High Availability Setup
 - Slurm with GPU GRES
 - Container Toolkit Setup
 - Pyxis/Enroot with Slurm
 
 ### Domain 4: Cluster Test and Verification (33%)
+
 - Single-Node Stress Test
 - HPL Benchmark
 - NCCL Tests (Single & Multi-Node)
 - Storage Validation
 
 ### Domain 5: Troubleshooting and Optimization (12%)
+
 - Diagnose Low HPL Performance
 - GPU Faults in NVSM
 - InfiniBand Link Errors
@@ -299,18 +312,19 @@ The simulator accurately models:
 
 Common GPU XID errors you'll encounter:
 
-| XID | Description | Action |
-|-----|-------------|--------|
-| 13 | Graphics engine exception | Check application, possible GPU issue |
-| 31 | GPU memory page fault | Application bug or memory corruption |
-| 48 | Double-bit ECC error | Replace GPU if persistent |
-| 63 | ECC page retirement | Monitor; excessive retirements = replace |
-| 79 | GPU fallen off bus | Check PCIe slot, reseat GPU |
-| 119 | GSP error | Driver/firmware mismatch |
+| XID | Description               | Action                                   |
+| --- | ------------------------- | ---------------------------------------- |
+| 13  | Graphics engine exception | Check application, possible GPU issue    |
+| 31  | GPU memory page fault     | Application bug or memory corruption     |
+| 48  | Double-bit ECC error      | Replace GPU if persistent                |
+| 63  | ECC page retirement       | Monitor; excessive retirements = replace |
+| 79  | GPU fallen off bus        | Check PCIe slot, reseat GPU              |
+| 119 | GSP error                 | Driver/firmware mismatch                 |
 
 ## 🛣️ Roadmap
 
 ### Recently Completed
+
 - [x] NVSM simulator with hierarchical navigation
 - [x] Mellanox tools (mlxconfig, mlxlink, mlxcables, mlxtrace)
 - [x] Slurm commands (sinfo, squeue, scontrol, sbatch, scancel)
@@ -323,12 +337,14 @@ Common GPU XID errors you'll encounter:
 - [x] HPL benchmark simulation
 
 ### In Progress
+
 - [ ] Expand practice exam to 150+ questions
 - [ ] Additional lab scenarios (target: 30+)
 - [ ] Enhanced feedback system with "did you mean?" suggestions
 - [ ] Domain-specific study modes
 
 ### Coming Soon
+
 - [ ] D3.js topology visualization
 - [ ] Tab completion for commands
 - [ ] Command history search (Ctrl+R)
@@ -336,6 +352,7 @@ Common GPU XID errors you'll encounter:
 - [ ] Progress analytics dashboard
 
 ### Future Enhancements
+
 - WebSocket support for multi-user scenarios
 - Collaborative training sessions
 - Achievement/badge system for completed labs
@@ -368,6 +385,7 @@ npm run test:e2e:report   # View HTML report
 ```
 
 **E2E Test Coverage:**
+
 - ClusterKit commands (~20 tests)
 - Burn-in tests: NCCL, HPL, NeMo (~25 tests)
 - Firmware and cable validation (~20 tests)

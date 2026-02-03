@@ -1,17 +1,17 @@
-import { useState, useEffect } from 'react';
-import { SimulatorView } from './components/SimulatorView';
-import { FaultInjection } from './components/FaultInjection';
-import { LabWorkspace } from './components/LabWorkspace';
-import { ExamWorkspace } from './components/ExamWorkspace';
-import { WelcomeScreen } from './components/WelcomeScreen';
-import { Documentation } from './components/Documentation';
-import { StudyDashboard } from './components/StudyDashboard';
-import { LearningPaths } from './components/LearningPaths';
-import { getTotalPathStats } from './utils/learningPathEngine';
-import { useSimulationStore } from './store/simulationStore';
-import { useMetricsSimulation } from './hooks/useMetricsSimulation';
-import { initializeScenario } from './utils/scenarioLoader';
-import { safeParseClusterJSON } from './utils/clusterSchema';
+import { useState, useEffect } from "react";
+import { SimulatorView } from "./components/SimulatorView";
+import { FaultInjection } from "./components/FaultInjection";
+import { LabWorkspace } from "./components/LabWorkspace";
+import { ExamWorkspace } from "./components/ExamWorkspace";
+import { WelcomeScreen } from "./components/WelcomeScreen";
+import { Documentation } from "./components/Documentation";
+import { StudyDashboard } from "./components/StudyDashboard";
+import { LearningPaths } from "./components/LearningPaths";
+import { getTotalPathStats } from "./utils/learningPathEngine";
+import { useSimulationStore } from "./store/simulationStore";
+import { useMetricsSimulation } from "./hooks/useMetricsSimulation";
+import { initializeScenario } from "./utils/scenarioLoader";
+import { safeParseClusterJSON } from "./utils/clusterSchema";
 import {
   Monitor,
   BookOpen,
@@ -23,18 +23,21 @@ import {
   Upload,
   TrendingUp,
   GraduationCap,
-} from 'lucide-react';
+} from "lucide-react";
 
-type View = 'simulator' | 'labs' | 'docs';
+type View = "simulator" | "labs" | "docs";
 
 function App() {
-  const [currentView, setCurrentView] = useState<View>('simulator');
+  const [currentView, setCurrentView] = useState<View>("simulator");
   const [showLabWorkspace, setShowLabWorkspace] = useState(false);
   const [showExamWorkspace, setShowExamWorkspace] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [showStudyDashboard, setShowStudyDashboard] = useState(false);
   const [showLearningPaths, setShowLearningPaths] = useState(false);
-  const [learningProgress, setLearningProgress] = useState({ completed: 0, total: 0 });
+  const [learningProgress, setLearningProgress] = useState({
+    completed: 0,
+    total: 0,
+  });
 
   const {
     cluster,
@@ -51,7 +54,7 @@ function App() {
 
   // Load learning progress on mount and when modal closes
   useEffect(() => {
-    const savedLessons = localStorage.getItem('ncp-aii-completed-lessons');
+    const savedLessons = localStorage.getItem("ncp-aii-completed-lessons");
     const completed = savedLessons ? JSON.parse(savedLessons).length : 0;
     const stats = getTotalPathStats();
     setLearningProgress({ completed, total: stats.totalLessons });
@@ -59,9 +62,9 @@ function App() {
 
   const handleExport = () => {
     const data = exportCluster();
-    const blob = new Blob([data], { type: 'application/json' });
+    const blob = new Blob([data], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `cluster-config-${Date.now()}.json`;
     a.click();
@@ -69,9 +72,9 @@ function App() {
   };
 
   const handleImport = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
@@ -82,7 +85,9 @@ function App() {
           if (result.valid && result.data) {
             importCluster(JSON.stringify(result.data));
           } else {
-            alert(`Failed to import cluster configuration:\n\n${result.errors.join('\n')}`);
+            alert(
+              `Failed to import cluster configuration:\n\n${result.errors.join("\n")}`,
+            );
           }
         };
         reader.readAsText(file);
@@ -94,32 +99,42 @@ function App() {
   const handleStartLab = async (domain: string) => {
     // Map domain to first scenario in that domain
     const domainScenarios: Record<string, string> = {
-      'domain1': 'domain1-server-post',
-      'domain2': 'domain2-mig-setup',
-      'domain3': 'domain3-slurm-config',
-      'domain4': 'domain4-dcgmi-diag',
-      'domain5': 'domain5-xid-errors',
+      domain1: "domain1-server-post",
+      domain2: "domain2-mig-setup",
+      domain3: "domain3-slurm-config",
+      domain4: "domain4-dcgmi-diag",
+      domain5: "domain5-xid-errors",
     };
 
     const scenarioId = domainScenarios[domain];
     if (scenarioId) {
       const success = await initializeScenario(scenarioId);
       if (success) {
-        setCurrentView('simulator'); // Switch to simulator view
+        setCurrentView("simulator"); // Switch to simulator view
         setShowLabWorkspace(true); // Show lab workspace overlay
       }
     }
   };
 
   const handleBeginExam = () => {
-    setCurrentView('simulator'); // Switch to simulator view
+    setCurrentView("simulator"); // Switch to simulator view
     setShowExamWorkspace(true); // Show exam workspace overlay
   };
 
   return (
     <div className="h-screen bg-gray-900 text-gray-100 flex flex-col overflow-hidden">
+      {/* Skip Link for Keyboard Navigation */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-nvidia-green focus:text-black focus:px-4 focus:py-2 focus:rounded"
+      >
+        Skip to main content
+      </a>
+
       {/* Header */}
-      <header className={`bg-black border-b border-gray-800 px-6 py-4 transition-all duration-300 ${showLabWorkspace ? 'ml-[600px]' : ''}`}>
+      <header
+        className={`bg-black border-b border-gray-800 px-6 py-4 transition-all duration-300 ${showLabWorkspace ? "ml-[600px]" : ""}`}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
@@ -142,13 +157,18 @@ function App() {
             <div className="flex items-center gap-2 bg-gray-800 rounded-lg p-2">
               <button
                 onClick={isRunning ? stopSimulation : startSimulation}
-                className={`p-2 rounded transition-colors ${isRunning
-                  ? 'bg-red-600 hover:bg-red-700 text-white'
-                  : 'bg-nvidia-green hover:bg-nvidia-darkgreen text-black'
-                  }`}
-                title={isRunning ? 'Pause Simulation' : 'Start Simulation'}
+                className={`p-2 rounded transition-colors ${
+                  isRunning
+                    ? "bg-red-600 hover:bg-red-700 text-white"
+                    : "bg-nvidia-green hover:bg-nvidia-darkgreen text-black"
+                }`}
+                title={isRunning ? "Pause Simulation" : "Start Simulation"}
               >
-                {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                {isRunning ? (
+                  <Pause className="w-4 h-4" />
+                ) : (
+                  <Play className="w-4 h-4" />
+                )}
               </button>
               <button
                 onClick={resetSimulation}
@@ -179,7 +199,8 @@ function App() {
                 {cluster.name}
               </div>
               <div className="text-xs text-gray-400">
-                {cluster.nodes.length} nodes • {cluster.nodes.reduce((sum, n) => sum + n.gpus.length, 0)} GPUs
+                {cluster.nodes.length} nodes •{" "}
+                {cluster.nodes.reduce((sum, n) => sum + n.gpus.length, 0)} GPUs
               </div>
             </div>
           </div>
@@ -187,35 +208,40 @@ function App() {
       </header>
 
       {/* Navigation */}
-      <nav className={`bg-gray-800 border-b border-gray-700 px-6 transition-all duration-300 ${showLabWorkspace ? 'ml-[600px]' : ''}`}>
+      <nav
+        className={`bg-gray-800 border-b border-gray-700 px-6 transition-all duration-300 ${showLabWorkspace ? "ml-[600px]" : ""}`}
+      >
         <div className="flex gap-1">
           <button
-            onClick={() => setCurrentView('simulator')}
-            className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${currentView === 'simulator'
-              ? 'border-nvidia-green text-nvidia-green'
-              : 'border-transparent text-gray-400 hover:text-gray-200'
-              }`}
+            onClick={() => setCurrentView("simulator")}
+            className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
+              currentView === "simulator"
+                ? "border-nvidia-green text-nvidia-green"
+                : "border-transparent text-gray-400 hover:text-gray-200"
+            }`}
           >
             <Monitor className="w-4 h-4" />
             <span className="font-medium">Simulator</span>
           </button>
           <button
             data-testid="nav-labs"
-            onClick={() => setCurrentView('labs')}
-            className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${currentView === 'labs'
-              ? 'border-nvidia-green text-nvidia-green'
-              : 'border-transparent text-gray-400 hover:text-gray-200'
-              }`}
+            onClick={() => setCurrentView("labs")}
+            className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
+              currentView === "labs"
+                ? "border-nvidia-green text-nvidia-green"
+                : "border-transparent text-gray-400 hover:text-gray-200"
+            }`}
           >
             <Settings className="w-4 h-4" />
             <span className="font-medium">Labs & Scenarios</span>
           </button>
           <button
-            onClick={() => setCurrentView('docs')}
-            className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${currentView === 'docs'
-              ? 'border-nvidia-green text-nvidia-green'
-              : 'border-transparent text-gray-400 hover:text-gray-200'
-              }`}
+            onClick={() => setCurrentView("docs")}
+            className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
+              currentView === "docs"
+                ? "border-nvidia-green text-nvidia-green"
+                : "border-transparent text-gray-400 hover:text-gray-200"
+            }`}
           >
             <BookOpen className="w-4 h-4" />
             <span className="font-medium">Documentation</span>
@@ -224,12 +250,15 @@ function App() {
       </nav>
 
       {/* Main Content */}
-      <main className={`flex-1 h-0 flex flex-col overflow-hidden transition-all duration-300 ${showLabWorkspace ? 'ml-[600px]' : ''}`}>
-        {currentView === 'simulator' && (
+      <main
+        id="main-content"
+        className={`flex-1 h-0 flex flex-col overflow-hidden transition-all duration-300 ${showLabWorkspace ? "ml-[600px]" : ""}`}
+      >
+        {currentView === "simulator" && (
           <SimulatorView className="flex-1 h-full" />
         )}
 
-        {currentView === 'labs' && (
+        {currentView === "labs" && (
           <div data-testid="labs-list" className="p-6 h-full overflow-auto">
             <div className="max-w-6xl mx-auto">
               {/* Fault Injection System */}
@@ -243,7 +272,10 @@ function App() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {/* Domain 1: Systems and Server Bring-Up */}
-                  <div data-testid="domain-1-card" className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                  <div
+                    data-testid="domain-1-card"
+                    className="bg-gray-800 rounded-lg p-6 border border-gray-700"
+                  >
                     <div className="text-sm text-nvidia-green font-semibold mb-2">
                       Domain 1 • 31%
                     </div>
@@ -269,7 +301,7 @@ function App() {
                       </li>
                     </ul>
                     <button
-                      onClick={() => handleStartLab('domain1')}
+                      onClick={() => handleStartLab("domain1")}
                       className="mt-4 w-full bg-nvidia-green text-black py-2 rounded-lg font-medium hover:bg-nvidia-darkgreen transition-colors"
                     >
                       Start Labs
@@ -277,7 +309,10 @@ function App() {
                   </div>
 
                   {/* Domain 2: Physical Layer Management */}
-                  <div data-testid="domain-2-card" className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                  <div
+                    data-testid="domain-2-card"
+                    className="bg-gray-800 rounded-lg p-6 border border-gray-700"
+                  >
                     <div className="text-sm text-nvidia-green font-semibold mb-2">
                       Domain 2 • 5%
                     </div>
@@ -299,7 +334,7 @@ function App() {
                       </li>
                     </ul>
                     <button
-                      onClick={() => handleStartLab('domain2')}
+                      onClick={() => handleStartLab("domain2")}
                       className="mt-4 w-full bg-nvidia-green text-black py-2 rounded-lg font-medium hover:bg-nvidia-darkgreen transition-colors"
                     >
                       Start Labs
@@ -307,7 +342,10 @@ function App() {
                   </div>
 
                   {/* Domain 3: Control Plane Installation */}
-                  <div data-testid="domain-3-card" className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                  <div
+                    data-testid="domain-3-card"
+                    className="bg-gray-800 rounded-lg p-6 border border-gray-700"
+                  >
                     <div className="text-sm text-nvidia-green font-semibold mb-2">
                       Domain 3 • 19%
                     </div>
@@ -333,7 +371,7 @@ function App() {
                       </li>
                     </ul>
                     <button
-                      onClick={() => handleStartLab('domain3')}
+                      onClick={() => handleStartLab("domain3")}
                       className="mt-4 w-full bg-nvidia-green text-black py-2 rounded-lg font-medium hover:bg-nvidia-darkgreen transition-colors"
                     >
                       Start Labs
@@ -341,7 +379,10 @@ function App() {
                   </div>
 
                   {/* Domain 4: Cluster Test and Verification */}
-                  <div data-testid="domain-4-card" className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                  <div
+                    data-testid="domain-4-card"
+                    className="bg-gray-800 rounded-lg p-6 border border-gray-700"
+                  >
                     <div className="text-sm text-nvidia-green font-semibold mb-2">
                       Domain 4 • 33%
                     </div>
@@ -367,7 +408,7 @@ function App() {
                       </li>
                     </ul>
                     <button
-                      onClick={() => handleStartLab('domain4')}
+                      onClick={() => handleStartLab("domain4")}
                       className="mt-4 w-full bg-nvidia-green text-black py-2 rounded-lg font-medium hover:bg-nvidia-darkgreen transition-colors"
                     >
                       Start Labs
@@ -375,7 +416,10 @@ function App() {
                   </div>
 
                   {/* Domain 5: Troubleshooting */}
-                  <div data-testid="domain-5-card" className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                  <div
+                    data-testid="domain-5-card"
+                    className="bg-gray-800 rounded-lg p-6 border border-gray-700"
+                  >
                     <div className="text-sm text-nvidia-green font-semibold mb-2">
                       Domain 5 • 12%
                     </div>
@@ -401,7 +445,7 @@ function App() {
                       </li>
                     </ul>
                     <button
-                      onClick={() => handleStartLab('domain5')}
+                      onClick={() => handleStartLab("domain5")}
                       className="mt-4 w-full bg-nvidia-green text-black py-2 rounded-lg font-medium hover:bg-nvidia-darkgreen transition-colors"
                     >
                       Start Labs
@@ -409,7 +453,10 @@ function App() {
                   </div>
 
                   {/* Practice Exam */}
-                  <div data-testid="practice-exam-card" className="bg-gradient-to-br from-nvidia-green to-nvidia-darkgreen rounded-lg p-6 border border-nvidia-green">
+                  <div
+                    data-testid="practice-exam-card"
+                    className="bg-gradient-to-br from-nvidia-green to-nvidia-darkgreen rounded-lg p-6 border border-nvidia-green"
+                  >
                     <div className="text-sm text-black font-semibold mb-2">
                       Full Exam Simulation
                     </div>
@@ -417,8 +464,8 @@ function App() {
                       NCP-AII Practice Exam
                     </h3>
                     <p className="text-sm text-gray-900 mb-4">
-                      Take a timed mock exam with questions covering all five domains.
-                      Get instant feedback and detailed explanations.
+                      Take a timed mock exam with questions covering all five
+                      domains. Get instant feedback and detailed explanations.
                     </p>
                     <button
                       onClick={handleBeginExam}
@@ -434,22 +481,23 @@ function App() {
                       <GraduationCap className="w-4 h-4" />
                       Guided Learning
                     </div>
-                    <h3 className="text-lg font-bold mb-3">
-                      Learning Paths
-                    </h3>
+                    <h3 className="text-lg font-bold mb-3">Learning Paths</h3>
 
                     {/* Progress indicator */}
                     <div className="mb-4">
                       <div className="flex justify-between text-sm mb-1">
                         <span className="text-gray-400">Progress</span>
                         <span className="text-purple-400">
-                          {learningProgress.completed}/{learningProgress.total} lessons
+                          {learningProgress.completed}/{learningProgress.total}{" "}
+                          lessons
                         </span>
                       </div>
                       <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-purple-600 transition-all duration-300"
-                          style={{ width: `${learningProgress.total > 0 ? (learningProgress.completed / learningProgress.total) * 100 : 0}%` }}
+                          style={{
+                            width: `${learningProgress.total > 0 ? (learningProgress.completed / learningProgress.total) * 100 : 0}%`,
+                          }}
                         />
                       </div>
                     </div>
@@ -472,7 +520,9 @@ function App() {
                       onClick={() => setShowLearningPaths(true)}
                       className="mt-4 w-full bg-purple-600 text-white py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors"
                     >
-                      {learningProgress.completed > 0 ? 'Continue Learning' : 'Start Learning'}
+                      {learningProgress.completed > 0
+                        ? "Continue Learning"
+                        : "Start Learning"}
                     </button>
                   </div>
 
@@ -482,9 +532,7 @@ function App() {
                       <TrendingUp className="w-4 h-4" />
                       Track Your Progress
                     </div>
-                    <h3 className="text-lg font-bold mb-3">
-                      Study Dashboard
-                    </h3>
+                    <h3 className="text-lg font-bold mb-3">Study Dashboard</h3>
                     <ul className="space-y-2 text-sm text-gray-300">
                       <li className="flex items-start gap-2">
                         <span className="text-blue-400">▸</span>
@@ -516,19 +564,17 @@ function App() {
           </div>
         )}
 
-        {currentView === 'docs' && (
-          <Documentation />
-        )}
+        {currentView === "docs" && <Documentation />}
       </main>
 
       {/* Footer */}
-      <footer className={`bg-black border-t border-gray-800 px-6 py-3 transition-all duration-300 ${showLabWorkspace ? 'ml-[600px]' : ''}`}>
+      <footer
+        className={`bg-black border-t border-gray-800 px-6 py-3 transition-all duration-300 ${showLabWorkspace ? "ml-[600px]" : ""}`}
+      >
         <div className="flex items-center justify-between text-xs text-gray-400">
-          <div>
-            NVIDIA AI Infrastructure Certification Simulator v1.0
-          </div>
+          <div>NVIDIA AI Infrastructure Certification Simulator v1.0</div>
           <div className="flex items-center gap-4">
-            <span>Status: {isRunning ? '🟢 Running' : '🔴 Paused'}</span>
+            <span>Status: {isRunning ? "🟢 Running" : "🔴 Paused"}</span>
             <span>•</span>
             <span>NCP-AII Training Environment</span>
           </div>
@@ -545,9 +591,7 @@ function App() {
         <ExamWorkspace onClose={() => setShowExamWorkspace(false)} />
       )}
       {/* Welcome Splash Screen */}
-      {showWelcome && (
-        <WelcomeScreen onClose={() => setShowWelcome(false)} />
-      )}
+      {showWelcome && <WelcomeScreen onClose={() => setShowWelcome(false)} />}
 
       {/* Study Dashboard Modal */}
       {showStudyDashboard && (
@@ -557,7 +601,7 @@ function App() {
               onClose={() => setShowStudyDashboard(false)}
               onStartExam={(mode) => {
                 setShowStudyDashboard(false);
-                if (mode === 'full-practice' || mode === 'quick-quiz') {
+                if (mode === "full-practice" || mode === "quick-quiz") {
                   setShowExamWorkspace(true);
                 }
               }}
