@@ -1,5 +1,5 @@
-import type { ValidationRule, ValidationResult } from '@/types/scenarios';
-import { useSimulationStore } from '@/store/simulationStore';
+import type { ValidationRule, ValidationResult } from "@/types/scenarios";
+import { useSimulationStore } from "@/store/simulationStore";
 
 /**
  * Parses a command into its components
@@ -12,34 +12,38 @@ function parseCommand(command: string): {
   pipedCommands?: string[];
 } {
   const parts = command.trim().split(/\s+/);
-  const baseCommand = parts[0] || '';
+  const baseCommand = parts[0] || "";
   const args: string[] = [];
   const flags = new Map<string, string | boolean>();
 
   // Check for pipes
-  const isPiped = command.includes('|');
+  const isPiped = command.includes("|");
   let pipedCommands: string[] | undefined;
 
   if (isPiped) {
-    pipedCommands = command.split('|').map(c => c.trim());
+    pipedCommands = command.split("|").map((c) => c.trim());
   }
 
   // Parse flags and arguments
   for (let i = 1; i < parts.length; i++) {
     const part = parts[i];
 
-    if (part.startsWith('--')) {
+    if (part.startsWith("--")) {
       // Long flag
       const flagName = part.substring(2);
       const nextPart = parts[i + 1];
 
-      if (nextPart && !nextPart.startsWith('-')) {
+      if (nextPart && !nextPart.startsWith("-")) {
         flags.set(flagName, nextPart);
         i++; // Skip the value
       } else {
         flags.set(flagName, true);
       }
-    } else if (part.startsWith('-') && part.length > 1 && !/^-\d+$/.test(part)) {
+    } else if (
+      part.startsWith("-") &&
+      part.length > 1 &&
+      !/^-\d+$/.test(part)
+    ) {
       // Short flag(s) - but not negative numbers
       const flagChars = part.substring(1);
 
@@ -47,7 +51,7 @@ function parseCommand(command: string): {
         // Single short flag, might have a value
         const nextPart = parts[i + 1];
 
-        if (nextPart && !nextPart.startsWith('-')) {
+        if (nextPart && !nextPart.startsWith("-")) {
           flags.set(flagChars, nextPart);
           i++; // Skip the value
         } else {
@@ -73,17 +77,17 @@ function parseCommand(command: string): {
  */
 export function validateCommandExecuted(
   executedCommand: string,
-  expectedCommands: string[]
+  expectedCommands: string[],
 ): boolean {
   const normalizedExecuted = executedCommand.trim().toLowerCase();
 
   // Check for common invalid patterns first
   const invalidPatterns = [
-    /\s-i\s+-\d+/,           // -i -0 (negative GPU ID)
-    /\s--id\s+-\d+/,         // --id -0
-    /nvidia-smi.*\s-gpu\s/,  // -gpu instead of -i
-    /sinfo\s+help/,          // sinfo help (not a valid subcommand)
-    /scontrol\s+help(?!\s)/  // scontrol help without proper argument
+    /\s-i\s+-\d+/, // -i -0 (negative GPU ID)
+    /\s--id\s+-\d+/, // --id -0
+    /nvidia-smi.*\s-gpu\s/, // -gpu instead of -i
+    /sinfo\s+help/, // sinfo help (not a valid subcommand)
+    /scontrol\s+help(?!\s)/, // scontrol help without proper argument
   ];
 
   for (const pattern of invalidPatterns) {
@@ -94,7 +98,7 @@ export function validateCommandExecuted(
 
   const executedParsed = parseCommand(normalizedExecuted);
 
-  return expectedCommands.some(expected => {
+  return expectedCommands.some((expected) => {
     const normalizedExpected = expected.trim().toLowerCase();
     const expectedParsed = parseCommand(normalizedExpected);
 
@@ -103,18 +107,23 @@ export function validateCommandExecuted(
       return true;
     }
 
-    // Strategy 2: For piped commands, check each segment
+    // Strategy 2: For piped commands, check each segment matches fully
     if (executedParsed.isPiped && expectedParsed.isPiped) {
       const execPipes = executedParsed.pipedCommands || [];
       const expPipes = expectedParsed.pipedCommands || [];
 
-      // Check if all expected pipe segments are present
-      return expPipes.every(expSegment => {
-        const expCmd = parseCommand(expSegment);
-        return execPipes.some(execSegment => {
-          const execCmd = parseCommand(execSegment);
-          return execCmd.baseCommand === expCmd.baseCommand;
-        });
+      // Must have same number of pipe segments
+      if (execPipes.length !== expPipes.length) {
+        return false;
+      }
+
+      // Check each pipe segment matches (in order)
+      return expPipes.every((expSegment, idx) => {
+        const execSegment = execPipes[idx];
+        // Normalize and compare full segments
+        return (
+          expSegment.trim().toLowerCase() === execSegment.trim().toLowerCase()
+        );
       });
     }
 
@@ -144,8 +153,8 @@ export function validateCommandExecuted(
         // Check critical arguments if any
         if (expectedParsed.args.length > 0) {
           // For commands like "scontrol show node", check args match
-          return expectedParsed.args.every((arg, idx) =>
-            executedParsed.args[idx] === arg
+          return expectedParsed.args.every(
+            (arg, idx) => executedParsed.args[idx] === arg,
           );
         }
         return true;
@@ -154,9 +163,16 @@ export function validateCommandExecuted(
 
     // Strategy 4: Special handling for common command patterns
     // Handle "sinfo -o" with format strings
-    if (executedParsed.baseCommand === 'sinfo' && expectedParsed.baseCommand === 'sinfo') {
-      const execHasO = executedParsed.flags.has('o') || executedParsed.flags.has('output-format');
-      const expHasO = expectedParsed.flags.has('o') || expectedParsed.flags.has('output-format');
+    if (
+      executedParsed.baseCommand === "sinfo" &&
+      expectedParsed.baseCommand === "sinfo"
+    ) {
+      const execHasO =
+        executedParsed.flags.has("o") ||
+        executedParsed.flags.has("output-format");
+      const expHasO =
+        expectedParsed.flags.has("o") ||
+        expectedParsed.flags.has("output-format");
 
       if (execHasO && expHasO) {
         // Both have output format flag, consider it a match
@@ -165,15 +181,21 @@ export function validateCommandExecuted(
     }
 
     // Handle "scontrol show <type>" commands
-    if (executedParsed.baseCommand === 'scontrol' && expectedParsed.baseCommand === 'scontrol') {
-      if (executedParsed.args[0] === 'show' && expectedParsed.args[0] === 'show') {
+    if (
+      executedParsed.baseCommand === "scontrol" &&
+      expectedParsed.baseCommand === "scontrol"
+    ) {
+      if (
+        executedParsed.args[0] === "show" &&
+        expectedParsed.args[0] === "show"
+      ) {
         // If both are show commands, check the target type
         const execTarget = executedParsed.args[1]?.toLowerCase();
         const expTarget = expectedParsed.args[1]?.toLowerCase();
 
         // Handle variations: "node", "nodes", "partition", "partitions"
         if (execTarget && expTarget) {
-          const normalizeTarget = (t: string) => t.replace(/s$/, ''); // Remove trailing 's'
+          const normalizeTarget = (t: string) => t.replace(/s$/, ""); // Remove trailing 's'
           return normalizeTarget(execTarget) === normalizeTarget(expTarget);
         }
       }
@@ -186,15 +208,12 @@ export function validateCommandExecuted(
 /**
  * Validates command output against a regex pattern
  */
-function validateOutputMatch(
-  output: string,
-  pattern: string
-): boolean {
+function validateOutputMatch(output: string, pattern: string): boolean {
   try {
-    const regex = new RegExp(pattern, 'i');
+    const regex = new RegExp(pattern, "i");
     return regex.test(output);
   } catch (error) {
-    console.error('Invalid regex pattern:', pattern, error);
+    console.error("Invalid regex pattern:", pattern, error);
     return false;
   }
 }
@@ -204,67 +223,71 @@ function validateOutputMatch(
  */
 function validateStateCheck(
   stateCheck: string,
-  stateParams?: Record<string, string | number | boolean | undefined>
+  stateParams?: Record<string, string | number | boolean | undefined>,
 ): boolean {
   const store = useSimulationStore.getState();
   const { cluster } = store;
 
   switch (stateCheck) {
-    case 'gpu-healthy': {
+    case "gpu-healthy": {
       // Check if specified GPU (or all GPUs) are healthy
       const nodeId = stateParams?.nodeId;
       const gpuId = stateParams?.gpuId;
 
       if (nodeId && gpuId !== undefined) {
-        const node = cluster.nodes.find(n => n.id === nodeId);
-        const gpu = node?.gpus.find(g => g.id === gpuId);
-        return gpu?.healthStatus === 'OK';
+        const node = cluster.nodes.find((n) => n.id === nodeId);
+        const gpu = node?.gpus.find((g) => g.id === gpuId);
+        return gpu?.healthStatus === "OK";
       }
 
       // Check all GPUs
-      return cluster.nodes.every(node =>
-        node.gpus.every(gpu => gpu.healthStatus === 'OK')
+      return cluster.nodes.every((node) =>
+        node.gpus.every((gpu) => gpu.healthStatus === "OK"),
       );
     }
 
-    case 'nvlink-active': {
+    case "nvlink-active": {
       // Check if NVLink is active
       const nodeId = stateParams?.nodeId;
       const gpuId = stateParams?.gpuId;
 
       if (nodeId && gpuId !== undefined) {
-        const node = cluster.nodes.find(n => n.id === nodeId);
-        const gpu = node?.gpus.find(g => g.id === gpuId);
-        return gpu?.nvlinks.every(link => link.status === 'Active') ?? false;
+        const node = cluster.nodes.find((n) => n.id === nodeId);
+        const gpu = node?.gpus.find((g) => g.id === gpuId);
+        return gpu?.nvlinks.every((link) => link.status === "Active") ?? false;
       }
 
-      return cluster.nodes.every(node =>
-        node.gpus.every(gpu => gpu.nvlinks.every(link => link.status === 'Active'))
+      return cluster.nodes.every((node) =>
+        node.gpus.every((gpu) =>
+          gpu.nvlinks.every((link) => link.status === "Active"),
+        ),
       );
     }
 
-    case 'slurm-online': {
+    case "slurm-online": {
       // Check if Slurm nodes are online (idle or alloc, not down/drain)
-      return cluster.nodes.every(node =>
-        node.slurmState === 'idle' || node.slurmState === 'alloc'
+      return cluster.nodes.every(
+        (node) => node.slurmState === "idle" || node.slurmState === "alloc",
       );
     }
 
-    case 'temperature-normal': {
+    case "temperature-normal": {
       // Check if GPU temperatures are within normal range
-      const maxTemp = typeof stateParams?.maxTemp === 'number' ? stateParams.maxTemp : 85;
+      const maxTemp =
+        typeof stateParams?.maxTemp === "number" ? stateParams.maxTemp : 85;
 
-      return cluster.nodes.every(node =>
-        node.gpus.every(gpu => gpu.temperature < maxTemp)
+      return cluster.nodes.every((node) =>
+        node.gpus.every((gpu) => gpu.temperature < maxTemp),
       );
     }
 
-    case 'ecc-cleared': {
+    case "ecc-cleared": {
       // Check if ECC errors are cleared
-      return cluster.nodes.every(node =>
-        node.gpus.every(gpu =>
-          gpu.eccErrors.singleBit === 0 && gpu.eccErrors.doubleBit === 0
-        )
+      return cluster.nodes.every((node) =>
+        node.gpus.every(
+          (gpu) =>
+            gpu.eccErrors.singleBit === 0 && gpu.eccErrors.doubleBit === 0,
+        ),
       );
     }
 
@@ -283,16 +306,24 @@ export function validateRule(
     executedCommand?: string;
     commandOutput?: string;
     executionTime?: number;
-  }
+  },
 ): ValidationResult {
-  const { type, expectedCommands, outputPattern, stateCheck, stateParams, maxSeconds, requireAllCommands } = rule;
+  const {
+    type,
+    expectedCommands,
+    outputPattern,
+    stateCheck,
+    stateParams,
+    maxSeconds,
+    requireAllCommands,
+  } = rule;
 
   switch (type) {
-    case 'command-executed': {
+    case "command-executed": {
       if (!expectedCommands) {
         return {
           passed: false,
-          message: 'No expected commands defined',
+          message: "No expected commands defined",
           timestamp: Date.now(),
           rule,
         };
@@ -300,11 +331,14 @@ export function validateRule(
 
       // If requireAllCommands is true, check if all commands have been executed
       if (requireAllCommands) {
-        const executedCommands = commandTracker.getExecutedCommands(expectedCommands);
+        const executedCommands =
+          commandTracker.getExecutedCommands(expectedCommands);
         const passed = executedCommands.length === expectedCommands.length;
 
         if (!passed) {
-          const remaining = expectedCommands.filter(cmd => !executedCommands.includes(cmd));
+          const remaining = expectedCommands.filter(
+            (cmd) => !executedCommands.includes(cmd),
+          );
           return {
             passed: false,
             message: `Try all suggested commands. Remaining: ${remaining.length}/${expectedCommands.length}`,
@@ -315,7 +349,7 @@ export function validateRule(
 
         return {
           passed: true,
-          message: 'All suggested commands executed successfully',
+          message: "All suggested commands executed successfully",
           timestamp: Date.now(),
           rule,
         };
@@ -325,29 +359,35 @@ export function validateRule(
       if (!context.executedCommand) {
         return {
           passed: false,
-          message: 'No command executed',
+          message: "No command executed",
           timestamp: Date.now(),
           rule,
         };
       }
 
-      const passed = validateCommandExecuted(context.executedCommand, expectedCommands);
+      const passed = validateCommandExecuted(
+        context.executedCommand,
+        expectedCommands,
+      );
 
       // Special handling for GPU reset with XID 79 errors
       // When attempting GPU reset, if the output contains XID 79 error message,
       // the attempt itself is valid even though the command "failed"
       if (passed && context.commandOutput) {
-        const isGpuReset = context.executedCommand.includes('--gpu-reset') ||
-                           context.executedCommand.includes('-r');
-        const hasXid79Error = context.commandOutput.includes('XID 79') ||
-                              context.commandOutput.includes('fallen off the bus');
+        const isGpuReset =
+          context.executedCommand.includes("--gpu-reset") ||
+          context.executedCommand.includes("-r");
+        const hasXid79Error =
+          context.commandOutput.includes("XID 79") ||
+          context.commandOutput.includes("fallen off the bus");
 
         if (isGpuReset && hasXid79Error) {
           // For XID 79, attempting the reset is the correct action
           // The failure message is the expected outcome
           return {
             passed: true,
-            message: 'GPU reset attempted (XID 79: reset not possible, as expected)',
+            message:
+              "GPU reset attempted (XID 79: reset not possible, as expected)",
             timestamp: Date.now(),
             rule,
           };
@@ -357,18 +397,18 @@ export function validateRule(
       return {
         passed,
         message: passed
-          ? 'Command executed successfully'
-          : `Expected one of: ${expectedCommands.join(', ')}`,
+          ? "Command executed successfully"
+          : `Expected one of: ${expectedCommands.join(", ")}`,
         timestamp: Date.now(),
         rule,
       };
     }
 
-    case 'output-match': {
+    case "output-match": {
       if (!context.commandOutput || !outputPattern) {
         return {
           passed: false,
-          message: 'No output to validate',
+          message: "No output to validate",
           timestamp: Date.now(),
           rule,
         };
@@ -379,18 +419,18 @@ export function validateRule(
       return {
         passed,
         message: passed
-          ? 'Output matches expected pattern'
+          ? "Output matches expected pattern"
           : `Output did not match pattern: ${outputPattern}`,
         timestamp: Date.now(),
         rule,
       };
     }
 
-    case 'state-check': {
+    case "state-check": {
       if (!stateCheck) {
         return {
           passed: false,
-          message: 'No state check specified',
+          message: "No state check specified",
           timestamp: Date.now(),
           rule,
         };
@@ -401,18 +441,18 @@ export function validateRule(
       return {
         passed,
         message: passed
-          ? 'State validation passed'
+          ? "State validation passed"
           : `State check failed: ${stateCheck}`,
         timestamp: Date.now(),
         rule,
       };
     }
 
-    case 'time-limit': {
+    case "time-limit": {
       if (context.executionTime === undefined || !maxSeconds) {
         return {
           passed: true,
-          message: 'Time limit not applicable',
+          message: "Time limit not applicable",
           timestamp: Date.now(),
           rule,
         };
@@ -449,17 +489,19 @@ export function validateStepRules(
     executedCommand?: string;
     commandOutput?: string;
     executionTime?: number;
-  }
+  },
 ): ValidationResult[] {
-  return rules.map(rule => validateRule(rule, context));
+  return rules.map((rule) => validateRule(rule, context));
 }
 
 /**
  * Checks if step is completed based on validation results
  */
-export function isStepCompleted(validationResults: ValidationResult[]): boolean {
+export function isStepCompleted(
+  validationResults: ValidationResult[],
+): boolean {
   // Step is completed if all validations pass
-  return validationResults.every(result => result.passed);
+  return validationResults.every((result) => result.passed);
 }
 
 /**
@@ -507,25 +549,39 @@ export class CommandTracker {
   /**
    * Checks if a specific command was executed recently
    */
-  wasCommandExecuted(expectedCommand: string, withinSeconds: number = 60): boolean {
-    const cutoffTime = Date.now() - (withinSeconds * 1000);
-    const recentCommands = this.commandHistory.filter(cmd => cmd.timestamp >= cutoffTime);
+  wasCommandExecuted(
+    expectedCommand: string,
+    withinSeconds: number = 60,
+  ): boolean {
+    const cutoffTime = Date.now() - withinSeconds * 1000;
+    const recentCommands = this.commandHistory.filter(
+      (cmd) => cmd.timestamp >= cutoffTime,
+    );
 
-    return recentCommands.some(cmd =>
-      validateCommandExecuted(cmd.command, [expectedCommand])
+    return recentCommands.some((cmd) =>
+      validateCommandExecuted(cmd.command, [expectedCommand]),
     );
   }
 
   /**
    * Get which expected commands have been executed for the current step
    */
-  getExecutedCommands(expectedCommands: string[], withinSeconds: number = 3600): string[] {
-    const cutoffTime = Date.now() - (withinSeconds * 1000);
-    const recentCommands = this.commandHistory.filter(cmd => cmd.timestamp >= cutoffTime);
+  getExecutedCommands(
+    expectedCommands: string[],
+    withinSeconds: number = 3600,
+  ): string[] {
+    const cutoffTime = Date.now() - withinSeconds * 1000;
+    const recentCommands = this.commandHistory.filter(
+      (cmd) => cmd.timestamp >= cutoffTime,
+    );
 
     const executed: string[] = [];
     for (const expected of expectedCommands) {
-      if (recentCommands.some(cmd => validateCommandExecuted(cmd.command, [expected]))) {
+      if (
+        recentCommands.some((cmd) =>
+          validateCommandExecuted(cmd.command, [expected]),
+        )
+      ) {
         executed.push(expected);
       }
     }
@@ -536,7 +592,10 @@ export class CommandTracker {
   /**
    * Check if all expected commands have been executed
    */
-  allCommandsExecuted(expectedCommands: string[], withinSeconds: number = 3600): boolean {
+  allCommandsExecuted(
+    expectedCommands: string[],
+    withinSeconds: number = 3600,
+  ): boolean {
     const executed = this.getExecutedCommands(expectedCommands, withinSeconds);
     return executed.length === expectedCommands.length;
   }
