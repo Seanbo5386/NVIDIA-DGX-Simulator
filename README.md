@@ -113,8 +113,8 @@ The NVIDIA AI Infrastructure Certification Simulator provides realistic, hands-o
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
-cd dc-sim-011126
+git clone https://github.com/Seanbo5386/NVIDIA-Certification-Simulator.git
+cd NVIDIA-Certification-Simulator
 
 # Install dependencies
 npm install
