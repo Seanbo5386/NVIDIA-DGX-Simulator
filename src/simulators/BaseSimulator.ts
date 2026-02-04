@@ -8,16 +8,23 @@
  * - Metadata management
  */
 
-import type { CommandResult, CommandContext } from '@/types/commands';
-import type { ParsedCommand } from '@/utils/commandParser';
-import { commandInterceptor, type FlagDefinition } from '@/simulators/CommandInterceptor';
+import type { CommandResult, CommandContext } from "@/types/commands";
+import type { ParsedCommand } from "@/utils/commandParser";
+import {
+  commandInterceptor,
+  type FlagDefinition,
+} from "@/simulators/CommandInterceptor";
+import {
+  getCommandDefinitionRegistry,
+  CommandDefinitionRegistry,
+} from "@/cli/CommandDefinitionRegistry";
 
 /**
  * Command handler function type
  */
 export type CommandHandler = (
   parsed: ParsedCommand,
-  context: CommandContext
+  context: CommandContext,
 ) => CommandResult | Promise<CommandResult>;
 
 /**
@@ -62,6 +69,9 @@ export abstract class BaseSimulator {
   /** Command metadata for help generation */
   protected commandMetadata: Map<string, CommandMetadata> = new Map();
 
+  /** Command definition registry for JSON-based validation (optional) */
+  protected definitionRegistry: CommandDefinitionRegistry | null = null;
+
   /**
    * Get simulator metadata (name, version, description)
    * Must be implemented by subclasses
@@ -74,7 +84,10 @@ export abstract class BaseSimulator {
    * @param context - Command execution context
    * @returns Command result with output and exit code
    */
-  abstract execute(parsed: ParsedCommand, context: CommandContext): CommandResult | Promise<CommandResult>;
+  abstract execute(
+    parsed: ParsedCommand,
+    context: CommandContext,
+  ): CommandResult | Promise<CommandResult>;
 
   /**
    * Register a command handler with metadata
@@ -85,7 +98,7 @@ export abstract class BaseSimulator {
   protected registerCommand(
     name: string,
     handler: CommandHandler,
-    metadata?: CommandMetadata
+    metadata?: CommandMetadata,
   ): void {
     this.commands.set(name, handler);
     if (metadata) {
@@ -163,10 +176,12 @@ export abstract class BaseSimulator {
     if (metadata.commands.length > 0) {
       output += `Commands:\n`;
 
-      const maxLength = Math.max(...metadata.commands.map(cmd => cmd.name.length));
+      const maxLength = Math.max(
+        ...metadata.commands.map((cmd) => cmd.name.length),
+      );
 
       for (const cmd of metadata.commands) {
-        const padding = ' '.repeat(maxLength - cmd.name.length + 2);
+        const padding = " ".repeat(maxLength - cmd.name.length + 2);
         output += `  ${cmd.name}${padding}${cmd.description}\n`;
       }
 
@@ -193,14 +208,16 @@ export abstract class BaseSimulator {
     if (cmdMeta.flags && cmdMeta.flags.length > 0) {
       output += `Options:\n`;
       for (const flag of cmdMeta.flags) {
-        const shortPart = flag.short ? `-${flag.short}, ` : '    ';
+        const shortPart = flag.short ? `-${flag.short}, ` : "    ";
         const longPart = `--${flag.long}`;
-        const valuePart = flag.takesValue ? ' VALUE' : '';
-        const defaultPart = flag.defaultValue ? ` (default: ${flag.defaultValue})` : '';
+        const valuePart = flag.takesValue ? " VALUE" : "";
+        const defaultPart = flag.defaultValue
+          ? ` (default: ${flag.defaultValue})`
+          : "";
         output += `  ${shortPart}${longPart}${valuePart}\n`;
         output += `      ${flag.description}${defaultPart}\n`;
       }
-      output += '\n';
+      output += "\n";
     }
 
     if (cmdMeta.examples && cmdMeta.examples.length > 0) {
@@ -247,10 +264,13 @@ export abstract class BaseSimulator {
    * @param operation - What requires permission
    * @returns Command result with exit code 13 (EACCES)
    */
-  protected createPermissionError(command: string, operation: string = 'access'): CommandResult {
+  protected createPermissionError(
+    command: string,
+    operation: string = "access",
+  ): CommandResult {
     return {
       output: `\x1b[31m${command}: Permission denied: ${operation} requires root privileges\x1b[0m`,
-      exitCode: 13,  // EACCES
+      exitCode: 13, // EACCES
     };
   }
 
@@ -260,7 +280,10 @@ export abstract class BaseSimulator {
    * @param device - Device path or identifier
    * @returns Command result with exit code 2
    */
-  protected createDeviceNotFoundError(command: string, device: string): CommandResult {
+  protected createDeviceNotFoundError(
+    command: string,
+    device: string,
+  ): CommandResult {
     return {
       output: `\x1b[31m${command}: Error: Device not found: ${device}\x1b[0m`,
       exitCode: 2,
@@ -273,9 +296,12 @@ export abstract class BaseSimulator {
    * @param flag - Invalid flag
    * @returns Command result with exit code 2
    */
-  protected createInvalidFlagError(command: string, flag: string): CommandResult {
+  protected createInvalidFlagError(
+    command: string,
+    flag: string,
+  ): CommandResult {
     return {
-      output: `\x1b[31m${command}: invalid option -- '${flag.replace(/^-+/, '')}'\x1b[0m\nTry '${command} --help' for more information.`,
+      output: `\x1b[31m${command}: invalid option -- '${flag.replace(/^-+/, "")}'\x1b[0m\nTry '${command} --help' for more information.`,
       exitCode: 2,
     };
   }
@@ -286,7 +312,10 @@ export abstract class BaseSimulator {
    * @param argument - Missing argument name
    * @returns Command result with exit code 1
    */
-  protected createMissingArgumentError(command: string, argument: string): CommandResult {
+  protected createMissingArgumentError(
+    command: string,
+    argument: string,
+  ): CommandResult {
     return {
       output: `\x1b[31m${command}: missing required argument: ${argument}\x1b[0m\nTry '${command} --help' for more information.`,
       exitCode: 1,
@@ -301,13 +330,17 @@ export abstract class BaseSimulator {
    * @param suggestions - Array of suggested corrections
    * @returns Command result with exit code 2
    */
-  protected createFlagSuggestionError(command: string, flag: string, suggestions: string[]): CommandResult {
-    let output = `\x1b[31m${command}: unrecognized option '--${flag.replace(/^-+/, '')}'\x1b[0m\n`;
+  protected createFlagSuggestionError(
+    command: string,
+    flag: string,
+    suggestions: string[],
+  ): CommandResult {
+    let output = `\x1b[31m${command}: unrecognized option '--${flag.replace(/^-+/, "")}'\x1b[0m\n`;
 
     if (suggestions.length === 1) {
       output += `Did you mean '--${suggestions[0]}'?\n`;
     } else if (suggestions.length > 1) {
-      output += `Did you mean one of: ${suggestions.map(s => `'--${s}'`).join(', ')}?\n`;
+      output += `Did you mean one of: ${suggestions.map((s) => `'--${s}'`).join(", ")}?\n`;
     }
 
     output += `Try '${command} --help' for more information.`;
@@ -325,13 +358,17 @@ export abstract class BaseSimulator {
    * @param suggestions - Array of suggested corrections
    * @returns Command result with exit code 1
    */
-  protected createSubcommandSuggestionError(command: string, subcommand: string, suggestions: string[]): CommandResult {
+  protected createSubcommandSuggestionError(
+    command: string,
+    subcommand: string,
+    suggestions: string[],
+  ): CommandResult {
     let output = `\x1b[31m${command}: '${subcommand}' is not a ${command} command.\x1b[0m\n`;
 
     if (suggestions.length === 1) {
       output += `Did you mean '${suggestions[0]}'?\n`;
     } else if (suggestions.length > 1) {
-      output += `Similar commands: ${suggestions.join(', ')}\n`;
+      output += `Similar commands: ${suggestions.join(", ")}\n`;
     }
 
     output += `See '${command} --help'.`;
@@ -370,7 +407,7 @@ export abstract class BaseSimulator {
    */
   protected validateFlags(
     parsed: ParsedCommand,
-    validFlags?: string[]
+    validFlags?: string[],
   ): CommandResult | null {
     const metadata = this.getMetadata();
 
@@ -380,14 +417,25 @@ export abstract class BaseSimulator {
         if (!validFlags.includes(flag)) {
           const result = commandInterceptor.validateFlag(metadata.name, flag);
           if (!result.exactMatch) {
-            return this.createFlagSuggestionError(metadata.name, flag, result.suggestions);
+            return this.createFlagSuggestionError(
+              metadata.name,
+              flag,
+              result.suggestions,
+            );
           }
         }
       } else {
         const result = commandInterceptor.validateFlag(metadata.name, flag);
         // Only error if there are registered flags AND it's not a match
-        if (commandInterceptor.getRegisteredFlags(metadata.name).length > 0 && !result.exactMatch) {
-          return this.createFlagSuggestionError(metadata.name, flag, result.suggestions);
+        if (
+          commandInterceptor.getRegisteredFlags(metadata.name).length > 0 &&
+          !result.exactMatch
+        ) {
+          return this.createFlagSuggestionError(
+            metadata.name,
+            flag,
+            result.suggestions,
+          );
         }
       }
     }
@@ -401,12 +449,95 @@ export abstract class BaseSimulator {
    */
   protected validateSubcommand(subcommand: string): CommandResult | null {
     const metadata = this.getMetadata();
-    const result = commandInterceptor.validateSubcommand(metadata.name, subcommand);
+    const result = commandInterceptor.validateSubcommand(
+      metadata.name,
+      subcommand,
+    );
 
     // Only error if there are registered subcommands AND it's not a match
-    if (commandInterceptor.getRegisteredSubcommands(metadata.name).length > 0 && !result.exactMatch) {
-      return this.createSubcommandSuggestionError(metadata.name, subcommand, result.suggestions);
+    if (
+      commandInterceptor.getRegisteredSubcommands(metadata.name).length > 0 &&
+      !result.exactMatch
+    ) {
+      return this.createSubcommandSuggestionError(
+        metadata.name,
+        subcommand,
+        result.suggestions,
+      );
     }
+    return null;
+  }
+
+  // ============================================
+  // Command Definition Registry Integration
+  // ============================================
+
+  /**
+   * Initialize the command definition registry for enhanced validation
+   * Call this in simulator constructors to enable JSON-based validation
+   */
+  protected async initializeDefinitionRegistry(): Promise<void> {
+    this.definitionRegistry = await getCommandDefinitionRegistry();
+  }
+
+  /**
+   * Validate flags using the definition registry (if available)
+   * Falls back to existing validation if registry not initialized
+   * @param parsed - Parsed command
+   * @param commandName - Optional command name override (for commands like nvidia-smi)
+   * @returns CommandResult if error, null if all flags valid
+   */
+  protected validateFlagsWithRegistry(
+    parsed: ParsedCommand,
+    commandName?: string,
+  ): CommandResult | null {
+    if (!this.definitionRegistry) {
+      // Fall back to standard validation
+      return this.validateFlags(parsed);
+    }
+
+    const name = commandName || this.getMetadata().name;
+
+    for (const [flag] of parsed.flags) {
+      const result = this.definitionRegistry.validateFlag(name, flag);
+      if (!result.valid) {
+        return this.createFlagSuggestionError(
+          name,
+          flag,
+          result.suggestions || [],
+        );
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Validate a subcommand using the definition registry (if available)
+   * Falls back to existing validation if registry not initialized
+   * @param subcommand - Subcommand to validate
+   * @param commandName - Optional command name override
+   * @returns CommandResult if error, null if valid
+   */
+  protected validateSubcommandWithRegistry(
+    subcommand: string,
+    commandName?: string,
+  ): CommandResult | null {
+    if (!this.definitionRegistry) {
+      return this.validateSubcommand(subcommand);
+    }
+
+    const name = commandName || this.getMetadata().name;
+    const result = this.definitionRegistry.validateSubcommand(name, subcommand);
+
+    if (!result.valid) {
+      return this.createSubcommandSuggestionError(
+        name,
+        subcommand,
+        result.suggestions || [],
+      );
+    }
+
     return null;
   }
 
@@ -420,38 +551,39 @@ export abstract class BaseSimulator {
   protected formatTable(
     headers: string[],
     rows: string[][],
-    columnWidths?: number[]
+    columnWidths?: number[],
   ): string {
     // Calculate column widths if not provided
     if (!columnWidths) {
       columnWidths = headers.map((header, i) => {
-        const maxRowWidth = Math.max(...rows.map(row => (row[i] || '').length));
+        const maxRowWidth = Math.max(
+          ...rows.map((row) => (row[i] || "").length),
+        );
         return Math.max(header.length, maxRowWidth);
       });
     }
 
     // Create separator
-    const separator = '+' + columnWidths.map(w => '-'.repeat(w + 2)).join('+') + '+';
+    const separator =
+      "+" + columnWidths.map((w) => "-".repeat(w + 2)).join("+") + "+";
 
     // Format header
-    const headerRow = '| ' + headers.map((h, i) =>
-      h.padEnd(columnWidths![i])
-    ).join(' | ') + ' |';
+    const headerRow =
+      "| " +
+      headers.map((h, i) => h.padEnd(columnWidths![i])).join(" | ") +
+      " |";
 
     // Format rows
-    const dataRows = rows.map(row =>
-      '| ' + row.map((cell, i) =>
-        (cell || '').padEnd(columnWidths![i])
-      ).join(' | ') + ' |'
+    const dataRows = rows.map(
+      (row) =>
+        "| " +
+        row
+          .map((cell, i) => (cell || "").padEnd(columnWidths![i]))
+          .join(" | ") +
+        " |",
     );
 
-    return [
-      separator,
-      headerRow,
-      separator,
-      ...dataRows,
-      separator,
-    ].join('\n');
+    return [separator, headerRow, separator, ...dataRows, separator].join("\n");
   }
 
   /**
@@ -462,12 +594,14 @@ export abstract class BaseSimulator {
    */
   protected validateRequiredFlags(
     parsed: ParsedCommand,
-    requiredFlags: string[][]
+    requiredFlags: string[][],
   ): CommandResult | null {
     for (const flagGroup of requiredFlags) {
-      const hasAny = flagGroup.some(flag => parsed.flags.has(flag));
+      const hasAny = flagGroup.some((flag) => parsed.flags.has(flag));
       if (!hasAny) {
-        const flagList = flagGroup.map(f => f.length === 1 ? `-${f}` : `--${f}`).join('/');
+        const flagList = flagGroup
+          .map((f) => (f.length === 1 ? `-${f}` : `--${f}`))
+          .join("/");
         return this.createError(`Missing required flag: ${flagList}`);
       }
     }
@@ -484,7 +618,7 @@ export abstract class BaseSimulator {
   protected getFlag(
     parsed: ParsedCommand,
     flags: string[],
-    defaultValue?: string | boolean
+    defaultValue?: string | boolean,
   ): string | boolean | undefined {
     if (!parsed?.flags) return defaultValue;
     for (const flag of flags) {
@@ -505,10 +639,10 @@ export abstract class BaseSimulator {
   protected getFlagString(
     parsed: ParsedCommand,
     flags: string[],
-    defaultValue = ''
+    defaultValue = "",
   ): string {
     const value = this.getFlag(parsed, flags);
-    return typeof value === 'string' ? value : defaultValue;
+    return typeof value === "string" ? value : defaultValue;
   }
 
   /**
@@ -521,10 +655,10 @@ export abstract class BaseSimulator {
   protected getFlagNumber(
     parsed: ParsedCommand,
     flags: string[],
-    defaultValue = 0
+    defaultValue = 0,
   ): number {
     const value = this.getFlag(parsed, flags);
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       const num = parseInt(value, 10);
       return isNaN(num) ? defaultValue : num;
     }
@@ -539,7 +673,7 @@ export abstract class BaseSimulator {
    */
   protected hasAnyFlag(parsed: ParsedCommand, flags: string[]): boolean {
     if (!parsed?.flags) return false;
-    return flags.some(flag => parsed.flags.has(flag));
+    return flags.some((flag) => parsed.flags.has(flag));
   }
 
   // ============================================
@@ -552,12 +686,21 @@ export abstract class BaseSimulator {
    * @param maxGpus - Maximum number of GPUs
    * @returns Validation result with error message if invalid
    */
-  protected validateGpuIndex(index: number, maxGpus: number): { valid: boolean; error?: string } {
+  protected validateGpuIndex(
+    index: number,
+    maxGpus: number,
+  ): { valid: boolean; error?: string } {
     if (isNaN(index) || !Number.isInteger(index)) {
-      return { valid: false, error: `Invalid GPU index: ${index}. Must be an integer.` };
+      return {
+        valid: false,
+        error: `Invalid GPU index: ${index}. Must be an integer.`,
+      };
     }
     if (index < 0 || index >= maxGpus) {
-      return { valid: false, error: `Invalid GPU index: ${index}. Valid range is 0-${maxGpus - 1}.` };
+      return {
+        valid: false,
+        error: `Invalid GPU index: ${index}. Valid range is 0-${maxGpus - 1}.`,
+      };
     }
     return { valid: true };
   }
@@ -568,7 +711,10 @@ export abstract class BaseSimulator {
    * @param name - Name of the parameter for error messages
    * @returns Validation result with parsed value if valid
    */
-  protected validatePositiveInt(value: string, name: string = 'Value'): { valid: boolean; error?: string; value?: number } {
+  protected validatePositiveInt(
+    value: string,
+    name: string = "Value",
+  ): { valid: boolean; error?: string; value?: number } {
     const num = parseInt(value, 10);
     if (isNaN(num)) {
       return { valid: false, error: `Invalid number: '${value}'` };
@@ -586,11 +732,15 @@ export abstract class BaseSimulator {
    * @param name - Name of the parameter for error messages
    * @returns Validation result with error message if invalid
    */
-  protected validateInSet<T>(value: T, validValues: T[], name: string): { valid: boolean; error?: string } {
+  protected validateInSet<T>(
+    value: T,
+    validValues: T[],
+    name: string,
+  ): { valid: boolean; error?: string } {
     if (!validValues.includes(value)) {
       return {
         valid: false,
-        error: `Invalid ${name}: '${value}'. Valid options: ${validValues.join(', ')}`
+        error: `Invalid ${name}: '${value}'. Valid options: ${validValues.join(", ")}`,
       };
     }
     return { valid: true };
@@ -606,13 +756,15 @@ export abstract class BaseSimulator {
   protected checkUnknownFlags(
     parsed: ParsedCommand,
     knownFlags: Set<string>,
-    commandName: string
+    commandName: string,
   ): CommandResult | null {
     if (!parsed?.flags) return null;
     for (const flag of parsed.flags.keys()) {
       if (!knownFlags.has(flag)) {
         const flagStr = flag.length === 1 ? `-${flag}` : `--${flag}`;
-        return this.createError(`${commandName}: unrecognized option '${flagStr}'\nTry '${commandName} --help' for more information.`);
+        return this.createError(
+          `${commandName}: unrecognized option '${flagStr}'\nTry '${commandName} --help' for more information.`,
+        );
       }
     }
     return null;
