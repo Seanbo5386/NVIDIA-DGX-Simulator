@@ -18,7 +18,11 @@ import {
   getCommandDefinitionRegistry,
   CommandDefinitionRegistry,
 } from "@/cli/CommandDefinitionRegistry";
-import { formatCommandHelp } from "@/cli/formatters";
+import {
+  formatCommandHelp,
+  formatFlagHelp,
+  formatValidationError,
+} from "@/cli/formatters";
 
 /**
  * Command handler function type
@@ -555,6 +559,45 @@ export abstract class BaseSimulator {
     if (!def) return null;
 
     return this.createSuccess(formatCommandHelp(def));
+  }
+
+  /**
+   * Get help for a specific flag from JSON definitions
+   * @param commandName - Command name
+   * @param flag - Flag to get help for (normalized, no leading dashes)
+   * @returns CommandResult with flag help or error with suggestions
+   */
+  protected getFlagHelpFromRegistry(
+    commandName: string,
+    flag: string,
+  ): CommandResult | null {
+    if (!this.definitionRegistry) return null;
+
+    const def = this.definitionRegistry.getDefinition(commandName);
+    if (!def) return null;
+
+    // Normalize flag
+    const normalizedFlag = flag.replace(/^-+/, "");
+
+    // Find the option
+    const opt = def.global_options?.find((o) => {
+      const shortNorm = o.short?.replace(/^-+/, "");
+      const longNorm = o.long?.replace(/^-+/, "").replace(/=$/, "");
+      return shortNorm === normalizedFlag || longNorm === normalizedFlag;
+    });
+
+    if (opt) {
+      return this.createSuccess(formatFlagHelp(commandName, opt));
+    }
+
+    // Flag not found - try to get suggestions
+    const validation = this.definitionRegistry.validateFlag(
+      commandName,
+      normalizedFlag,
+    );
+    return this.createError(
+      formatValidationError(commandName, flag, validation),
+    );
   }
 
   /**

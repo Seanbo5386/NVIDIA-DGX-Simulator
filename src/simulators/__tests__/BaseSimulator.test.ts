@@ -451,4 +451,82 @@ describe("BaseSimulator", () => {
       expect(result).toBeNull();
     });
   });
+
+  describe("getFlagHelpFromRegistry", () => {
+    it("should return formatted help for a specific flag", async () => {
+      class TestSimulator extends BaseSimulator {
+        constructor() {
+          super();
+          this.initializeDefinitionRegistry();
+        }
+
+        getMetadata() {
+          return {
+            name: "test",
+            version: "1.0",
+            description: "Test",
+            commands: [],
+          };
+        }
+
+        execute() {
+          return { output: "", exitCode: 0 };
+        }
+
+        public testGetFlagHelp(
+          command: string,
+          flag: string,
+        ): { output: string; exitCode: number } | null {
+          return this.getFlagHelpFromRegistry(command, flag);
+        }
+      }
+
+      const sim = new TestSimulator();
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const result = sim.testGetFlagHelp("nvidia-smi", "q");
+
+      expect(result).not.toBeNull();
+      expect(result?.output).toContain("query");
+      expect(result?.exitCode).toBe(0);
+    });
+
+    it("should return error with suggestions for unknown flag", async () => {
+      class TestSimulator extends BaseSimulator {
+        constructor() {
+          super();
+          this.initializeDefinitionRegistry();
+        }
+
+        getMetadata() {
+          return {
+            name: "test",
+            version: "1.0",
+            description: "Test",
+            commands: [],
+          };
+        }
+
+        execute() {
+          return { output: "", exitCode: 0 };
+        }
+
+        public testGetFlagHelp(
+          command: string,
+          flag: string,
+        ): { output: string; exitCode: number } | null {
+          return this.getFlagHelpFromRegistry(command, flag);
+        }
+      }
+
+      const sim = new TestSimulator();
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const result = sim.testGetFlagHelp("nvidia-smi", "qurey");
+
+      expect(result).not.toBeNull();
+      expect(result?.exitCode).not.toBe(0);
+      expect(result?.output).toContain("Did you mean");
+    });
+  });
 });
