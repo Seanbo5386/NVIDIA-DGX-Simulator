@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { BaseSimulator } from "../BaseSimulator";
+import { parse } from "@/utils/commandParser";
 import type {
   ParsedCommand,
   CommandContext,
   SimulatorMetadata,
+  CommandResult,
 } from "@/types/commands";
 
 // Concrete implementation for testing
@@ -527,6 +529,88 @@ describe("BaseSimulator", () => {
       expect(result).not.toBeNull();
       expect(result?.exitCode).not.toBe(0);
       expect(result?.output).toContain("Did you mean");
+    });
+  });
+
+  describe("checkStatePrerequisites", () => {
+    it("should return null for read-only commands", async () => {
+      class TestSimulator extends BaseSimulator {
+        constructor() {
+          super();
+          this.initializeDefinitionRegistry();
+        }
+
+        getMetadata() {
+          return {
+            name: "test",
+            version: "1.0",
+            description: "Test",
+            commands: [],
+          };
+        }
+
+        execute() {
+          return { output: "", exitCode: 0 };
+        }
+
+        public testCheckPrereqs(
+          parsed: ParsedCommand,
+          context: CommandContext,
+        ): CommandResult | null {
+          return this.checkStatePrerequisites(parsed, context);
+        }
+      }
+
+      const sim = new TestSimulator();
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const parsed = parse("sinfo");
+      const context = { currentNode: "node1", isRoot: false } as CommandContext;
+
+      const result = sim.testCheckPrereqs(parsed, context);
+
+      expect(result).toBeNull();
+    });
+
+    it("should return error for privileged command without root", async () => {
+      class TestSimulator extends BaseSimulator {
+        constructor() {
+          super();
+          this.initializeDefinitionRegistry();
+        }
+
+        getMetadata() {
+          return {
+            name: "test",
+            version: "1.0",
+            description: "Test",
+            commands: [],
+          };
+        }
+
+        execute() {
+          return { output: "", exitCode: 0 };
+        }
+
+        public testCheckPrereqs(
+          parsed: ParsedCommand,
+          context: CommandContext,
+        ): CommandResult | null {
+          return this.checkStatePrerequisites(parsed, context);
+        }
+      }
+
+      const sim = new TestSimulator();
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const parsed = parse("nvidia-smi -pl 300");
+      const context = { currentNode: "node1", isRoot: false } as CommandContext;
+
+      const result = sim.testCheckPrereqs(parsed, context);
+
+      expect(result).not.toBeNull();
+      expect(result?.exitCode).not.toBe(0);
+      expect(result?.output).toContain("root");
     });
   });
 });

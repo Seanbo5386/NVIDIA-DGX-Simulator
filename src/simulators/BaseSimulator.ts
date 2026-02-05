@@ -23,6 +23,7 @@ import {
   formatFlagHelp,
   formatValidationError,
 } from "@/cli/formatters";
+import { StateEngine } from "@/cli/StateEngine";
 
 /**
  * Command handler function type
@@ -76,6 +77,9 @@ export abstract class BaseSimulator {
 
   /** Command definition registry for JSON-based validation (optional) */
   protected definitionRegistry: CommandDefinitionRegistry | null = null;
+
+  /** State engine for prerequisite checking (optional) */
+  protected stateEngine: StateEngine | null = null;
 
   /**
    * Get simulator metadata (name, version, description)
@@ -483,6 +487,7 @@ export abstract class BaseSimulator {
    */
   protected async initializeDefinitionRegistry(): Promise<void> {
     this.definitionRegistry = await getCommandDefinitionRegistry();
+    this.stateEngine = new StateEngine(this.definitionRegistry);
   }
 
   /**
@@ -598,6 +603,35 @@ export abstract class BaseSimulator {
     return this.createError(
       formatValidationError(commandName, flag, validation),
     );
+  }
+
+  /**
+   * Check state prerequisites before executing a command
+   * @param parsed - Parsed command
+   * @param context - Command context with isRoot flag
+   * @returns CommandResult with error if prerequisites not met, null if OK
+   */
+  protected checkStatePrerequisites(
+    parsed: ParsedCommand,
+    context: CommandContext,
+  ): CommandResult | null {
+    if (!this.stateEngine) return null;
+
+    // Use baseCommand from parsed, or fall back to simulator metadata name
+    const commandName = parsed.baseCommand || this.getMetadata().name;
+
+    const flags = Array.from(parsed.flags.keys());
+
+    const error = this.stateEngine.getPrerequisiteError(commandName, flags, {
+      isRoot:
+        (context as CommandContext & { isRoot?: boolean }).isRoot ?? false,
+    });
+
+    if (error) {
+      return this.createPermissionError(commandName, "this operation");
+    }
+
+    return null;
   }
 
   /**
