@@ -97,3 +97,54 @@ describe("formatCommandHelp with options", () => {
     expect(output).toContain("... and 5 more options");
   });
 });
+
+describe("formatCommandHelp with subcommands", () => {
+  it("should format subcommands", () => {
+    const def = {
+      command: "test-cmd",
+      category: "general" as const,
+      description: "Test",
+      synopsis: "test-cmd <subcommand>",
+      subcommands: [
+        { name: "start", description: "Start the service" },
+        { name: "stop", description: "Stop the service" },
+      ],
+    };
+
+    const output = formatCommandHelp(def);
+
+    expect(output).toContain("Subcommands:");
+    expect(output).toContain("start");
+    expect(output).toContain("Start the service");
+  });
+});
+
+describe("formatCommandHelp with examples", () => {
+  it("should format common_usage_patterns", () => {
+    const def = {
+      command: "test-cmd",
+      category: "general" as const,
+      description: "Test",
+      synopsis: "test-cmd",
+      common_usage_patterns: [
+        {
+          description: "Run with defaults",
+          command: "test-cmd",
+          requires_root: false,
+        },
+        {
+          description: "Run as admin",
+          command: "sudo test-cmd --admin",
+          requires_root: true,
+        },
+      ],
+    };
+
+    const output = formatCommandHelp(def);
+
+    expect(output).toContain("Examples:");
+    expect(output).toContain("test-cmd");
+    expect(output).toContain("Run with defaults");
+    expect(output).toContain("⚠ Requires root privileges");
+  });
+});

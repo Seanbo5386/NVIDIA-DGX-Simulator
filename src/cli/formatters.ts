@@ -66,5 +66,38 @@ export function formatCommandHelp(def: CommandDefinition): string {
     output += "\n";
   }
 
+  // Subcommands (add after options section)
+  if (def.subcommands && def.subcommands.length > 0) {
+    output += `${ANSI.BOLD}Subcommands:${ANSI.RESET}\n`;
+    const maxSubs = 8;
+
+    for (const sub of def.subcommands.slice(0, maxSubs)) {
+      let desc = sub.description;
+      if (desc.length > 50) {
+        desc = desc.substring(0, 47) + "...";
+      }
+      output += `  ${ANSI.CYAN}${sub.name.padEnd(15)}${ANSI.RESET} ${desc}\n`;
+    }
+
+    if (def.subcommands.length > maxSubs) {
+      output += `  ... and ${def.subcommands.length - maxSubs} more\n`;
+    }
+    output += "\n";
+  }
+
+  // Examples
+  if (def.common_usage_patterns && def.common_usage_patterns.length > 0) {
+    output += `${ANSI.BOLD}Examples:${ANSI.RESET}\n`;
+
+    for (const pattern of def.common_usage_patterns.slice(0, 5)) {
+      output += `\n  ${ANSI.CYAN}${pattern.command}${ANSI.RESET}\n`;
+      output += `    ${pattern.description}\n`;
+      if (pattern.requires_root) {
+        output += `    ${ANSI.YELLOW}⚠ Requires root privileges${ANSI.RESET}\n`;
+      }
+    }
+    output += "\n";
+  }
+
   return output;
 }
