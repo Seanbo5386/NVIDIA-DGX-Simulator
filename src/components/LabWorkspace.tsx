@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSimulationStore } from "@/store/simulationStore";
+import { useLearningProgressStore } from "@/store/learningProgressStore";
 import {
   X,
   ChevronRight,
+  ChevronDown,
   Check,
   HelpCircle,
   Clock,
@@ -11,10 +13,18 @@ import {
   Circle,
   Eye,
   BookOpen,
+  Lock,
+  Wrench,
 } from "lucide-react";
 import { HintManager } from "@/utils/hintManager";
 import { commandTracker } from "@/utils/commandValidator";
 import { getVisualizationContext } from "@/utils/scenarioVisualizationMap";
+import {
+  isTierUnlocked,
+  type TierProgressState,
+} from "@/utils/tierProgressionEngine";
+import commandFamiliesData from "@/data/commandFamilies.json";
+import type { CommandFamily } from "@/types/commandFamilies";
 
 interface LabWorkspaceProps {
   onClose: () => void;
@@ -36,6 +46,46 @@ function useMediaQuery(query: string): boolean {
   return matches;
 }
 
+// Helper to get tier badge info
+function getTierBadgeInfo(tier: 1 | 2 | 3 | undefined): {
+  label: string;
+  colorClass: string;
+} {
+  switch (tier) {
+    case 1:
+      return { label: "Guided", colorClass: "bg-green-600 text-white" };
+    case 2:
+      return { label: "Choice", colorClass: "bg-yellow-500 text-black" };
+    case 3:
+      return { label: "Realistic", colorClass: "bg-red-600 text-white" };
+    default:
+      return { label: "Standard", colorClass: "bg-gray-600 text-white" };
+  }
+}
+
+// Get unlock requirement message for a tier
+function getUnlockRequirementMessage(
+  familyId: string,
+  tier: 1 | 2 | 3,
+): string {
+  const familyNames: Record<string, string> = {
+    "gpu-monitoring": "GPU Monitoring",
+    "infiniband-tools": "InfiniBand Tools",
+    "bmc-hardware": "BMC & Hardware",
+    "cluster-tools": "Slurm Cluster Tools",
+    "container-tools": "Container Tools",
+    diagnostics: "Diagnostics & Testing",
+  };
+  const familyName = familyNames[familyId] || familyId;
+
+  if (tier === 2) {
+    return `Pass the ${familyName} quiz and use all tools to unlock`;
+  } else if (tier === 3) {
+    return `Complete Tier 2 with 80%+ accuracy and pass explanation gate`;
+  }
+  return "Complete prerequisite scenarios to unlock";
+}
+
 export function LabWorkspace({ onClose }: LabWorkspaceProps) {
   const {
     activeScenario,
@@ -49,8 +99,77 @@ export function LabWorkspace({ onClose }: LabWorkspaceProps) {
     labPanelVisible,
     setLabPanelVisible,
   } = useSimulationStore();
+
+  // Learning progress store for tier unlock checks
+  const learningProgress = useLearningProgressStore();
+
   const [showHints, setShowHints] = useState<Record<string, number>>({});
+  const [toolHintsSidebarOpen, setToolHintsSidebarOpen] = useState(true);
   const isSmallScreen = useMediaQuery("(max-width: 1279px)");
+
+  // Get command families for tool hints
+  const commandFamilies = useMemo(() => {
+    return (commandFamiliesData as { families: CommandFamily[] }).families;
+  }, []);
+
+  // Get relevant tools for this scenario's command families
+  const relevantTools = useMemo(() => {
+    if (!activeScenario?.commandFamilies || !activeScenario.toolHints) {
+      return [];
+    }
+
+    return commandFamilies
+      .filter((family) => activeScenario.commandFamilies?.includes(family.id))
+      .flatMap((family) =>
+        family.tools.map((tool) => ({
+          ...tool,
+          familyName: family.name,
+          familyIcon: family.icon,
+        })),
+      );
+  }, [activeScenario, commandFamilies]);
+
+  // Check if scenario is unlocked based on tier and progress
+  const checkScenarioUnlocked = useMemo(() => {
+    if (!activeScenario) return true;
+
+    const tier = activeScenario.tier;
+    if (!tier || tier === 1) return true; // Tier 1 always unlocked
+
+    const families = activeScenario.commandFamilies || [];
+    if (families.length === 0) return true; // No family requirement
+
+    // Build TierProgressState from learning progress store
+    const progressState: TierProgressState = {
+      toolsUsed: learningProgress.toolsUsed,
+      familyQuizScores: learningProgress.familyQuizScores,
+      unlockedTiers: learningProgress.unlockedTiers,
+      tierProgress: learningProgress.tierProgress,
+      explanationGateResults: learningProgress.explanationGateResults,
+    };
+
+    // Check if tier is unlocked for at least one of the command families
+    return families.some((familyId) =>
+      isTierUnlocked(familyId, tier, progressState),
+    );
+  }, [activeScenario, learningProgress]);
+
+  // Get the first locked family for showing unlock requirements
+  const lockedFamilyInfo = useMemo(() => {
+    if (!activeScenario || checkScenarioUnlocked) return null;
+
+    const tier = activeScenario.tier;
+    if (!tier || tier === 1) return null;
+
+    const families = activeScenario.commandFamilies || [];
+    if (families.length === 0) return null;
+
+    return {
+      familyId: families[0],
+      tier,
+      message: getUnlockRequirementMessage(families[0], tier),
+    };
+  }, [activeScenario, checkScenarioUnlocked]);
 
   // Initialize panel visibility based on screen size
   useEffect(() => {
@@ -149,9 +268,30 @@ export function LabWorkspace({ onClose }: LabWorkspaceProps) {
         {/* Header */}
         <div className="bg-gray-800 px-6 py-4 border-b border-gray-700 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-green-400">
-              {activeScenario.title}
-            </h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-bold text-green-400">
+                {activeScenario.title}
+              </h2>
+              {/* Tier Badge */}
+              {(() => {
+                const tierInfo = getTierBadgeInfo(activeScenario.tier);
+                return (
+                  <span
+                    className={`px-2 py-0.5 rounded text-xs font-semibold ${tierInfo.colorClass}`}
+                    title={`Tier ${activeScenario.tier || "Standard"}: ${tierInfo.label}`}
+                  >
+                    {tierInfo.label}
+                  </span>
+                );
+              })()}
+              {/* Lock indicator for locked scenarios */}
+              {!checkScenarioUnlocked && (
+                <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-gray-700 text-gray-400 text-xs">
+                  <Lock className="w-3 h-3" />
+                  Locked
+                </span>
+              )}
+            </div>
             <p className="text-sm text-gray-400 mt-1">
               {activeScenario.domain.toUpperCase()} •{" "}
               {activeScenario.difficulty} • {activeScenario.estimatedTime} min
@@ -188,6 +328,82 @@ export function LabWorkspace({ onClose }: LabWorkspaceProps) {
             />
           </div>
         </div>
+
+        {/* Lock Warning Banner */}
+        {!checkScenarioUnlocked && lockedFamilyInfo && (
+          <div className="bg-amber-900/30 border-b border-amber-600/50 px-6 py-3">
+            <div className="flex items-center gap-3">
+              <Lock className="w-5 h-5 text-amber-400 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-amber-300">
+                  Scenario Locked
+                </p>
+                <p className="text-xs text-amber-200/80">
+                  {lockedFamilyInfo.message}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tool Hints Sidebar (Tier 1 only) */}
+        {activeScenario.tier === 1 &&
+          activeScenario.toolHints &&
+          relevantTools.length > 0 && (
+            <div className="border-b border-gray-700">
+              <button
+                onClick={() => setToolHintsSidebarOpen(!toolHintsSidebarOpen)}
+                className="w-full px-6 py-3 flex items-center justify-between bg-blue-900/20 hover:bg-blue-900/30 transition-colors"
+              >
+                <div className="flex items-center gap-2 text-blue-300">
+                  <Wrench className="w-4 h-4" />
+                  <span className="text-sm font-semibold">Suggested Tools</span>
+                  <span className="text-xs text-blue-400/70">
+                    ({relevantTools.length} tools)
+                  </span>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-blue-400 transition-transform ${
+                    toolHintsSidebarOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              {toolHintsSidebarOpen && (
+                <div className="px-6 py-4 bg-gray-800/50 max-h-60 overflow-y-auto">
+                  <div className="space-y-3">
+                    {relevantTools.map((tool, idx) => (
+                      <div
+                        key={`${tool.name}-${idx}`}
+                        className="bg-gray-900 rounded-lg p-3 border border-gray-700"
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-base">{tool.familyIcon}</span>
+                          <code className="text-sm font-mono text-green-400 font-semibold">
+                            {tool.name}
+                          </code>
+                          <span className="text-xs text-gray-500">
+                            ({tool.familyName})
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 mb-1">
+                          {tool.tagline} - {tool.description}
+                        </p>
+                        <p className="text-xs text-blue-300">
+                          <span className="font-semibold">Best for:</span>{" "}
+                          {tool.bestFor}
+                        </p>
+                        <div className="mt-2 text-xs">
+                          <code className="bg-black px-2 py-1 rounded text-gray-300">
+                            {tool.exampleCommand}
+                          </code>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
         {/* Main Content */}
         <div className="flex-1 overflow-y-auto p-6">
