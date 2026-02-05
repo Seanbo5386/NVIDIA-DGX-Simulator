@@ -1,0 +1,3199 @@
+{
+  "scenarios": [
+    {
+      "id": "domain1-midnight-deployment",
+      "domain": 1,
+      "title": "The Midnight Deployment",
+      "narrative": {
+        "hook": "New DGX H100 cluster arrives at 11 PM - deployment deadline is 8 AM.",
+        "setting": "You're the lead systems engineer responsible for bringing up a 4-node DGX H100 cluster before the AI team's Monday morning deadline.",
+        "resolution": "Successfully configure BMC, validate firmware, and bring all GPUs online with proper driver installation."
+      },
+      "commandFamilies": ["bmc-hardware", "gpu-monitoring", "diagnostics"],
+      "estimatedMinutes": 25,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "The shipping crates are open. Four pristine DGX H100 nodes sit on the rack rails, power cables ready.",
+          "task": "Before powering on, use ipmitool to verify BMC connectivity and check the System Event Log for any shipping damage alerts.",
+          "hints": [
+            "Use ipmitool to access BMC",
+            "Check SEL for hardware events",
+            "Look for temperature or vibration alerts"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ipmitool",
+            "pattern": "sel|SEL|event"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "BMC responds. SEL shows normal power-off events from factory. Time to verify hardware inventory.",
+          "task": "Use dmidecode to check memory configuration and verify all DIMMs are detected.",
+          "hints": [
+            "dmidecode -t memory shows DIMM info",
+            "Look for 2TB total system memory",
+            "Check all slots are populated"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dmidecode",
+            "pattern": "memory|Memory|DIMM"
+          },
+          "quiz": {
+            "question": "Why check dmidecode before GPU validation?",
+            "options": [
+              "GPU drivers need memory info",
+              "Detect shipping damage to DIMMs first",
+              "Memory errors can mask GPU issues",
+              "BIOS requires memory validation"
+            ],
+            "correctIndex": 2,
+            "explanation": "System memory errors can cause GPU initialization failures and misleading error messages. Validating memory first ensures a clean baseline."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "All 2TB of system memory detected across 32 DIMMs. OS boots cleanly.",
+          "task": "Run nvidia-smi to verify all 8 GPUs are detected and check their initial state.",
+          "hints": [
+            "nvidia-smi shows all GPUs",
+            "Look for 8x H100 GPUs",
+            "Check for any ERR! or N/A values"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "H100|GPU"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "nvidia-smi shows 8 GPUs but GPU 6 shows 'ERR!' in the temperature column.",
+          "task": "Use nvidia-smi -q to get detailed information about GPU 6 and identify the issue.",
+          "hints": [
+            "nvidia-smi -q -i 6 for detailed info",
+            "Check for driver or hardware errors",
+            "Look at ECC memory status"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "-q|-i|query"
+          },
+          "quiz": {
+            "question": "What does 'ERR!' typically indicate in nvidia-smi output?",
+            "options": [
+              "Driver not loaded",
+              "GPU powered off",
+              "Communication failure with GPU",
+              "Normal initialization state"
+            ],
+            "correctIndex": 2,
+            "explanation": "ERR! indicates the driver cannot communicate with the GPU properly, often due to PCIe issues, driver problems, or hardware faults."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "Detailed query shows GPU 6 has a pending GPU reset required flag.",
+          "task": "Check the sensors output to verify thermal conditions before attempting any GPU reset.",
+          "hints": [
+            "sensors command shows temperatures",
+            "Check ambient and GPU temps",
+            "Ensure cooling is working"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "sensors",
+            "pattern": "temp|Core|GPU"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "Temperatures are normal. The issue appears to be a post-shipping initialization problem.",
+          "task": "Use dcgmi diag to run a quick health check on all GPUs before proceeding.",
+          "hints": [
+            "dcgmi diag -r 1 for quick check",
+            "Level 1 is fastest diagnostic",
+            "Check all GPUs pass"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "diag|health"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "Diagnostics show GPU 6 needs a reset. Other 7 GPUs pass all tests.",
+          "task": "Document the GPU state using nvidia-bug-report before attempting any reset operations.",
+          "hints": [
+            "nvidia-bug-report.sh creates log bundle",
+            "Document before making changes",
+            "Save for support ticket if needed"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-bug-report",
+            "pattern": "report|log"
+          },
+          "quiz": {
+            "question": "Why create a bug report before GPU reset?",
+            "options": [
+              "Required by NVIDIA warranty",
+              "Captures pre-reset state for analysis",
+              "Automatically fixes issues",
+              "Enables remote support access"
+            ],
+            "correctIndex": 1,
+            "explanation": "Creating a bug report captures the complete system state before changes, providing crucial debugging information if the reset doesn't resolve the issue."
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Bug report saved. Time to attempt recovery of GPU 6.",
+          "task": "Use nvidia-smi to attempt a GPU reset on GPU 6 and verify recovery.",
+          "hints": [
+            "nvidia-smi -r resets GPUs",
+            "May need to specify GPU index",
+            "Verify with nvidia-smi after"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "-r|reset"
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "GPU 6 recovered after reset. All 8 GPUs now showing healthy status.",
+          "task": "Run a comprehensive DCGM diagnostic to validate the cluster is ready for production.",
+          "hints": [
+            "dcgmi diag -r 3 for thorough test",
+            "Takes longer but more complete",
+            "All GPUs should pass"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "diag|-r 3|level 3"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "All diagnostics pass. The cluster is ready for the AI team's Monday morning deadline.",
+          "task": "Final verification: check nvidia-smi to confirm all GPUs are operational and document the deployment.",
+          "hints": [
+            "nvidia-smi for final check",
+            "All 8 GPUs should show healthy",
+            "Note temperatures and memory usage"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "GPU|Memory"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain1-firmware-emergency",
+      "domain": 1,
+      "title": "The Firmware Emergency",
+      "narrative": {
+        "hook": "Security bulletin requires immediate firmware updates across 16 production nodes.",
+        "setting": "A critical security vulnerability has been disclosed in the BMC firmware. You have a 4-hour maintenance window to update all systems.",
+        "resolution": "Successfully update BMC firmware, verify GPU firmware compatibility, and bring nodes back online."
+      },
+      "commandFamilies": [
+        "bmc-hardware",
+        "gpu-monitoring",
+        "diagnostics",
+        "cluster-tools"
+      ],
+      "estimatedMinutes": 20,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "The security team has flagged 16 nodes for immediate BMC firmware update. Downtime approved.",
+          "task": "Use sinfo to check which nodes are currently running jobs before starting updates.",
+          "hints": [
+            "sinfo shows node states",
+            "Check for allocated vs idle nodes",
+            "Identify nodes to drain first"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "sinfo",
+            "pattern": "STATE|alloc|idle"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "8 nodes are running jobs. You need to gracefully drain them for maintenance.",
+          "task": "Use scontrol to drain nodes with a maintenance reason before starting firmware updates.",
+          "hints": [
+            "scontrol update nodename state=drain",
+            "Add reason for audit trail",
+            "Wait for jobs to complete"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "drain|update|state"
+          },
+          "quiz": {
+            "question": "Why drain nodes instead of immediately forcing them offline?",
+            "options": [
+              "Slurm requires it",
+              "Preserves running job data",
+              "Faster than canceling jobs",
+              "Required for firmware updates"
+            ],
+            "correctIndex": 1,
+            "explanation": "Draining allows running jobs to complete gracefully, preserving computation results and avoiding data loss from interrupted training runs."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "Nodes are draining. While waiting, verify current BMC firmware versions.",
+          "task": "Use ipmitool to check the current BMC firmware version on the first node.",
+          "hints": [
+            "ipmitool mc info shows BMC version",
+            "Document current version",
+            "Compare to security bulletin"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ipmitool",
+            "pattern": "mc info|version|firmware"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "Current BMC version confirmed as vulnerable. Jobs have completed, nodes fully drained.",
+          "task": "Before firmware update, capture the current BMC sensor baselines using ipmitool.",
+          "hints": [
+            "ipmitool sensor list shows all sensors",
+            "Document normal values",
+            "Useful for post-update comparison"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ipmitool",
+            "pattern": "sensor"
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "Sensor baselines captured. Time to verify GPU state before BMC update.",
+          "task": "Run nvidia-smi to document GPU state before the BMC firmware change.",
+          "hints": [
+            "nvidia-smi captures GPU state",
+            "Note driver version",
+            "Check for any existing issues"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "Driver|GPU"
+          },
+          "quiz": {
+            "question": "Why document GPU state before BMC updates?",
+            "options": [
+              "BMC controls GPU power",
+              "BMC firmware can affect GPU detection",
+              "NVIDIA requires it",
+              "GPU drivers depend on BMC"
+            ],
+            "correctIndex": 1,
+            "explanation": "BMC firmware changes can affect PCIe enumeration and power management, potentially impacting GPU detection. Documenting beforehand helps identify any post-update issues."
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "GPU state documented. Ready to proceed with BMC firmware update.",
+          "task": "Check BMC event log for any hardware warnings before rebooting for firmware update.",
+          "hints": [
+            "ipmitool sel elist shows events",
+            "Look for recent warnings",
+            "Clear log after review"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ipmitool",
+            "pattern": "sel|event"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "Event log clean. Firmware update completed via BMC web interface. Node rebooting.",
+          "task": "After reboot, verify the new BMC firmware version is installed correctly.",
+          "hints": [
+            "ipmitool mc info shows version",
+            "Verify against security bulletin",
+            "Document new version"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ipmitool",
+            "pattern": "mc info|version"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "BMC firmware updated successfully. Now verify GPU subsystem survived the reboot.",
+          "task": "Run nvidia-smi to verify all GPUs are detected after the BMC update and reboot.",
+          "hints": [
+            "nvidia-smi shows GPU status",
+            "Compare to pre-update state",
+            "Check for any new errors"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "GPU|Driver"
+          },
+          "quiz": {
+            "question": "What should you verify first after firmware update and reboot?",
+            "options": [
+              "Network connectivity",
+              "GPU count matches pre-update",
+              "Slurm service status",
+              "User home directories"
+            ],
+            "correctIndex": 1,
+            "explanation": "Verifying GPU detection confirms the PCIe subsystem is working correctly after BMC firmware changes, which is critical for HPC/AI workloads."
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "All GPUs detected. Run quick diagnostics to verify GPU health post-update.",
+          "task": "Use dcgmi diag to run a health check on all GPUs after the firmware update.",
+          "hints": [
+            "dcgmi diag -r 1 for quick check",
+            "Verify all tests pass",
+            "Document any warnings"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "diag"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "Diagnostics pass. Node ready to return to production.",
+          "task": "Use scontrol to return the node to service and verify its state.",
+          "hints": [
+            "scontrol update state=resume",
+            "Verify with sinfo",
+            "Node should show idle"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "resume|idle|state"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain1-driver-disaster",
+      "domain": 1,
+      "title": "The Driver Disaster",
+      "narrative": {
+        "hook": "Driver update breaks GPU communication on 8 production nodes during business hours.",
+        "setting": "A well-intentioned driver update has left half your cluster unable to see GPUs. Users are impacted and management is watching.",
+        "resolution": "Diagnose the driver mismatch, perform controlled rollback, and restore GPU functionality."
+      },
+      "commandFamilies": [
+        "gpu-monitoring",
+        "diagnostics",
+        "bmc-hardware",
+        "cluster-tools"
+      ],
+      "estimatedMinutes": 22,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "Users report 'CUDA error: no CUDA-capable device' on dgx-01 through dgx-08. Panic ensues.",
+          "task": "Start triage by checking nvidia-smi on an affected node to understand the GPU state.",
+          "hints": [
+            "nvidia-smi is the first check",
+            "Look for error messages",
+            "Check if driver is loaded"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "GPU|ERR|failed"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "nvidia-smi shows 'NVIDIA-SMI has failed because it couldn't communicate with the NVIDIA driver.'",
+          "task": "Check if the NVIDIA kernel modules are loaded using system commands.",
+          "hints": [
+            "lsmod shows loaded modules",
+            "grep for nvidia modules",
+            "Should see nvidia, nvidia_uvm, etc."
+          ],
+          "validation": {
+            "type": "command",
+            "command": "lsmod",
+            "pattern": "nvidia"
+          },
+          "quiz": {
+            "question": "What does 'couldn't communicate with NVIDIA driver' typically mean?",
+            "options": [
+              "GPUs are physically disconnected",
+              "Kernel module not loaded or crashed",
+              "CUDA toolkit not installed",
+              "Insufficient permissions"
+            ],
+            "correctIndex": 1,
+            "explanation": "This error indicates the nvidia kernel module is either not loaded, failed to load, or has crashed. The user-space nvidia-smi can't communicate with kernel-space driver."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "lsmod shows nvidia module is loaded but version 550.54 doesn't match expected 535.154.",
+          "task": "Check system logs for driver initialization errors using journalctl or dmesg.",
+          "hints": [
+            "dmesg shows kernel messages",
+            "Look for NVRM errors",
+            "Check module load time"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dmesg",
+            "pattern": "NVRM|nvidia|GPU"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "dmesg shows NVRM: GPU firmware mismatch - driver expects newer GSP firmware.",
+          "task": "Document the current driver and CUDA versions for the rollback plan.",
+          "hints": [
+            "cat /proc/driver/nvidia/version",
+            "nvcc --version for CUDA",
+            "Document both versions"
+          ],
+          "validation": { "type": "command", "pattern": "nvidia/version|nvcc" }
+        },
+        {
+          "id": "step-5",
+          "situation": "Driver 550.54 requires GSP firmware update, but cluster policy prohibits firmware changes without approval.",
+          "task": "Check what driver packages are available for rollback using package manager.",
+          "hints": [
+            "apt list or dnf list for packages",
+            "Look for older nvidia-driver versions",
+            "535.154 was the previous version"
+          ],
+          "validation": { "type": "command", "pattern": "nvidia|driver|list" },
+          "quiz": {
+            "question": "Why might a newer driver require firmware updates?",
+            "options": [
+              "Marketing requirements",
+              "New features need GSP support",
+              "Licensing changes",
+              "Bug fixes only"
+            ],
+            "correctIndex": 1,
+            "explanation": "Newer drivers may require updated GPU System Processor (GSP) firmware to support new features, security patches, or architectural changes in driver-GPU communication."
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "Previous driver package 535.154 is still cached in the repository. Rollback is possible.",
+          "task": "Use scontrol to drain the affected nodes before starting the driver rollback.",
+          "hints": [
+            "scontrol update state=drain",
+            "Add maintenance reason",
+            "Prevent new jobs from starting"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "drain|state"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "Nodes draining. Time to document the current state before making changes.",
+          "task": "Create a bug report to capture system state before the rollback.",
+          "hints": [
+            "nvidia-bug-report.sh creates bundle",
+            "Useful for post-incident review",
+            "Document before changing"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-bug-report",
+            "pattern": "report"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Bug report saved. Driver rollback completed via package manager. Reboot required.",
+          "task": "After reboot, verify nvidia-smi now communicates with the GPUs successfully.",
+          "hints": [
+            "nvidia-smi should work now",
+            "Check all 8 GPUs visible",
+            "Verify driver version 535.154"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "535|GPU"
+          },
+          "quiz": {
+            "question": "After a driver rollback, what should you verify first?",
+            "options": [
+              "User applications work",
+              "All GPUs are detected",
+              "Network connectivity",
+              "Slurm configuration"
+            ],
+            "correctIndex": 1,
+            "explanation": "Verifying GPU detection confirms the driver rollback was successful and the driver-firmware compatibility is restored before testing higher-level functionality."
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "nvidia-smi shows all 8 GPUs with driver 535.154. Basic communication restored.",
+          "task": "Run DCGM diagnostics to verify GPU health after the driver change.",
+          "hints": [
+            "dcgmi diag -r 2 for moderate test",
+            "Verify compute and memory",
+            "All GPUs should pass"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "diag"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "All diagnostics pass. Nodes ready to return to production.",
+          "task": "Resume the nodes in Slurm and verify they return to idle state.",
+          "hints": [
+            "scontrol update state=resume",
+            "sinfo to verify state",
+            "Nodes should show idle"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "resume"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain1-rack-expansion",
+      "domain": 1,
+      "title": "The Rack Expansion",
+      "narrative": {
+        "hook": "Four new DGX nodes arrive to expand the training cluster capacity by 50%.",
+        "setting": "Budget approved, hardware delivered. Your job is to integrate 4 new DGX A100 nodes into the existing 8-node cluster seamlessly.",
+        "resolution": "Configure BMC networking, validate GPU health, and integrate nodes into Slurm."
+      },
+      "commandFamilies": [
+        "bmc-hardware",
+        "gpu-monitoring",
+        "cluster-tools",
+        "diagnostics"
+      ],
+      "estimatedMinutes": 28,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "Four new DGX A100 nodes are racked, cabled, and powered on. BMC LEDs show network activity.",
+          "task": "Use ipmitool to verify BMC connectivity and check system power state.",
+          "hints": [
+            "ipmitool chassis status",
+            "Verify power is on",
+            "Check BMC is responsive"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ipmitool",
+            "pattern": "chassis|power|status"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "BMC responds. System is powered on. Time to verify hardware inventory.",
+          "task": "Use dmidecode to verify the system model and memory configuration.",
+          "hints": [
+            "dmidecode -t system for model",
+            "dmidecode -t memory for RAM",
+            "DGX A100 should have 1TB or 2TB"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dmidecode",
+            "pattern": "system|memory|DGX"
+          },
+          "quiz": {
+            "question": "Why verify hardware specs on new nodes before integration?",
+            "options": [
+              "Warranty requirements",
+              "Ensure config matches cluster standards",
+              "NVIDIA licensing",
+              "Slurm requires it"
+            ],
+            "correctIndex": 1,
+            "explanation": "Verifying hardware configuration ensures the new nodes match cluster standards for memory, storage, and network, preventing heterogeneous cluster issues."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "Hardware matches spec: DGX A100 with 1TB RAM, 8 GPUs expected.",
+          "task": "Run nvidia-smi to verify all 8 A100 GPUs are detected.",
+          "hints": [
+            "nvidia-smi shows GPU inventory",
+            "Should see 8 A100 GPUs",
+            "Check memory: 40GB or 80GB per GPU"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "A100|GPU"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "All 8 GPUs detected: A100-SXM4-80GB. Time for health validation.",
+          "task": "Check GPU topology to verify NVLink connectivity between GPUs.",
+          "hints": [
+            "nvidia-smi topo -m shows topology",
+            "All GPUs should connect via NVLink",
+            "NV12 for A100 systems"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "topo"
+          },
+          "quiz": {
+            "question": "What does 'NV12' in topology output indicate?",
+            "options": [
+              "12 NVLink connections",
+              "NVLink version 1.2",
+              "12th generation GPU",
+              "PCIe gen 4 x12"
+            ],
+            "correctIndex": 0,
+            "explanation": "NV12 indicates 12 NVLink connections between the GPU pair, providing high-bandwidth communication for multi-GPU workloads like distributed training."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "NVLink topology looks correct. Run diagnostics to validate GPU health.",
+          "task": "Use dcgmi diag to run a comprehensive health check on all GPUs.",
+          "hints": [
+            "dcgmi diag -r 3 for full test",
+            "Takes 10-15 minutes",
+            "All tests should pass"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "diag|-r"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "All 8 GPUs pass diagnostics. Time to verify thermal performance.",
+          "task": "Check system thermal sensors to ensure cooling is adequate.",
+          "hints": [
+            "sensors shows temperatures",
+            "GPU temps should be under 45C at idle",
+            "Check CPU and system temps too"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "sensors",
+            "pattern": "temp|Core|GPU"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "Thermals look good. Now verify the node can join the Slurm cluster.",
+          "task": "Check sinfo to see the current cluster configuration before adding new nodes.",
+          "hints": [
+            "sinfo shows all nodes",
+            "Note current node count",
+            "Identify partition structure"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "sinfo",
+            "pattern": "PARTITION|NODE"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Current cluster has 8 nodes in 'gpu' partition. New nodes need to be added.",
+          "task": "Verify the new node's hostname and IP are configured correctly for Slurm.",
+          "hints": [
+            "hostname command shows name",
+            "Should follow naming convention",
+            "Check /etc/hosts or DNS"
+          ],
+          "validation": { "type": "command", "pattern": "hostname|host" },
+          "quiz": {
+            "question": "Why is consistent hostname naming important for Slurm?",
+            "options": [
+              "User convenience only",
+              "Slurm uses hostnames for job scheduling",
+              "Required by NVIDIA",
+              "Network performance"
+            ],
+            "correctIndex": 1,
+            "explanation": "Slurm relies on consistent hostname patterns for job scheduling, node selection, and resource management. Inconsistent naming causes scheduling failures."
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "Hostname dgx-09 configured correctly. Slurm client configured.",
+          "task": "Use scontrol to add the new node to the cluster and verify its state.",
+          "hints": [
+            "scontrol update may be needed",
+            "Admin may need to update slurm.conf",
+            "Check node state after"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "node|update|show"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "New nodes added to Slurm. Final validation required.",
+          "task": "Use sinfo to verify all 12 nodes (8 original + 4 new) are visible and idle.",
+          "hints": [
+            "sinfo -N -l for detailed view",
+            "All nodes should show idle",
+            "GPU count should be correct"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "sinfo",
+            "pattern": "idle|gpu"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain2-nvlink-mystery",
+      "domain": 2,
+      "title": "The NVLink Mystery",
+      "narrative": {
+        "hook": "Multi-GPU training suddenly drops from 8-GPU scaling to 4-GPU performance.",
+        "setting": "Users report their 8-GPU jobs are running at half the expected speed. Network team says fabric is fine.",
+        "resolution": "Discover degraded NVLink connections between GPU pairs and identify failing NVSwitch."
+      },
+      "commandFamilies": [
+        "gpu-monitoring",
+        "diagnostics",
+        "infiniband-tools",
+        "bmc-hardware"
+      ],
+      "estimatedMinutes": 25,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "User reports 8-GPU PyTorch training is 2x slower than last week. Same code, same data.",
+          "task": "Start by checking nvidia-smi to verify all 8 GPUs are detected and healthy.",
+          "hints": [
+            "nvidia-smi shows GPU status",
+            "Check for errors or warnings",
+            "Verify memory usage"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "GPU|Memory"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "All 8 GPUs show healthy, but you notice GPU utilization varies widely during training.",
+          "task": "Check the GPU topology to understand the NVLink connectivity matrix.",
+          "hints": [
+            "nvidia-smi topo -m shows connections",
+            "Look for NVLink vs PCIe paths",
+            "NV should appear between all GPUs"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "topo"
+          },
+          "quiz": {
+            "question": "In topology output, what does 'PIX' between two GPUs indicate?",
+            "options": [
+              "Pixel shader connection",
+              "PCIe switch connection",
+              "Physical inspection required",
+              "Performance index rating"
+            ],
+            "correctIndex": 1,
+            "explanation": "PIX indicates GPUs are connected through a PCIe switch rather than NVLink, resulting in significantly lower bandwidth for GPU-to-GPU communication."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "Topology shows GPUs 0-3 and 4-7 are connected via NVLink, but 0-4, 1-5, etc. show 'SYS' (PCIe)!",
+          "task": "Check NVLink status in detail to identify which links are degraded.",
+          "hints": [
+            "nvidia-smi nvlink --status",
+            "Check all link states",
+            "Look for inactive links"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "nvlink|status"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "NVLink status shows links through NVSwitch 2 are all inactive. The switch may be failing.",
+          "task": "Check NVLink error counters to see if there are physical layer errors.",
+          "hints": [
+            "nvidia-smi nvlink -e shows errors",
+            "Look for CRC or replay errors",
+            "High counts indicate problems"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "nvlink|-e"
+          },
+          "quiz": {
+            "question": "What do high NVLink replay counts typically indicate?",
+            "options": [
+              "Normal operation",
+              "Signal integrity issues",
+              "Driver bugs",
+              "Memory errors"
+            ],
+            "correctIndex": 1,
+            "explanation": "High replay counts indicate signal integrity problems causing packet retransmissions, often due to cable issues, connector problems, or failing NVSwitch components."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "Error counters show CRC errors on all links going through NVSwitch 2.",
+          "task": "Use nvsm to check NVSwitch health status directly.",
+          "hints": [
+            "nvsm show nvswitch",
+            "Check health status",
+            "Look for degraded switches"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvsm",
+            "pattern": "nvswitch|health"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "nvsm shows NVSwitch 2 in 'Degraded' state with thermal warning.",
+          "task": "Check system thermal sensors to understand the temperature situation.",
+          "hints": [
+            "sensors shows temperatures",
+            "Look for NVSwitch temps",
+            "Compare to healthy switches"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "sensors",
+            "pattern": "temp|NVSwitch"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "NVSwitch 2 is running 15C hotter than others. Possible cooling issue.",
+          "task": "Check BMC sensor data for fan speeds and cooling system status.",
+          "hints": [
+            "ipmitool sensor list",
+            "Look for fan RPM",
+            "Check cooling zone status"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ipmitool",
+            "pattern": "sensor|fan"
+          },
+          "quiz": {
+            "question": "Why would one NVSwitch run significantly hotter than others?",
+            "options": [
+              "Higher utilization",
+              "Blocked airflow or fan failure",
+              "Manufacturing variance",
+              "Software bug"
+            ],
+            "correctIndex": 1,
+            "explanation": "Significant temperature differences between identical components usually indicate airflow obstruction, failed fans, or thermal paste degradation rather than utilization differences."
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Fan 4 (cooling NVSwitch 2 zone) is running at 50% of normal RPM. Bearing failure suspected.",
+          "task": "Document the issue using nvidia-bug-report before scheduling maintenance.",
+          "hints": [
+            "nvidia-bug-report.sh captures state",
+            "Include thermal data",
+            "Needed for RMA"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-bug-report",
+            "pattern": "report"
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "Bug report captured. Need to take node offline for fan replacement.",
+          "task": "Use scontrol to drain the node for maintenance.",
+          "hints": [
+            "scontrol update state=drain",
+            "Add reason for records",
+            "Jobs will complete first"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "drain"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "Node draining. Document final GPU state before shutdown.",
+          "task": "Run dcgmi diag to document current GPU health for comparison after repair.",
+          "hints": [
+            "dcgmi diag -r 1 quick check",
+            "Document any failures",
+            "Compare after repair"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "diag"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain2-pcie-puzzle",
+      "domain": 2,
+      "title": "The PCIe Puzzle",
+      "narrative": {
+        "hook": "Intermittent 'GPU fell off the bus' errors appearing in system logs.",
+        "setting": "Production node showing random GPU disconnections. Users complain of jobs crashing unpredictably.",
+        "resolution": "Trace PCIe link training failures to marginal power delivery and thermal cycling issues."
+      },
+      "commandFamilies": [
+        "gpu-monitoring",
+        "bmc-hardware",
+        "diagnostics",
+        "cluster-tools"
+      ],
+      "estimatedMinutes": 23,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "System logs show 'NVRM: GPU at PCI:0000:41:00.0 has fallen off the bus' errors, seemingly random.",
+          "task": "Check nvidia-smi to see current GPU state and identify which GPU is affected.",
+          "hints": [
+            "nvidia-smi shows GPU status",
+            "Look for ERR! or missing GPUs",
+            "Note PCI address mapping"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "GPU|ERR"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "nvidia-smi shows 7 GPUs instead of 8. GPU 3 (PCI 41:00.0) is missing.",
+          "task": "Check system logs for the exact error messages and timestamps.",
+          "hints": [
+            "dmesg shows kernel messages",
+            "grep for NVRM or nvidia",
+            "Note when errors started"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dmesg",
+            "pattern": "NVRM|nvidia|GPU|pci"
+          },
+          "quiz": {
+            "question": "What does 'GPU fell off the bus' typically indicate?",
+            "options": [
+              "Driver crash only",
+              "PCIe link failure or GPU reset",
+              "Power cable disconnected",
+              "Thermal shutdown"
+            ],
+            "correctIndex": 1,
+            "explanation": "This error indicates the PCIe link between CPU and GPU has failed, either due to hardware issues, power problems, or the GPU entering a non-recoverable state."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "Logs show the error occurs during high-power training phases. Possible power issue.",
+          "task": "Check BMC power sensor readings to understand power delivery health.",
+          "hints": [
+            "ipmitool sensor list",
+            "Look for power readings",
+            "Check voltage levels"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ipmitool",
+            "pattern": "sensor|power|volt"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "Power readings show PSU 2 output voltage is 0.3V below nominal during peaks.",
+          "task": "Check the BMC System Event Log for any power-related warnings.",
+          "hints": [
+            "ipmitool sel elist",
+            "Look for power events",
+            "Check timestamps"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ipmitool",
+            "pattern": "sel|event"
+          },
+          "quiz": {
+            "question": "Why might marginal power cause PCIe link failures?",
+            "options": [
+              "PCIe is power-hungry",
+              "GPU PCIe PHY needs stable voltage",
+              "Software power management bug",
+              "Cable length too long"
+            ],
+            "correctIndex": 1,
+            "explanation": "The PCIe physical layer (PHY) requires stable voltage for reliable high-speed signaling. Voltage dips during load can cause link training failures or bit errors."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "SEL shows multiple 'PSU 2 Assert' events correlating with GPU dropout times.",
+          "task": "Document PSU configuration and check for redundancy status.",
+          "hints": [
+            "ipmitool fru print for PSU info",
+            "Check redundancy status",
+            "Document serial numbers"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ipmitool",
+            "pattern": "fru|psu"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "PSU 2 FRU shows it's an older unit - possible degradation. Need thermal check.",
+          "task": "Check system temperatures to rule out thermal contribution to the issue.",
+          "hints": [
+            "sensors shows temperatures",
+            "Check all zones",
+            "Compare to spec limits"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "sensors",
+            "pattern": "temp|Core"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "Temperatures normal. Issue isolated to PSU 2. Need to schedule replacement.",
+          "task": "Create bug report documenting the power and GPU dropout correlation.",
+          "hints": [
+            "nvidia-bug-report.sh",
+            "Document power events",
+            "Include timestamps"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-bug-report",
+            "pattern": "report"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Bug report created. The GPU is still missing. Attempt recovery.",
+          "task": "Try to reset the GPUs to see if the missing one recovers.",
+          "hints": [
+            "nvidia-smi -r for reset",
+            "May need reboot if fails",
+            "Check if GPU 3 returns"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "-r|reset"
+          },
+          "quiz": {
+            "question": "When should you attempt a GPU reset vs. a full reboot?",
+            "options": [
+              "Always try reset first",
+              "Reset for driver issues, reboot for PCIe",
+              "Always reboot for reliability",
+              "Based on error message only"
+            ],
+            "correctIndex": 1,
+            "explanation": "GPU resets work for driver-level issues, but PCIe link failures often require a full system reboot to re-enumerate the PCI bus and retrain links."
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "Reset didn't recover GPU 3. Full reboot required, but must drain first.",
+          "task": "Drain the node from Slurm before scheduling the reboot.",
+          "hints": [
+            "scontrol update state=drain",
+            "Add reason for maintenance",
+            "Wait for jobs to complete"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "drain"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "Node drained. After reboot, verify all 8 GPUs are back.",
+          "task": "Run nvidia-smi after reboot to verify all GPUs are detected.",
+          "hints": [
+            "nvidia-smi after reboot",
+            "Should show all 8 GPUs",
+            "Schedule PSU replacement"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "8|GPU"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain3-slurm-setup",
+      "domain": 3,
+      "title": "The Slurm Setup",
+      "narrative": {
+        "hook": "New AI research team needs their GPU cluster integrated with the shared HPC environment.",
+        "setting": "A 12-node DGX cluster must be configured with Slurm for GPU job scheduling with proper resource allocation.",
+        "resolution": "Configure Slurm GRES for GPUs, set up partitions, and validate job submission."
+      },
+      "commandFamilies": [
+        "cluster-tools",
+        "gpu-monitoring",
+        "container-tools",
+        "diagnostics"
+      ],
+      "estimatedMinutes": 25,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "Fresh 12-node DGX A100 cluster with Slurm installed but not configured for GPUs.",
+          "task": "Check the current Slurm configuration to understand what's already set up.",
+          "hints": [
+            "sinfo shows partitions",
+            "scontrol show config",
+            "Check for GRES settings"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "config|show"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "Basic Slurm is running but no GPU resources (GRES) are configured.",
+          "task": "First verify GPU inventory on a compute node using nvidia-smi.",
+          "hints": [
+            "nvidia-smi on compute node",
+            "Count GPUs per node",
+            "Note GPU model"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "GPU|A100"
+          },
+          "quiz": {
+            "question": "Why verify GPU inventory before Slurm GRES configuration?",
+            "options": [
+              "Documentation requirement",
+              "GRES count must match actual hardware",
+              "Driver dependency check",
+              "License validation"
+            ],
+            "correctIndex": 1,
+            "explanation": "Slurm GRES configuration must match the actual number of GPUs on each node. Misconfiguration leads to scheduling failures or resource conflicts."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "Each node has 8 A100-80GB GPUs. Need to configure Slurm to recognize them.",
+          "task": "Check if dcgmi is running to provide GPU telemetry for Slurm.",
+          "hints": [
+            "dcgmi discovery -l lists GPUs",
+            "DCGM provides GPU metrics",
+            "Useful for accounting"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "discovery|list"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "DCGM is running and sees all GPUs. Slurm config files need editing.",
+          "task": "Check current node information in Slurm to see feature configuration.",
+          "hints": [
+            "scontrol show node",
+            "Look for Gres entries",
+            "Check features field"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "show node"
+          },
+          "quiz": {
+            "question": "What does the Slurm GRES field specify for GPU scheduling?",
+            "options": [
+              "GPU driver version",
+              "GPU memory and count per node",
+              "GPU temperature limits",
+              "GPU brand preference"
+            ],
+            "correctIndex": 1,
+            "explanation": "GRES (Generic RESource) in Slurm specifies consumable resources like GPUs, including count and optionally type/memory, enabling precise GPU job scheduling."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "Nodes show Gres=gpu:8 after config update. Time to test job submission.",
+          "task": "Check sinfo to verify the GPU partition is available with correct resources.",
+          "hints": [
+            "sinfo -N -l for detailed view",
+            "Check GPU counts",
+            "Verify partition state"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "sinfo",
+            "pattern": "gpu|GRES"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "GPU partition shows 96 total GPUs (12 nodes x 8 GPUs). Ready for testing.",
+          "task": "Check squeue to see current job activity on the cluster.",
+          "hints": [
+            "squeue shows job queue",
+            "Should be empty on new cluster",
+            "Note format options"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "squeue",
+            "pattern": "JOBID|USER"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "Queue is empty. Need to configure container support for AI workloads.",
+          "task": "Verify Docker/Enroot is available for containerized workloads.",
+          "hints": [
+            "docker --version for Docker",
+            "enroot version for Enroot",
+            "Check container runtime"
+          ],
+          "validation": {
+            "type": "command",
+            "pattern": "docker|enroot|version"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Enroot is installed for HPC containers. Test GPU visibility in containers.",
+          "task": "Use docker to verify GPUs are visible inside containers.",
+          "hints": [
+            "docker run --gpus all nvidia-smi",
+            "Should see all GPUs",
+            "Tests nvidia-container-toolkit"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "docker",
+            "pattern": "gpus|nvidia"
+          },
+          "quiz": {
+            "question": "What makes GPUs visible inside Docker containers?",
+            "options": [
+              "Slurm GRES configuration",
+              "NVIDIA Container Toolkit",
+              "CUDA driver installation",
+              "Docker GPU plugin"
+            ],
+            "correctIndex": 1,
+            "explanation": "The NVIDIA Container Toolkit (nvidia-container-toolkit) enables GPU visibility in containers by mounting driver components and device files into the container."
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "Container GPU access works. Run a final validation test.",
+          "task": "Use dcgmi diag to run a quick health check before declaring cluster ready.",
+          "hints": [
+            "dcgmi diag -r 1 quick test",
+            "Run on sample node",
+            "Verify no issues"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "diag"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "All systems validated. Document cluster readiness.",
+          "task": "Final sinfo check to confirm cluster is ready for production workloads.",
+          "hints": [
+            "sinfo -N -l",
+            "All nodes should be idle",
+            "GPU resources visible"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "sinfo",
+            "pattern": "idle|gpu"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain3-container-crisis",
+      "domain": 3,
+      "title": "The Container Crisis",
+      "narrative": {
+        "hook": "Containerized ML training jobs fail with 'CUDA initialization error' after cluster update.",
+        "setting": "A routine system update broke GPU access in containers across the entire cluster.",
+        "resolution": "Identify nvidia-container-toolkit version mismatch and restore container GPU functionality."
+      },
+      "commandFamilies": [
+        "container-tools",
+        "gpu-monitoring",
+        "cluster-tools",
+        "diagnostics"
+      ],
+      "estimatedMinutes": 20,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "Users report 'CUDA initialization error' when running GPU containers after yesterday's update.",
+          "task": "Verify GPUs work outside containers using nvidia-smi directly.",
+          "hints": [
+            "nvidia-smi on host",
+            "Should show all GPUs",
+            "Compare to container behavior"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "GPU|Driver"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "nvidia-smi works on host - all 8 GPUs visible with driver 535.154.",
+          "task": "Test GPU visibility inside a Docker container.",
+          "hints": [
+            "docker run --gpus all nvidia-smi",
+            "Should show GPUs if working",
+            "Note any errors"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "docker",
+            "pattern": "gpus|nvidia-smi"
+          },
+          "quiz": {
+            "question": "Why might GPUs work on host but fail in containers?",
+            "options": [
+              "Container resource limits",
+              "nvidia-container-toolkit version mismatch",
+              "Docker daemon crash",
+              "Network configuration"
+            ],
+            "correctIndex": 1,
+            "explanation": "The nvidia-container-toolkit must be compatible with the host driver version. Updates that change driver versions can break container GPU access."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "Container test shows 'Failed to initialize NVML: Unknown Error'. Version mismatch suspected.",
+          "task": "Check the nvidia-container-toolkit version installed on the system.",
+          "hints": [
+            "dpkg -l or rpm -q for package",
+            "Look for nvidia-container-toolkit",
+            "Note version number"
+          ],
+          "validation": {
+            "type": "command",
+            "pattern": "nvidia-container|toolkit|version"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "nvidia-container-toolkit is version 1.13.0 but driver is 535.154 requiring 1.14.x.",
+          "task": "Check Docker daemon logs for more details about the GPU initialization failure.",
+          "hints": [
+            "journalctl -u docker",
+            "Look for nvidia runtime errors",
+            "Check recent logs"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "journalctl",
+            "pattern": "docker|nvidia"
+          },
+          "quiz": {
+            "question": "Where are NVIDIA container runtime errors typically logged?",
+            "options": [
+              "nvidia-smi output",
+              "Docker daemon logs or syslog",
+              "CUDA error files",
+              "Container stdout only"
+            ],
+            "correctIndex": 1,
+            "explanation": "NVIDIA container runtime errors appear in Docker daemon logs (journalctl -u docker) or syslog, not in nvidia-smi which only monitors the host."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "Logs confirm: 'nvidia-container-cli: driver mismatch'. Need to update toolkit.",
+          "task": "Check which Slurm jobs are currently affected by this issue.",
+          "hints": [
+            "squeue shows running jobs",
+            "Look for job states",
+            "Identify affected users"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "squeue",
+            "pattern": "RUNNING|PENDING|STATE"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "Multiple container jobs are failing. Need to communicate and fix quickly.",
+          "task": "Drain nodes for toolkit update while allowing current non-container jobs to finish.",
+          "hints": [
+            "scontrol update state=drain",
+            "Add reason for users",
+            "Schedule update window"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "drain|state"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "Nodes draining. The toolkit update is being installed by sysadmin team.",
+          "task": "After toolkit update, verify the new version is installed.",
+          "hints": [
+            "Check package version again",
+            "Should be 1.14.x or later",
+            "Compatible with driver 535"
+          ],
+          "validation": {
+            "type": "command",
+            "pattern": "nvidia-container|version|1.14"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Toolkit updated to 1.14.3. Test container GPU access again.",
+          "task": "Run a Docker test to verify GPUs are now visible in containers.",
+          "hints": [
+            "docker run --gpus all nvidia-smi",
+            "Should show all 8 GPUs",
+            "No errors expected"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "docker",
+            "pattern": "gpus|nvidia-smi"
+          },
+          "quiz": {
+            "question": "After fixing container GPU access, what should you test next?",
+            "options": [
+              "Reboot all nodes",
+              "Run DCGM diagnostics",
+              "Test Slurm container job submission",
+              "Update all containers"
+            ],
+            "correctIndex": 2,
+            "explanation": "After fixing container runtime, test the complete workflow including Slurm job submission with containers to ensure the production path works end-to-end."
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "Docker test passes. Now verify Enroot (HPC container runtime) also works.",
+          "task": "Test that Enroot can import and run a container with GPU access.",
+          "hints": [
+            "enroot import or run",
+            "Check GPU visibility",
+            "Used by Slurm+Pyxis"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "enroot",
+            "pattern": "import|run|nvidia"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "Enroot works. Resume nodes and notify users.",
+          "task": "Resume nodes in Slurm and verify they return to service.",
+          "hints": [
+            "scontrol update state=resume",
+            "sinfo to verify",
+            "All nodes should be idle"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "resume"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain3-storage-showdown",
+      "domain": 3,
+      "title": "The Storage Showdown",
+      "narrative": {
+        "hook": "Parallel filesystem performance drops 80%, causing AI training jobs to stall on data loading.",
+        "setting": "The shared Lustre filesystem that serves training data has slowed dramatically, impacting all users.",
+        "resolution": "Identify failed OST, rebalance data, and restore filesystem performance."
+      },
+      "commandFamilies": [
+        "cluster-tools",
+        "diagnostics",
+        "gpu-monitoring",
+        "bmc-hardware"
+      ],
+      "estimatedMinutes": 22,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "Users complain GPU utilization is stuck at 10% - jobs are waiting for data.",
+          "task": "Verify the GPU utilization issue using nvidia-smi.",
+          "hints": [
+            "nvidia-smi shows utilization",
+            "Low GPU util with jobs running",
+            "Data loading bottleneck"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "GPU|Utilization|%"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "Confirmed: GPUs at 8% utilization during active training. I/O wait is the bottleneck.",
+          "task": "Check Slurm job status to see how many jobs are affected.",
+          "hints": [
+            "squeue shows job status",
+            "Look for running jobs",
+            "Note resource usage"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "squeue",
+            "pattern": "RUNNING|JOBID"
+          },
+          "quiz": {
+            "question": "Why would low GPU utilization indicate a storage problem?",
+            "options": [
+              "GPUs need storage for memory",
+              "Training is I/O bound waiting for data",
+              "Storage provides GPU cooling",
+              "CUDA requires local storage"
+            ],
+            "correctIndex": 1,
+            "explanation": "AI training pipelines load data from storage into GPU memory. Slow storage causes GPUs to idle waiting for the next batch, appearing as low utilization."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "45 jobs running across 12 nodes, all showing low GPU utilization.",
+          "task": "Check system I/O statistics to confirm the storage bottleneck.",
+          "hints": [
+            "iostat or sar for I/O stats",
+            "Look for high wait times",
+            "Check read/write throughput"
+          ],
+          "validation": { "type": "command", "pattern": "iostat|iowait|stat" }
+        },
+        {
+          "id": "step-4",
+          "situation": "I/O wait is at 60%. Lustre filesystem is the bottleneck. Need to check OST health.",
+          "task": "Check Lustre filesystem status to identify any failed or degraded components.",
+          "hints": [
+            "lfs check servers",
+            "lfs df shows OST status",
+            "Look for offline or degraded OSTs"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "lfs",
+            "pattern": "check|df|status"
+          },
+          "quiz": {
+            "question": "What is an OST in Lustre filesystem terminology?",
+            "options": [
+              "Object Storage Target - stores file data",
+              "Operating System Thread",
+              "Optimized Storage Tier",
+              "Output Stream Terminal"
+            ],
+            "correctIndex": 0,
+            "explanation": "OST (Object Storage Target) stores actual file data in Lustre. Failed or slow OSTs directly impact read/write performance for all clients."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "lfs df shows OST0003 is offline. This explains the performance degradation.",
+          "task": "Check the storage server logs or BMC for hardware issues.",
+          "hints": [
+            "ipmitool on storage server",
+            "Check sel for events",
+            "Look for disk errors"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ipmitool",
+            "pattern": "sel|event|sensor"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "Storage server BMC shows multiple disk failure events on OST0003.",
+          "task": "Document the storage server status for the storage team.",
+          "hints": [
+            "ipmitool sensor list",
+            "dmidecode for hardware info",
+            "Document disk locations"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ipmitool",
+            "pattern": "sensor"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "Storage team notified. Meanwhile, check if data can be migrated away from failed OST.",
+          "task": "Check which directories are most affected by the OST failure.",
+          "hints": [
+            "lfs getstripe shows file layout",
+            "Check training data directories",
+            "Identify affected datasets"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "lfs",
+            "pattern": "getstripe|layout"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Critical training datasets are striped across all OSTs including the failed one.",
+          "task": "Check dcgmi to verify GPUs are healthy while waiting for storage fix.",
+          "hints": [
+            "dcgmi diag quick check",
+            "Ensure GPUs aren't the issue",
+            "Rule out GPU problems"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "diag|health"
+          },
+          "quiz": {
+            "question": "Why verify GPU health during a storage investigation?",
+            "options": [
+              "GPUs might cause storage errors",
+              "Rule out GPU issues as contributing factor",
+              "Storage and GPU are linked",
+              "Required for documentation"
+            ],
+            "correctIndex": 1,
+            "explanation": "When troubleshooting performance issues, verify all components are healthy. GPUs might have their own issues masked by the primary storage problem."
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "GPUs are healthy. Storage team has recovered OST0003. Verify performance.",
+          "task": "Check Lustre status to confirm all OSTs are back online.",
+          "hints": [
+            "lfs df shows all OSTs",
+            "All should show active",
+            "Check capacity distribution"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "lfs",
+            "pattern": "df|OST"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "All OSTs online. Verify GPU utilization has recovered.",
+          "task": "Check nvidia-smi to confirm GPU utilization has returned to normal.",
+          "hints": [
+            "nvidia-smi shows utilization",
+            "Should be high now",
+            "Data loading restored"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "Util|GPU|%"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain4-silent-cluster",
+      "domain": 4,
+      "title": "The Silent Cluster",
+      "narrative": {
+        "hook": "Production cluster showing intermittent NCCL timeouts during distributed training.",
+        "setting": "You're the on-call engineer for a 32-node DGX A100 cluster experiencing random training hangs.",
+        "resolution": "Identify ECC errors on GPU 3 causing NVLink degradation and intermittent communication failures."
+      },
+      "commandFamilies": [
+        "gpu-monitoring",
+        "infiniband-tools",
+        "cluster-tools",
+        "diagnostics"
+      ],
+      "estimatedMinutes": 25,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "You receive a ticket about NCCL all-reduce hanging on multi-node training jobs.",
+          "task": "Check which nodes are running jobs using Slurm commands.",
+          "hints": [
+            "squeue shows running jobs",
+            "Check nodelist for jobs",
+            "Identify affected nodes"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "squeue",
+            "pattern": "RUNNING|NODELIST"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "You see 4 multi-node jobs running. The user's job uses dgx-01 through dgx-08.",
+          "task": "Check overall GPU health across the cluster using nvidia-smi.",
+          "hints": [
+            "nvidia-smi shows GPU status",
+            "Look for ERR! or N/A",
+            "Check memory and temp"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "GPU|Memory"
+          },
+          "quiz": {
+            "question": "When investigating intermittent cluster issues, why start with nvidia-smi?",
+            "options": [
+              "It's the only tool available",
+              "Quick snapshot shows obvious problems",
+              "DCGM requires permissions",
+              "nvidia-smi is more accurate"
+            ],
+            "correctIndex": 1,
+            "explanation": "nvidia-smi provides a quick snapshot that can reveal obvious issues like missing GPUs, memory errors, or temperature problems before deeper investigation."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "nvidia-smi shows all GPUs present, but GPU 3 on dgx-04 shows high memory usage even when idle.",
+          "task": "Check GPU 3 on dgx-04 for ECC memory errors.",
+          "hints": [
+            "nvidia-smi -q for details",
+            "Look for ECC errors section",
+            "Check volatile and aggregate counts"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "-q|ECC|error"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "GPU 3 shows 47 ECC single-bit errors. This could cause intermittent issues.",
+          "task": "Use dcgmi to get detailed GPU health information.",
+          "hints": [
+            "dcgmi diag for health check",
+            "Check specific GPU",
+            "Look for memory issues"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "diag|health"
+          },
+          "quiz": {
+            "question": "What do ECC single-bit errors indicate about GPU health?",
+            "options": [
+              "Immediate failure imminent",
+              "Normal operation",
+              "Memory cells degrading but correctable",
+              "Driver software bug"
+            ],
+            "correctIndex": 2,
+            "explanation": "Single-bit ECC errors are automatically corrected but indicate memory cell degradation. High counts suggest the GPU may need attention or replacement."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "DCGM shows GPU 3 has elevated error rates. Check if InfiniBand is also affected.",
+          "task": "Check InfiniBand port status on the affected node.",
+          "hints": [
+            "ibstat shows IB port status",
+            "Look for active/inactive",
+            "Check link width and speed"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibstat",
+            "pattern": "State|Active|Width"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "IB ports look healthy. The issue seems isolated to GPU 3 memory.",
+          "task": "Check NVLink status to see if GPU 3 affects NVLink communication.",
+          "hints": [
+            "nvidia-smi nvlink --status",
+            "Check GPU 3 links",
+            "Look for inactive or errors"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "nvlink|status"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "NVLink shows elevated replay counts on links connected to GPU 3.",
+          "task": "Check NVLink error counters for details on the communication issues.",
+          "hints": [
+            "nvidia-smi nvlink -e",
+            "Check replay and CRC errors",
+            "Compare GPU 3 to others"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "nvlink|-e"
+          },
+          "quiz": {
+            "question": "How do ECC errors affect NVLink communication?",
+            "options": [
+              "No relation between ECC and NVLink",
+              "Memory errors can corrupt NVLink packets",
+              "NVLink has its own ECC",
+              "Only affects PCIe"
+            ],
+            "correctIndex": 1,
+            "explanation": "GPU memory errors can corrupt data being sent over NVLink, causing increased replay counts as the link protocol detects and retries corrupted transmissions."
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Confirmed: GPU 3 memory errors are causing NVLink retries. Need to isolate the GPU.",
+          "task": "Create a bug report documenting the GPU 3 issues before taking action.",
+          "hints": [
+            "nvidia-bug-report.sh",
+            "Captures full state",
+            "Needed for RMA"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-bug-report",
+            "pattern": "report"
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "Bug report saved. Need to drain the node for GPU replacement.",
+          "task": "Drain dgx-04 from Slurm to prepare for maintenance.",
+          "hints": [
+            "scontrol update state=drain",
+            "Reason: GPU 3 ECC errors",
+            "Jobs will migrate"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "drain|dgx-04"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "Node drained. Run final diagnostics to document GPU 3 failure mode.",
+          "task": "Run comprehensive DCGM diagnostics on the affected GPU.",
+          "hints": [
+            "dcgmi diag -r 3 -i 3",
+            "Level 3 for thorough test",
+            "Document failure pattern"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "diag|-r 3"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain4-bandwidth-bottleneck",
+      "domain": 4,
+      "title": "The Bandwidth Bottleneck",
+      "narrative": {
+        "hook": "NCCL benchmark shows 50% of expected all-reduce bandwidth on the new cluster.",
+        "setting": "A newly deployed cluster is underperforming. Acceptance testing reveals poor multi-node communication.",
+        "resolution": "Discover InfiniBand port running at reduced width due to cable issue."
+      },
+      "commandFamilies": [
+        "infiniband-tools",
+        "gpu-monitoring",
+        "cluster-tools",
+        "diagnostics"
+      ],
+      "estimatedMinutes": 23,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "NCCL all-reduce test shows 120 GB/s instead of expected 240 GB/s across nodes.",
+          "task": "Verify GPU health is not the bottleneck using nvidia-smi.",
+          "hints": [
+            "nvidia-smi on affected nodes",
+            "Check GPU health",
+            "Verify NVLink status"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "GPU|NVLink"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "GPUs look healthy. Intra-node NVLink bandwidth tests pass. Issue is inter-node.",
+          "task": "Check InfiniBand port status on the first node.",
+          "hints": [
+            "ibstat shows port status",
+            "Check rate and width",
+            "Look for 4x HDR expected"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibstat",
+            "pattern": "State|Rate|Width"
+          },
+          "quiz": {
+            "question": "What does '4x' in InfiniBand link width mean?",
+            "options": [
+              "4 times normal speed",
+              "4 lanes active",
+              "4 ports total",
+              "Generation 4"
+            ],
+            "correctIndex": 1,
+            "explanation": "InfiniBand links use multiple lanes. 4x means 4 lanes are active. Full width is typically 4x; reduced width like 1x indicates cable or port issues."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "ibstat shows all ports at 4x HDR (200 Gb/s) on node 1. Check other nodes.",
+          "task": "Use iblinkinfo to see the entire fabric topology and link states.",
+          "hints": [
+            "iblinkinfo shows all links",
+            "Look for reduced width",
+            "Check switch connections"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "iblinkinfo",
+            "pattern": "Width|Rate|Switch"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "iblinkinfo shows dgx-07 port 2 is running at 1x width instead of 4x!",
+          "task": "Check detailed port status on dgx-07 for the degraded port.",
+          "hints": [
+            "ibstat on dgx-07",
+            "Check port 2 specifically",
+            "Note physical state"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibstat",
+            "pattern": "Port 2|Width"
+          },
+          "quiz": {
+            "question": "What typically causes an IB port to run at reduced width?",
+            "options": [
+              "Software configuration",
+              "Cable damage or connection issue",
+              "Switch firmware bug",
+              "GPU driver problem"
+            ],
+            "correctIndex": 1,
+            "explanation": "Reduced link width usually indicates physical layer problems - damaged cables, dirty connectors, or loose connections preventing all lanes from training."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "Port 2 on dgx-07 shows physical state 'LinkUp' but width 1x. Cable suspect.",
+          "task": "Check InfiniBand error counters for this port.",
+          "hints": [
+            "perfquery for port counters",
+            "Look for symbol errors",
+            "High errors indicate cable issue"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "perfquery",
+            "pattern": "error|counter|symbol"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "perfquery shows elevated symbol error count on this port. Cable issue confirmed.",
+          "task": "Run full fabric diagnostic to check for any other issues.",
+          "hints": [
+            "ibdiagnet for full fabric test",
+            "Check for other degraded links",
+            "Document all issues"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibdiagnet",
+            "pattern": "diag|fabric"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "ibdiagnet confirms single cable issue on dgx-07 port 2. No other issues found.",
+          "task": "Check which jobs are using dgx-07 before scheduling cable replacement.",
+          "hints": [
+            "squeue shows jobs",
+            "Filter by node",
+            "Identify affected users"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "squeue",
+            "pattern": "dgx-07|NODELIST"
+          },
+          "quiz": {
+            "question": "Why is a 1x link causing 50% bandwidth loss cluster-wide?",
+            "options": [
+              "All traffic goes through that link",
+              "NCCL uses ring topology",
+              "One slow link bottlenecks collective operations",
+              "Hardware limitation"
+            ],
+            "correctIndex": 2,
+            "explanation": "In collective operations like all-reduce, the slowest link becomes the bottleneck for the entire operation, reducing overall performance significantly."
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Jobs on dgx-07 completed. Ready to drain for cable replacement.",
+          "task": "Drain dgx-07 for cable maintenance.",
+          "hints": [
+            "scontrol update state=drain",
+            "Reason: IB cable replacement",
+            "Node will stop accepting jobs"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "drain|dgx-07"
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "Node drained. Cable replaced. Verify link comes up at full width.",
+          "task": "Check ibstat to verify the link is now at full 4x width.",
+          "hints": [
+            "ibstat shows link width",
+            "Should show 4x now",
+            "Check physical state"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibstat",
+            "pattern": "4x|Width"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "Link now at 4x HDR. Resume node and verify bandwidth.",
+          "task": "Resume the node in Slurm after successful cable replacement.",
+          "hints": [
+            "scontrol update state=resume",
+            "sinfo to verify state",
+            "Run bandwidth test next"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "resume"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain4-nccl-nightmare",
+      "domain": 4,
+      "title": "The NCCL Nightmare",
+      "narrative": {
+        "hook": "Multi-node training jobs hang at random points with no error messages.",
+        "setting": "Large language model training keeps freezing. Logs show nothing. Users are frustrated.",
+        "resolution": "Enable NCCL debug logging to discover network timeout from misconfigured IB subnet."
+      },
+      "commandFamilies": [
+        "gpu-monitoring",
+        "infiniband-tools",
+        "cluster-tools",
+        "diagnostics"
+      ],
+      "estimatedMinutes": 24,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "8-node LLM training hangs randomly after 2-6 hours. No errors in application logs.",
+          "task": "Check Slurm job status to see the current state of running jobs.",
+          "hints": [
+            "squeue shows job status",
+            "Look for run time",
+            "Check resource allocation"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "squeue",
+            "pattern": "RUNNING|TIME"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "Job shows RUNNING for 3 hours but users report it's frozen. Check GPU activity.",
+          "task": "Use nvidia-smi to check GPU utilization on the allocated nodes.",
+          "hints": [
+            "nvidia-smi shows utilization",
+            "Low util means waiting",
+            "Check all allocated GPUs"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "Util|GPU|%"
+          },
+          "quiz": {
+            "question": "What does 0% GPU utilization during 'running' training indicate?",
+            "options": [
+              "Training complete",
+              "Data loading phase",
+              "Communication deadlock",
+              "GPU power saving"
+            ],
+            "correctIndex": 2,
+            "explanation": "Zero GPU utilization during training typically indicates a communication deadlock where processes are waiting for collective operations that will never complete."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "All GPUs at 0% utilization. Classic NCCL deadlock symptoms.",
+          "task": "Check InfiniBand connectivity between the nodes.",
+          "hints": [
+            "ibstat on multiple nodes",
+            "Verify ports are active",
+            "Check for any down ports"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibstat",
+            "pattern": "Active|State"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "All IB ports show Active. But are they seeing each other correctly?",
+          "task": "Use iblinkinfo to verify full mesh connectivity.",
+          "hints": [
+            "iblinkinfo shows topology",
+            "Verify all nodes connected",
+            "Look for missing links"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "iblinkinfo",
+            "pattern": "dgx|Switch"
+          },
+          "quiz": {
+            "question": "Why check full mesh connectivity for NCCL issues?",
+            "options": [
+              "NCCL requires mesh topology",
+              "Missing paths cause routing failures",
+              "Performance optimization",
+              "NVIDIA requirement"
+            ],
+            "correctIndex": 1,
+            "explanation": "NCCL relies on the subnet manager's routing tables. Missing connectivity or routing issues can cause collective operations to fail or hang."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "Topology looks complete. Check for network performance issues.",
+          "task": "Check IB error counters across the fabric.",
+          "hints": [
+            "perfquery for port errors",
+            "Check multiple nodes",
+            "Look for high error counts"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "perfquery",
+            "pattern": "error|Rcv|Xmt"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "Error counters clean. Issue might be at a higher level. Check routing tables.",
+          "task": "Verify the subnet manager configuration and LID assignments.",
+          "hints": [
+            "smpquery or sminfo",
+            "Check LID assignments",
+            "Verify SM is running"
+          ],
+          "validation": { "type": "command", "pattern": "smpquery|sminfo|LID" }
+        },
+        {
+          "id": "step-7",
+          "situation": "SM running but some nodes have unusual LID assignments in a different range.",
+          "task": "Check detailed subnet manager logs for routing decisions.",
+          "hints": [
+            "opensm logs if accessible",
+            "Look for routing warnings",
+            "Check for subnet issues"
+          ],
+          "validation": { "type": "command", "pattern": "opensm|log|routing" }
+        },
+        {
+          "id": "step-8",
+          "situation": "Logs show two subnets accidentally merged. Some nodes on different IPoIB subnet.",
+          "task": "Document current network configuration for the network team.",
+          "hints": [
+            "ip addr for IPoIB config",
+            "Note subnet masks",
+            "Document for network team"
+          ],
+          "validation": { "type": "command", "pattern": "ip addr|inet|ib0" },
+          "quiz": {
+            "question": "How can IPoIB subnet misconfiguration cause NCCL hangs?",
+            "options": [
+              "NCCL uses IPoIB for all communication",
+              "Socket communication during setup fails",
+              "GPUDirect requires matching subnets",
+              "CUDA driver limitation"
+            ],
+            "correctIndex": 1,
+            "explanation": "NCCL uses IPoIB for initial setup and coordination. Nodes on different subnets can't establish initial TCP connections, causing setup hangs."
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "Network team confirms subnet misconfiguration. Fix being deployed.",
+          "task": "Run dcgmi diagnostics to verify GPU subsystem while waiting for fix.",
+          "hints": [
+            "dcgmi diag for health check",
+            "Ensure no GPU issues",
+            "Rule out other problems"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "diag"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "GPU health verified. Network fix deployed. Verify connectivity.",
+          "task": "Check ibstat to confirm all nodes are on the correct subnet after fix.",
+          "hints": [
+            "ibstat shows port info",
+            "Verify LID assignments",
+            "Should be sequential now"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibstat",
+            "pattern": "LID|port"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain4-benchmark-battle",
+      "domain": 4,
+      "title": "The Benchmark Battle",
+      "narrative": {
+        "hook": "HPL benchmark achieves only 60% of theoretical peak performance on new supercomputer.",
+        "setting": "The acceptance test for a major HPC installation depends on hitting performance targets.",
+        "resolution": "Optimize HPL parameters, fix NUMA binding, and achieve 90% of theoretical peak."
+      },
+      "commandFamilies": [
+        "gpu-monitoring",
+        "cluster-tools",
+        "diagnostics",
+        "bmc-hardware"
+      ],
+      "estimatedMinutes": 26,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "HPL benchmark on 16-node DGX H100 cluster achieves 23.4 PFLOPS instead of expected 39 PFLOPS.",
+          "task": "Verify basic GPU configuration and availability using nvidia-smi.",
+          "hints": [
+            "nvidia-smi across all nodes",
+            "Verify 128 total GPUs",
+            "Check clocks and memory"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "GPU|H100|Memory"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "All 128 H100 GPUs detected. Clocks show max frequency. Memory available.",
+          "task": "Check GPU topology to verify optimal NVLink connectivity.",
+          "hints": [
+            "nvidia-smi topo -m",
+            "All GPUs should use NVLink",
+            "NV18 for H100"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "topo|-m|NV"
+          },
+          "quiz": {
+            "question": "Why does NVLink connectivity matter for HPL performance?",
+            "options": [
+              "HPL requires NVLink",
+              "GPU-to-GPU data movement is critical for large matrices",
+              "License verification",
+              "Error checking requirement"
+            ],
+            "correctIndex": 1,
+            "explanation": "HPL involves large matrix operations distributed across GPUs. High-bandwidth NVLink connectivity is essential for efficient data exchange during computation."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "NVLink topology looks correct. Check InfiniBand for inter-node communication.",
+          "task": "Verify InfiniBand is running at full bandwidth between nodes.",
+          "hints": [
+            "ibstat for port status",
+            "Check 400 Gb/s NDR",
+            "Verify all ports active"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibstat",
+            "pattern": "Rate|NDR|Active"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "InfiniBand shows full 400 Gb/s NDR on all ports. Check system configuration.",
+          "task": "Check CPU and memory configuration for NUMA optimization.",
+          "hints": [
+            "numactl --hardware",
+            "Check node distribution",
+            "Verify memory bandwidth"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "numactl",
+            "pattern": "node|cpus|memory"
+          },
+          "quiz": {
+            "question": "Why is NUMA configuration important for GPU benchmarks?",
+            "options": [
+              "NUMA controls GPU clock speed",
+              "CPU-GPU affinity affects PCIe bandwidth",
+              "Only matters for CPU benchmarks",
+              "NVIDIA driver requirement"
+            ],
+            "correctIndex": 1,
+            "explanation": "Proper NUMA binding ensures processes use CPUs and memory local to their assigned GPUs, maximizing PCIe bandwidth and reducing latency for data transfers."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "NUMA shows 2 nodes with 64 cores each. Need to verify process affinity.",
+          "task": "Check current HPL process CPU binding using taskset or similar.",
+          "hints": [
+            "taskset or numactl shows binding",
+            "Check if processes are spread",
+            "Should match GPU locality"
+          ],
+          "validation": {
+            "type": "command",
+            "pattern": "taskset|numactl|bind|affinity"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "Processes are not properly bound to NUMA nodes! This explains some performance loss.",
+          "task": "Check system thermal state during benchmark.",
+          "hints": [
+            "sensors during load",
+            "Check for throttling",
+            "GPU temps should stay under 80C"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "sensors",
+            "pattern": "temp|Core|GPU"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "Thermals show some GPUs at 83C with power throttling. Cooling adjustment needed.",
+          "task": "Check GPU power and clock states during the benchmark.",
+          "hints": [
+            "nvidia-smi -q -d POWER",
+            "Check power draw",
+            "Look for throttle reasons"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "power|POWER|throttle"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Power throttling detected. Some GPUs hitting 700W limit and throttling.",
+          "task": "Check cluster-wide job status and resource utilization.",
+          "hints": [
+            "squeue for job status",
+            "scontrol show job for details",
+            "Verify exclusive access"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "show job|exclusive"
+          },
+          "quiz": {
+            "question": "Why does power throttling significantly impact HPL scores?",
+            "options": [
+              "HPL requires constant power",
+              "Throttling reduces compute frequency",
+              "Power measurement error",
+              "Memory bandwidth affected"
+            ],
+            "correctIndex": 1,
+            "explanation": "Power throttling reduces GPU clock frequencies to stay within power limits, directly reducing FLOPS. HPL is compute-bound, so any frequency reduction hurts scores."
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "Issues identified: NUMA binding and thermal throttling. Fixes being applied.",
+          "task": "Run DCGM diagnostics to ensure no underlying hardware issues.",
+          "hints": [
+            "dcgmi diag -r 2",
+            "Check all GPUs",
+            "Verify no hardware problems"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "diag"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "Hardware healthy. After fixes, re-run HPL verification.",
+          "task": "Check final nvidia-smi status before optimized benchmark run.",
+          "hints": [
+            "nvidia-smi for final check",
+            "Verify all GPUs ready",
+            "Clocks at max, temps reasonable"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "GPU|Temp|Power"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain5-xid-investigation",
+      "domain": 5,
+      "title": "The XID Investigation",
+      "narrative": {
+        "hook": "System logs flooded with 'XID 79' errors, jobs failing randomly.",
+        "setting": "Production cluster showing GPU errors that don't point to obvious hardware failure.",
+        "resolution": "Trace XID 79 (GPU fallen off bus) to thermal cycling causing PCIe connector issues."
+      },
+      "commandFamilies": [
+        "diagnostics",
+        "gpu-monitoring",
+        "bmc-hardware",
+        "cluster-tools"
+      ],
+      "estimatedMinutes": 24,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "Monitoring alerts show frequent XID 79 errors on dgx-05 over the past 24 hours.",
+          "task": "Check system logs for XID error patterns and frequency.",
+          "hints": [
+            "dmesg for kernel messages",
+            "Look for NVRM XID errors",
+            "Note error frequency"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dmesg",
+            "pattern": "XID|NVRM|error"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "dmesg shows 'XID 79' errors occurring every 2-3 hours, affecting different GPUs.",
+          "task": "Check current GPU status using nvidia-smi.",
+          "hints": [
+            "nvidia-smi shows GPU health",
+            "Look for missing or errored GPUs",
+            "Note affected GPU indices"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "GPU|ERR"
+          },
+          "quiz": {
+            "question": "What does XID 79 (GPU has fallen off the bus) typically indicate?",
+            "options": [
+              "Driver crash",
+              "PCIe link failure",
+              "CUDA error",
+              "Memory exhaustion"
+            ],
+            "correctIndex": 1,
+            "explanation": "XID 79 indicates the GPU is no longer responding on the PCIe bus, typically due to hardware issues, power problems, or PCIe link instability."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "Currently all 8 GPUs are visible but GPU 5 was recently reset. Pattern suggests intermittent failures.",
+          "task": "Check BMC System Event Log for correlated hardware events.",
+          "hints": [
+            "ipmitool sel elist",
+            "Look for thermal or power events",
+            "Match timestamps to XID errors"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ipmitool",
+            "pattern": "sel|event"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "SEL shows thermal events preceding each XID error by 5-10 minutes.",
+          "task": "Check current thermal sensor readings across the system.",
+          "hints": [
+            "sensors shows temperatures",
+            "Check GPU and system temps",
+            "Look for hot spots"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "sensors",
+            "pattern": "temp|Core"
+          },
+          "quiz": {
+            "question": "How can thermal issues cause PCIe failures?",
+            "options": [
+              "GPUs shut down from overheating",
+              "Thermal expansion affects connectors",
+              "Heat damages PCIe lanes",
+              "Driver thermal protection"
+            ],
+            "correctIndex": 1,
+            "explanation": "Thermal cycling causes expansion and contraction that can affect PCIe connector contact quality, leading to intermittent link failures."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "Ambient temperature in the rack area shows significant variation. HVAC issue suspected.",
+          "task": "Check historical temperature data in the BMC.",
+          "hints": [
+            "ipmitool sensor get specific sensor",
+            "Look for temp trends",
+            "BMC may log history"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ipmitool",
+            "pattern": "sensor|temp|inlet"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "Inlet temperature varies 15C over the course of each day. HVAC cycling too aggressively.",
+          "task": "Document GPU health status before scheduling maintenance.",
+          "hints": [
+            "nvidia-smi -q for details",
+            "Check ECC errors",
+            "Document all 8 GPUs"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "-q|ECC|error"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "GPU health looks okay but XID errors are accumulating. Create support bundle.",
+          "task": "Generate nvidia-bug-report for detailed analysis.",
+          "hints": [
+            "nvidia-bug-report.sh",
+            "Captures full system state",
+            "Useful for RMA if needed"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-bug-report",
+            "pattern": "report"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Bug report captured. Need to stabilize the system while facilities fixes HVAC.",
+          "task": "Run DCGM diagnostics to assess current GPU health.",
+          "hints": [
+            "dcgmi diag -r 2",
+            "Check for hardware degradation",
+            "Document any failures"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "diag"
+          },
+          "quiz": {
+            "question": "Why run diagnostics on a thermally-stressed system?",
+            "options": [
+              "Heat reveals hidden defects",
+              "Establish baseline before changes",
+              "Required for warranty",
+              "Verify cooling is adequate"
+            ],
+            "correctIndex": 1,
+            "explanation": "Running diagnostics establishes a baseline of current GPU health before environmental changes, helping track whether conditions improve after the HVAC fix."
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "Diagnostics show borderline results on GPU 5. Recommend proactive monitoring.",
+          "task": "Drain the node for inspection and potential PCIe reseat.",
+          "hints": [
+            "scontrol drain",
+            "Schedule maintenance window",
+            "Add clear reason"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "drain"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "Node drained. After PCIe reseat and HVAC fix, verify recovery.",
+          "task": "Run final nvidia-smi check after maintenance.",
+          "hints": [
+            "nvidia-smi for GPU status",
+            "All 8 should be healthy",
+            "Monitor for future XID errors"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "GPU|8"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain5-memory-mystery",
+      "domain": 5,
+      "title": "The Memory Mystery",
+      "narrative": {
+        "hook": "Training jobs crash with 'CUDA out of memory' despite plenty of GPU memory showing available.",
+        "setting": "Users report impossible memory errors on jobs that ran fine last week.",
+        "resolution": "Discover memory fragmentation from leaked allocations in a shared PyTorch environment."
+      },
+      "commandFamilies": [
+        "gpu-monitoring",
+        "diagnostics",
+        "container-tools",
+        "cluster-tools"
+      ],
+      "estimatedMinutes": 22,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "Users report 'CUDA out of memory' when allocating 40GB on GPUs showing 70GB free.",
+          "task": "Check nvidia-smi to see current GPU memory state.",
+          "hints": [
+            "nvidia-smi shows memory usage",
+            "Check used vs total",
+            "Note any processes"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "Memory|Used|Free"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "nvidia-smi shows 10GB used but users can't allocate 40GB contiguous. Fragmentation suspected.",
+          "task": "Check what processes are using GPU memory.",
+          "hints": [
+            "nvidia-smi pmon for processes",
+            "Look for orphan processes",
+            "Check process owners"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "pmon|process"
+          },
+          "quiz": {
+            "question": "What causes GPU memory fragmentation?",
+            "options": [
+              "Hardware defect",
+              "Repeated allocations and frees leaving gaps",
+              "Driver bug",
+              "CUDA version mismatch"
+            ],
+            "correctIndex": 1,
+            "explanation": "Memory fragmentation occurs when repeated allocations and deallocations leave non-contiguous free blocks, preventing large contiguous allocations even with total free space."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "Several zombie processes holding small GPU memory allocations found.",
+          "task": "Check which Slurm jobs these processes belong to.",
+          "hints": [
+            "squeue to see jobs",
+            "Match PIDs to jobs",
+            "Look for orphan processes"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "squeue",
+            "pattern": "JOBID|USER|STATE"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "Orphan processes from completed jobs that didn't clean up properly.",
+          "task": "Check if these are containerized jobs with cleanup issues.",
+          "hints": [
+            "docker ps for containers",
+            "Check Slurm epilog",
+            "Container cleanup script"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "docker",
+            "pattern": "ps|CONTAINER"
+          },
+          "quiz": {
+            "question": "Why might containerized jobs leave orphan GPU processes?",
+            "options": [
+              "Container bug",
+              "Slurm didn't run epilog properly",
+              "GPU driver leak",
+              "All of the above are possible"
+            ],
+            "correctIndex": 3,
+            "explanation": "Orphan GPU processes can result from container cleanup failures, missing Slurm epilog scripts, or application code that doesn't properly release resources."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "Found 3 orphan containers with GPU processes still running.",
+          "task": "Check dcgmi for detailed GPU memory state.",
+          "hints": [
+            "dcgmi dmon for metrics",
+            "Check memory allocation",
+            "Look for leaks"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "dmon|memory"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "DCGM shows fragmented memory allocation pattern. Need to clean up and reset.",
+          "task": "Document current state before cleanup.",
+          "hints": [
+            "nvidia-smi for documentation",
+            "Note process IDs",
+            "Record memory state"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "Process|GPU|Memory"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "State documented. Time to clean up orphan processes and containers.",
+          "task": "Drain the node to prevent new jobs while cleaning up.",
+          "hints": [
+            "scontrol drain",
+            "Prevents new allocations",
+            "Allows cleanup"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "drain"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Node drained. Clean up orphan containers.",
+          "task": "Remove stopped and orphan containers.",
+          "hints": [
+            "docker container prune",
+            "Or docker rm specific containers",
+            "Verify GPU processes stop"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "docker",
+            "pattern": "prune|rm|stop"
+          },
+          "quiz": {
+            "question": "After cleaning containers, why might GPU memory still be fragmented?",
+            "options": [
+              "Containers don't use GPU memory",
+              "CUDA contexts persist until process dies",
+              "Memory is physically damaged",
+              "Driver caches allocations"
+            ],
+            "correctIndex": 1,
+            "explanation": "CUDA contexts and memory allocations persist until the process fully terminates. Simply stopping containers might not fully release GPU resources."
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "Containers removed. Verify GPU memory is cleared.",
+          "task": "Check nvidia-smi to confirm memory is freed.",
+          "hints": [
+            "nvidia-smi for memory state",
+            "Should show minimal usage",
+            "All 8 GPUs should be clean"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "Memory|Free"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "Memory cleared. Resume node for production use.",
+          "task": "Resume the node in Slurm and verify it's ready for jobs.",
+          "hints": [
+            "scontrol resume",
+            "sinfo to verify",
+            "Monitor for recurrence"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "resume"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain5-network-nightmare",
+      "domain": 5,
+      "title": "The Network Nightmare",
+      "narrative": {
+        "hook": "Multi-node training performance degrades gradually over days until jobs fail.",
+        "setting": "A subtle network issue is causing progressive performance degradation that's hard to pinpoint.",
+        "resolution": "Discover accumulating InfiniBand port errors from a degrading optical transceiver."
+      },
+      "commandFamilies": [
+        "infiniband-tools",
+        "gpu-monitoring",
+        "cluster-tools",
+        "diagnostics"
+      ],
+      "estimatedMinutes": 25,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "Users report training speed has dropped 30% over the past week with no code changes.",
+          "task": "Check current GPU utilization to understand the bottleneck.",
+          "hints": [
+            "nvidia-smi for GPU util",
+            "Low util suggests waiting",
+            "Check memory usage too"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "Util|GPU|%"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "GPU utilization oscillates between 95% and 40%. Communication phases are slowing down.",
+          "task": "Check InfiniBand port status for any obvious issues.",
+          "hints": [
+            "ibstat shows port state",
+            "Verify active status",
+            "Check rate and width"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibstat",
+            "pattern": "State|Active|Rate"
+          },
+          "quiz": {
+            "question": "Why does oscillating GPU utilization suggest a communication issue?",
+            "options": [
+              "GPUs are overheating",
+              "Compute phases are fine but communication phases are slow",
+              "Memory bandwidth issue",
+              "Driver bug"
+            ],
+            "correctIndex": 1,
+            "explanation": "Oscillating utilization with high peaks and low valleys indicates compute phases run normally but communication/synchronization phases are taking longer than expected."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "All ports show Active. But 'active' doesn't mean error-free.",
+          "task": "Check InfiniBand error counters for accumulated errors.",
+          "hints": [
+            "perfquery shows counters",
+            "Look for symbol errors",
+            "CRC errors indicate issues"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "perfquery",
+            "pattern": "error|Symbol|Rcv"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "perfquery shows high SymbolErrorCounter on port 2 of dgx-03. Growing errors.",
+          "task": "Check historical error rate using extended counters.",
+          "hints": [
+            "perfquery -x for extended",
+            "Compare multiple reads",
+            "Calculate error rate"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "perfquery",
+            "pattern": "-x|extended"
+          },
+          "quiz": {
+            "question": "What do accumulating symbol errors typically indicate?",
+            "options": [
+              "Software configuration issue",
+              "Physical layer degradation like failing transceiver",
+              "Firmware bug",
+              "Overloaded switch"
+            ],
+            "correctIndex": 1,
+            "explanation": "Symbol errors indicate bit-level corruption in the physical layer, typically caused by degrading optical transceivers, damaged cables, or dirty connectors."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "Error rate is 1000x higher than other ports. Transceiver degradation suspected.",
+          "task": "Run comprehensive fabric diagnostics.",
+          "hints": [
+            "ibdiagnet for full check",
+            "Will flag problem ports",
+            "Document all issues"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibdiagnet",
+            "pattern": "diag|error|warning"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "ibdiagnet flags port as having excessive errors and recommends replacement.",
+          "task": "Check if this port is causing packet retransmissions.",
+          "hints": [
+            "perfquery for retry counts",
+            "High retries cause latency",
+            "Explains performance drop"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "perfquery",
+            "pattern": "retry|Xmt"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "Retransmit counts confirm the issue. Each retry adds latency to communication.",
+          "task": "Document the failing port for RMA.",
+          "hints": [
+            "Note port and GUID",
+            "Document error counts",
+            "Screenshot or save output"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibstat",
+            "pattern": "GUID|port"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Transceiver documented. Schedule replacement during maintenance window.",
+          "task": "Check which jobs are using the affected node.",
+          "hints": [
+            "squeue shows jobs",
+            "Filter by node",
+            "Notify affected users"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "squeue",
+            "pattern": "dgx-03|NODELIST"
+          },
+          "quiz": {
+            "question": "Should you immediately drain a node with high IB errors?",
+            "options": [
+              "Yes, always",
+              "No, wait for complete failure",
+              "Depends on error rate and impact",
+              "Only if users complain"
+            ],
+            "correctIndex": 2,
+            "explanation": "The decision depends on error severity and impact. High error rates affecting performance warrant draining, but low rates might allow waiting for a maintenance window."
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "Error rate is high enough to impact all multi-node jobs. Draining recommended.",
+          "task": "Drain dgx-03 for transceiver replacement.",
+          "hints": [
+            "scontrol drain",
+            "Reason: IB transceiver replacement",
+            "Allow jobs to migrate"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "drain|dgx-03"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "Node drained. After transceiver replacement, verify recovery.",
+          "task": "After replacement, check that error counters are cleared and stable.",
+          "hints": [
+            "perfquery for error check",
+            "Should be zero or low",
+            "Monitor for 10 minutes"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "perfquery",
+            "pattern": "error|counter"
+          }
+        }
+      ]
+    }
+  ]
+}
