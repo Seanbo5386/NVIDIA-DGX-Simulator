@@ -221,7 +221,10 @@
         {
           "type": "command-executed",
           "description": "Must triage XID 31",
-          "expectedCommands": ["dmesg | grep -i xid", "nvidia-smi -q -d MEMORY"],
+          "expectedCommands": [
+            "dmesg | grep -i xid",
+            "nvidia-smi -q -d MEMORY"
+          ],
           "requireAllCommands": true
         }
       ],
@@ -327,5 +330,9 @@
   ],
   "estimatedTime": 55,
   "prerequisites": ["domain5-xid-error"],
-  "tags": ["xid", "troubleshooting", "errors", "gpu-health", "advanced"]
+  "tags": ["xid", "troubleshooting", "errors", "gpu-health", "advanced"],
+  "tier": 3,
+  "commandFamilies": ["gpu-monitoring", "diagnostics"],
+  "explanationGateId": "gate-domain5-xid-triage",
+  "toolHints": false
 }

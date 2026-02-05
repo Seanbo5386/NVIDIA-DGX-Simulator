@@ -38,7 +38,10 @@
         {
           "type": "command-executed",
           "description": "Must check PCIe link status",
-          "expectedCommands": ["nvidia-smi --query-gpu=pcie.link.gen", "nvidia-smi -q -d PCIE"],
+          "expectedCommands": [
+            "nvidia-smi --query-gpu=pcie.link.gen",
+            "nvidia-smi -q -d PCIE"
+          ],
           "requireAllCommands": true
         }
       ],
@@ -256,7 +259,10 @@
         {
           "type": "command-executed",
           "description": "Must diagnose hardware causes",
-          "expectedCommands": ["ipmitool sensor list", "nvidia-smi -q -d TEMPERATURE"],
+          "expectedCommands": [
+            "ipmitool sensor list",
+            "nvidia-smi -q -d TEMPERATURE"
+          ],
           "requireAllCommands": true
         }
       ],
@@ -325,5 +331,9 @@
   ],
   "estimatedTime": 50,
   "prerequisites": ["domain1-driver-install"],
-  "tags": ["pcie", "bandwidth", "troubleshooting", "degradation", "advanced"]
+  "tags": ["pcie", "bandwidth", "troubleshooting", "degradation", "advanced"],
+  "tier": 3,
+  "commandFamilies": ["gpu-monitoring", "bmc-hardware", "diagnostics"],
+  "explanationGateId": "gate-domain5-pcie-diagnosis",
+  "toolHints": false
 }

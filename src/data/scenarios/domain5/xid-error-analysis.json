@@ -44,10 +44,7 @@
         {
           "type": "command-executed",
           "description": "Must check for XID errors in logs",
-          "expectedCommands": [
-            "dmesg | grep -i xid",
-            "dmesg | grep -i nvrm"
-          ],
+          "expectedCommands": ["dmesg | grep -i xid", "dmesg | grep -i nvrm"],
           "requireAllCommands": true
         }
       ],
@@ -77,18 +74,12 @@
         "Identify potential root causes",
         "Determine impact on workloads"
       ],
-      "expectedCommands": [
-        "dmesg | grep 'Xid 79'",
-        "dmesg | grep 'Xid'"
-      ],
+      "expectedCommands": ["dmesg | grep 'Xid 79'", "dmesg | grep 'Xid'"],
       "validationRules": [
         {
           "type": "command-executed",
           "description": "Must review XID error details",
-          "expectedCommands": [
-            "dmesg | grep 'Xid'",
-            "dmesg | grep -i nvrm"
-          ],
+          "expectedCommands": ["dmesg | grep 'Xid'", "dmesg | grep -i nvrm"],
           "requireAllCommands": true
         }
       ],
@@ -121,18 +112,12 @@
         "Verify GPU can be queried",
         "Test basic GPU functionality"
       ],
-      "expectedCommands": [
-        "nvidia-smi",
-        "nvidia-smi -q -i 0"
-      ],
+      "expectedCommands": ["nvidia-smi", "nvidia-smi -q -i 0"],
       "validationRules": [
         {
           "type": "command-executed",
           "description": "Must check GPU status",
-          "expectedCommands": [
-            "nvidia-smi",
-            "nvidia-smi -q"
-          ],
+          "expectedCommands": ["nvidia-smi", "nvidia-smi -q"],
           "requireAllCommands": true
         }
       ],
@@ -163,18 +148,12 @@
         "Verify GPU recovery",
         "Check for recurring errors"
       ],
-      "expectedCommands": [
-        "nvidia-smi --gpu-reset -i 0",
-        "nvidia-smi -q -i 0"
-      ],
+      "expectedCommands": ["nvidia-smi --gpu-reset -i 0", "nvidia-smi -q -i 0"],
       "validationRules": [
         {
           "type": "command-executed",
           "description": "Must attempt GPU recovery",
-          "expectedCommands": [
-            "nvidia-smi --gpu-reset",
-            "nvidia-smi -q"
-          ],
+          "expectedCommands": ["nvidia-smi --gpu-reset", "nvidia-smi -q"],
           "requireAllCommands": true
         }
       ],
@@ -214,10 +193,7 @@
         {
           "type": "command-executed",
           "description": "Must investigate root cause",
-          "expectedCommands": [
-            "nvidia-smi --query-gpu",
-            "lspci -vv"
-          ],
+          "expectedCommands": ["nvidia-smi --query-gpu", "lspci -vv"],
           "requireAllCommands": true
         }
       ],
@@ -256,10 +232,7 @@
         {
           "type": "command-executed",
           "description": "Must run diagnostics",
-          "expectedCommands": [
-            "dcgmi diag",
-            "nvidia-smi -q"
-          ],
+          "expectedCommands": ["dcgmi diag", "nvidia-smi -q"],
           "requireAllCommands": true
         }
       ],
@@ -298,10 +271,7 @@
         {
           "type": "command-executed",
           "description": "Must implement preventive measures",
-          "expectedCommands": [
-            "nvidia-smi --query-gpu",
-            "nvidia-smi -pm"
-          ],
+          "expectedCommands": ["nvidia-smi --query-gpu", "nvidia-smi -pm"],
           "requireAllCommands": true
         }
       ],
@@ -333,15 +303,16 @@
     "Implemented preventive measures"
   ],
   "estimatedTime": 65,
-  "prerequisites": [
-    "domain1-driver-install",
-    "domain4-dcgmi-diag"
-  ],
+  "prerequisites": ["domain1-driver-install", "domain4-dcgmi-diag"],
   "tags": [
     "xid-errors",
     "troubleshooting",
     "gpu-errors",
     "hardware-failures",
     "advanced"
-  ]
+  ],
+  "tier": 3,
+  "commandFamilies": ["gpu-monitoring", "diagnostics"],
+  "explanationGateId": "gate-domain5-xid-errors",
+  "toolHints": false
 }

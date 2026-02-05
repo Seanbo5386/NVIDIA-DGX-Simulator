@@ -44,7 +44,10 @@
       ],
       "estimatedDuration": 3,
       "documentationLinks": [
-        { "title": "DGX Hardware Guide", "url": "https://docs.nvidia.com/dgx/dgx-os-6-user-guide/hardware.html" }
+        {
+          "title": "DGX Hardware Guide",
+          "url": "https://docs.nvidia.com/dgx/dgx-os-6-user-guide/hardware.html"
+        }
       ]
     },
     {
@@ -145,7 +148,10 @@
       "title": "Check Temperature Sensors",
       "description": "Review temperature readings for all components. Elevated temperatures may indicate cooling issues, blocked airflow, or failing fans.",
       "objectives": ["Review thermal status"],
-      "expectedCommands": ["nvidia-smi -q | grep -A2 Temperature", "ipmitool sdr type temperature"],
+      "expectedCommands": [
+        "nvidia-smi -q | grep -A2 Temperature",
+        "ipmitool sdr type temperature"
+      ],
       "validationRules": [
         {
           "type": "command-executed",
@@ -176,7 +182,10 @@
       "title": "Document Hardware Inventory",
       "description": "Create a hardware inventory including serial numbers. This is essential for RMA requests and tracking hardware changes.",
       "objectives": ["Record serial numbers"],
-      "expectedCommands": ["nvidia-smi -q | grep Serial", "ipmitool fru print 0"],
+      "expectedCommands": [
+        "nvidia-smi -q | grep Serial",
+        "ipmitool fru print 0"
+      ],
       "validationRules": [
         {
           "type": "command-executed",
@@ -207,5 +216,17 @@
   ],
   "estimatedTime": 20,
   "prerequisites": [],
-  "tags": ["physical", "inspection", "hardware", "pcie", "thermal", "inventory", "domain5"]
+  "tags": [
+    "physical",
+    "inspection",
+    "hardware",
+    "pcie",
+    "thermal",
+    "inventory",
+    "domain5"
+  ],
+  "tier": 1,
+  "commandFamilies": ["gpu-monitoring", "bmc-hardware", "infiniband-tools"],
+  "explanationGateId": "gate-domain5-physical-inspection",
+  "toolHints": true
 }

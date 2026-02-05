@@ -160,7 +160,10 @@
         {
           "type": "command-executed",
           "description": "Must investigate XID 63",
-          "expectedCommands": ["nvidia-smi -q -d ROW_REMAPPER", "nvsm show health"]
+          "expectedCommands": [
+            "nvidia-smi -q -d ROW_REMAPPER",
+            "nvsm show health"
+          ]
         }
       ],
       "hints": [
@@ -308,9 +311,7 @@
     "Created proper RMA documentation"
   ],
   "estimatedTime": 50,
-  "prerequisites": [
-    "domain5-xid-errors"
-  ],
+  "prerequisites": ["domain5-xid-errors"],
   "tags": [
     "xid-43",
     "xid-48",
@@ -322,5 +323,9 @@
     "advanced",
     "exam-critical",
     "must-know"
-  ]
+  ],
+  "tier": 3,
+  "commandFamilies": ["gpu-monitoring", "bmc-hardware", "diagnostics"],
+  "explanationGateId": "gate-domain5-critical-xid",
+  "toolHints": false
 }

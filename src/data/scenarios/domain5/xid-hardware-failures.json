@@ -117,7 +117,10 @@
         {
           "type": "command-executed",
           "description": "Must investigate XID 43",
-          "expectedCommands": ["nvidia-smi -q -d TEMPERATURE", "nvidia-smi --gpu-reset"]
+          "expectedCommands": [
+            "nvidia-smi -q -d TEMPERATURE",
+            "nvidia-smi --gpu-reset"
+          ]
         }
       ],
       "hints": [
@@ -295,9 +298,7 @@
     "Created proper RMA documentation"
   ],
   "estimatedTime": 50,
-  "prerequisites": [
-    "domain5-critical-xid"
-  ],
+  "prerequisites": ["domain5-critical-xid"],
   "tags": [
     "xid-27",
     "xid-43",
@@ -308,5 +309,9 @@
     "advanced",
     "exam-critical",
     "rma"
-  ]
+  ],
+  "tier": 3,
+  "commandFamilies": ["gpu-monitoring", "bmc-hardware", "diagnostics"],
+  "explanationGateId": "gate-domain5-xid-hardware",
+  "toolHints": false
 }

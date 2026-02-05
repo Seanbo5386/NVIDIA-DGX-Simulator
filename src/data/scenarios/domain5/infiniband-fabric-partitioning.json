@@ -29,11 +29,7 @@
         "Test node connectivity",
         "Identify affected paths"
       ],
-      "expectedCommands": [
-        "ibstat",
-        "ibhosts",
-        "ibnodes"
-      ],
+      "expectedCommands": ["ibstat", "ibhosts", "ibnodes"],
       "validationRules": [
         {
           "type": "command-executed",
@@ -66,11 +62,7 @@
         "Verify link speed",
         "Check for local errors"
       ],
-      "expectedCommands": [
-        "ibstat",
-        "ibporterrors",
-        "perfquery"
-      ],
+      "expectedCommands": ["ibstat", "ibporterrors", "perfquery"],
       "validationRules": [
         {
           "type": "command-executed",
@@ -140,11 +132,7 @@
         "Verify SM is master",
         "Look for SM errors"
       ],
-      "expectedCommands": [
-        "sminfo",
-        "smpquery -G nodeinfo -D 0",
-        "ibdiagnet"
-      ],
+      "expectedCommands": ["sminfo", "smpquery -G nodeinfo -D 0", "ibdiagnet"],
       "validationRules": [
         {
           "type": "command-executed",
@@ -250,11 +238,7 @@
         "Restart SM if needed",
         "Verify connectivity restored"
       ],
-      "expectedCommands": [
-        "systemctl restart opensmd",
-        "ibhosts",
-        "ibdiagnet"
-      ],
+      "expectedCommands": ["systemctl restart opensmd", "ibhosts", "ibdiagnet"],
       "validationRules": [
         {
           "type": "command-executed",
@@ -287,11 +271,7 @@
         "Test all-to-all connectivity",
         "Document resolution"
       ],
-      "expectedCommands": [
-        "ibdiagnet",
-        "ibhosts | wc -l",
-        "perfquery -x"
-      ],
+      "expectedCommands": ["ibdiagnet", "ibhosts | wc -l", "perfquery -x"],
       "validationRules": [
         {
           "type": "command-executed",
@@ -328,5 +308,15 @@
   ],
   "estimatedTime": 55,
   "prerequisites": ["domain4-cluster-health"],
-  "tags": ["infiniband", "partitioning", "fabric", "troubleshooting", "advanced"]
+  "tags": [
+    "infiniband",
+    "partitioning",
+    "fabric",
+    "troubleshooting",
+    "advanced"
+  ],
+  "tier": 3,
+  "commandFamilies": ["infiniband-tools", "diagnostics"],
+  "explanationGateId": "gate-domain5-ib-partitioning",
+  "toolHints": false
 }

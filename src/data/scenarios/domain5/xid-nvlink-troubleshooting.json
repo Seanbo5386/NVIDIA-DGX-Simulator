@@ -294,9 +294,7 @@
     "Created proper documentation for escalation"
   ],
   "estimatedTime": 45,
-  "prerequisites": [
-    "domain5-xid-errors"
-  ],
+  "prerequisites": ["domain5-xid-errors"],
   "tags": [
     "xid-72",
     "xid-74",
@@ -307,5 +305,9 @@
     "troubleshooting",
     "advanced",
     "exam-critical"
-  ]
+  ],
+  "tier": 3,
+  "commandFamilies": ["gpu-monitoring", "diagnostics"],
+  "explanationGateId": "gate-domain5-xid-nvlink",
+  "toolHints": false
 }

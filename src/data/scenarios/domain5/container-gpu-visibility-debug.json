@@ -74,7 +74,10 @@
         {
           "type": "command-executed",
           "description": "Must check Container Toolkit",
-          "expectedCommands": ["nvidia-ctk --version", "cat /etc/docker/daemon.json"],
+          "expectedCommands": [
+            "nvidia-ctk --version",
+            "cat /etc/docker/daemon.json"
+          ],
           "requireAllCommands": true
         }
       ],
@@ -111,7 +114,10 @@
         {
           "type": "command-executed",
           "description": "Must verify Docker runtime",
-          "expectedCommands": ["docker info | grep -i runtime", "docker run --rm --gpus all"],
+          "expectedCommands": [
+            "docker info | grep -i runtime",
+            "docker run --rm --gpus all"
+          ],
           "requireAllCommands": true
         }
       ],
@@ -184,7 +190,10 @@
         {
           "type": "command-executed",
           "description": "Must check device files",
-          "expectedCommands": ["ls -la /dev/nvidia*", "docker run --rm --gpus all"],
+          "expectedCommands": [
+            "ls -la /dev/nvidia*",
+            "docker run --rm --gpus all"
+          ],
           "requireAllCommands": true
         }
       ],
@@ -220,7 +229,9 @@
         {
           "type": "command-executed",
           "description": "Must check environment variables",
-          "expectedCommands": ["docker run --rm --gpus all nvidia/cuda env | grep"],
+          "expectedCommands": [
+            "docker run --rm --gpus all nvidia/cuda env | grep"
+          ],
           "requireAllCommands": true
         }
       ],
@@ -256,7 +267,10 @@
         {
           "type": "command-executed",
           "description": "Must test GPU selection",
-          "expectedCommands": ["docker run --rm --gpus '\"device=0\"'", "docker run --rm --gpus '\"device=0,1\"'"],
+          "expectedCommands": [
+            "docker run --rm --gpus '\"device=0\"'",
+            "docker run --rm --gpus '\"device=0,1\"'"
+          ],
           "requireAllCommands": true
         }
       ],
@@ -293,7 +307,10 @@
         {
           "type": "command-executed",
           "description": "Must resolve common issues",
-          "expectedCommands": ["systemctl restart docker", "docker run --rm --gpus all"],
+          "expectedCommands": [
+            "systemctl restart docker",
+            "docker run --rm --gpus all"
+          ],
           "requireAllCommands": true
         }
       ],
@@ -325,5 +342,14 @@
   ],
   "estimatedTime": 46,
   "prerequisites": ["domain3-container-runtime"],
-  "tags": ["containers", "docker", "gpu-visibility", "troubleshooting", "intermediate"]
+  "tags": [
+    "containers",
+    "docker",
+    "gpu-visibility",
+    "troubleshooting",
+    "intermediate"
+  ],
+  "tier": 2,
+  "commandFamilies": ["gpu-monitoring", "container-tools"],
+  "explanationGateId": "gate-domain5-container-gpu"
 }

@@ -35,10 +35,7 @@
         "Identify recent events",
         "Check SEL storage capacity"
       ],
-      "expectedCommands": [
-        "ipmitool sel list",
-        "ipmitool sel info"
-      ],
+      "expectedCommands": ["ipmitool sel list", "ipmitool sel info"],
       "validationRules": [
         {
           "type": "command-executed",
@@ -300,9 +297,7 @@
     "Cleared SEL after resolution"
   ],
   "estimatedTime": 40,
-  "prerequisites": [
-    "domain1-bmc-config"
-  ],
+  "prerequisites": ["domain1-bmc-config"],
   "tags": [
     "sel",
     "ipmitool",
@@ -312,5 +307,8 @@
     "rma",
     "intermediate",
     "exam-critical"
-  ]
+  ],
+  "tier": 2,
+  "commandFamilies": ["bmc-hardware", "gpu-monitoring", "diagnostics"],
+  "explanationGateId": "gate-domain5-sel-analysis"
 }

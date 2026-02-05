@@ -44,7 +44,10 @@
       ],
       "estimatedDuration": 3,
       "documentationLinks": [
-        { "title": "InfiniBand Troubleshooting", "url": "https://docs.nvidia.com/networking/display/MLNXOFEDv531001/Troubleshooting" }
+        {
+          "title": "InfiniBand Troubleshooting",
+          "url": "https://docs.nvidia.com/networking/display/MLNXOFEDv531001/Troubleshooting"
+        }
       ]
     },
     {
@@ -115,7 +118,10 @@
       ],
       "estimatedDuration": 5,
       "documentationLinks": [
-        { "title": "InfiniBand Counters", "url": "https://docs.nvidia.com/networking/display/MLNXOFEDv531001/InfiniBand+Fabric+Utilities" }
+        {
+          "title": "InfiniBand Counters",
+          "url": "https://docs.nvidia.com/networking/display/MLNXOFEDv531001/InfiniBand+Fabric+Utilities"
+        }
       ]
     },
     {
@@ -216,5 +222,16 @@
   ],
   "estimatedTime": 25,
   "prerequisites": [],
-  "tags": ["cable", "infiniband", "diagnostics", "mlxlink", "troubleshooting", "physical", "domain5"]
+  "tags": [
+    "cable",
+    "infiniband",
+    "diagnostics",
+    "mlxlink",
+    "troubleshooting",
+    "physical",
+    "domain5"
+  ],
+  "tier": 2,
+  "commandFamilies": ["infiniband-tools", "diagnostics"],
+  "explanationGateId": "gate-domain5-cable-diagnostics"
 }

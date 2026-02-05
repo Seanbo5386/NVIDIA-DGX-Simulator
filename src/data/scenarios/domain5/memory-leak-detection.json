@@ -38,7 +38,10 @@
         {
           "type": "command-executed",
           "description": "Must monitor GPU memory",
-          "expectedCommands": ["nvidia-smi", "nvidia-smi --query-gpu=memory.used"],
+          "expectedCommands": [
+            "nvidia-smi",
+            "nvidia-smi --query-gpu=memory.used"
+          ],
           "requireAllCommands": true
         }
       ],
@@ -74,7 +77,10 @@
         {
           "type": "command-executed",
           "description": "Must identify GPU processes",
-          "expectedCommands": ["nvidia-smi --query-compute-apps", "nvidia-smi pmon"],
+          "expectedCommands": [
+            "nvidia-smi --query-compute-apps",
+            "nvidia-smi pmon"
+          ],
           "requireAllCommands": true
         }
       ],
@@ -184,7 +190,10 @@
         {
           "type": "command-executed",
           "description": "Must debug with CUDA tools",
-          "expectedCommands": ["nvidia-smi -q -d MEMORY", "nvidia-smi --query-gpu=memory.total"],
+          "expectedCommands": [
+            "nvidia-smi -q -d MEMORY",
+            "nvidia-smi --query-gpu=memory.total"
+          ],
           "requireAllCommands": true
         }
       ],
@@ -293,7 +302,10 @@
         {
           "type": "command-executed",
           "description": "Must implement prevention",
-          "expectedCommands": ["dcgmi policy", "nvidia-smi --query-gpu=memory.used"],
+          "expectedCommands": [
+            "dcgmi policy",
+            "nvidia-smi --query-gpu=memory.used"
+          ],
           "requireAllCommands": true
         }
       ],
@@ -325,5 +337,8 @@
   ],
   "estimatedTime": 48,
   "prerequisites": ["domain1-driver-install"],
-  "tags": ["memory", "leak", "debugging", "monitoring", "intermediate"]
+  "tags": ["memory", "leak", "debugging", "monitoring", "intermediate"],
+  "tier": 2,
+  "commandFamilies": ["gpu-monitoring", "diagnostics"],
+  "explanationGateId": "gate-domain5-memory-leak"
 }

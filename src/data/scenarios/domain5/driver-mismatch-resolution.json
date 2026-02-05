@@ -111,7 +111,10 @@
         {
           "type": "command-executed",
           "description": "Must compare installed versions",
-          "expectedCommands": ["dpkg -l | grep nvidia", "cat /proc/driver/nvidia/version"],
+          "expectedCommands": [
+            "dpkg -l | grep nvidia",
+            "cat /proc/driver/nvidia/version"
+          ],
           "requireAllCommands": true
         }
       ],
@@ -148,7 +151,10 @@
         {
           "type": "command-executed",
           "description": "Must check for multiple drivers",
-          "expectedCommands": ["dpkg -l | grep -i nvidia", "apt list --installed | grep nvidia"],
+          "expectedCommands": [
+            "dpkg -l | grep -i nvidia",
+            "apt list --installed | grep nvidia"
+          ],
           "requireAllCommands": true
         }
       ],
@@ -222,7 +228,10 @@
         {
           "type": "command-executed",
           "description": "Must install correct driver",
-          "expectedCommands": ["ubuntu-drivers devices", "apt install nvidia-driver"],
+          "expectedCommands": [
+            "ubuntu-drivers devices",
+            "apt install nvidia-driver"
+          ],
           "requireAllCommands": true
         }
       ],
@@ -296,7 +305,11 @@
         {
           "type": "command-executed",
           "description": "Must test GPU functionality",
-          "expectedCommands": ["nvidia-smi", "nvidia-smi -q", "dcgmi discovery -l"],
+          "expectedCommands": [
+            "nvidia-smi",
+            "nvidia-smi -q",
+            "dcgmi discovery -l"
+          ],
           "requireAllCommands": true
         }
       ],
@@ -328,5 +341,14 @@
   ],
   "estimatedTime": 46,
   "prerequisites": ["domain1-driver-install"],
-  "tags": ["driver", "mismatch", "troubleshooting", "installation", "intermediate"]
+  "tags": [
+    "driver",
+    "mismatch",
+    "troubleshooting",
+    "installation",
+    "intermediate"
+  ],
+  "tier": 2,
+  "commandFamilies": ["gpu-monitoring", "diagnostics"],
+  "explanationGateId": "gate-domain5-driver-mismatch"
 }

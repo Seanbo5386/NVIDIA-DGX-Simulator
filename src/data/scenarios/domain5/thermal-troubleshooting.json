@@ -253,10 +253,7 @@
         {
           "type": "command-executed",
           "description": "Must review thermal logs",
-          "expectedCommands": [
-            "dmesg | grep -i thermal",
-            "ipmitool sel list"
-          ],
+          "expectedCommands": ["dmesg | grep -i thermal", "ipmitool sel list"],
           "requireAllCommands": true
         }
       ],
@@ -377,10 +374,7 @@
     "Verified temperature returned to normal"
   ],
   "estimatedTime": 65,
-  "prerequisites": [
-    "domain1-bmc-config",
-    "domain1-driver-install"
-  ],
+  "prerequisites": ["domain1-bmc-config", "domain1-driver-install"],
   "tags": [
     "thermal",
     "cooling",
@@ -388,5 +382,8 @@
     "throttling",
     "troubleshooting",
     "intermediate"
-  ]
+  ],
+  "tier": 2,
+  "commandFamilies": ["gpu-monitoring", "bmc-hardware"],
+  "explanationGateId": "gate-domain5-thermal"
 }
