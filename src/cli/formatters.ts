@@ -7,6 +7,7 @@ import type {
   ErrorMessage,
   UsagePattern,
 } from "./types";
+import type { ValidationResult } from "./CommandDefinitionRegistry";
 
 /**
  * ANSI escape codes for terminal formatting
@@ -149,4 +150,63 @@ export function formatErrorMessage(error: ErrorMessage): string {
  */
 export function formatExitCode(exitCode: ExitCode): string {
   return `  ${ANSI.CYAN}${exitCode.code.toString().padEnd(5)}${ANSI.RESET} ${exitCode.meaning}\n`;
+}
+
+/**
+ * Format detailed help for a specific flag
+ */
+export function formatFlagHelp(command: string, opt: CommandOption): string {
+  let output = "";
+
+  // Header
+  output += `${ANSI.BOLD_CYAN}━━━ ${command} flag ━━━${ANSI.RESET}\n\n`;
+
+  // Flag name
+  const shortStr = opt.short ? `-${opt.short.replace(/^-+/, "")}` : "";
+  const longStr = opt.long ? `--${opt.long.replace(/^-+/, "")}` : "";
+  const combined = [shortStr, longStr].filter(Boolean).join(", ");
+  output += `${ANSI.BOLD}Flag:${ANSI.RESET} ${combined}\n\n`;
+
+  // Description
+  output += `${ANSI.BOLD}Description:${ANSI.RESET}\n  ${opt.description}\n\n`;
+
+  // Arguments
+  if (opt.arguments) {
+    output += `${ANSI.BOLD}Arguments:${ANSI.RESET} ${opt.arguments}`;
+    if (opt.argument_type) {
+      output += ` (${opt.argument_type})`;
+    }
+    output += "\n\n";
+  }
+
+  // Default
+  if (opt.default) {
+    output += `${ANSI.BOLD}Default:${ANSI.RESET} ${opt.default}\n\n`;
+  }
+
+  // Example
+  if (opt.example) {
+    output += `${ANSI.BOLD}Example:${ANSI.RESET}\n  ${ANSI.CYAN}${opt.example}${ANSI.RESET}\n\n`;
+  }
+
+  return output;
+}
+
+/**
+ * Format a validation error with suggestions
+ */
+export function formatValidationError(
+  command: string,
+  flag: string,
+  result: ValidationResult,
+): string {
+  let output = `${command}: unrecognized option '${flag}'\n`;
+
+  if (result.suggestions && result.suggestions.length > 0) {
+    output += `Did you mean: ${result.suggestions.join(", ")}?\n`;
+  }
+
+  output += `Try '${command} --help' for more information.\n`;
+
+  return output;
 }

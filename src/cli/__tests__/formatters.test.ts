@@ -5,6 +5,8 @@ import {
   formatCommandHelp,
   formatErrorMessage,
   formatExitCode,
+  formatFlagHelp,
+  formatValidationError,
 } from "../formatters";
 
 describe("Formatter Constants", () => {
@@ -226,5 +228,70 @@ describe("formatExitCode", () => {
 
     expect(output).toContain("13");
     expect(output).toContain("Permission denied");
+  });
+});
+
+describe("formatFlagHelp", () => {
+  it("should format a flag with all details", () => {
+    const opt = {
+      short: "i",
+      long: "index",
+      description: "Specify GPU index",
+      arguments: "INDEX",
+      argument_type: "integer",
+      default: "0",
+      example: "nvidia-smi -i 0",
+    };
+
+    const output = formatFlagHelp("nvidia-smi", opt);
+
+    expect(output).toContain("-i, --index");
+    expect(output).toContain("Specify GPU index");
+    expect(output).toContain("Arguments:");
+    expect(output).toContain("INDEX");
+    expect(output).toContain("integer");
+    expect(output).toContain("Default:");
+    expect(output).toContain("Example:");
+  });
+
+  it("should handle flag with only long form", () => {
+    const opt = {
+      long: "verbose",
+      description: "Enable verbose mode",
+    };
+
+    const output = formatFlagHelp("test", opt);
+
+    expect(output).toContain("--verbose");
+    expect(output).not.toContain("-,");
+  });
+});
+
+describe("formatValidationError", () => {
+  it("should format unknown flag with suggestions", () => {
+    const result = {
+      valid: false,
+      suggestions: ["query", "quiet"],
+    };
+
+    const output = formatValidationError("nvidia-smi", "qurey", result);
+
+    expect(output).toContain("nvidia-smi");
+    expect(output).toContain("qurey");
+    expect(output).toContain("Did you mean");
+    expect(output).toContain("query");
+  });
+
+  it("should format unknown flag without suggestions", () => {
+    const result = {
+      valid: false,
+      suggestions: [],
+    };
+
+    const output = formatValidationError("test", "xyz", result);
+
+    expect(output).toContain("unrecognized option");
+    expect(output).toContain("xyz");
+    expect(output).not.toContain("Did you mean");
   });
 });
