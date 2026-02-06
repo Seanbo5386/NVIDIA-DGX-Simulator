@@ -9,6 +9,18 @@ import { useSimulationStore } from "@/store/simulationStore";
 import { MIG_PROFILES } from "@/utils/clusterFactory";
 import { generateTimestamp } from "@/utils/outputTemplates";
 
+function getArchitecture(gpuName: string): string {
+  if (gpuName.includes("B200") || gpuName.includes("GB200")) return "Blackwell";
+  if (gpuName.includes("H100") || gpuName.includes("H200")) return "Hopper";
+  if (
+    gpuName.includes("A100") ||
+    gpuName.includes("A30") ||
+    gpuName.includes("A40")
+  )
+    return "Ampere";
+  return "Ampere"; // Default fallback
+}
+
 export class NvidiaSmiSimulator extends BaseSimulator {
   constructor() {
     super();
@@ -362,7 +374,7 @@ export class NvidiaSmiSimulator extends BaseSimulator {
         (gpu) => !this.hasGPUFallenOffBus(gpu),
       );
       return {
-        output: this.formatQuery(visibleGPUs, targetGpuId),
+        output: this.formatQuery(visibleGPUs, node, targetGpuId),
         exitCode: 0,
       };
     }
@@ -1602,12 +1614,8 @@ export class NvidiaSmiSimulator extends BaseSimulator {
       const temp = Math.round(gpu.temperature).toString().padStart(3);
       const pwr = Math.round(gpu.powerDraw).toString().padStart(3);
       const pwrMax = Math.round(gpu.powerLimit).toString().padStart(3);
-      const memUsed = Math.round(gpu.memoryUsed / 1024)
-        .toString()
-        .padStart(5);
-      const memTotal = Math.round(gpu.memoryTotal / 1024)
-        .toString()
-        .padStart(5);
+      const memUsed = Math.round(gpu.memoryUsed).toString().padStart(5);
+      const memTotal = Math.round(gpu.memoryTotal).toString().padStart(5);
       const util = Math.round(gpu.utilization).toString().padStart(3);
 
       const col1_r2 = ` N/A   ${temp}C    P0    ${pwr}W / ${pwrMax}W `;
@@ -1665,7 +1673,7 @@ export class NvidiaSmiSimulator extends BaseSimulator {
     return output;
   }
 
-  private formatQuery(gpus: GPU[], gpu?: number): string {
+  private formatQuery(gpus: GPU[], node: DGXNode, gpu?: number): string {
     const selectedGPUs =
       gpu !== undefined ? gpus.filter((g) => g.id === gpu) : gpus;
 
@@ -1675,13 +1683,14 @@ export class NvidiaSmiSimulator extends BaseSimulator {
 
       output += `==============NVSMI LOG==============\n\n`;
       output += `Timestamp                                 : ${new Date().toISOString()}\n`;
-      output += `Driver Version                            : ${g.name}\n\n`;
+      output += `Driver Version                            : ${node.nvidiaDriverVersion}\n`;
+      output += `CUDA Version                              : ${node.cudaVersion}\n\n`;
       output += `Attached GPUs                             : ${gpus.length}\n`;
       output += `GPU ${g.id.toString().padStart(8, "0")}\n\n`;
 
       output += `Product Name                              : ${g.name}\n`;
       output += `Product Brand                             : NVIDIA\n`;
-      output += `Product Architecture                      : Ampere\n`;
+      output += `Product Architecture                      : ${getArchitecture(g.name)}\n`;
       output += `Display Mode                              : Disabled\n`;
       output += `Display Active                            : Disabled\n`;
       output += `Persistence Mode                          : ${g.persistenceMode ? "Enabled" : "Disabled"}\n`;

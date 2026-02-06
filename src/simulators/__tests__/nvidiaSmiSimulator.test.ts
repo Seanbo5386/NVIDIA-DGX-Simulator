@@ -219,9 +219,9 @@ describe("NvidiaSmiSimulator", () => {
       const parsed = parse("nvidia-smi");
       const result = simulator.execute(parsed, context);
 
-      // GPU 0: 1 MiB used (1024/1024), GPU 1: 40 MiB used (40960/1024)
-      expect(result.output).toContain("1MiB");
-      expect(result.output).toContain("40MiB");
+      // GPU 0: 1024 MiB used, GPU 1: 40960 MiB used (values already in MiB)
+      expect(result.output).toContain("1024MiB");
+      expect(result.output).toContain("40960MiB");
     });
 
     it("should show temperature values", () => {
@@ -337,6 +337,50 @@ describe("NvidiaSmiSimulator", () => {
       expect(result.output).toContain("nvidia-smi");
       expect(result.output).toContain("Description:");
       expect(result.output).toContain("Options:");
+    });
+  });
+
+  describe("Bug Fixes: Driver Version, Architecture, and Memory", () => {
+    it("should show numeric driver version in -q output, not GPU name", () => {
+      const parsed = parse("nvidia-smi -q");
+      const result = simulator.execute(parsed, context);
+
+      expect(result.exitCode).toBe(0);
+      // Should show the node's driver version string, not the GPU name
+      expect(result.output).toContain(
+        "Driver Version                            : 535.129.03",
+      );
+      expect(result.output).not.toContain(
+        "Driver Version                            : NVIDIA H100 80GB HBM3",
+      );
+      // Should also show CUDA version
+      expect(result.output).toContain(
+        "CUDA Version                              : 12.2",
+      );
+    });
+
+    it("should show Hopper architecture for H100 GPUs in -q output", () => {
+      const parsed = parse("nvidia-smi -q");
+      const result = simulator.execute(parsed, context);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toContain(
+        "Product Architecture                      : Hopper",
+      );
+      expect(result.output).not.toContain(
+        "Product Architecture                      : Ampere",
+      );
+    });
+
+    it("should display memory in MiB without dividing by 1024 in default view", () => {
+      const parsed = parse("nvidia-smi");
+      const result = simulator.execute(parsed, context);
+
+      expect(result.exitCode).toBe(0);
+      // GPU memory values are already in MiB (81920 MiB = 80 GB for H100)
+      // Should show 81920MiB, not 80MiB (which was the result of dividing by 1024)
+      expect(result.output).toContain("81920MiB");
+      expect(result.output).not.toContain("80MiB");
     });
   });
 });
