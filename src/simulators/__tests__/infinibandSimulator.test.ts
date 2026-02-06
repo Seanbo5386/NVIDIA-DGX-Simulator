@@ -161,6 +161,23 @@ describe("InfiniBandSimulator", () => {
     });
   });
 
+  describe("GUID format consistency", () => {
+    it("should display all GUIDs with 0x prefix in ibstat output", () => {
+      const parsed = parse("ibstat");
+      const result = simulator.executeIbstat(parsed, context);
+
+      const guidLines = result.output
+        .split("\n")
+        .filter((l) => l.includes("GUID"));
+      expect(guidLines.length).toBeGreaterThan(0);
+      for (const line of guidLines) {
+        expect(line).toMatch(/0x[0-9a-f]{16}/i);
+        // Should not have double 0x prefix
+        expect(line).not.toMatch(/0x0x/);
+      }
+    });
+  });
+
   describe("CommandDefinitionRegistry Integration", () => {
     it("should have definition registry initialized after construction", async () => {
       // Wait for async initialization (lazy-loaded JSON imports may take longer)

@@ -95,8 +95,8 @@ Options:
       output += `\tNumber of ports: ${hca.ports.length}\n`;
       output += `\tFirmware version: ${hca.firmwareVersion}\n`;
       output += `\tHardware version: 0\n`;
-      output += `\tNode GUID: 0x${hca.ports[0]?.guid}\n`;
-      output += `\tSystem image GUID: 0x${hca.ports[0]?.guid}\n`;
+      output += `\tNode GUID: ${hca.ports[0]?.guid}\n`;
+      output += `\tSystem image GUID: ${hca.ports[0]?.guid}\n`;
 
       hca.ports.forEach((port) => {
         output += `\tPort ${port.portNumber}:\n`;
