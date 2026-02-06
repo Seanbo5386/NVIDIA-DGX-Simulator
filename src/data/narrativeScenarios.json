@@ -3420,6 +3420,2338 @@
           }
         }
       ]
+    },
+    {
+      "id": "domain1-fabric-awakening",
+      "domain": 1,
+      "title": "The Fabric Manager Awakening",
+      "difficulty": "intermediate",
+      "narrative": {
+        "hook": "A brand-new DGX cluster sits idle because Fabric Manager was never started after initial OS installation.",
+        "setting": "You are the datacenter engineer responsible for bringing a 4-node DGX H100 cluster online. The OS and drivers are installed, but multi-GPU NVSwitch communication is not working because NVIDIA Fabric Manager has not been configured.",
+        "resolution": "Successfully start and configure Fabric Manager, verify NVSwitch communication, and confirm all GPUs can communicate across the NVSwitch fabric."
+      },
+      "commandFamilies": ["gpu-monitoring", "diagnostics", "bmc-hardware"],
+      "estimatedMinutes": 20,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "The DGX H100 cluster has been racked and the OS is installed, but users report that multi-GPU jobs fail with NVLink errors.",
+          "task": "Check the current status of the NVIDIA Fabric Manager service to see if it is running.",
+          "expectedCommands": ["systemctl status nvidia-fabricmanager"],
+          "hints": [
+            "Use systemctl to check service status",
+            "Look for active/inactive state",
+            "Fabric Manager manages NVSwitch"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "systemctl",
+            "pattern": "nvidia-fabricmanager|status"
+          },
+          "quiz": {
+            "question": "What is the primary purpose of NVIDIA Fabric Manager?",
+            "options": [
+              "Managing InfiniBand network fabric",
+              "Coordinating NVSwitch-based GPU communication",
+              "Installing GPU driver updates automatically",
+              "Monitoring GPU temperatures across the cluster"
+            ],
+            "correctIndex": 1,
+            "explanation": "NVIDIA Fabric Manager manages NVSwitch-based multi-GPU communication in DGX and HGX systems, enabling GPUs to communicate across NVSwitch fabric for high-bandwidth GPU-to-GPU transfers."
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "Fabric Manager service is inactive (dead). It was never enabled after initial installation.",
+          "task": "Start the NVIDIA Fabric Manager service and check that it starts successfully.",
+          "expectedCommands": ["systemctl start nvidia-fabricmanager"],
+          "hints": [
+            "systemctl start to launch the service",
+            "Check status after starting",
+            "Look for any error messages"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "systemctl",
+            "pattern": "start|nvidia-fabricmanager"
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "The service start command returned, but you need to verify it is actually running without errors.",
+          "task": "Check the Fabric Manager journal logs to confirm successful initialization.",
+          "expectedCommands": ["journalctl -u nvidia-fabricmanager"],
+          "hints": [
+            "journalctl -u for unit-specific logs",
+            "Look for initialization success messages",
+            "Check for NVSwitch detection entries"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "journalctl",
+            "pattern": "nvidia-fabricmanager|fabric"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "Logs show Fabric Manager detected all NVSwitches. Time to verify GPU visibility.",
+          "task": "Run nvidia-smi to verify all GPUs are detected and check their current state.",
+          "expectedCommands": ["nvidia-smi"],
+          "hints": [
+            "nvidia-smi shows all GPUs",
+            "Look for 8 H100 GPUs per node",
+            "Check for any ERR! entries"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "GPU|H100"
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "All 8 GPUs are visible. Now verify the NVIDIA kernel modules are properly loaded.",
+          "task": "Check that all required NVIDIA kernel modules are loaded in the correct order.",
+          "expectedCommands": ["lsmod | grep nvidia"],
+          "hints": [
+            "lsmod shows loaded kernel modules",
+            "grep for nvidia to filter",
+            "Should see nvidia, nvidia_uvm, nvidia_modeset"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "lsmod",
+            "pattern": "nvidia"
+          },
+          "quiz": {
+            "question": "Which NVIDIA kernel module is required for NVSwitch fabric communication?",
+            "options": [
+              "nvidia_uvm",
+              "nvidia_drm",
+              "nvidia_fabricmanager (user-space, not module)",
+              "nvidia_nvswitch"
+            ],
+            "correctIndex": 2,
+            "explanation": "Fabric Manager runs as a user-space service (not a kernel module) that communicates with NVSwitch hardware through the nvidia kernel driver. The nvidia base module handles the hardware interface."
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "Kernel modules look correct. Need to verify the driver version matches firmware expectations.",
+          "task": "Check detailed driver and firmware version information using modinfo.",
+          "expectedCommands": ["modinfo nvidia"],
+          "hints": [
+            "modinfo nvidia shows driver details",
+            "Check version field",
+            "Verify firmware compatibility"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "modinfo",
+            "pattern": "nvidia|version"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "Driver version is confirmed compatible. Check for any kernel-level GPU messages.",
+          "task": "Check dmesg for any NVIDIA-related warnings or errors during boot and initialization.",
+          "expectedCommands": ["dmesg | grep -i nvidia"],
+          "hints": [
+            "dmesg shows kernel messages",
+            "grep -i for case-insensitive search",
+            "Look for warnings or errors"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dmesg",
+            "pattern": "nvidia|NVIDIA"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "No kernel errors found. Perform a final comprehensive GPU state check.",
+          "task": "Run nvidia-smi -q to get detailed GPU status including NVLink and fabric information.",
+          "expectedCommands": ["nvidia-smi -q"],
+          "hints": [
+            "nvidia-smi -q for detailed query",
+            "Check NVLink section for all GPUs",
+            "Verify fabric manager status field"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "-q|query|NVLink"
+          },
+          "quiz": {
+            "question": "What happens to multi-GPU jobs if Fabric Manager is not running on an NVSwitch system?",
+            "options": [
+              "Jobs run normally but slightly slower",
+              "GPUs cannot communicate across NVSwitch, causing failures or fallback to PCIe",
+              "Only single-GPU jobs are affected",
+              "The system automatically starts Fabric Manager when needed"
+            ],
+            "correctIndex": 1,
+            "explanation": "Without Fabric Manager, NVSwitch-based GPU-to-GPU communication is not available. Multi-GPU jobs either fail or fall back to much slower PCIe paths, severely degrading performance."
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain1-network-bonding-blues",
+      "domain": 1,
+      "title": "Network Bonding Blues",
+      "difficulty": "intermediate",
+      "narrative": {
+        "hook": "New cluster nodes have Ethernet bonding misconfigured and InfiniBand ports sitting idle after rack installation.",
+        "setting": "You are setting up network connectivity on freshly racked DGX nodes. Management network bonding needs verification and the InfiniBand HCAs must be configured for high-speed compute fabric.",
+        "resolution": "Correctly verify network bonding configuration, bring up InfiniBand ports, and validate MST tools for firmware management."
+      },
+      "commandFamilies": ["infiniband-tools", "bmc-hardware", "diagnostics"],
+      "estimatedMinutes": 20,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "The new DGX nodes are racked and cabled, but the management network is intermittently dropping packets.",
+          "task": "Check the network interfaces to see the current link states and IP configuration.",
+          "expectedCommands": ["ip link show"],
+          "hints": [
+            "ip link show lists all interfaces",
+            "Look for bond interfaces",
+            "Check UP/DOWN state of members"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ip",
+            "pattern": "link|show"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "You see bond0 exists but one member interface is DOWN. Need to check IP addressing.",
+          "task": "Check IP address assignments to verify the management network configuration.",
+          "expectedCommands": ["ip addr"],
+          "hints": [
+            "ip addr shows IP addresses",
+            "Check bond0 has correct IP",
+            "Verify subnet mask"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ip",
+            "pattern": "addr"
+          },
+          "quiz": {
+            "question": "What is the primary benefit of network bonding for management interfaces?",
+            "options": [
+              "Doubles the network speed",
+              "Provides link redundancy and failover",
+              "Reduces network latency by half",
+              "Required for IPMI access"
+            ],
+            "correctIndex": 1,
+            "explanation": "Network bonding provides link redundancy so that if one physical interface fails, the management network remains accessible through the surviving interface."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "IP configuration looks correct on bond0. Need to verify the bonding mode and slave status.",
+          "task": "Check the bonding driver status to verify mode and member interface health.",
+          "expectedCommands": ["cat /proc/net/bonding/bond0"],
+          "hints": [
+            "The bonding status file shows details",
+            "Check bonding mode (active-backup, 802.3ad)",
+            "Verify both slaves are up"
+          ],
+          "validation": {
+            "type": "command",
+            "pattern": "bonding|bond0"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "Bond is in active-backup mode with one slave down. Management network fixed. Now check InfiniBand.",
+          "task": "Check InfiniBand HCA status to see if the high-speed ports are linked up.",
+          "expectedCommands": ["ibstat"],
+          "hints": [
+            "ibstat shows HCA port status",
+            "Look for Active or Down state",
+            "Check link width and rate"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibstat",
+            "pattern": "State|Active|Rate"
+          },
+          "quiz": {
+            "question": "What is the key difference between InfiniBand and Ethernet for HPC interconnects?",
+            "options": [
+              "InfiniBand uses fiber optic only",
+              "InfiniBand provides lower latency and RDMA support natively",
+              "Ethernet supports higher bandwidth",
+              "InfiniBand works without switches"
+            ],
+            "correctIndex": 1,
+            "explanation": "InfiniBand provides significantly lower latency and native RDMA (Remote Direct Memory Access) support, making it ideal for tightly-coupled HPC and AI distributed training workloads."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "InfiniBand ports are Active. Now initialize the Mellanox Software Tools for firmware management.",
+          "task": "Start the MST (Mellanox Software Tools) driver to enable firmware management.",
+          "expectedCommands": ["mst start"],
+          "hints": [
+            "mst start loads MST drivers",
+            "Required for firmware queries",
+            "May need root privileges"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "mst",
+            "pattern": "start"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "MST driver loaded. Verify the MST devices are detected correctly.",
+          "task": "Check MST status to see all detected Mellanox/NVIDIA devices.",
+          "expectedCommands": ["mst status"],
+          "hints": [
+            "mst status shows detected devices",
+            "Look for HCA device paths",
+            "Note /dev/mst/ device names"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "mst",
+            "pattern": "status"
+          },
+          "quiz": {
+            "question": "What is the purpose of MST (Mellanox Software Tools)?",
+            "options": [
+              "Monitoring network traffic throughput",
+              "Providing device-level access for firmware and configuration management",
+              "Testing InfiniBand cable quality",
+              "Managing Subnet Manager routing tables"
+            ],
+            "correctIndex": 1,
+            "explanation": "MST provides low-level device access for firmware updates, configuration queries, and hardware diagnostics on Mellanox/NVIDIA network adapters."
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "MST shows two ConnectX-7 HCA devices. Need to verify firmware configuration.",
+          "task": "Query the HCA firmware configuration using mlxconfig.",
+          "expectedCommands": ["mlxconfig -d /dev/mst/mt41686_pciconf0 q"],
+          "hints": [
+            "mlxconfig -d <device> q queries config",
+            "Check link type settings",
+            "Verify SRIOV and other features"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "mlxconfig",
+            "pattern": "query|config|-d"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "HCA configuration looks correct. Perform final firmware version verification.",
+          "task": "Query the installed firmware versions on all HCAs to ensure they are up to date.",
+          "expectedCommands": ["mlxfwmanager --query"],
+          "hints": [
+            "mlxfwmanager --query shows firmware versions",
+            "Compare to latest recommended version",
+            "Check all devices"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "mlxfwmanager",
+            "pattern": "query|firmware|version"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain1-bios-verification",
+      "domain": 1,
+      "title": "The BIOS Verification",
+      "difficulty": "beginner",
+      "narrative": {
+        "hook": "Before powering on for production workloads, the new servers need their UEFI/BIOS settings and firmware validated against the deployment checklist.",
+        "setting": "You are a junior systems engineer performing first-boot validation on new compute nodes. Your task is to verify BIOS settings, CPU configuration, and kernel/driver readiness before handing off to the cluster team.",
+        "resolution": "Verify all BIOS settings match the deployment standard, confirm CPU and memory configuration, and validate that the NVIDIA driver is properly installed."
+      },
+      "commandFamilies": ["bmc-hardware", "gpu-monitoring", "diagnostics"],
+      "estimatedMinutes": 15,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "The new compute node has booted for the first time. You need to verify the BIOS firmware version and vendor information.",
+          "task": "Use dmidecode to read the BIOS information table and verify the firmware version.",
+          "expectedCommands": ["dmidecode -t bios"],
+          "hints": [
+            "dmidecode -t bios shows BIOS info",
+            "Check vendor and version fields",
+            "Note the release date"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dmidecode",
+            "pattern": "bios|BIOS"
+          },
+          "quiz": {
+            "question": "What is the key difference between UEFI and Legacy BIOS?",
+            "options": [
+              "UEFI only works with NVIDIA hardware",
+              "UEFI supports larger disks, secure boot, and faster initialization",
+              "Legacy BIOS is more secure than UEFI",
+              "There is no practical difference for servers"
+            ],
+            "correctIndex": 1,
+            "explanation": "UEFI provides support for disks larger than 2TB (GPT), Secure Boot for firmware integrity, faster initialization, and a richer pre-boot environment compared to Legacy BIOS."
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "BIOS version matches the deployment checklist. Now verify the system identity.",
+          "task": "Check the system information table to verify manufacturer, model, and serial number.",
+          "expectedCommands": ["dmidecode -t system"],
+          "hints": [
+            "dmidecode -t system shows system info",
+            "Verify manufacturer and product name",
+            "Record serial number for inventory"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dmidecode",
+            "pattern": "system|manufacturer|product"
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "System identification confirmed. Need to verify the UEFI boot configuration.",
+          "task": "Check the EFI boot manager to verify boot order and secure boot status.",
+          "expectedCommands": ["efibootmgr -v"],
+          "hints": [
+            "efibootmgr -v shows verbose boot entries",
+            "Check BootOrder for correct sequence",
+            "Verify boot entries exist"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "efibootmgr",
+            "pattern": "Boot|boot|EFI"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "Boot configuration verified. Time to check the CPU configuration.",
+          "task": "Examine the CPU configuration to verify model, core count, and NUMA topology.",
+          "expectedCommands": ["lscpu"],
+          "hints": [
+            "lscpu shows detailed CPU information",
+            "Check model name and core count",
+            "Note NUMA node configuration"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "lscpu",
+            "pattern": "CPU|core|NUMA"
+          },
+          "quiz": {
+            "question": "Why is NUMA topology important for GPU workloads?",
+            "options": [
+              "NUMA determines GPU clock speeds",
+              "CPU-GPU affinity affects PCIe and memory access latency",
+              "NUMA is only relevant for CPU-only workloads",
+              "GPU drivers require specific NUMA settings"
+            ],
+            "correctIndex": 1,
+            "explanation": "Proper NUMA awareness ensures that processes use CPUs and memory that are physically close to their assigned GPUs, minimizing PCIe traversal and memory access latency."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "CPU and NUMA topology look correct. Verify the PCIe device topology next.",
+          "task": "Check the PCIe device tree to see all connected devices including GPUs.",
+          "expectedCommands": ["lspci -tv"],
+          "hints": [
+            "lspci -tv shows tree view",
+            "Look for NVIDIA GPU entries",
+            "Verify PCIe bridge hierarchy"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "lspci",
+            "pattern": "pci|NVIDIA|tree"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "PCIe topology shows all GPU slots populated. Verify system memory next.",
+          "task": "Check the total system memory and verify it matches the deployment specification.",
+          "expectedCommands": ["free -h"],
+          "hints": [
+            "free -h shows memory in human readable format",
+            "Check total memory matches spec",
+            "Note available vs used memory"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "free",
+            "pattern": "Mem|total|free"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "System memory matches spec. Now verify the running kernel version.",
+          "task": "Check the kernel version to ensure it matches the approved version for GPU drivers.",
+          "expectedCommands": ["uname -r"],
+          "hints": [
+            "uname -r shows kernel release",
+            "Must match driver compatibility",
+            "Check against deployment checklist"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "uname",
+            "pattern": "kernel|release|-r"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Kernel version is correct. Final step: verify the NVIDIA driver installation.",
+          "task": "Check the installed NVIDIA driver version to confirm it matches the cluster standard.",
+          "expectedCommands": ["cat /proc/driver/nvidia/version"],
+          "hints": [
+            "The proc filesystem shows driver info",
+            "Check both kernel and user-space versions",
+            "Should match cluster standard"
+          ],
+          "validation": {
+            "type": "command",
+            "pattern": "nvidia|version|driver"
+          },
+          "quiz": {
+            "question": "Which dmidecode table type provides BIOS/UEFI firmware information?",
+            "options": [
+              "dmidecode -t 0 (BIOS)",
+              "dmidecode -t 1 (System)",
+              "dmidecode -t 2 (Baseboard)",
+              "dmidecode -t 4 (Processor)"
+            ],
+            "correctIndex": 0,
+            "explanation": "DMI table type 0 contains BIOS information including vendor, version, and release date. Type 1 is system info, type 2 is baseboard, and type 4 is processor."
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain3-job-scheduler",
+      "domain": 3,
+      "title": "The Job Scheduler Setup",
+      "difficulty": "intermediate",
+      "narrative": {
+        "hook": "A research institution just received their first GPU cluster, and the job scheduler needs to be configured from scratch for GPU-aware workload management.",
+        "setting": "You are the HPC administrator tasked with configuring Slurm for GPU workloads on a new 8-node DGX A100 cluster. GRES, partitions, and accounting all need to be set up and validated.",
+        "resolution": "Successfully configure Slurm GRES for GPU scheduling, validate partitions, and confirm that GPU jobs can be submitted and tracked."
+      },
+      "commandFamilies": ["cluster-tools", "gpu-monitoring", "diagnostics"],
+      "estimatedMinutes": 25,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "Slurm is installed on the cluster but GPU-aware scheduling is not yet configured. Users cannot request GPUs in their jobs.",
+          "task": "Check the detailed node information to understand current resource availability.",
+          "expectedCommands": ["sinfo -Nel"],
+          "hints": [
+            "sinfo -Nel shows detailed node list",
+            "Check GRES column for GPU info",
+            "Note current partition setup"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "sinfo",
+            "pattern": "-N|-l|node"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "sinfo shows nodes but no GRES (GPU) resources listed. Configuration needed.",
+          "task": "Review the current Slurm configuration to understand existing settings.",
+          "expectedCommands": ["scontrol show config"],
+          "hints": [
+            "scontrol show config shows all settings",
+            "Look for GresTypes line",
+            "Check AccountingStorageType"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "show config|configuration"
+          },
+          "quiz": {
+            "question": "What does GRES stand for in Slurm terminology?",
+            "options": [
+              "GPU Resource Extension System",
+              "Generic RESource",
+              "Graphics Rendering Execution Scheduler",
+              "Group Resource Environment Setting"
+            ],
+            "correctIndex": 1,
+            "explanation": "GRES stands for Generic RESource, a Slurm mechanism for managing consumable resources like GPUs, MICs, or any custom hardware beyond CPUs and memory."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "Configuration shows GresTypes=gpu is defined but partitions lack GPU resource allocation.",
+          "task": "Check the current partition configuration for GPU resource specifications.",
+          "expectedCommands": ["scontrol show partition"],
+          "hints": [
+            "scontrol show partition shows all partitions",
+            "Check TRESBillingWeights for GPU",
+            "Verify AllowedGRES settings"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "show partition|partition"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "Partitions exist but GRES is not properly mapped. Need to verify the gres.conf file.",
+          "task": "Examine the Slurm GRES configuration file to verify GPU device mappings.",
+          "expectedCommands": ["cat /etc/slurm/gres.conf"],
+          "hints": [
+            "gres.conf maps GPUs to devices",
+            "Check NodeName and device paths",
+            "Verify GPU count per node"
+          ],
+          "validation": {
+            "type": "command",
+            "pattern": "gres.conf|gres|GPU"
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "GRES configuration file updated with correct GPU mappings. Time to test GPU job submission.",
+          "task": "Submit a test job that requests one GPU to verify GRES scheduling works.",
+          "expectedCommands": ["sbatch --gres=gpu:1"],
+          "hints": [
+            "sbatch --gres=gpu:N requests GPUs",
+            "Start with 1 GPU to test",
+            "Check job ID returned"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "sbatch",
+            "pattern": "gres|gpu"
+          },
+          "quiz": {
+            "question": "What happens if you submit a job with --gres=gpu:1 but GRES is not configured?",
+            "options": [
+              "Job runs without GPU access",
+              "Job is queued forever in PENDING state",
+              "Slurm automatically detects GPUs",
+              "Job fails immediately with an error"
+            ],
+            "correctIndex": 1,
+            "explanation": "Without GRES configured, Slurm cannot match the GPU resource request to any node, so the job stays in PENDING state indefinitely with reason 'ReqNodeNotAvail' or 'Resources'."
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "Test job submitted successfully. Need to verify it is running with GPU allocated.",
+          "task": "Check the job queue to see the status of the submitted GPU test job.",
+          "expectedCommands": ["squeue"],
+          "hints": [
+            "squeue shows all jobs",
+            "Look for RUNNING state",
+            "Check NODELIST assignment"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "squeue",
+            "pattern": "RUNNING|JOBID"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "Job is running. Need to verify accounting is tracking GPU usage properly.",
+          "task": "Check job accounting data to verify GPU resource tracking is working.",
+          "expectedCommands": ["sacct -j"],
+          "hints": [
+            "sacct -j JOBID shows accounting",
+            "Check AllocTRES for gpu count",
+            "Verify elapsed time tracking"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "sacct",
+            "pattern": "job|TRES|gpu"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Accounting shows GPU allocation. Verify user associations are configured for GPU billing.",
+          "task": "Check Slurm accounting associations to ensure GPU billing is set up.",
+          "expectedCommands": ["sacctmgr show assoc"],
+          "hints": [
+            "sacctmgr show assoc lists associations",
+            "Check GrpTRES limits",
+            "Verify account structure"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "sacctmgr",
+            "pattern": "show|assoc|account"
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "Accounting and associations configured. Verify individual node GPU configuration.",
+          "task": "Check detailed node information to confirm GRES is properly reported.",
+          "expectedCommands": ["scontrol show node"],
+          "hints": [
+            "scontrol show node shows details",
+            "Look for Gres= and GresUsed=",
+            "Verify gpu:8 on each node"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "show node|Gres"
+          },
+          "quiz": {
+            "question": "Why is it important to configure Slurm partitions with GPU resources?",
+            "options": [
+              "GPUs won't work without partitions",
+              "Partitions enable fair scheduling, resource limits, and access control for GPU resources",
+              "NVIDIA requires partition-based scheduling",
+              "Partitions improve GPU performance"
+            ],
+            "correctIndex": 1,
+            "explanation": "Slurm partitions allow administrators to set resource limits, access controls, and scheduling priorities, ensuring fair GPU allocation across research groups and workloads."
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "Node GRES configuration verified. Run a final end-to-end test with GPU validation.",
+          "task": "Run an interactive job that requests a GPU and runs nvidia-smi to validate the complete pipeline.",
+          "expectedCommands": ["srun --gres=gpu:1 nvidia-smi"],
+          "hints": [
+            "srun for interactive execution",
+            "Request 1 GPU with --gres",
+            "nvidia-smi should show the allocated GPU"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "srun",
+            "pattern": "gres|gpu|nvidia-smi"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain3-container-orchestration",
+      "domain": 3,
+      "title": "Container Orchestration",
+      "difficulty": "intermediate",
+      "narrative": {
+        "hook": "The AI team needs containerized PyTorch and TensorFlow environments, but the cluster has never run GPU containers before.",
+        "setting": "You are setting up the container infrastructure on a DGX cluster for the first time. Docker, Enroot, and the NVIDIA Container Toolkit all need to be verified and integrated with Slurm.",
+        "resolution": "Successfully configure and validate GPU container support with Docker, Enroot, and the NVIDIA Container Toolkit for production AI workloads."
+      },
+      "commandFamilies": ["container-tools", "gpu-monitoring", "cluster-tools"],
+      "estimatedMinutes": 20,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "The cluster has Docker installed but GPU container support has never been tested.",
+          "task": "Check Docker daemon information to verify it is running and see runtime configuration.",
+          "expectedCommands": ["docker info"],
+          "hints": [
+            "docker info shows daemon details",
+            "Look for Runtime section",
+            "Check for nvidia runtime entry"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "docker",
+            "pattern": "info|runtime"
+          },
+          "quiz": {
+            "question": "What is the NVIDIA Container Toolkit's role in GPU containers?",
+            "options": [
+              "It installs GPU drivers inside containers",
+              "It provides a container runtime hook that mounts GPU drivers and devices into containers",
+              "It manages container networking for GPUs",
+              "It compiles CUDA code for container environments"
+            ],
+            "correctIndex": 1,
+            "explanation": "The NVIDIA Container Toolkit provides a runtime hook (nvidia-container-runtime) that automatically mounts the host GPU drivers, CUDA libraries, and device nodes into containers."
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "Docker is running with nvidia runtime available. Time to pull an NGC container image.",
+          "task": "Pull the official NVIDIA PyTorch container from NGC (NVIDIA GPU Cloud).",
+          "expectedCommands": ["docker pull nvcr.io/nvidia/pytorch"],
+          "hints": [
+            "nvcr.io is the NGC registry",
+            "Pull takes time for large images",
+            "Check for authentication if needed"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "docker",
+            "pattern": "pull|nvcr|pytorch"
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "PyTorch container pulled successfully. Test GPU access inside the container.",
+          "task": "Run the container with GPU access to verify GPUs are visible inside.",
+          "expectedCommands": ["docker run --rm --gpus all"],
+          "hints": [
+            "docker run --rm --gpus all",
+            "Run nvidia-smi inside container",
+            "Should show all host GPUs"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "docker",
+            "pattern": "run|gpus all"
+          },
+          "quiz": {
+            "question": "What does NGC (NVIDIA GPU Cloud) provide for AI workflows?",
+            "options": [
+              "Free cloud GPU instances for training",
+              "Pre-built, optimized container images for AI frameworks and tools",
+              "GPU driver updates via cloud sync",
+              "Cloud-based GPU monitoring dashboards"
+            ],
+            "correctIndex": 1,
+            "explanation": "NGC provides pre-built, tested, and optimized container images for popular AI frameworks like PyTorch, TensorFlow, and specialized tools, saving significant setup time."
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "Docker GPU access works. Now set up Enroot for HPC container workflows.",
+          "task": "Import a container image into Enroot format for use with Slurm.",
+          "expectedCommands": ["enroot import"],
+          "hints": [
+            "enroot import converts Docker images",
+            "Creates .sqsh squashfs file",
+            "More efficient for HPC workloads"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "enroot",
+            "pattern": "import"
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "Container imported as squashfs image. Create an Enroot container from it.",
+          "task": "Create an Enroot container from the imported image for job execution.",
+          "expectedCommands": ["enroot create"],
+          "hints": [
+            "enroot create from .sqsh file",
+            "Creates container root filesystem",
+            "Name it for easy reference"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "enroot",
+            "pattern": "create"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "Container created. Verify it appears in the Enroot container list.",
+          "task": "List available Enroot containers to confirm the creation was successful.",
+          "expectedCommands": ["enroot list"],
+          "hints": [
+            "enroot list shows containers",
+            "Should see the new container",
+            "Note the container name"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "enroot",
+            "pattern": "list"
+          },
+          "quiz": {
+            "question": "Why is Enroot preferred over Docker for HPC container workloads?",
+            "options": [
+              "Enroot has better GPU support",
+              "Enroot runs unprivileged and integrates with Slurm via Pyxis",
+              "Docker cannot run on HPC clusters",
+              "Enroot containers are smaller"
+            ],
+            "correctIndex": 1,
+            "explanation": "Enroot runs containers without root privileges and integrates natively with Slurm through the Pyxis plugin, making it suitable for multi-user HPC environments where Docker's root requirement is a security concern."
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "Enroot containers are ready. Test running a container job through Slurm with Pyxis.",
+          "task": "Submit a Slurm job that uses a container image to run nvidia-smi inside the container.",
+          "expectedCommands": ["srun --container-image"],
+          "hints": [
+            "srun --container-image= specifies image",
+            "Pyxis plugin handles container launch",
+            "GPU should be visible inside"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "srun",
+            "pattern": "container|image"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Slurm container integration works. Perform a final validation of the container toolkit.",
+          "task": "Check the nvidia-container-cli to verify GPU device and driver information.",
+          "expectedCommands": ["nvidia-container-cli info"],
+          "hints": [
+            "nvidia-container-cli info shows runtime details",
+            "Verifies driver compatibility",
+            "Lists available GPU devices"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-container-cli",
+            "pattern": "info|driver|device"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain3-storage-architect",
+      "domain": 3,
+      "title": "The Storage Architect",
+      "difficulty": "intermediate",
+      "narrative": {
+        "hook": "Training jobs are completing 40% slower than expected, and initial investigation points to storage as the bottleneck.",
+        "setting": "You are troubleshooting storage performance on a cluster that uses both Lustre parallel filesystem and NFS. Data loading is not keeping up with GPU compute, and you need to diagnose and optimize the storage configuration.",
+        "resolution": "Identify Lustre striping misconfiguration and NFS mount options causing poor performance, then optimize both for AI training workloads."
+      },
+      "commandFamilies": ["cluster-tools", "diagnostics", "bmc-hardware"],
+      "estimatedMinutes": 20,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "Users report that large model training takes 40% longer than benchmarks suggest. GPU utilization drops periodically during data loading phases.",
+          "task": "Check the Lustre filesystem capacity and health to identify any obvious issues.",
+          "expectedCommands": ["lfs df -h"],
+          "hints": [
+            "lfs df -h shows filesystem usage",
+            "Check each OST capacity",
+            "Look for imbalanced or full OSTs"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "lfs",
+            "pattern": "df"
+          },
+          "quiz": {
+            "question": "What is Lustre's primary advantage over NFS for AI training data?",
+            "options": [
+              "Better security features",
+              "Parallel I/O across multiple storage targets for higher aggregate bandwidth",
+              "Simpler configuration and management",
+              "Built-in data compression"
+            ],
+            "correctIndex": 1,
+            "explanation": "Lustre stripes data across multiple OSTs (Object Storage Targets), enabling parallel I/O that provides much higher aggregate bandwidth than single-server NFS for large sequential reads."
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "Lustre shows some OSTs near capacity while others have plenty of space. Possible imbalance.",
+          "task": "Verify the health of Lustre servers to ensure all are responding properly.",
+          "expectedCommands": ["lfs check servers"],
+          "hints": [
+            "lfs check servers pings all servers",
+            "All MDT and OST servers should respond",
+            "Note any timeouts"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "lfs",
+            "pattern": "check|servers"
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "All Lustre servers are healthy. The issue may be in how files are striped across OSTs.",
+          "task": "Check the stripe configuration of the training data directory.",
+          "expectedCommands": ["lfs getstripe"],
+          "hints": [
+            "lfs getstripe shows file layout",
+            "Check stripe count and size",
+            "Compare to optimal settings"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "lfs",
+            "pattern": "getstripe|stripe"
+          },
+          "quiz": {
+            "question": "What does Lustre stripe count control?",
+            "options": [
+              "The number of backup copies of each file",
+              "The number of OSTs a file's data is distributed across",
+              "The maximum file size allowed",
+              "The number of concurrent readers"
+            ],
+            "correctIndex": 1,
+            "explanation": "Stripe count determines how many OSTs a file's data is spread across. Higher stripe counts enable parallel I/O from more storage servers, increasing aggregate bandwidth for large files."
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "Training data directory has stripe count of 1 - all data on a single OST. This is the bottleneck.",
+          "task": "Set optimal Lustre striping for the training data directory to use all available OSTs.",
+          "expectedCommands": ["lfs setstripe"],
+          "hints": [
+            "lfs setstripe sets stripe params",
+            "Use -c -1 for all OSTs",
+            "Set appropriate stripe size"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "lfs",
+            "pattern": "setstripe|stripe"
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "Lustre striping fixed for new files. Now check the NFS-mounted home directories.",
+          "task": "Check NFS client statistics to see if NFS is also contributing to performance issues.",
+          "expectedCommands": ["nfsstat -c"],
+          "hints": [
+            "nfsstat -c shows client stats",
+            "Look for retransmissions",
+            "Check RPC statistics"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nfsstat",
+            "pattern": "client|-c|nfs"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "NFS client stats show elevated retransmissions. Check mount options.",
+          "task": "Check the NFS mount options to see if they are optimized for performance.",
+          "expectedCommands": ["nfsstat -m"],
+          "hints": [
+            "nfsstat -m shows mount options",
+            "Check rsize and wsize values",
+            "Verify NFS version (v4 preferred)"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nfsstat",
+            "pattern": "-m|mount"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "NFS mount options show suboptimal rsize/wsize. Also check current NFS mounts.",
+          "task": "View all NFS mounts to verify correct servers and export paths.",
+          "expectedCommands": ["mount | grep nfs"],
+          "hints": [
+            "mount shows all filesystems",
+            "grep nfs to filter",
+            "Check server addresses"
+          ],
+          "validation": {
+            "type": "command",
+            "pattern": "mount|nfs"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "NFS mounts identified. Perform final filesystem capacity check across all types.",
+          "task": "Check disk usage across all mounted filesystems to get a complete storage picture.",
+          "expectedCommands": ["df -hT"],
+          "hints": [
+            "df -hT shows filesystem types",
+            "Compare Lustre and NFS usage",
+            "Check for any full filesystems"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "df",
+            "pattern": "Filesystem|Type|Size"
+          },
+          "quiz": {
+            "question": "Why might AI training jobs use both Lustre and NFS on the same cluster?",
+            "options": [
+              "Redundancy in case one fails",
+              "Lustre for high-bandwidth training data, NFS for home directories and code",
+              "They provide the same performance",
+              "NFS is used only for logging"
+            ],
+            "correctIndex": 1,
+            "explanation": "Lustre provides high-bandwidth parallel I/O ideal for large training datasets, while NFS is simpler and sufficient for smaller files like code, configs, and user home directories."
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain4-nccl-championship",
+      "domain": 4,
+      "title": "The NCCL Championship",
+      "difficulty": "advanced",
+      "narrative": {
+        "hook": "The new 16-node DGX H100 cluster needs to pass NCCL all-reduce benchmarks before production sign-off.",
+        "setting": "You are the validation engineer responsible for running and optimizing NCCL collective communication benchmarks across the entire cluster. The acceptance criteria require 90% of theoretical bandwidth.",
+        "resolution": "Tune NCCL environment variables, optimize transport selection, and achieve target bandwidth across all nodes."
+      },
+      "commandFamilies": ["gpu-monitoring", "infiniband-tools", "diagnostics"],
+      "estimatedMinutes": 25,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "The cluster is assembled and basic tests pass, but you need to validate the NCCL communication library is properly installed.",
+          "task": "Check that the NCCL library is installed and verify its version.",
+          "expectedCommands": ["ldconfig -p | grep libnccl"],
+          "hints": [
+            "ldconfig -p lists shared libraries",
+            "grep for libnccl to find NCCL",
+            "Note the version number"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ldconfig",
+            "pattern": "nccl|libnccl"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "NCCL 2.18 is installed. Time to run the initial all-reduce benchmark on a single node.",
+          "task": "Run the all_reduce_perf benchmark to establish single-node baseline performance.",
+          "expectedCommands": ["all_reduce_perf -b 8 -e 128M"],
+          "hints": [
+            "all_reduce_perf is the NCCL benchmark",
+            "-b is begin size, -e is end size",
+            "Look at bus bandwidth column"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "all_reduce_perf",
+            "pattern": "reduce|bandwidth|-b|-e"
+          },
+          "quiz": {
+            "question": "What does all-reduce do in distributed training?",
+            "options": [
+              "Reduces the number of GPUs used",
+              "Sums gradients across all GPUs and distributes the result to all",
+              "Compresses model weights to reduce memory",
+              "Reduces training time by skipping iterations"
+            ],
+            "correctIndex": 1,
+            "explanation": "All-reduce is a collective operation that sums (or reduces) data across all participating GPUs and distributes the result back to every GPU, essential for synchronizing gradients in distributed training."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "Single-node benchmark shows good NVLink bandwidth. Need to enable NCCL debug logging for multi-node tests.",
+          "task": "Set NCCL debug environment variable to get detailed transport information.",
+          "expectedCommands": ["NCCL_DEBUG=INFO"],
+          "hints": [
+            "NCCL_DEBUG=INFO enables logging",
+            "Shows transport selection details",
+            "Useful for diagnosing issues"
+          ],
+          "validation": {
+            "type": "command",
+            "pattern": "NCCL_DEBUG|INFO"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "Debug logging configured. Verify InfiniBand transport is not accidentally disabled.",
+          "task": "Check and set the NCCL InfiniBand transport environment variable.",
+          "expectedCommands": ["NCCL_IB_DISABLE=0"],
+          "hints": [
+            "NCCL_IB_DISABLE=0 enables IB",
+            "Set to 1 would force TCP fallback",
+            "IB is critical for performance"
+          ],
+          "validation": {
+            "type": "command",
+            "pattern": "NCCL_IB|DISABLE"
+          },
+          "quiz": {
+            "question": "Why is InfiniBand preferred over TCP for NCCL multi-node communication?",
+            "options": [
+              "TCP is not supported by NCCL",
+              "InfiniBand provides RDMA with lower latency and higher bandwidth",
+              "TCP requires more GPU memory",
+              "InfiniBand works without a switch"
+            ],
+            "correctIndex": 1,
+            "explanation": "InfiniBand with RDMA (Remote Direct Memory Access) bypasses the CPU for data transfers, providing significantly lower latency and higher bandwidth than TCP/IP for GPU-to-GPU communication."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "IB transport enabled. Also verify peer-to-peer GPU communication is enabled.",
+          "task": "Check the NCCL P2P (peer-to-peer) configuration for intra-node communication.",
+          "expectedCommands": ["NCCL_P2P_DISABLE=0"],
+          "hints": [
+            "NCCL_P2P_DISABLE=0 enables P2P",
+            "P2P uses NVLink for intra-node",
+            "Important for single-node perf"
+          ],
+          "validation": {
+            "type": "command",
+            "pattern": "NCCL_P2P|DISABLE"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "All NCCL settings configured. Verify the complete NCCL environment before the big test.",
+          "task": "Display all current NCCL-related environment variables to confirm the configuration.",
+          "expectedCommands": ["env | grep NCCL"],
+          "hints": [
+            "env shows all environment variables",
+            "grep NCCL to filter",
+            "Verify all settings are correct"
+          ],
+          "validation": {
+            "type": "command",
+            "pattern": "env|NCCL"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "Environment is configured. Time for the full multi-node NCCL benchmark.",
+          "task": "Run the multi-node all-reduce benchmark across all 16 nodes using MPI.",
+          "expectedCommands": ["mpirun -np 16 -H node1,node2 all_reduce_perf"],
+          "hints": [
+            "mpirun launches across nodes",
+            "-np for number of processes",
+            "-H specifies hosts"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "mpirun",
+            "pattern": "all_reduce|perf|node"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Multi-node benchmark shows 85% of theoretical bandwidth. Need to check GPU topology for optimization.",
+          "task": "Check GPU topology to verify optimal NVLink and PCIe affinity for NCCL.",
+          "expectedCommands": ["nvidia-smi topo -m"],
+          "hints": [
+            "nvidia-smi topo -m shows connections",
+            "Check for NVLink between all GPUs",
+            "Verify CPU affinity"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "topo|-m|NV"
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "Topology shows good NVLink connectivity. Check InfiniBand fabric for any issues.",
+          "task": "Verify InfiniBand port status on a representative node.",
+          "expectedCommands": ["ibstat"],
+          "hints": [
+            "ibstat shows port status",
+            "Verify NDR 400 Gb/s rate",
+            "All ports should be Active"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibstat",
+            "pattern": "State|Active|Rate"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "All checks pass. After tuning NCCL tree/ring algorithms, bandwidth reaches 92%. Document results.",
+          "task": "Capture final GPU and topology state for the acceptance documentation.",
+          "expectedCommands": ["nvidia-smi topo -m"],
+          "hints": [
+            "Document topology matrix",
+            "Record benchmark results",
+            "Include NCCL settings used"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "topo"
+          },
+          "quiz": {
+            "question": "What are the two main NCCL algorithms for all-reduce?",
+            "options": [
+              "Broadcast and scatter",
+              "Ring and tree",
+              "Direct and relay",
+              "Mesh and star"
+            ],
+            "correctIndex": 1,
+            "explanation": "NCCL uses ring and tree algorithms for all-reduce. Ring provides optimal bandwidth utilization, while tree provides lower latency for smaller messages. NCCL automatically selects the best algorithm."
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain4-linpack-showdown",
+      "domain": 4,
+      "title": "Linpack Showdown",
+      "difficulty": "advanced",
+      "narrative": {
+        "hook": "The cluster acceptance test requires hitting 85% of theoretical peak FLOPS on the HPL benchmark, and the first run achieved only 65%.",
+        "setting": "You are the performance engineer tasked with running and optimizing HPL (High Performance Linpack) on a DGX H100 cluster for the formal acceptance test. The customer will not accept the system until performance targets are met.",
+        "resolution": "Diagnose NUMA binding issues and thermal throttling, optimize HPL parameters, and achieve the required performance target."
+      },
+      "commandFamilies": ["gpu-monitoring", "diagnostics", "cluster-tools"],
+      "estimatedMinutes": 25,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "First HPL run achieved only 65% of theoretical peak. Need to understand the HPL configuration.",
+          "task": "Examine the HPL input file to check problem size and process grid configuration.",
+          "expectedCommands": ["cat HPL.dat"],
+          "hints": [
+            "HPL.dat contains benchmark parameters",
+            "Check N (problem size)",
+            "Verify P x Q process grid"
+          ],
+          "validation": {
+            "type": "command",
+            "pattern": "HPL.dat|HPL"
+          },
+          "quiz": {
+            "question": "Why does HPL problem size (N) affect benchmark performance?",
+            "options": [
+              "Larger N uses more network bandwidth",
+              "N must be a prime number for best performance",
+              "Larger N increases compute-to-communication ratio, improving efficiency",
+              "Problem size has no significant effect"
+            ],
+            "correctIndex": 2,
+            "explanation": "Larger problem sizes increase the ratio of computation to communication, reducing the relative overhead of data exchange and improving overall efficiency up to memory limits."
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "HPL.dat shows a modest problem size. Need to monitor GPU behavior during the benchmark.",
+          "task": "Start GPU device monitoring to watch utilization, temperature, and power during the run.",
+          "expectedCommands": ["nvidia-smi dmon"],
+          "hints": [
+            "nvidia-smi dmon for live monitoring",
+            "Watch temperature and power columns",
+            "Look for throttling indicators"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "dmon|monitor"
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "Monitoring shows periodic power throttling on some GPUs. Need detailed DCGM stats.",
+          "task": "Enable DCGM statistics collection for detailed GPU performance analysis.",
+          "expectedCommands": ["dcgmi stats --enable"],
+          "hints": [
+            "dcgmi stats --enable starts collection",
+            "Will track performance metrics",
+            "Run before benchmark"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "stats|enable"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "DCGM stats collection enabled. Check current statistics baseline.",
+          "task": "View the DCGM statistics to see baseline GPU performance metrics.",
+          "expectedCommands": ["dcgmi stats"],
+          "hints": [
+            "dcgmi stats shows collected data",
+            "Check compute utilization",
+            "Look for memory bandwidth usage"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "stats"
+          },
+          "quiz": {
+            "question": "What is the relationship between Rmax and Rpeak in HPL?",
+            "options": [
+              "Rmax is always greater than Rpeak",
+              "Rpeak is theoretical maximum, Rmax is measured achievement",
+              "They are the same metric in different units",
+              "Rmax measures memory, Rpeak measures compute"
+            ],
+            "correctIndex": 1,
+            "explanation": "Rpeak is the theoretical peak FLOPS based on hardware specs, while Rmax is the maximum achieved FLOPS during the HPL benchmark. The ratio Rmax/Rpeak indicates system efficiency."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "Baseline stats captured. Check NUMA hardware topology to optimize process placement.",
+          "task": "Check the NUMA hardware configuration to plan optimal HPL process binding.",
+          "expectedCommands": ["numactl --hardware"],
+          "hints": [
+            "numactl --hardware shows NUMA topology",
+            "Note CPU and memory per node",
+            "Plan GPU-to-NUMA affinity"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "numactl",
+            "pattern": "hardware|node|cpu"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "NUMA topology understood. Ready to run an optimized HPL with proper process binding.",
+          "task": "Launch the HPL benchmark with MPI and proper NUMA binding.",
+          "expectedCommands": ["mpirun -np 8 ./hpl"],
+          "hints": [
+            "mpirun for multi-process launch",
+            "Add --bind-to for CPU binding",
+            "Match processes to GPU count"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "mpirun",
+            "pattern": "hpl|np"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "HPL running with better binding. Monitor GPU performance states during the benchmark.",
+          "task": "Check GPU performance state and throttle reasons during the active benchmark.",
+          "expectedCommands": ["nvidia-smi -q -d PERFORMANCE"],
+          "hints": [
+            "nvidia-smi -q -d PERFORMANCE for perf data",
+            "Check for throttle reasons",
+            "Note clock speeds"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "PERFORMANCE|-d|throttle"
+          },
+          "quiz": {
+            "question": "What is the most common reason GPUs underperform during HPL?",
+            "options": [
+              "Insufficient GPU memory",
+              "Network bandwidth limitations",
+              "Thermal or power throttling reducing clock speeds",
+              "Incompatible CUDA version"
+            ],
+            "correctIndex": 2,
+            "explanation": "HPL is extremely compute-intensive, pushing GPUs to maximum power consumption. Thermal or power limits cause the GPU to reduce clock speeds (throttle), directly reducing FLOPS."
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Some throttling observed. Run gpu-burn to stress test thermal limits separately.",
+          "task": "Run gpu-burn to validate GPU thermal performance under sustained full load.",
+          "expectedCommands": ["gpu-burn"],
+          "hints": [
+            "gpu-burn applies sustained GPU load",
+            "Monitor temperatures during test",
+            "Check for thermal throttling"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "gpu-burn",
+            "pattern": "burn|test"
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "Thermal analysis complete. Check all DCGM stats after the benchmark runs.",
+          "task": "Review final DCGM statistics to document performance analysis.",
+          "expectedCommands": ["dcgmi stats"],
+          "hints": [
+            "dcgmi stats for final data",
+            "Compare to baseline",
+            "Document improvements"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "stats"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "After optimization, HPL achieves 87% of Rpeak. Final verification needed.",
+          "task": "Run nvidia-smi to capture final GPU state for acceptance documentation.",
+          "expectedCommands": ["nvidia-smi"],
+          "hints": [
+            "nvidia-smi for final snapshot",
+            "Document all GPU states",
+            "Include in acceptance report"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "GPU|Power|Temp"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain4-health-inspector",
+      "domain": 4,
+      "title": "The Health Inspector",
+      "difficulty": "intermediate",
+      "narrative": {
+        "hook": "Quarterly GPU health audit is due, and every GPU in the 8-node cluster must pass comprehensive DCGM diagnostics.",
+        "setting": "You are running the quarterly health validation using DCGM (Data Center GPU Manager). Every GPU must pass all diagnostic levels, and you need to set up proper monitoring groups and health watches.",
+        "resolution": "Complete a full DCGM diagnostic sweep across all nodes, set up monitoring groups, and document the health status of every GPU."
+      },
+      "commandFamilies": ["diagnostics", "gpu-monitoring", "infiniband-tools"],
+      "estimatedMinutes": 20,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "Quarterly health audit begins. First, discover all GPUs that DCGM can manage on this node.",
+          "task": "Use DCGM to list all GPU devices available for diagnostics.",
+          "expectedCommands": ["dcgmi discovery -l"],
+          "hints": [
+            "dcgmi discovery -l lists GPUs",
+            "Should show all 8 GPUs",
+            "Note device IDs"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "discovery|-l|list"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "All 8 GPUs discovered. Now check compute capabilities and detailed GPU information.",
+          "task": "Run DCGM discovery in compute mode to see GPU capabilities.",
+          "expectedCommands": ["dcgmi discovery -c"],
+          "hints": [
+            "dcgmi discovery -c for compute info",
+            "Shows CUDA compute capability",
+            "Verifies GPU type"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "discovery|-c|compute"
+          },
+          "quiz": {
+            "question": "What are the three diagnostic levels in DCGM?",
+            "options": [
+              "Basic, Standard, Premium",
+              "Quick (1), Medium (2), Extended (3)",
+              "Hardware, Software, Network",
+              "Level A, Level B, Level C"
+            ],
+            "correctIndex": 1,
+            "explanation": "DCGM provides three diagnostic levels: Quick (level 1) for fast checks, Medium (level 2) for moderate stress tests, and Extended (level 3) for comprehensive hardware validation."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "GPU capabilities confirmed. Start with the quick diagnostic level.",
+          "task": "Run DCGM level 1 (quick) diagnostics on all GPUs.",
+          "expectedCommands": ["dcgmi diag -r 1"],
+          "hints": [
+            "dcgmi diag -r 1 for quick test",
+            "Takes about 30 seconds",
+            "All GPUs should pass"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "diag|-r 1"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "Quick diagnostics pass. Proceed to medium-level stress test.",
+          "task": "Run DCGM level 2 (medium) diagnostics for more thorough testing.",
+          "expectedCommands": ["dcgmi diag -r 2"],
+          "hints": [
+            "dcgmi diag -r 2 for medium test",
+            "Takes several minutes",
+            "Includes memory stress tests"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "diag|-r 2"
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "Medium diagnostics pass. Now run the full extended diagnostic sweep.",
+          "task": "Run DCGM level 3 (extended) diagnostics for comprehensive hardware validation.",
+          "expectedCommands": ["dcgmi diag -r 3"],
+          "hints": [
+            "dcgmi diag -r 3 for full test",
+            "Takes 10-15 minutes",
+            "Tests PCIe, memory, compute"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "diag|-r 3"
+          },
+          "quiz": {
+            "question": "What does DCGM level 3 diagnostics test that level 1 does not?",
+            "options": [
+              "GPU temperature reading",
+              "Extended memory tests, PCIe bandwidth, and sustained compute stress",
+              "Driver version verification",
+              "Network connectivity"
+            ],
+            "correctIndex": 1,
+            "explanation": "Level 3 includes comprehensive tests like targeted stress testing of GPU memory, PCIe bandwidth verification, sustained compute tests, and diagnostic pattern detection that level 1 skips for speed."
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "Extended diagnostics complete. Set up DCGM health monitoring for ongoing checks.",
+          "task": "Configure DCGM health watches for continuous GPU monitoring.",
+          "expectedCommands": ["dcgmi health -c"],
+          "hints": [
+            "dcgmi health -c configures watches",
+            "Enables background monitoring",
+            "Catches issues between audits"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "health|-c|watch"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "Health watches configured. Now create a GPU group for organized monitoring.",
+          "task": "Create a DCGM group for the production GPUs to manage them as a unit.",
+          "expectedCommands": ["dcgmi group -c"],
+          "hints": [
+            "dcgmi group -c creates a group",
+            "Name it descriptively",
+            "Groups organize GPU management"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "group|-c|create"
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Group created. List existing groups to verify it was created correctly.",
+          "task": "List all DCGM groups to verify the new group exists.",
+          "expectedCommands": ["dcgmi group -l"],
+          "hints": [
+            "dcgmi group -l lists all groups",
+            "Should see the new group",
+            "Note the group ID"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "group|-l|list"
+          },
+          "quiz": {
+            "question": "Why use DCGM groups for GPU management?",
+            "options": [
+              "Groups make GPUs run faster",
+              "Groups enable bulk operations like diagnostics, monitoring, and policy on multiple GPUs at once",
+              "DCGM requires groups to function",
+              "Groups reduce GPU memory usage"
+            ],
+            "correctIndex": 1,
+            "explanation": "DCGM groups allow administrators to perform bulk operations like running diagnostics, setting health watches, and applying policies across multiple GPUs simultaneously."
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "Group listed. Add all GPUs to the monitoring group.",
+          "task": "Add GPU devices to the production monitoring group.",
+          "expectedCommands": ["dcgmi group -a"],
+          "hints": [
+            "dcgmi group -a adds GPUs",
+            "Specify group ID and GPU IDs",
+            "Add all 8 GPUs"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "group|-a|add"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "GPUs added to group. Start continuous monitoring for the audit report.",
+          "task": "Start DCGM device monitoring to collect real-time metrics for the audit.",
+          "expectedCommands": ["dcgmi dmon"],
+          "hints": [
+            "dcgmi dmon for live monitoring",
+            "Shows temp, power, utilization",
+            "Capture data for report"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "dmon|monitor"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain4-fabric-pressure",
+      "domain": 4,
+      "title": "Fabric Under Pressure",
+      "difficulty": "advanced",
+      "narrative": {
+        "hook": "The InfiniBand fabric validation tests are failing intermittently on the new 32-node cluster, blocking production deployment.",
+        "setting": "You are the fabric validation engineer for a large cluster deployment. The InfiniBand fabric must pass comprehensive tests including bandwidth, latency, and error-free operation before the cluster can go live.",
+        "resolution": "Identify and resolve cable errors, validate full fabric bandwidth, and certify the InfiniBand fabric for production use."
+      },
+      "commandFamilies": ["infiniband-tools", "diagnostics", "gpu-monitoring"],
+      "estimatedMinutes": 25,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "New 32-node cluster with NDR InfiniBand fabric needs validation before going live.",
+          "task": "Discover all hosts connected to the InfiniBand fabric.",
+          "expectedCommands": ["ibhosts"],
+          "hints": [
+            "ibhosts lists all HCA nodes",
+            "Should show all 32 nodes",
+            "Check for missing entries"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibhosts",
+            "pattern": "host|HCA"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "ibhosts shows all 32 nodes. Verify the switch infrastructure next.",
+          "task": "Discover all InfiniBand switches in the fabric topology.",
+          "expectedCommands": ["ibswitches"],
+          "hints": [
+            "ibswitches lists all switches",
+            "Check switch count matches design",
+            "Note switch GUIDs"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibswitches",
+            "pattern": "switch|Switch"
+          },
+          "quiz": {
+            "question": "What is the typical InfiniBand topology for large GPU clusters?",
+            "options": [
+              "Star topology with one central switch",
+              "Fat-tree topology with leaf and spine switches",
+              "Ring topology connecting all nodes",
+              "Mesh topology with direct connections"
+            ],
+            "correctIndex": 1,
+            "explanation": "Large GPU clusters typically use fat-tree topology with leaf switches (connecting to hosts) and spine switches (connecting leaf switches), providing full bisection bandwidth."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "All switches detected. Map the complete fabric topology.",
+          "task": "Discover the full fabric topology to understand the connection map.",
+          "expectedCommands": ["ibnetdiscover"],
+          "hints": [
+            "ibnetdiscover maps full topology",
+            "Shows connections between nodes and switches",
+            "Verify no missing links"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibnetdiscover",
+            "pattern": "discover|topology"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "Topology mapped. Check for any ports reporting errors across the fabric.",
+          "task": "Check all ports in the fabric for accumulated errors.",
+          "expectedCommands": ["ibporterrors"],
+          "hints": [
+            "ibporterrors scans all ports",
+            "Flags ports with error counters",
+            "Critical for fabric health"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibporterrors",
+            "pattern": "error|port"
+          },
+          "quiz": {
+            "question": "Which port error type is most indicative of a physical cable problem?",
+            "options": [
+              "PortXmitWait (congestion)",
+              "SymbolErrorCounter (signal integrity)",
+              "VL15Dropped (management traffic)",
+              "PortRcvSwitchRelayErrors (routing)"
+            ],
+            "correctIndex": 1,
+            "explanation": "SymbolErrorCounter indicates bit-level signal integrity problems in the physical layer, typically caused by damaged cables, dirty connectors, or failing transceivers."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "A few ports flagged with errors. Run bandwidth tests on suspicious links.",
+          "task": "Run an InfiniBand write bandwidth test between two nodes to validate link performance.",
+          "expectedCommands": ["ib_write_bw"],
+          "hints": [
+            "ib_write_bw tests write bandwidth",
+            "Run server on one end, client on other",
+            "Compare to expected NDR bandwidth"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ib_write_bw",
+            "pattern": "write|bandwidth|bw"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "Write bandwidth test shows good throughput. Now test read bandwidth.",
+          "task": "Run an InfiniBand read bandwidth test to validate bidirectional performance.",
+          "expectedCommands": ["ib_read_bw"],
+          "hints": [
+            "ib_read_bw tests read bandwidth",
+            "Should be similar to write",
+            "Asymmetry indicates issues"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ib_read_bw",
+            "pattern": "read|bandwidth|bw"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "Bandwidth tests pass. Check extended performance counters for deeper analysis.",
+          "task": "Query extended performance counters on a port with elevated errors.",
+          "expectedCommands": ["perfquery -x"],
+          "hints": [
+            "perfquery -x for extended counters",
+            "Shows 64-bit counters",
+            "More accurate than basic counters"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "perfquery",
+            "pattern": "-x|extended"
+          },
+          "quiz": {
+            "question": "What is the difference between ib_write_bw and ib_read_bw tests?",
+            "options": [
+              "They test different cable types",
+              "Write tests RDMA write, read tests RDMA read - testing different DMA engines",
+              "Write is faster than read by design",
+              "They test the same thing from different perspectives"
+            ],
+            "correctIndex": 1,
+            "explanation": "ib_write_bw uses RDMA Write operations while ib_read_bw uses RDMA Read operations. These exercise different DMA engines in the HCA, and asymmetric results can indicate hardware issues."
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Extended counters show one link with elevated error rate. Check all links systematically.",
+          "task": "Check link information across all switch ports to find degraded connections.",
+          "expectedCommands": ["iblinkinfo -l"],
+          "hints": [
+            "iblinkinfo -l shows link details",
+            "Check width and speed for each",
+            "Look for reduced link width"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "iblinkinfo",
+            "pattern": "-l|link|width"
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "One link running at reduced width found. Run comprehensive fabric diagnostics.",
+          "task": "Run the ibdiagnet comprehensive fabric diagnostic tool.",
+          "expectedCommands": ["ibdiagnet"],
+          "hints": [
+            "ibdiagnet runs full fabric test",
+            "Checks topology, errors, routing",
+            "Creates detailed report"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibdiagnet",
+            "pattern": "diag|fabric"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "ibdiagnet identified the problematic cable. Check for any cable-specific error reporting.",
+          "task": "Query cable error information to document the failing cable for replacement.",
+          "expectedCommands": ["ibcableerrors"],
+          "hints": [
+            "ibcableerrors shows cable-specific data",
+            "Document cable location",
+            "Note port and GUID for replacement"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibcableerrors",
+            "pattern": "cable|error"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain4-cluster-certification",
+      "domain": 4,
+      "title": "The Cluster Certification",
+      "difficulty": "advanced",
+      "narrative": {
+        "hook": "The 64-GPU DGX SuperPOD must pass the formal certification checklist before the customer accepts delivery.",
+        "setting": "You are leading the acceptance testing for a major DGX SuperPOD deployment. Every subsystem must be validated: GPUs, NVLink, InfiniBand, storage, and job scheduler. Failure means delayed delivery and penalties.",
+        "resolution": "Systematically validate all cluster subsystems, document test results, and certify the cluster for production AI workloads."
+      },
+      "commandFamilies": [
+        "diagnostics",
+        "gpu-monitoring",
+        "infiniband-tools",
+        "cluster-tools"
+      ],
+      "estimatedMinutes": 30,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "Certification day. Start with comprehensive GPU inventory and health status across all nodes.",
+          "task": "Run detailed GPU query to verify all GPUs are present and reporting correctly.",
+          "expectedCommands": ["nvidia-smi -q"],
+          "hints": [
+            "nvidia-smi -q for detailed info",
+            "Check each GPU's ECC status",
+            "Verify driver and firmware versions"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "-q|query|GPU"
+          },
+          "quiz": {
+            "question": "What is the first thing to verify in a cluster acceptance test?",
+            "options": [
+              "Network bandwidth",
+              "Complete hardware inventory matches the purchase order",
+              "Software version compatibility",
+              "User access permissions"
+            ],
+            "correctIndex": 1,
+            "explanation": "The first step in acceptance testing is verifying that all purchased hardware is present and detected correctly, including GPU count, memory size, and model matching specifications."
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "All 64 GPUs accounted for across 8 nodes. Run comprehensive GPU diagnostics.",
+          "task": "Run DCGM level 3 extended diagnostics on all GPUs to validate hardware health.",
+          "expectedCommands": ["dcgmi diag -r 3"],
+          "hints": [
+            "dcgmi diag -r 3 for full test",
+            "Run on each node",
+            "All tests must pass"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "diag|-r 3"
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "GPU diagnostics pass. Now validate the InfiniBand fabric.",
+          "task": "Run comprehensive InfiniBand fabric diagnostics to validate the network.",
+          "expectedCommands": ["ibdiagnet"],
+          "hints": [
+            "ibdiagnet for full fabric test",
+            "Check for errors and warnings",
+            "Document any issues"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibdiagnet",
+            "pattern": "diag|fabric"
+          },
+          "quiz": {
+            "question": "Why must InfiniBand validation be part of GPU cluster certification?",
+            "options": [
+              "InfiniBand is optional for GPU clusters",
+              "Multi-node GPU training depends entirely on inter-node fabric performance",
+              "It is only needed for non-GPU workloads",
+              "InfiniBand affects GPU clock speeds"
+            ],
+            "correctIndex": 1,
+            "explanation": "Distributed AI training relies on high-bandwidth, low-latency inter-node communication. InfiniBand fabric performance directly determines multi-node scaling efficiency."
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "Fabric diagnostics clean. Verify the Slurm job scheduler sees all resources.",
+          "task": "Check detailed Slurm node information to verify all compute resources are registered.",
+          "expectedCommands": ["sinfo -Nel"],
+          "hints": [
+            "sinfo -Nel for detailed node list",
+            "Verify GPU GRES on each node",
+            "All nodes should be idle"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "sinfo",
+            "pattern": "-N|-l|GRES"
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "Slurm shows all 8 nodes with 8 GPUs each. Verify individual node configuration.",
+          "task": "Check detailed node configuration to verify GRES and feature settings.",
+          "expectedCommands": ["scontrol show node"],
+          "hints": [
+            "scontrol show node shows details",
+            "Verify Gres=gpu:8",
+            "Check Features field"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "scontrol",
+            "pattern": "show node"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "Slurm configuration verified. Run NCCL all-reduce benchmark for multi-node validation.",
+          "task": "Run the NCCL all-reduce performance test across all nodes to validate communication.",
+          "expectedCommands": ["all_reduce_perf"],
+          "hints": [
+            "all_reduce_perf across all nodes",
+            "Check bus bandwidth results",
+            "Must meet acceptance criteria"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "all_reduce_perf",
+            "pattern": "reduce|perf|bandwidth"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "NCCL tests pass. Run sustained GPU stress test for thermal validation.",
+          "task": "Run gpu-burn to verify sustained GPU compute under thermal load.",
+          "expectedCommands": ["gpu-burn"],
+          "hints": [
+            "gpu-burn for sustained stress",
+            "Run for at least 10 minutes",
+            "Monitor for thermal throttling"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "gpu-burn",
+            "pattern": "burn|stress"
+          },
+          "quiz": {
+            "question": "Why is sustained stress testing important for cluster certification?",
+            "options": [
+              "It makes GPUs faster over time",
+              "Thermal and power issues only manifest under sustained full load",
+              "It validates the software installation",
+              "Stress testing is optional for certification"
+            ],
+            "correctIndex": 1,
+            "explanation": "Some hardware issues like thermal throttling, power delivery problems, and marginal components only manifest under sustained full load, making stress testing essential for reliability validation."
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "Stress test complete with no thermal issues. Configure health monitoring for production.",
+          "task": "Set up DCGM health watches for ongoing production monitoring.",
+          "expectedCommands": ["dcgmi health -c"],
+          "hints": [
+            "dcgmi health -c configures watches",
+            "Set for all GPUs",
+            "Enables proactive monitoring"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "dcgmi",
+            "pattern": "health|-c"
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "Health monitoring configured. Final check on InfiniBand port errors after all tests.",
+          "task": "Check InfiniBand port errors one final time after all testing is complete.",
+          "expectedCommands": ["ibporterrors"],
+          "hints": [
+            "ibporterrors after stress tests",
+            "Compare to pre-test baseline",
+            "No new errors expected"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibporterrors",
+            "pattern": "error|port"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "All tests pass. Final NVLink verification for complete documentation.",
+          "task": "Check NVLink status across all GPUs for the final certification report.",
+          "expectedCommands": ["nvidia-smi nvlink -s"],
+          "hints": [
+            "nvidia-smi nvlink -s for status",
+            "All links should be active",
+            "Document for acceptance report"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "nvidia-smi",
+            "pattern": "nvlink|-s|status"
+          }
+        }
+      ]
+    },
+    {
+      "id": "domain5-cable-detective",
+      "domain": 5,
+      "title": "Cable Detective",
+      "difficulty": "advanced",
+      "narrative": {
+        "hook": "Random training failures and link flaps traced to physical layer issues in the InfiniBand fabric, but which cable is the culprit?",
+        "setting": "You are troubleshooting intermittent InfiniBand link failures that are causing distributed training jobs to fail. The fabric has hundreds of cables and you need to identify the specific failing cable and connection.",
+        "resolution": "Systematically trace the failing link through the fabric, identify the degraded cable using diagnostic tools, and validate the replacement."
+      },
+      "commandFamilies": ["infiniband-tools", "diagnostics", "bmc-hardware"],
+      "estimatedMinutes": 25,
+      "steps": [
+        {
+          "id": "step-1",
+          "situation": "InfiniBand link flaps have been reported on the monitoring dashboard. Jobs are failing during multi-node communication phases.",
+          "task": "Check the local InfiniBand port status to see if any ports are experiencing issues.",
+          "expectedCommands": ["ibstat"],
+          "hints": [
+            "ibstat shows port status",
+            "Check State and PhysicalState",
+            "Look for ports not in Active state"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibstat",
+            "pattern": "State|Active|Physical"
+          }
+        },
+        {
+          "id": "step-2",
+          "situation": "ibstat shows all local ports Active but one port keeps flapping. Need to see the full fabric link status.",
+          "task": "Check link information across the entire fabric to identify degraded connections.",
+          "expectedCommands": ["iblinkinfo"],
+          "hints": [
+            "iblinkinfo shows all fabric links",
+            "Look for reduced width or speed",
+            "Note port and GUID of issues"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "iblinkinfo",
+            "pattern": "link|width|speed"
+          },
+          "quiz": {
+            "question": "What are the common types of InfiniBand cables used in datacenter clusters?",
+            "options": [
+              "Cat6 and Cat7 copper cables",
+              "DAC (Direct Attach Copper), AOC (Active Optical), and fiber with transceivers",
+              "Coaxial and twisted pair",
+              "USB-C and Thunderbolt"
+            ],
+            "correctIndex": 1,
+            "explanation": "Datacenter InfiniBand uses DAC for short runs (up to 3m), AOC for medium distances, and fiber optic cables with separate transceivers for longer runs. Each has different failure modes."
+          }
+        },
+        {
+          "id": "step-3",
+          "situation": "iblinkinfo flags a link between dgx-05 port 2 and leaf switch port 15 with intermittent width changes.",
+          "task": "Check cable-specific error information to assess the cable health.",
+          "expectedCommands": ["ibcableerrors"],
+          "hints": [
+            "ibcableerrors shows cable diagnostics",
+            "Focus on the flagged connection",
+            "High errors indicate cable issues"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibcableerrors",
+            "pattern": "cable|error"
+          }
+        },
+        {
+          "id": "step-4",
+          "situation": "Cable errors confirm signal integrity degradation on that link. Need deeper diagnostics.",
+          "task": "Use mlxlink to get detailed physical layer diagnostics on the suspect port.",
+          "expectedCommands": ["mlxlink -d mlx5_0"],
+          "hints": [
+            "mlxlink -d shows link details",
+            "Check eye opening margins",
+            "Look for PHY error counters"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "mlxlink",
+            "pattern": "-d|mlx5|link"
+          },
+          "quiz": {
+            "question": "What does signal integrity mean in the context of InfiniBand cables?",
+            "options": [
+              "The cable is encrypted for security",
+              "The electrical/optical signal quality at the receiver meets minimum thresholds for reliable data transfer",
+              "The cable brand is verified as genuine",
+              "Signal integrity measures cable length accuracy"
+            ],
+            "correctIndex": 1,
+            "explanation": "Signal integrity refers to the quality of the electrical or optical signal at the receiver. Degraded signal integrity causes bit errors, retransmissions, and ultimately link failures."
+          }
+        },
+        {
+          "id": "step-5",
+          "situation": "mlxlink shows degraded eye opening margins on the suspect link. Test basic connectivity.",
+          "task": "Use ibping to test basic InfiniBand connectivity to the switch port.",
+          "expectedCommands": ["ibping"],
+          "hints": [
+            "ibping tests IB connectivity",
+            "Similar to network ping",
+            "Check for dropped packets"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibping",
+            "pattern": "ping|latency"
+          }
+        },
+        {
+          "id": "step-6",
+          "situation": "ibping shows intermittent timeouts. Trace the path through the fabric.",
+          "task": "Trace the InfiniBand route from the affected node to another node to map the path.",
+          "expectedCommands": ["ibtracert"],
+          "hints": [
+            "ibtracert traces IB routes",
+            "Shows switches in the path",
+            "Identify which hop has the issue"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibtracert",
+            "pattern": "trace|route|hop"
+          }
+        },
+        {
+          "id": "step-7",
+          "situation": "Trace confirms the problematic link. Check Subnet Manager status to ensure routing is stable.",
+          "task": "Verify the Subnet Manager is healthy and check for any routing issues.",
+          "expectedCommands": ["sminfo"],
+          "hints": [
+            "sminfo shows SM status",
+            "Verify SM is master",
+            "Check for SM failover events"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "sminfo",
+            "pattern": "SM|master|state"
+          },
+          "quiz": {
+            "question": "What happens when the InfiniBand Subnet Manager fails over?",
+            "options": [
+              "All connections are permanently lost",
+              "A standby SM takes over and reconfigures routing tables",
+              "GPUs stop working",
+              "Manual intervention is always required"
+            ],
+            "correctIndex": 1,
+            "explanation": "InfiniBand supports SM redundancy. When the master SM fails, a standby SM takes over, reconfiguring LID assignments and routing tables. This causes a brief disruption but restores fabric operation."
+          }
+        },
+        {
+          "id": "step-8",
+          "situation": "SM is stable. Verify the OFED driver stack version for compatibility information.",
+          "task": "Check the installed OFED (OpenFabrics Enterprise Distribution) version.",
+          "expectedCommands": ["ofed_info"],
+          "hints": [
+            "ofed_info shows OFED version",
+            "Important for compatibility",
+            "Document for support ticket"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ofed_info",
+            "pattern": "OFED|version|MLNX"
+          }
+        },
+        {
+          "id": "step-9",
+          "situation": "OFED version documented. Check the PCIe details of the HCA for hardware-level issues.",
+          "task": "Verify the HCA PCIe link status to rule out host-side issues.",
+          "expectedCommands": ["lspci -vv"],
+          "hints": [
+            "lspci -vv for detailed PCI info",
+            "Check link speed and width",
+            "Verify PCIe Gen and lanes"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "lspci",
+            "pattern": "ConnectX|Mellanox|Width"
+          }
+        },
+        {
+          "id": "step-10",
+          "situation": "PCIe looks fine. Cable is confirmed as the issue. Run final comprehensive fabric diagnostic.",
+          "task": "Run ibdiagnet one final time to create a complete diagnostic report for the cable replacement.",
+          "expectedCommands": ["ibdiagnet"],
+          "hints": [
+            "ibdiagnet for full report",
+            "Document before cable swap",
+            "Compare after replacement"
+          ],
+          "validation": {
+            "type": "command",
+            "command": "ibdiagnet",
+            "pattern": "diag|report"
+          }
+        }
+      ]
     }
   ]
 }

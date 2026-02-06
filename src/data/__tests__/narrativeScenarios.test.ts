@@ -50,8 +50,8 @@ describe("narrativeScenarios.json", () => {
     expect(Array.isArray(scenarios)).toBe(true);
   });
 
-  it("should have 16 narrative scenarios", () => {
-    expect(scenarios.length).toBe(16);
+  it("should have 28 narrative scenarios", () => {
+    expect(scenarios.length).toBe(28);
   });
 
   it("should cover all 5 domains", () => {
@@ -63,9 +63,9 @@ describe("narrativeScenarios.json", () => {
   });
 
   describe("domain distribution", () => {
-    it("should have 4 scenarios for Domain 1 (Systems & Bring-Up, 31%)", () => {
+    it("should have 7 scenarios for Domain 1 (Systems & Bring-Up, 31%)", () => {
       const domain1 = scenarios.filter((s) => s.domain === 1);
-      expect(domain1.length).toBe(4);
+      expect(domain1.length).toBe(7);
     });
 
     it("should have 2 scenarios for Domain 2 (Physical Layer, 5%)", () => {
@@ -73,19 +73,19 @@ describe("narrativeScenarios.json", () => {
       expect(domain2.length).toBe(2);
     });
 
-    it("should have 3 scenarios for Domain 3 (Control Plane, 19%)", () => {
+    it("should have 6 scenarios for Domain 3 (Control Plane, 19%)", () => {
       const domain3 = scenarios.filter((s) => s.domain === 3);
-      expect(domain3.length).toBe(3);
+      expect(domain3.length).toBe(6);
     });
 
-    it("should have 4 scenarios for Domain 4 (Cluster Test, 33%)", () => {
+    it("should have 9 scenarios for Domain 4 (Cluster Test, 33%)", () => {
       const domain4 = scenarios.filter((s) => s.domain === 4);
-      expect(domain4.length).toBe(4);
+      expect(domain4.length).toBe(9);
     });
 
-    it("should have 3 scenarios for Domain 5 (Troubleshooting, 12%)", () => {
+    it("should have 4 scenarios for Domain 5 (Troubleshooting, 12%)", () => {
       const domain5 = scenarios.filter((s) => s.domain === 5);
-      expect(domain5.length).toBe(3);
+      expect(domain5.length).toBe(4);
     });
   });
 
