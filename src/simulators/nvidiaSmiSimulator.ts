@@ -1361,14 +1361,25 @@ export class NvidiaSmiSimulator extends BaseSimulator {
     }
 
     if (this.hasAnyFlag(parsed, ["m", "matrix"])) {
+      // Determine NVLink count based on system type
+      // In DGX systems with NVSwitch, all GPU pairs connect uniformly
+      const systemType = node.systemType || "H100";
+      let nvLinkLabel: string;
+      if (systemType.includes("B200") || systemType.includes("GB200")) {
+        nvLinkLabel = "NV72"; // Blackwell NVLink count
+      } else if (systemType.includes("H100") || systemType.includes("H200")) {
+        nvLinkLabel = "NV18"; // Hopper NVLink count
+      } else {
+        nvLinkLabel = "NV12"; // A100 default
+      }
+
       let output =
         "\tGPU0\tGPU1\tGPU2\tGPU3\tGPU4\tGPU5\tGPU6\tGPU7\tmlx5_0\tmlx5_1\tCPU Affinity\tNUMA Affinity\n";
       node.gpus.forEach((_gpu, i) => {
         output += `GPU${i}\t`;
         for (let j = 0; j < 8; j++) {
           if (i === j) output += " X\t";
-          else if (Math.abs(i - j) <= 1) output += "NV12\t";
-          else output += "NV6\t";
+          else output += `${nvLinkLabel}\t`;
         }
         output += "SYS\tSYS\t0-63\t0\n";
       });

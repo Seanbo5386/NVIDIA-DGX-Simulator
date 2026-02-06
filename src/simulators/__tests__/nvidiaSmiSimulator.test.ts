@@ -340,6 +340,37 @@ describe("NvidiaSmiSimulator", () => {
     });
   });
 
+  describe("Topology Matrix", () => {
+    it("should show uniform NVLink count for DGX NVSwitch topology", () => {
+      const parsed = parse("nvidia-smi topo -m");
+      const result = simulator.execute(parsed, context);
+
+      expect(result.exitCode).toBe(0);
+      // In a DGX H100 with NVSwitch, all GPU pairs should show NV18
+      const lines = result.output
+        .split("\n")
+        .filter((l) => l.startsWith("GPU"));
+      for (const line of lines) {
+        // Should NOT contain "NV6" for a full NVSwitch system
+        expect(line).not.toContain("NV6");
+        // Should contain NV18 for H100
+        expect(line).toContain("NV18");
+      }
+    });
+
+    it("should show X for self-connections", () => {
+      const parsed = parse("nvidia-smi topo -m");
+      const result = simulator.execute(parsed, context);
+
+      const lines = result.output
+        .split("\n")
+        .filter((l) => l.startsWith("GPU"));
+      // GPU0 line should have X in position 0, GPU1 line should have X in position 1, etc.
+      expect(lines[0]).toMatch(/GPU0\s+X/);
+      expect(lines[1]).toMatch(/GPU1\s+NV18\s+X/);
+    });
+  });
+
   describe("Bug Fixes: Driver Version, Architecture, and Memory", () => {
     it("should show numeric driver version in -q output, not GPU name", () => {
       const parsed = parse("nvidia-smi -q");
