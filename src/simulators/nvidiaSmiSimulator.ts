@@ -687,8 +687,14 @@ export class NvidiaSmiSimulator extends BaseSimulator {
         return `${Math.round(gpu.powerLimit)} W`;
       case "power.min_limit":
         return `${Math.round(gpu.powerLimit * 0.5)} W`;
-      case "power.max_limit":
-        return `${Math.round(gpu.powerLimit * 1.1)} W`;
+      case "power.max_limit": {
+        // SXM form factor: max = TDP. PCIe: allow slight headroom.
+        const isSXMQuery = gpu.type?.includes("SXM") || false;
+        const maxLimitQuery = isSXMQuery
+          ? gpu.powerLimit
+          : gpu.powerLimit * 1.05;
+        return `${Math.round(maxLimitQuery)} W`;
+      }
       case "power.management":
         return "Supported";
       case "enforced.power.limit":
@@ -990,7 +996,9 @@ export class NvidiaSmiSimulator extends BaseSimulator {
     const powerDraw = Math.round(gpu.powerDraw);
     const powerLimit = Math.round(gpu.powerLimit);
     const minLimit = Math.round(gpu.powerLimit * 0.5);
-    const maxLimit = Math.round(gpu.powerLimit * 1.1);
+    // SXM form factor: max = TDP. PCIe: allow slight headroom.
+    const isSXM = gpu.type?.includes("SXM") || false;
+    const maxLimit = isSXM ? powerLimit : Math.round(gpu.powerLimit * 1.05);
     let output = `    GPU Power Readings\n`;
     output += `        Power Management                  : Supported\n`;
     output += `        Power Draw                        : ${powerDraw}.00 W\n`;

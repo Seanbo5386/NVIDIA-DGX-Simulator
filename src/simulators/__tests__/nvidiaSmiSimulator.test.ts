@@ -413,6 +413,21 @@ describe("NvidiaSmiSimulator", () => {
       );
     });
 
+    it("should not exceed hardware TDP for max power limit on SXM GPUs", () => {
+      const parsed = parse("nvidia-smi -q");
+      const result = simulator.execute(parsed, context);
+
+      expect(result.exitCode).toBe(0);
+      // H100 SXM max power = 700W, should NOT show 770W (which was 700 * 1.1)
+      expect(result.output).not.toContain("770");
+      const lines = result.output.split("\n");
+      const maxPowerLine = lines.find((l) => l.includes("Max Power Limit"));
+      if (maxPowerLine) {
+        const value = parseFloat(maxPowerLine.match(/(\d+\.?\d*)/)?.[1] || "0");
+        expect(value).toBeLessThanOrEqual(700);
+      }
+    });
+
     it("should display memory in MiB without dividing by 1024 in default view", () => {
       const parsed = parse("nvidia-smi");
       const result = simulator.execute(parsed, context);
