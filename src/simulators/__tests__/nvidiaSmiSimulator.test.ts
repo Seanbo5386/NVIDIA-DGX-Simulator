@@ -313,9 +313,13 @@ describe("NvidiaSmiSimulator", () => {
 
   describe("CommandDefinitionRegistry Integration", () => {
     it("should have definition registry initialized after construction", async () => {
-      // Wait for async initialization
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      expect(simulator["definitionRegistry"]).not.toBeNull();
+      // Wait for async initialization (lazy-loaded JSON imports may take longer)
+      await vi.waitFor(
+        () => {
+          expect(simulator["definitionRegistry"]).not.toBeNull();
+        },
+        { timeout: 5000 },
+      );
     });
 
     it("should validate flags using registry", () => {
@@ -328,7 +332,13 @@ describe("NvidiaSmiSimulator", () => {
 
   describe("Help from JSON definitions", () => {
     it("nvidia-smi --help should return registry-based help", async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Wait for lazy-loaded JSON definitions to be available
+      await vi.waitFor(
+        () => {
+          expect(simulator["definitionRegistry"]).not.toBeNull();
+        },
+        { timeout: 5000 },
+      );
 
       const parsed = parse("nvidia-smi --help");
       const result = simulator.execute(parsed, context);

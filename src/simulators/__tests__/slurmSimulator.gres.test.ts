@@ -120,7 +120,15 @@ describe("SlurmSimulator GRES", () => {
       expect(result.output).toContain("Submitted batch job");
     });
 
-    it("should show GRES help in sbatch --help", () => {
+    it("should show GRES help in sbatch --help", async () => {
+      // Wait for lazy-loaded JSON definitions to be available
+      await vi.waitFor(
+        () => {
+          expect(simulator["definitionRegistry"]).not.toBeNull();
+        },
+        { timeout: 5000 },
+      );
+
       const result = simulator.executeSbatch(parse("sbatch --help"), context);
       // Registry-based help shows examples with --gpus or --gres
       // The output should contain GPU-related content

@@ -1,15 +1,16 @@
 import type { CommandDefinition, CommandCategory } from "./types";
 
-// Import all JSON files from data/output using Vite's glob import
+// Import all JSON files from data/output using Vite's lazy glob import
+// This avoids bundling all 150+ JSON files into the main chunk (~3.7MB)
 const commandModules = import.meta.glob("../data/output/**/*.json", {
-  eager: true,
+  eager: false,
 });
 
 /**
  * Loads command definitions from JSON files in src/data/output/
  *
- * This loader uses Vite's glob import to statically include all JSON files
- * at build time, avoiding runtime file system access.
+ * This loader uses Vite's lazy glob import to dynamically load JSON files
+ * on demand, reducing the initial bundle size.
  */
 export class CommandDefinitionLoader {
   private definitions: Map<string, CommandDefinition> = new Map();
@@ -33,16 +34,26 @@ export class CommandDefinitionLoader {
       return this.definitions;
     }
 
-    for (const [path, module] of Object.entries(commandModules)) {
-      // Skip schema.json and state_domains.json
-      if (path.includes("schema.json") || path.includes("state_domains.json")) {
-        continue;
-      }
+    const entries = Object.entries(commandModules);
+    const results = await Promise.all(
+      entries
+        .filter(
+          ([path]) =>
+            !path.includes("schema.json") &&
+            !path.includes("state_domains.json"),
+        )
+        .map(async ([, importFn]) => {
+          const module = await (
+            importFn as () => Promise<{ default?: CommandDefinition }>
+          )();
+          return (
+            (module as { default?: CommandDefinition }).default ||
+            (module as unknown as CommandDefinition)
+          );
+        }),
+    );
 
-      const def =
-        (module as { default?: CommandDefinition }).default ||
-        (module as CommandDefinition);
-
+    for (const def of results) {
       if (def && typeof def === "object" && "command" in def) {
         this.definitions.set(def.command, def);
       }

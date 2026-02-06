@@ -28,6 +28,13 @@ export class CommandDefinitionRegistry {
   }
 
   /**
+   * Whether the registry has finished loading definitions
+   */
+  get isInitialized(): boolean {
+    return this.initialized;
+  }
+
+  /**
    * Initialize the registry by loading all command definitions
    */
   async initialize(): Promise<void> {
@@ -47,6 +54,11 @@ export class CommandDefinitionRegistry {
    * Validate a flag for a command
    */
   validateFlag(command: string, flag: string): ValidationResult {
+    if (!this.initialized) {
+      // Registry not yet loaded; skip validation rather than rejecting valid flags
+      return { valid: true };
+    }
+
     const def = this.getDefinitionSync(command);
     if (!def) {
       return { valid: false, suggestions: [] };
@@ -69,6 +81,11 @@ export class CommandDefinitionRegistry {
    * Validate a subcommand for a command
    */
   validateSubcommand(command: string, subcommand: string): ValidationResult {
+    if (!this.initialized) {
+      // Registry not yet loaded; skip validation rather than rejecting valid subcommands
+      return { valid: true };
+    }
+
     const def = this.getDefinitionSync(command);
     if (!def || !def.subcommands) {
       return { valid: false, suggestions: [] };
@@ -330,13 +347,20 @@ export class CommandDefinitionRegistry {
   }
 }
 
-// Singleton
+// Singleton with proper async initialization guard
 let registryInstance: CommandDefinitionRegistry | null = null;
+let registryPromise: Promise<CommandDefinitionRegistry> | null = null;
 
 export async function getCommandDefinitionRegistry(): Promise<CommandDefinitionRegistry> {
-  if (!registryInstance) {
-    registryInstance = new CommandDefinitionRegistry();
-    await registryInstance.initialize();
+  if (registryInstance?.isInitialized) {
+    return registryInstance;
   }
-  return registryInstance;
+  if (!registryPromise) {
+    registryPromise = (async () => {
+      registryInstance = new CommandDefinitionRegistry();
+      await registryInstance.initialize();
+      return registryInstance;
+    })();
+  }
+  return registryPromise;
 }

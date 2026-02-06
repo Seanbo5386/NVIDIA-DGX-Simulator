@@ -163,15 +163,24 @@ describe("InfiniBandSimulator", () => {
 
   describe("CommandDefinitionRegistry Integration", () => {
     it("should have definition registry initialized after construction", async () => {
-      // Wait for async initialization
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      expect(simulator["definitionRegistry"]).not.toBeNull();
+      // Wait for async initialization (lazy-loaded JSON imports may take longer)
+      await vi.waitFor(
+        () => {
+          expect(simulator["definitionRegistry"]).not.toBeNull();
+        },
+        { timeout: 5000 },
+      );
     });
   });
 
   describe("Help from JSON definitions", () => {
     it("ibstat --help should return registry-based help", async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await vi.waitFor(
+        () => {
+          expect(simulator["definitionRegistry"]).not.toBeNull();
+        },
+        { timeout: 5000 },
+      );
 
       const parsed = parse("ibstat --help");
       const result = simulator.executeIbstat(parsed, context);
@@ -181,7 +190,12 @@ describe("InfiniBandSimulator", () => {
     });
 
     it("ibportstate --help should return help", async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await vi.waitFor(
+        () => {
+          expect(simulator["definitionRegistry"]).not.toBeNull();
+        },
+        { timeout: 5000 },
+      );
 
       const parsed = parse("ibportstate --help");
       const result = simulator.executeIbportstate(parsed, context);
@@ -191,7 +205,12 @@ describe("InfiniBandSimulator", () => {
     });
 
     it("ibporterrors --help should return help", async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await vi.waitFor(
+        () => {
+          expect(simulator["definitionRegistry"]).not.toBeNull();
+        },
+        { timeout: 5000 },
+      );
 
       const parsed = parse("ibporterrors --help");
       const result = simulator.executeIbporterrors(parsed, context);
@@ -201,7 +220,12 @@ describe("InfiniBandSimulator", () => {
     });
 
     it("iblinkinfo --help should return help", async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await vi.waitFor(
+        () => {
+          expect(simulator["definitionRegistry"]).not.toBeNull();
+        },
+        { timeout: 5000 },
+      );
 
       const parsed = parse("iblinkinfo --help");
       const result = simulator.executeIblinkinfo(parsed, context);
@@ -211,7 +235,12 @@ describe("InfiniBandSimulator", () => {
     });
 
     it("perfquery --help should return help", async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await vi.waitFor(
+        () => {
+          expect(simulator["definitionRegistry"]).not.toBeNull();
+        },
+        { timeout: 5000 },
+      );
 
       const parsed = parse("perfquery --help");
       const result = simulator.executePerfquery(parsed, context);
@@ -221,7 +250,12 @@ describe("InfiniBandSimulator", () => {
     });
 
     it("ibdiagnet --help should return help", async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await vi.waitFor(
+        () => {
+          expect(simulator["definitionRegistry"]).not.toBeNull();
+        },
+        { timeout: 5000 },
+      );
 
       const parsed = parse("ibdiagnet --help");
       const result = simulator.executeIbdiagnet(parsed, context);
@@ -231,7 +265,12 @@ describe("InfiniBandSimulator", () => {
     });
 
     it("ibnetdiscover --help should return help", async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await vi.waitFor(
+        () => {
+          expect(simulator["definitionRegistry"]).not.toBeNull();
+        },
+        { timeout: 5000 },
+      );
 
       const parsed = parse("ibnetdiscover --help");
       const result = simulator.executeIbnetdiscover(parsed, context);
@@ -241,7 +280,12 @@ describe("InfiniBandSimulator", () => {
     });
 
     it("ibdev2netdev --help should return help", async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await vi.waitFor(
+        () => {
+          expect(simulator["definitionRegistry"]).not.toBeNull();
+        },
+        { timeout: 5000 },
+      );
 
       const parsed = parse("ibdev2netdev --help");
       const result = simulator.executeIbdev2netdev(parsed, context);

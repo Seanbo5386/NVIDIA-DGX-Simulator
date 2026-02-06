@@ -1088,6 +1088,7 @@ export class SlurmSimulator extends BaseSimulator {
         if (!currentJob || currentJob.state !== "PENDING") return;
 
         const state = useSimulationStore.getState();
+        if (!state?.cluster?.nodes) return;
         const nodes = state.cluster.nodes;
         const availableNode = nodes.find((n) => n.slurmState === "idle");
 
