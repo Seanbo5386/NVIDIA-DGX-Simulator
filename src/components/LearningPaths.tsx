@@ -21,12 +21,10 @@ import {
 } from "../utils/learningPathEngine";
 import { DOMAINS, type DomainId } from "@/types/scenarios";
 import { useLearningStore } from "@/store/learningStore";
-import { useLearningProgressStore } from "@/store/learningProgressStore";
 import { useDebouncedStorage } from "@/hooks/useDebouncedStorage";
 import { CommandFamilyCards } from "./CommandFamilyCards";
 import { WhichToolQuiz } from "./WhichToolQuiz";
 import { ExamGauntlet } from "./ExamGauntlet";
-import { ProgressRing } from "./ProgressRing";
 import { DomainProgressCards } from "./DomainProgressCards";
 import { OverallProgressDashboard } from "./OverallProgressDashboard";
 
