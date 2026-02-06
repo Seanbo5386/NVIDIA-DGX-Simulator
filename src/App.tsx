@@ -234,10 +234,16 @@ function App() {
 
       {/* Navigation */}
       <nav
+        role="tablist"
+        aria-label="Main navigation"
         className={`bg-gray-800 border-b border-gray-700 px-6 transition-all duration-300 ${showLabWorkspace ? "ml-[600px]" : ""}`}
       >
         <div className="flex gap-1">
           <button
+            role="tab"
+            id="tab-simulator"
+            aria-selected={currentView === "simulator"}
+            aria-controls="panel-simulator"
             onClick={() => setCurrentView("simulator")}
             className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
               currentView === "simulator"
@@ -249,6 +255,10 @@ function App() {
             <span className="font-medium">Simulator</span>
           </button>
           <button
+            role="tab"
+            id="tab-labs"
+            aria-selected={currentView === "labs"}
+            aria-controls="panel-labs"
             data-testid="nav-labs"
             onClick={() => setCurrentView("labs")}
             className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors relative ${
@@ -261,20 +271,25 @@ function App() {
             <span className="font-medium">Labs & Scenarios</span>
             {/* Review Notification Badge */}
             {dueReviewCount > 0 && (
-              <button
+              <span
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowSpacedReviewDrill(true);
                 }}
-                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-full transition-colors shadow-md"
+                role="status"
+                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-full transition-colors shadow-md cursor-pointer"
                 title={`${dueReviewCount} review${dueReviewCount > 1 ? "s" : ""} due`}
                 aria-label={`${dueReviewCount} reviews due. Click to start review drill.`}
               >
                 {dueReviewCount > 9 ? "9+" : dueReviewCount}
-              </button>
+              </span>
             )}
           </button>
           <button
+            role="tab"
+            id="tab-reference"
+            aria-selected={currentView === "reference"}
+            aria-controls="panel-reference"
             onClick={() => setCurrentView("reference")}
             className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
               currentView === "reference"
@@ -286,6 +301,10 @@ function App() {
             <span className="font-medium">Reference</span>
           </button>
           <button
+            role="tab"
+            id="tab-state"
+            aria-selected={currentView === "state"}
+            aria-controls="panel-state"
             onClick={() => setCurrentView("state")}
             className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
               currentView === "state"
@@ -302,6 +321,8 @@ function App() {
       {/* Main Content */}
       <main
         id="main-content"
+        role="tabpanel"
+        aria-labelledby={`tab-${currentView}`}
         className={`flex-1 h-0 flex flex-col overflow-hidden transition-all duration-300 ${showLabWorkspace ? "ml-[600px]" : ""}`}
       >
         {currentView === "simulator" && (
