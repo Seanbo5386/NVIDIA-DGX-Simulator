@@ -492,10 +492,10 @@ export const useSimulationStore = create<SimulationState>()(
             examId,
             startTime: Date.now(),
             timeRemaining: 90 * 60, // 90 minutes in seconds
-            answers: new Map(),
+            answers: {},
             currentQuestionIndex: 0,
-            flaggedQuestions: new Set(),
-            answeredQuestions: new Set(),
+            flaggedQuestions: [],
+            answeredQuestions: [],
             submitted: false,
           };
         }),
@@ -503,8 +503,10 @@ export const useSimulationStore = create<SimulationState>()(
       submitExamAnswer: (questionId, answer) =>
         set((state) => {
           if (!state.activeExam) return;
-          state.activeExam.answers.set(questionId, answer);
-          state.activeExam.answeredQuestions.add(questionId);
+          state.activeExam.answers[questionId] = answer;
+          if (!state.activeExam.answeredQuestions.includes(questionId)) {
+            state.activeExam.answeredQuestions.push(questionId);
+          }
         }),
 
       endExam: () => {

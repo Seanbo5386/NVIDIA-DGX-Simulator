@@ -319,12 +319,12 @@ export interface ExamState {
   timeRemaining: number; // seconds
 
   // User answers (questionId -> answer)
-  answers: Map<string, number | number[] | string>;
+  answers: Record<string, number | number[] | string>;
 
   // Question navigation state
   currentQuestionIndex: number;
-  flaggedQuestions: Set<string>;
-  answeredQuestions: Set<string>;
+  flaggedQuestions: string[];
+  answeredQuestions: string[];
 
   // Results (after submission)
   submitted: boolean;
