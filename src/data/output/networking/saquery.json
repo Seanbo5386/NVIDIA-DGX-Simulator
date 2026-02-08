@@ -1,0 +1,163 @@
+{
+  "command": "saquery",
+  "category": "networking",
+  "description": "Query InfiniBand Subnet Administrator for fabric information. Performs SA queries to retrieve node, path, and service records. Essential for fabric debugging and path analysis.",
+  "synopsis": "saquery [options] [query_type]",
+  "version_documented": "OFED/rdma-core 30+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/saquery.8.html"],
+  "installation": {
+    "package": "infiniband-diags",
+    "notes": "Install via: apt install infiniband-diags or yum install infiniband-diags"
+  },
+  "global_options": [
+    {
+      "short": "-C",
+      "long": "--Ca",
+      "description": "Use specified CA name",
+      "arguments": "<ca_name>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-P",
+      "long": "--Port",
+      "description": "Use specified CA port",
+      "arguments": "<port>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-N",
+      "long": "--node-name-map",
+      "description": "Use node name map file",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-g",
+      "long": "--sgid",
+      "description": "Query source GID",
+      "arguments": "<gid>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-D",
+      "long": "--dgid",
+      "description": "Query destination GID",
+      "arguments": "<gid>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-L",
+      "long": "--lid",
+      "description": "Query by LID",
+      "arguments": "<lid>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-p",
+      "long": "--pkey",
+      "description": "Query P_Key",
+      "arguments": "<pkey>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error or no records found"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Query all node records",
+      "command": "saquery -N",
+      "output_example": "NodeRecord dump:\n        lid.....................1\n        base_version............1\n        class_version...........2\n        type....................Channel Adapter\n        num_ports...............2\n        node_guid...............0x0002c903001f8c30",
+      "requires_root": false
+    },
+    {
+      "description": "Query path between two nodes",
+      "command": "saquery PR -D 0xfe80::2c90:300:1f8c:30 -g 0xfe80::2c90:300:1f8c:32",
+      "requires_root": false
+    },
+    {
+      "description": "Query by LID",
+      "command": "saquery -L 10",
+      "requires_root": false
+    },
+    {
+      "description": "Query service records",
+      "command": "saquery SR",
+      "requires_root": false
+    },
+    {
+      "description": "Query multicast groups",
+      "command": "saquery MR",
+      "requires_root": false
+    },
+    {
+      "description": "Query link records",
+      "command": "saquery LR",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "SA query failed",
+      "meaning": "Cannot communicate with Subnet Administrator",
+      "resolution": "Verify SM is running and responsive"
+    },
+    {
+      "message": "No records found",
+      "meaning": "Query returned empty result set",
+      "resolution": "Check query parameters and fabric state"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["smpquery", "sminfo", "ibhosts", "ibnetdiscover"],
+    "notes": "SA (Subnet Administrator) is a component of the SM that maintains fabric database. saquery retrieves various record types: NR (Node), PR (Path), SR (Service), MR (Multicast), LR (Link)."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for queries",
+    "write_operations": "N/A - read-only command",
+    "notes": "Queries SA database maintained by SM"
+  },
+  "limitations": [
+    "Requires active Subnet Manager",
+    "Output can be verbose",
+    "Path records depend on SM routing"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["guid", "lid"],
+        "description": "Queries fabric topology from SA database"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Fabric topology change",
+        "effect": "Query results reflect new topology"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ibnetdiscover",
+        "shared_state": "Node and link information matches"
+      },
+      {
+        "command": "ibhosts",
+        "shared_state": "Host GUIDs consistent"
+      }
+    ]
+  }
+}

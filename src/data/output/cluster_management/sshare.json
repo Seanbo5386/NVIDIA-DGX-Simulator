@@ -1,0 +1,187 @@
+{
+  "command": "sshare",
+  "category": "cluster_management",
+  "description": "View fair-share information for accounts and users in Slurm. Shows current usage, allocated shares, and fair-share factors that affect job scheduling priority. Essential for understanding resource allocation fairness.",
+  "synopsis": "sshare [OPTIONS]",
+  "version_documented": "Slurm 23.02+",
+  "source_urls": ["https://slurm.schedmd.com/sshare.html"],
+  "installation": {
+    "package": "slurm-client",
+    "notes": "Part of Slurm workload manager client utilities."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Show all users and accounts (not just those with associations)"
+    },
+    {
+      "short": "-A",
+      "long": "--accounts",
+      "description": "Show specific accounts",
+      "arguments": "<account_list>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-l",
+      "long": "--long",
+      "description": "Show more detailed information"
+    },
+    {
+      "short": "-m",
+      "long": "--partition",
+      "description": "Show fair-share for specific partition",
+      "arguments": "<partition>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-n",
+      "long": "--noheader",
+      "description": "Do not print header line"
+    },
+    {
+      "short": "-o",
+      "long": "--format",
+      "description": "Specify output format",
+      "arguments": "<format>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-p",
+      "long": "--parsable",
+      "description": "Output in parsable format with | delimiters"
+    },
+    {
+      "short": "-P",
+      "long": "--parsable2",
+      "description": "Output in parsable format without trailing |"
+    },
+    {
+      "short": "-u",
+      "long": "--users",
+      "description": "Show specific users",
+      "arguments": "<user_list>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-U",
+      "long": "--Users",
+      "description": "Show users only (no account totals)"
+    },
+    {
+      "short": "-M",
+      "long": "--clusters",
+      "description": "Clusters to query",
+      "arguments": "<cluster_list>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show fair-share for all users",
+      "command": "sshare -a",
+      "output_example": "             Account       User  RawShares  NormShares    RawUsage  EffectvUsage  FairShare\n-------------------- ---------- ---------- -----------  ---------- ------------- ----------\nroot                                           1.000000           0      0.000000   1.000000\n physics                              100    0.333333     1234567      0.250000   0.583333\n  physics              user1        50    0.166667      567890      0.115000   0.644348\n  physics              user2        50    0.166667      666677      0.135000   0.618519\n chemistry                            100    0.333333      987654      0.200000   0.633333",
+      "requires_root": false
+    },
+    {
+      "description": "Show my fair-share information",
+      "command": "sshare -u $USER",
+      "requires_root": false
+    },
+    {
+      "description": "Show fair-share for specific account",
+      "command": "sshare -A physics",
+      "requires_root": false
+    },
+    {
+      "description": "Show detailed fair-share with long format",
+      "command": "sshare -a -l",
+      "requires_root": false
+    },
+    {
+      "description": "Parsable output for scripting",
+      "command": "sshare -P -u $USER",
+      "requires_root": false
+    },
+    {
+      "description": "Show fair-share for partition",
+      "command": "sshare -a -m gpu",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No associations found",
+      "meaning": "User or account has no Slurm associations",
+      "resolution": "User must be associated with an account via sacctmgr"
+    },
+    {
+      "message": "Accounting storage not configured",
+      "meaning": "Slurm accounting not enabled",
+      "resolution": "sshare requires AccountingStorageType in slurm.conf"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["sprio", "sacctmgr", "sacct", "sreport"],
+    "notes": "Fair-share tracks historical resource usage to prioritize users/accounts who have used less than their allocated share. FairShare value of 1.0 means at expected usage, <0.5 means under-utilized (higher priority), >0.5 means over-utilized (lower priority)."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "N/A - read-only command",
+    "notes": "All users can view fair-share information"
+  },
+  "limitations": [
+    "Requires Slurm accounting to be configured",
+    "Fair-share calculation depends on configured decay period",
+    "Historical data may not be immediately available after configuration changes"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "job_state",
+        "fields": ["user", "account"],
+        "description": "Usage data from completed jobs affects fair-share"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Job completion",
+        "effect": "RawUsage increases for user/account"
+      },
+      {
+        "state_change": "Time passes (decay)",
+        "effect": "Historical usage decays, improving fair-share"
+      },
+      {
+        "state_change": "Share allocation change",
+        "effect": "NormShares and fair-share recalculated"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "sprio",
+        "shared_state": "FAIRSHARE factor in sprio derived from sshare FairShare"
+      },
+      {
+        "command": "sacctmgr show assoc",
+        "shared_state": "Account shares and associations"
+      }
+    ]
+  }
+}

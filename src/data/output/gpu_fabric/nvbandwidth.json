@@ -1,0 +1,185 @@
+{
+  "command": "nvbandwidth",
+  "category": "gpu_fabric",
+  "description": "NVIDIA bandwidth measurement tool for testing GPU-to-GPU and GPU-to-Host memory bandwidth via NVLink, PCIe, and other interconnects. Provides detailed bandwidth measurements for various memory copy operations including peer-to-peer transfers.",
+  "synopsis": "nvbandwidth [options]",
+  "version_documented": "nvbandwidth 0.2+",
+  "source_urls": ["https://github.com/NVIDIA/nvbandwidth"],
+  "installation": {
+    "package": "nvbandwidth",
+    "notes": "Available from NVIDIA GitHub. Build with CMake: cmake -B build && cmake --build build. Requires CUDA toolkit."
+  },
+  "global_options": [
+    {
+      "short": "-l",
+      "long": "--list",
+      "description": "List all available tests"
+    },
+    {
+      "short": "-t",
+      "long": "--testcase",
+      "description": "Run specific test case(s)",
+      "arguments": "<test_id>",
+      "argument_type": "string",
+      "example": "-t 1,2,3"
+    },
+    {
+      "short": "-d",
+      "long": "--device",
+      "description": "Specify GPU devices to test",
+      "arguments": "<device_list>",
+      "argument_type": "string",
+      "example": "-d 0,1"
+    },
+    {
+      "short": "-s",
+      "long": "--size",
+      "description": "Buffer size in bytes",
+      "arguments": "<size>",
+      "argument_type": "integer",
+      "default": "64MB"
+    },
+    {
+      "short": "-n",
+      "long": "--iterations",
+      "description": "Number of iterations",
+      "arguments": "<num>",
+      "argument_type": "integer",
+      "default": "20"
+    },
+    {
+      "long": "--csv",
+      "description": "Output in CSV format"
+    },
+    {
+      "long": "--json",
+      "description": "Output in JSON format"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run all bandwidth tests",
+      "command": "nvbandwidth",
+      "output_example": "nvbandwidth Version: 0.2\nBuilt from Git revision: abc1234\n\nCUDA Runtime Version: 12.2\nCUDA Driver Version: 12.2\nDriver Version: 535.129.03\n\nDevice 0: NVIDIA A100-SXM4-80GB (UUID: GPU-12345...)\nDevice 1: NVIDIA A100-SXM4-80GB (UUID: GPU-67890...)\n...\n\nRunning host_to_device_memcpy_ce:\nmemcpy CE CPU(row) -> GPU(column) bandwidth (GB/s)\n          0         1         2         3\n0     26.17     25.89     24.12     24.05\n1     25.92     26.08     24.18     24.01\n\nRunning device_to_device_memcpy_read_ce:\nmemcpy CE GPU(row) <- GPU(column) bandwidth (GB/s)\n          0         1         2         3\n0    1558.2    252.89    252.45    252.12\n1    252.78   1560.1    252.34    252.01\n2    252.45    252.12   1562.3    252.67\n3    252.01    252.89    252.45   1559.8",
+      "requires_root": false
+    },
+    {
+      "description": "List available tests",
+      "command": "nvbandwidth -l",
+      "output_example": "Available testcases:\n0: host_to_device_memcpy_ce\n1: device_to_host_memcpy_ce\n2: host_to_device_bidirectional_memcpy_ce\n3: device_to_host_bidirectional_memcpy_ce\n4: device_to_device_memcpy_read_ce\n5: device_to_device_memcpy_write_ce\n6: device_to_device_bidirectional_memcpy_read_ce\n7: device_to_device_bidirectional_memcpy_write_ce\n8: all_to_host_memcpy_ce\n9: all_to_one_memcpy_ce\n10: one_to_all_memcpy_ce\n11: host_to_device_memcpy_sm\n12: device_to_host_memcpy_sm\n13: device_to_device_memcpy_read_sm\n14: device_to_device_memcpy_write_sm",
+      "requires_root": false
+    },
+    {
+      "description": "Run specific test case",
+      "command": "nvbandwidth -t 4",
+      "requires_root": false
+    },
+    {
+      "description": "Test specific GPU pair",
+      "command": "nvbandwidth -t 4 -d 0,1",
+      "requires_root": false
+    },
+    {
+      "description": "Output in JSON format",
+      "command": "nvbandwidth --json",
+      "requires_root": false
+    },
+    {
+      "description": "Run with larger buffer",
+      "command": "nvbandwidth -s 268435456",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "CUDA error: no CUDA-capable device",
+      "meaning": "No GPU detected or driver not loaded",
+      "resolution": "Check nvidia-smi and driver status"
+    },
+    {
+      "message": "Peer access not supported",
+      "meaning": "Direct GPU-to-GPU access not available",
+      "resolution": "Check nvidia-smi topo -m for peer access capability"
+    },
+    {
+      "message": "nvbandwidth: command not found",
+      "meaning": "nvbandwidth not installed",
+      "resolution": "Build from source or install from package"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "bandwidthTest",
+      "p2pBandwidthLatencyTest",
+      "nvidia-smi topo -m",
+      "dcgmi nvlink"
+    ],
+    "notes": "nvbandwidth provides comprehensive bandwidth testing for multi-GPU systems. Tests cover various copy engine (CE) and streaming multiprocessor (SM) copy methods. Useful for validating NVLink bandwidth in DGX and HGX systems."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for basic operation",
+    "write_operations": "N/A - benchmark tool",
+    "notes": "Peer access may require appropriate CUDA IPC permissions"
+  },
+  "limitations": [
+    "Requires multiple GPUs for peer-to-peer tests",
+    "Results may vary with system load",
+    "NVLink bandwidth depends on topology",
+    "Does not test sustained bandwidth under real workloads"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "gpu_id",
+          "memory_total",
+          "pcie_link_gen_current",
+          "pcie_link_width_current"
+        ],
+        "description": "Uses GPU memory for bandwidth testing"
+      },
+      {
+        "state_domain": "fabric_state",
+        "fields": ["nvlink_version", "links"],
+        "description": "Tests NVLink bandwidth between GPUs"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "NVLink link failure",
+        "effect": "Peer bandwidth degrades or fails"
+      },
+      {
+        "state_change": "GPU throttling",
+        "effect": "Reduced bandwidth measurements"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi topo -m",
+        "shared_state": "GPU topology determines expected peer bandwidth"
+      },
+      {
+        "command": "p2pBandwidthLatencyTest",
+        "shared_state": "Peer-to-peer bandwidth should be similar"
+      }
+    ]
+  }
+}

@@ -1,0 +1,360 @@
+{
+  "command": "ib_write_lat",
+  "category": "rdma_perf",
+  "description": "RDMA write latency benchmark for InfiniBand performance testing. ib_write_lat measures the round-trip latency of RDMA write operations between two nodes connected via InfiniBand or RoCE networks. It operates in a client-server model where the server listens for incoming connections and the client initiates the test. The tool sends messages of specified sizes and measures the time for each round-trip, reporting minimum, maximum, average, median, and percentile latency values. It supports various message sizes, iteration counts, and advanced features like GPUDirect RDMA for direct GPU memory transfers. It is part of the perftest suite and is commonly used for validating InfiniBand fabric latency, troubleshooting network issues, and benchmarking latency-sensitive RDMA applications.",
+  "synopsis": "ib_write_lat [options] [server_hostname]",
+  "version_documented": "perftest 4.5+",
+  "source_urls": ["https://github.com/linux-rdma/perftest"],
+  "installation": {
+    "package": "perftest",
+    "notes": "On RHEL/CentOS: yum install perftest. On Ubuntu/Debian: apt install perftest. Requires RDMA-capable hardware (InfiniBand HCA or RoCE NIC) and properly configured RDMA stack (rdma-core, libibverbs)."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--ib-dev",
+      "description": "Specify the InfiniBand device to use for the test.",
+      "arguments": "DEVICE",
+      "argument_type": "string",
+      "default": "First available IB device",
+      "example": "-d mlx5_0"
+    },
+    {
+      "short": "-i",
+      "long": "--ib-port",
+      "description": "Specify the port number on the InfiniBand device to use.",
+      "arguments": "PORT",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "-i 1"
+    },
+    {
+      "short": "-s",
+      "long": "--size",
+      "description": "Set the message size in bytes for the latency test.",
+      "arguments": "SIZE",
+      "argument_type": "integer",
+      "default": "2",
+      "example": "-s 64"
+    },
+    {
+      "short": "-n",
+      "long": "--iters",
+      "description": "Number of iterations (exchanges) to perform in the test.",
+      "arguments": "ITERS",
+      "argument_type": "integer",
+      "default": "1000",
+      "example": "-n 5000"
+    },
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Run test with all message sizes from 2 bytes to 2^23 bytes (power of 2 increments). Overrides -s option.",
+      "example": "-a"
+    },
+    {
+      "short": "-p",
+      "long": "--port",
+      "description": "TCP port number for initial connection exchange between client and server.",
+      "arguments": "PORT",
+      "argument_type": "integer",
+      "default": "18515",
+      "example": "-p 20000"
+    },
+    {
+      "short": "-m",
+      "long": "--mtu",
+      "description": "Set the MTU size for the test (256, 512, 1024, 2048, 4096).",
+      "arguments": "MTU",
+      "argument_type": "integer",
+      "default": "Active MTU from device",
+      "example": "-m 4096"
+    },
+    {
+      "short": "-R",
+      "long": "--rdma_cm",
+      "description": "Use RDMA Connection Manager (rdma_cm) for connection establishment instead of default socket-based exchange.",
+      "example": "-R"
+    },
+    {
+      "long": "--use_cuda",
+      "description": "Use CUDA GPU memory for RDMA operations (GPUDirect RDMA). Requires NVIDIA GPU with GPUDirect support.",
+      "arguments": "GPU_INDEX",
+      "argument_type": "integer",
+      "example": "--use_cuda 0"
+    },
+    {
+      "long": "--use_rocm",
+      "description": "Use ROCm GPU memory for RDMA operations (GPUDirect RDMA). Requires AMD GPU with ROCm support.",
+      "arguments": "GPU_INDEX",
+      "argument_type": "integer",
+      "example": "--use_rocm 0"
+    },
+    {
+      "short": "-c",
+      "long": "--connection",
+      "description": "Connection type: RC (Reliable Connection), UC (Unreliable Connection), or UD (Unreliable Datagram).",
+      "arguments": "TYPE",
+      "argument_type": "string",
+      "default": "RC",
+      "example": "-c RC"
+    },
+    {
+      "short": "-I",
+      "long": "--inline_size",
+      "description": "Set the maximum inline data size in bytes. Inline sends can reduce latency for small messages.",
+      "arguments": "SIZE",
+      "argument_type": "integer",
+      "default": "Device maximum",
+      "example": "-I 64"
+    },
+    {
+      "short": "-F",
+      "long": "--CPU-freq",
+      "description": "Do not show CPU frequency warning message.",
+      "example": "-F"
+    },
+    {
+      "long": "--poll",
+      "description": "Use polling mode for completion instead of event-driven. Provides lowest latency but consumes CPU.",
+      "example": "--poll"
+    },
+    {
+      "short": "-U",
+      "long": "--unsolicited",
+      "description": "Use unsolicited write operations (RDMA write without signaling completion).",
+      "example": "-U"
+    },
+    {
+      "long": "--latency_gap",
+      "description": "Delay in microseconds between consecutive latency iterations to prevent queuing effects.",
+      "arguments": "USEC",
+      "argument_type": "integer",
+      "example": "--latency_gap 100"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help message with all available options."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version information."
+    }
+  ],
+  "output_formats": {
+    "default": "Tabular format showing message size (bytes), iterations, and latency statistics including t_min, t_max, t_avg (average), and percentiles (50th, 75th, 99th, 99.9th) in microseconds.",
+    "all_sizes": "When using -a flag, shows a table with latency results for each power-of-2 message size from 2 bytes to 8MB."
+  },
+  "environment_variables": [
+    {
+      "name": "CUDA_VISIBLE_DEVICES",
+      "description": "Controls which NVIDIA GPUs are visible for GPUDirect RDMA testing.",
+      "example": "CUDA_VISIBLE_DEVICES=0,1",
+      "affects_command": "Limits which GPUs can be used with --use_cuda option."
+    },
+    {
+      "name": "MLX5_SCATTER_TO_CQE",
+      "description": "Controls scatter-to-CQE feature for Mellanox/NVIDIA HCAs.",
+      "example": "MLX5_SCATTER_TO_CQE=1",
+      "affects_command": "Can significantly improve small message latency when enabled."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - test completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - test failed due to connection issues, invalid parameters, or RDMA errors"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Start server mode waiting for client connection",
+      "command": "ib_write_lat",
+      "output_example": "************************************\n* Waiting for client to connect... *\n************************************",
+      "requires_root": false
+    },
+    {
+      "description": "Run client connecting to server and perform latency test",
+      "command": "ib_write_lat server-hostname",
+      "output_example": "---------------------------------------------------------------------------------------\n                    RDMA_Write Latency Test\n Dual-port       : OFF\t\tDevice         : mlx5_0\n Number of qps   : 1\t\tTransport type : IB\n Connection type : RC\t\tUsing SRQ      : OFF\n CQ Moderation   : 1\n Mtu             : 4096[B]\n Link type       : IB\n Max inline data : 220[B]\n rdma_cm QPs     : OFF\n Data ex. method : Ethernet\n---------------------------------------------------------------------------------------\n local address: LID 0x01 QPN 0x0107 PSN 0x123456\n remote address: LID 0x02 QPN 0x0108 PSN 0x654321\n---------------------------------------------------------------------------------------\n #bytes        #iterations      t_min[usec]     t_max[usec]     t_avg[usec]     t_stdev[usec]   99%% tile[usec]\n 2             1000             0.89            2.45            0.92            0.05            1.12",
+      "requires_root": false
+    },
+    {
+      "description": "Test latency across all message sizes from 2 bytes to 8MB",
+      "command": "ib_write_lat -a server-hostname",
+      "output_example": " #bytes        #iterations      t_min[usec]     t_max[usec]     t_avg[usec]     t_stdev[usec]   99%% tile[usec]\n 2             1000             0.89            2.45            0.92            0.05            1.12\n 4             1000             0.90            2.51            0.93            0.06            1.15\n ...\n 65536         1000             3.21            8.45            3.45            0.12            4.56",
+      "requires_root": false
+    },
+    {
+      "description": "Run latency test with specific message size (64 bytes)",
+      "command": "ib_write_lat -s 64 server-hostname",
+      "requires_root": false
+    },
+    {
+      "description": "Run latency test with more iterations for statistical accuracy",
+      "command": "ib_write_lat -n 10000 server-hostname",
+      "requires_root": false
+    },
+    {
+      "description": "Run GPUDirect RDMA latency test using NVIDIA GPU 0 (server side)",
+      "command": "ib_write_lat --use_cuda 0",
+      "requires_root": false
+    },
+    {
+      "description": "Run GPUDirect RDMA latency test using NVIDIA GPU 0 (client side)",
+      "command": "ib_write_lat --use_cuda 0 server-hostname",
+      "requires_root": false
+    },
+    {
+      "description": "Use specific InfiniBand device and port",
+      "command": "ib_write_lat -d mlx5_1 -i 1 server-hostname",
+      "requires_root": false
+    },
+    {
+      "description": "Use custom TCP port for connection exchange",
+      "command": "ib_write_lat -p 20000 server-hostname",
+      "requires_root": false
+    },
+    {
+      "description": "Use RDMA Connection Manager for connection",
+      "command": "ib_write_lat -R server-hostname",
+      "requires_root": false
+    },
+    {
+      "description": "Test with latency gap to prevent queuing effects",
+      "command": "ib_write_lat --latency_gap 100 server-hostname",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Unable to find any InfiniBand devices",
+      "meaning": "No RDMA-capable network devices were found in the system",
+      "resolution": "Verify InfiniBand or RoCE hardware is installed with 'lspci | grep -i mellanox'. Check if RDMA drivers are loaded with 'lsmod | grep mlx'. Ensure rdma-core packages are installed."
+    },
+    {
+      "message": "Couldn't connect to hostname:port",
+      "meaning": "Failed to establish TCP connection with the server for initial handshake",
+      "resolution": "Verify the server is running ib_write_lat in server mode. Check network connectivity and firewall rules. Ensure the port (default 18515) is not blocked."
+    },
+    {
+      "message": "Failed to create QP",
+      "meaning": "Could not create the RDMA Queue Pair required for the test",
+      "resolution": "Check system resource limits (ulimit -l for locked memory). Verify the RDMA device is functioning with ibstat. May need to increase max_qp limits."
+    },
+    {
+      "message": "Failed to register memory",
+      "meaning": "Could not register memory region for RDMA operations",
+      "resolution": "Increase locked memory limit with 'ulimit -l unlimited' or configure /etc/security/limits.conf. For large message sizes, ensure sufficient memory is available."
+    },
+    {
+      "message": "CUDA initialization failed",
+      "meaning": "Failed to initialize CUDA for GPUDirect RDMA testing",
+      "resolution": "Verify NVIDIA drivers are installed and GPU is accessible. Check CUDA_VISIBLE_DEVICES environment variable. Ensure nvidia-peermem module is loaded for GPUDirect support."
+    },
+    {
+      "message": "ibv_post_send failed",
+      "meaning": "Failed to post RDMA write request to the send queue",
+      "resolution": "May indicate network issues or incorrect QP state. Check link status with ibstat. Verify no errors on the port with perfquery."
+    },
+    {
+      "message": "Poll CQ timeout",
+      "meaning": "Timeout waiting for completion of RDMA operations",
+      "resolution": "Check network connectivity and link status. Look for errors in dmesg. Verify remote side is responding. May indicate network fabric issues."
+    },
+    {
+      "message": "Conflicting parameters",
+      "meaning": "Incompatible command-line options were specified",
+      "resolution": "Review the options used. For example, -a (all sizes) conflicts with -s (specific size). Check ib_write_lat --help for valid combinations."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "ib_write_bw",
+      "ib_read_lat",
+      "ib_read_bw",
+      "ib_send_lat",
+      "ib_send_bw",
+      "ib_atomic_lat",
+      "ib_atomic_bw",
+      "ibstat",
+      "ibstatus",
+      "perfquery",
+      "mlxlink"
+    ],
+    "uses_library": ["libibverbs", "librdmacm", "libmlx5"],
+    "notes": "ib_write_lat is part of the perftest benchmark suite. It measures RDMA write latency (round-trip time). For bandwidth measurements, use ib_write_bw. For read operations, use ib_read_lat. For send/receive semantics, use ib_send_lat. All perftest tools share similar command-line interfaces and can be used together to characterize different aspects of RDMA performance. Latency tests are particularly sensitive to CPU frequency scaling and system interrupts."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required for basic tests. Any user with access to the RDMA device can run latency tests.",
+    "write_operations": "May require increased locked memory limits (ulimit -l) for large message sizes.",
+    "notes": "GPUDirect RDMA testing may require the nvidia-peermem kernel module loaded. For accurate latency measurements, consider disabling CPU frequency scaling and isolating CPU cores."
+  },
+  "limitations": [
+    "Requires matching perftest version on both client and server for best compatibility",
+    "GPUDirect RDMA requires compatible GPU (NVIDIA with nvidia-peermem or AMD with ROCm)",
+    "Maximum message size is limited by available system memory and RDMA device capabilities",
+    "TCP port must be accessible between client and server for initial connection exchange",
+    "Does not test application-level protocols, only raw RDMA write latency",
+    "Latency measurements are highly sensitive to CPU frequency scaling, interrupt coalescing, and system load",
+    "Results may vary based on NUMA topology; pinning processes to local NUMA nodes is recommended for accurate measurements",
+    "Single-threaded test; measures per-operation latency rather than aggregate throughput"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": [
+          "device",
+          "port",
+          "state",
+          "link_speed",
+          "link_width",
+          "mtu",
+          "lid",
+          "gid"
+        ],
+        "description": "Reads InfiniBand device and port configuration to establish RDMA connections and determine link capabilities"
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["device_index", "memory", "pcie_info"],
+        "description": "When using GPUDirect RDMA (--use_cuda or --use_rocm), reads GPU device information and allocates GPU memory for RDMA transfers"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "InfiniBand link state changes",
+        "effect": "Test will fail if link goes down during execution"
+      },
+      {
+        "state_change": "GPU memory pressure",
+        "effect": "GPUDirect tests may fail if GPU memory cannot be allocated"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ib_write_bw",
+        "shared_state": "Uses same RDMA device and connection parameters; measures bandwidth instead of latency for RDMA write operations"
+      },
+      {
+        "command": "ib_read_lat",
+        "shared_state": "Uses same RDMA device and connection parameters; tests RDMA read latency instead of write latency"
+      },
+      {
+        "command": "ib_send_lat",
+        "shared_state": "Uses same RDMA device; tests send/receive latency instead of RDMA write semantics"
+      },
+      {
+        "command": "ibstat",
+        "shared_state": "Reports the same device and port state that ib_write_lat uses for connections"
+      }
+    ]
+  }
+}

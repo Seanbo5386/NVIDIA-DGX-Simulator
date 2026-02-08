@@ -1,0 +1,389 @@
+{
+  "command": "ps",
+  "category": "monitoring",
+  "description": "Report a snapshot of current processes. The ps command displays information about active processes on the system. Unlike top, ps provides a static snapshot rather than a continuous display, making it ideal for scripting and automation. Part of the procps-ng package, ps reads process information from the /proc filesystem and supports both BSD and UNIX style options. It is fundamental for process monitoring, job tracking, and system administration on HPC clusters.",
+  "synopsis": "ps [options]",
+  "version_documented": "procps-ng 3.3.17+",
+  "source_urls": [
+    "https://man7.org/linux/man-pages/man1/ps.1.html",
+    "https://gitlab.com/procps-ng/procps"
+  ],
+  "installation": {
+    "package": "procps-ng",
+    "notes": "Part of the procps-ng package (or procps on older systems) which is installed by default on virtually all Linux distributions. Provides process monitoring utilities including ps, top, free, and uptime."
+  },
+  "global_options": [
+    {
+      "flag": "aux",
+      "description": "BSD-style option combination: show all processes (a), show user-oriented format with username (u), and include processes without controlling terminals (x). This is the most common way to list all processes on a system.",
+      "example": "ps aux"
+    },
+    {
+      "short": "-e",
+      "description": "Select all processes. Identical to -A. UNIX style option to display every process on the system.",
+      "example": "ps -e"
+    },
+    {
+      "short": "-f",
+      "description": "Full-format listing. Displays UID, PID, PPID, C, STIME, TTY, TIME, and CMD columns.",
+      "example": "ps -ef"
+    },
+    {
+      "short": "-o",
+      "long": "--format",
+      "description": "User-defined format. Specify output columns using comma-separated field names. Allows customization of displayed information.",
+      "arguments": "<format>",
+      "argument_type": "string",
+      "example": "ps -o pid,user,%cpu,%mem,comm"
+    },
+    {
+      "long": "--forest",
+      "description": "Display process hierarchy in ASCII art tree format. Shows parent-child relationships between processes using indentation and branch characters.",
+      "example": "ps --forest"
+    },
+    {
+      "short": "-p",
+      "long": "--pid",
+      "description": "Select by process ID. Only show processes with the specified PID(s). Can accept multiple PIDs separated by commas.",
+      "arguments": "<pidlist>",
+      "argument_type": "string",
+      "example": "ps -p 1234,5678"
+    },
+    {
+      "short": "-u",
+      "long": "--user",
+      "description": "Select by effective user ID or name. Shows processes belonging to the specified user(s).",
+      "arguments": "<userlist>",
+      "argument_type": "string",
+      "example": "ps -u root,slurmuser"
+    },
+    {
+      "short": "-U",
+      "long": "--User",
+      "description": "Select by real user ID or name. Unlike -u, this selects by real UID rather than effective UID.",
+      "arguments": "<userlist>",
+      "argument_type": "string",
+      "example": "ps -U admin"
+    },
+    {
+      "short": "-C",
+      "description": "Select by command name. Shows processes matching the specified command name (not the full path).",
+      "arguments": "<cmdlist>",
+      "argument_type": "string",
+      "example": "ps -C python,bash"
+    },
+    {
+      "short": "-g",
+      "long": "--group",
+      "description": "Select by session OR effective group name. Depending on context, filters by session leader or group.",
+      "arguments": "<grplist>",
+      "argument_type": "string",
+      "example": "ps -g developers"
+    },
+    {
+      "short": "-t",
+      "long": "--tty",
+      "description": "Select by tty. Shows processes associated with the specified terminal(s).",
+      "arguments": "<ttylist>",
+      "argument_type": "string",
+      "example": "ps -t pts/0"
+    },
+    {
+      "long": "--sort",
+      "description": "Specify sorting order. Use + for ascending (default), - for descending. Multiple keys separated by commas.",
+      "arguments": "<spec>",
+      "argument_type": "string",
+      "example": "ps aux --sort=-%mem"
+    },
+    {
+      "short": "-L",
+      "description": "Show threads, possibly with LWP (light weight process) and NLWP (number of threads) columns.",
+      "example": "ps -eLf"
+    },
+    {
+      "short": "-H",
+      "description": "Show process hierarchy (forest). Alternative to --forest for showing parent-child relationships.",
+      "example": "ps -eH"
+    },
+    {
+      "long": "--headers",
+      "description": "Repeat header lines, one per page of output. Useful for long process listings.",
+      "example": "ps aux --headers"
+    },
+    {
+      "long": "--no-headers",
+      "description": "Print no header line at all. Useful for scripting when parsing output.",
+      "example": "ps --no-headers -eo pid,comm"
+    },
+    {
+      "short": "-w",
+      "description": "Wide output. Use twice for unlimited width. Prevents truncation of command lines.",
+      "example": "ps auxww"
+    },
+    {
+      "long": "--width",
+      "description": "Set screen width. Overrides detected terminal width.",
+      "arguments": "<num>",
+      "argument_type": "integer",
+      "example": "ps aux --width 200"
+    },
+    {
+      "short": "-A",
+      "description": "Select all processes. Identical to -e.",
+      "example": "ps -A"
+    },
+    {
+      "long": "--help",
+      "description": "Display help message and exit. Shows usage information for different option categories.",
+      "example": "ps --help all"
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version information and exit.",
+      "example": "ps --version"
+    }
+  ],
+  "output_formats": {
+    "standard": "Default process listing with basic columns: PID, TTY, TIME, CMD.",
+    "full": "Full-format listing (-f) with: UID, PID, PPID, C, STIME, TTY, TIME, CMD.",
+    "user": "User-oriented format (u) with: USER, PID, %CPU, %MEM, VSZ, RSS, TTY, STAT, START, TIME, COMMAND.",
+    "custom": "User-defined format (-o) allows selecting specific columns from available fields."
+  },
+  "environment_variables": [
+    {
+      "name": "PS_PERSONALITY",
+      "description": "Set to one of posix, old, linux, bsd, sun, digital to control default behavior.",
+      "affects_command": "Changes default option interpretation and output format."
+    },
+    {
+      "name": "COLUMNS",
+      "description": "Override detected terminal width.",
+      "affects_command": "Controls output width when not using -w or --width options."
+    },
+    {
+      "name": "LINES",
+      "description": "Override detected terminal height.",
+      "affects_command": "Affects header repetition with --headers option."
+    },
+    {
+      "name": "PS_FORMAT",
+      "description": "Default output format specification.",
+      "affects_command": "Used as default format when -o is not specified.",
+      "example": "pid,user,args"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - general failure, invalid option, or other error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "List all processes with user-oriented format (most common usage)",
+      "command": "ps aux",
+      "output_example": "USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nroot         1  0.0  0.0 169836 13244 ?        Ss   Jan15   0:12 /usr/lib/systemd/systemd\nroot         2  0.0  0.0      0     0 ?        S    Jan15   0:00 [kthreadd]\nuser1    12345 45.2  2.5 26624512 13107200 ?   Sl   10:30 123:45 python train.py\nuser2    23456 32.1  1.6 19088384 8493056 ?    Sl   09:15  98:12 ./cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "List all processes with full format (UNIX style)",
+      "command": "ps -ef",
+      "output_example": "UID        PID  PPID  C STIME TTY          TIME CMD\nroot         1     0  0 Jan15 ?        00:00:12 /usr/lib/systemd/systemd\nroot         2     0  0 Jan15 ?        00:00:00 [kthreadd]\nuser1    12345  1234 45 10:30 ?        02:03:45 python train.py",
+      "requires_root": false
+    },
+    {
+      "description": "Find specific processes by name using grep",
+      "command": "ps aux | grep python",
+      "requires_root": false
+    },
+    {
+      "description": "Custom output format showing specific fields",
+      "command": "ps -eo pid,user,%cpu,%mem,rss,comm --sort=-%cpu | head -10",
+      "output_example": "  PID USER     %CPU %MEM   RSS COMMAND\n12345 user1    45.2  2.5 13107200 python\n23456 user2    32.1  1.6 8493056 cuda_app\n34567 user3    15.3  0.8 4194304 mpirun",
+      "requires_root": false
+    },
+    {
+      "description": "Show process tree (parent-child relationships)",
+      "command": "ps -ef --forest",
+      "output_example": "UID        PID  PPID  C STIME TTY          TIME CMD\nroot         1     0  0 Jan15 ?        00:00:12 /usr/lib/systemd/systemd\nroot       456     1  0 Jan15 ?        00:00:05  \\_ /usr/lib/systemd/systemd-journald\nroot       789     1  0 Jan15 ?        00:00:02  \\_ /usr/sbin/sshd -D\nuser1    12345   789  0 10:30 ?        00:00:00      \\_ sshd: user1@pts/0\nuser1    12346 12345  0 10:30 pts/0    00:00:01          \\_ -bash",
+      "requires_root": false
+    },
+    {
+      "description": "Show all processes for a specific user",
+      "command": "ps -u slurmuser -f",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor specific process by PID",
+      "command": "ps -p 12345 -o pid,ppid,user,%cpu,%mem,etime,comm",
+      "output_example": "  PID  PPID USER     %CPU %MEM     ELAPSED COMMAND\n12345  1234 user1    45.2  2.5    02:15:30 python",
+      "requires_root": false
+    },
+    {
+      "description": "List processes sorted by memory usage (descending)",
+      "command": "ps aux --sort=-%mem | head -20",
+      "requires_root": false
+    },
+    {
+      "description": "Show all threads for all processes",
+      "command": "ps -eLf",
+      "requires_root": false
+    },
+    {
+      "description": "Get PIDs only for scripting (no headers)",
+      "command": "ps --no-headers -C python -o pid",
+      "output_example": "12345\n23456\n34567",
+      "requires_root": false
+    },
+    {
+      "description": "Show processes with full command line (no truncation)",
+      "command": "ps auxww",
+      "requires_root": false
+    },
+    {
+      "description": "List zombie processes",
+      "command": "ps aux | awk '$8 ~ /Z/ { print }'",
+      "requires_root": false
+    },
+    {
+      "description": "Show processes with specific parent PID",
+      "command": "ps --ppid 1234 -o pid,ppid,comm",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "error: unsupported option (BSD syntax)",
+      "meaning": "Mixed BSD and UNIX style options incorrectly, or used an invalid BSD option",
+      "resolution": "Use consistent option style. BSD options have no dash (ps aux), UNIX options have dash (ps -ef). Do not mix styles inappropriately."
+    },
+    {
+      "message": "error: list of process IDs must follow -p",
+      "meaning": "The -p option was specified without providing process IDs",
+      "resolution": "Provide one or more PIDs after -p, e.g., 'ps -p 1234' or 'ps -p 1234,5678'."
+    },
+    {
+      "message": "error: user name does not exist",
+      "meaning": "The specified username in -u or -U option was not found on the system",
+      "resolution": "Verify the username exists using 'id username' or 'getent passwd username'."
+    },
+    {
+      "message": "error: Unknown output format option",
+      "meaning": "Invalid field name specified in -o format string",
+      "resolution": "Check available format specifiers with 'ps L' or 'ps --help output'. Common fields: pid, user, %cpu, %mem, comm, args."
+    },
+    {
+      "message": "error: can not find a terminal",
+      "meaning": "Terminal specified with -t option does not exist",
+      "resolution": "Verify terminal exists with 'ls /dev/pts/' or use -e to show all processes instead."
+    },
+    {
+      "message": "error: process ID list syntax error",
+      "meaning": "Invalid PID format in process list",
+      "resolution": "PIDs must be numeric and comma-separated without spaces, e.g., '1234,5678,9012'."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "top",
+      "htop",
+      "pgrep",
+      "pkill",
+      "kill",
+      "pidof",
+      "pstree",
+      "nvidia-smi",
+      "free",
+      "vmstat",
+      "uptime"
+    ],
+    "uses_library": [],
+    "notes": "The ps command is fundamental for process inspection and is often used in combination with grep to find specific processes. Use pgrep for more efficient process searching by name. On HPC systems, ps is essential for verifying job processes and debugging workload issues. For GPU workloads, combine with nvidia-smi to correlate CPU processes with GPU utilization. The output of ps is commonly piped to awk, sort, or other text processing tools for analysis."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required. All users can view their own processes. Non-root users can see basic information about other users' processes but some details may be hidden.",
+    "write_operations": "ps is a read-only command and does not modify system state. Use kill or pkill to terminate processes.",
+    "notes": "In some restricted environments with hidepid mount option on /proc, non-root users may only see their own processes."
+  },
+  "limitations": [
+    "Provides only a point-in-time snapshot; for continuous monitoring use top or htop",
+    "CPU percentage represents usage since process start, not current instant (unlike top)",
+    "Command line may be truncated without -w or --width options",
+    "Cannot directly show GPU process information; use nvidia-smi for GPU workloads",
+    "BSD and UNIX option styles can be confusing and mixing them may cause errors",
+    "Process information may change between reading and displaying",
+    "On systems with many processes, output can be very long; consider using filters or head/tail"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "process_list",
+          "process_pid",
+          "process_ppid",
+          "process_user",
+          "process_uid",
+          "process_gid",
+          "process_state",
+          "process_priority",
+          "process_nice",
+          "process_cpu_percent",
+          "process_memory_percent",
+          "process_virtual_memory",
+          "process_resident_memory",
+          "process_shared_memory",
+          "process_start_time",
+          "process_cpu_time",
+          "process_command",
+          "process_args",
+          "process_tty",
+          "process_threads"
+        ],
+        "description": "Reads process information from /proc filesystem including process identifiers, ownership, resource usage, state, and command details for all or selected processes."
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Process creation/termination",
+        "effect": "Newly created processes appear in output; terminated processes are no longer listed."
+      },
+      {
+        "state_change": "Process state changes",
+        "effect": "Process state column (STAT) reflects current state (running, sleeping, stopped, zombie, etc.)."
+      },
+      {
+        "state_change": "Resource usage changes",
+        "effect": "CPU and memory usage columns reflect accumulated/current resource consumption."
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "top",
+        "shared_state": "Process information (PID, user, CPU, memory, command) is derived from the same /proc data."
+      },
+      {
+        "command": "htop",
+        "shared_state": "Process listing and statistics are consistent as both read from /proc filesystem."
+      },
+      {
+        "command": "pgrep",
+        "shared_state": "Process selection by name matches ps -C output for the same command names."
+      },
+      {
+        "command": "pstree",
+        "shared_state": "Process hierarchy shown by ps --forest matches pstree output."
+      },
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU processes shown by nvidia-smi correspond to processes visible in ps output."
+      }
+    ]
+  }
+}

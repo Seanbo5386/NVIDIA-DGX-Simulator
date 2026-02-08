@@ -1,0 +1,203 @@
+{
+  "command": "uname",
+  "category": "system_info",
+  "description": "Print system information including kernel name, version, machine architecture, and operating system. The uname command retrieves and displays fundamental system identification information from the kernel. It is commonly used in scripts to determine the operating system, kernel version, and hardware architecture for conditional logic and compatibility checks. In HPC environments, uname helps verify kernel versions across cluster nodes and identify architecture-specific optimizations.",
+  "synopsis": "uname [OPTION]...",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": [
+    "https://www.gnu.org/software/coreutils/manual/html_node/uname-invocation.html",
+    "https://man7.org/linux/man-pages/man1/uname.1.html"
+  ],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of GNU coreutils which is installed by default on virtually all Linux distributions. No special hardware or driver requirements."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Print all available system information in the following order: kernel name, nodename, kernel release, kernel version, machine hardware name, processor type, hardware platform, and operating system. Equivalent to combining -s -n -r -v -m -p -i -o.",
+      "example": "uname -a"
+    },
+    {
+      "short": "-s",
+      "long": "--kernel-name",
+      "description": "Print the kernel name (e.g., 'Linux'). This is the default output when no options are specified.",
+      "example": "uname -s"
+    },
+    {
+      "short": "-n",
+      "long": "--nodename",
+      "description": "Print the network node hostname. This is the hostname as known to the kernel, which may differ from the FQDN.",
+      "example": "uname -n"
+    },
+    {
+      "short": "-r",
+      "long": "--kernel-release",
+      "description": "Print the kernel release version (e.g., '5.15.0-91-generic'). Useful for checking kernel compatibility and identifying the running kernel.",
+      "example": "uname -r"
+    },
+    {
+      "short": "-v",
+      "long": "--kernel-version",
+      "description": "Print the kernel version string including build date and configuration (e.g., '#101-Ubuntu SMP Tue Nov 14 13:30:08 UTC 2023').",
+      "example": "uname -v"
+    },
+    {
+      "short": "-m",
+      "long": "--machine",
+      "description": "Print the machine hardware name (e.g., 'x86_64', 'aarch64'). Essential for determining binary compatibility and architecture-specific optimizations.",
+      "example": "uname -m"
+    },
+    {
+      "short": "-p",
+      "long": "--processor",
+      "description": "Print the processor type or 'unknown' if not available. On many Linux systems this returns the same value as -m.",
+      "example": "uname -p"
+    },
+    {
+      "short": "-i",
+      "long": "--hardware-platform",
+      "description": "Print the hardware platform or 'unknown' if not available. On many Linux systems this returns the same value as -m.",
+      "example": "uname -i"
+    },
+    {
+      "short": "-o",
+      "long": "--operating-system",
+      "description": "Print the operating system name (e.g., 'GNU/Linux'). Useful for cross-platform scripts that need to identify the OS type.",
+      "example": "uname -o"
+    },
+    {
+      "long": "--help",
+      "description": "Display help message and exit."
+    },
+    {
+      "long": "--version",
+      "description": "Display version information and exit."
+    }
+  ],
+  "output_formats": {
+    "default": "Plain text output with each requested field separated by spaces. When multiple options are specified, fields appear in the order: kernel name, nodename, release, version, machine, processor, platform, OS."
+  },
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully and printed requested information"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - invalid option or other failure"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Get kernel release version for compatibility checks",
+      "command": "uname -r",
+      "output_example": "5.15.0-91-generic",
+      "requires_root": false
+    },
+    {
+      "description": "Check system architecture for binary compatibility",
+      "command": "uname -m",
+      "output_example": "x86_64",
+      "requires_root": false
+    },
+    {
+      "description": "Display full system information",
+      "command": "uname -a",
+      "output_example": "Linux compute-node01 5.15.0-91-generic #101-Ubuntu SMP Tue Nov 14 13:30:08 UTC 2023 x86_64 x86_64 x86_64 GNU/Linux",
+      "requires_root": false
+    },
+    {
+      "description": "Get hostname for node identification",
+      "command": "uname -n",
+      "output_example": "compute-node01",
+      "requires_root": false
+    },
+    {
+      "description": "Get operating system name",
+      "command": "uname -o",
+      "output_example": "GNU/Linux",
+      "requires_root": false
+    },
+    {
+      "description": "Combine kernel name and release for version string",
+      "command": "uname -sr",
+      "output_example": "Linux 5.15.0-91-generic",
+      "requires_root": false
+    },
+    {
+      "description": "Script conditional based on architecture",
+      "command": "if [ $(uname -m) = 'x86_64' ]; then echo '64-bit system'; fi",
+      "output_example": "64-bit system",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "uname: invalid option -- 'X'",
+      "meaning": "An unrecognized option was provided to uname",
+      "resolution": "Use 'uname --help' to see valid options. Common options are -a, -s, -n, -r, -v, -m, -p, -i, -o."
+    },
+    {
+      "message": "uname: extra operand",
+      "meaning": "uname received unexpected arguments that are not options",
+      "resolution": "uname does not accept non-option arguments. Remove any extra arguments."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "hostname",
+      "hostnamectl",
+      "lsb_release -a",
+      "cat /etc/os-release",
+      "arch",
+      "lscpu",
+      "cat /proc/version"
+    ],
+    "notes": "The 'hostname' command provides more detailed hostname information including FQDN. 'lsb_release' and '/etc/os-release' provide distribution-specific information not available from uname. For detailed CPU architecture, use 'lscpu'. The 'arch' command is equivalent to 'uname -m'."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required. All information is available to non-privileged users.",
+    "notes": "uname reads from kernel-provided interfaces that do not require elevated privileges."
+  },
+  "limitations": [
+    "On some systems, -p and -i options return 'unknown' as the information is not available",
+    "The nodename (-n) may not reflect the fully qualified domain name (FQDN)",
+    "In containerized environments, uname returns the host kernel information, not container-specific values",
+    "Processor and hardware platform fields are often identical to machine hardware name on Linux"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "kernel_name",
+          "kernel_release",
+          "kernel_version",
+          "hostname",
+          "architecture"
+        ],
+        "description": "Reads system identification information directly from the kernel via system calls (uname syscall). Information includes kernel name, version, release string, hostname, and machine architecture."
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "hostname",
+        "shared_state": "Nodename from uname -n matches short hostname from hostname command"
+      },
+      {
+        "command": "cat /proc/version",
+        "shared_state": "Kernel version string contains the same release and version information as uname -r and uname -v"
+      },
+      {
+        "command": "arch",
+        "shared_state": "Output of arch command is identical to uname -m"
+      },
+      {
+        "command": "lscpu",
+        "shared_state": "Architecture field in lscpu matches uname -m output"
+      }
+    ]
+  }
+}

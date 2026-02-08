@@ -1,0 +1,123 @@
+{
+  "command": "mpif90",
+  "category": "mpi",
+  "description": "MPI Fortran compiler wrapper. Compiles Fortran programs with MPI support. Essential for HPC scientific computing applications.",
+  "synopsis": "mpif90 [options] <source_files>",
+  "version_documented": "OpenMPI 4.0+ / MPICH 3.3+",
+  "source_urls": ["https://www.open-mpi.org/doc/current/man1/mpif90.1.php"],
+  "installation": {
+    "package": "openmpi or mpich",
+    "notes": "Install via: apt install openmpi-bin or yum install openmpi"
+  },
+  "global_options": [
+    {
+      "long": "--show",
+      "description": "Show compilation command without executing"
+    },
+    {
+      "long": "--showme:compile",
+      "description": "Show compiler flags"
+    },
+    {
+      "long": "--showme:link",
+      "description": "Show linker flags"
+    },
+    {
+      "short": "-o",
+      "description": "Output file name",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-O",
+      "description": "Optimization level",
+      "arguments": "<level>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-g",
+      "description": "Debug information"
+    },
+    {
+      "short": "-h",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Compilation error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Basic compilation",
+      "command": "mpif90 -o myapp myapp.f90",
+      "requires_root": false
+    },
+    {
+      "description": "With optimization",
+      "command": "mpif90 -O3 -o myapp myapp.f90",
+      "requires_root": false
+    },
+    {
+      "description": "Show wrapped command",
+      "command": "mpif90 --show myapp.f90",
+      "output_example": "gfortran -I/usr/include/openmpi -pthread -L/usr/lib/openmpi -lmpi_mpifh -lmpi myapp.f90",
+      "requires_root": false
+    },
+    {
+      "description": "Debug build",
+      "command": "mpif90 -g -O0 -o myapp myapp.f90",
+      "requires_root": false
+    },
+    {
+      "description": "Multiple source files",
+      "command": "mpif90 -O3 -o solver main.f90 solver.f90 utils.f90",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "module mpi not found",
+      "meaning": "MPI module not accessible",
+      "resolution": "Check MPI installation and module path"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["mpicc", "mpicxx", "mpiexec", "ompi_info"],
+    "notes": "Wrapper around Fortran compiler (gfortran, ifort). Adds MPI include paths and libraries. Use 'use mpi' or 'include mpif.h' in Fortran code."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "Creates executable",
+    "notes": "Standard user permissions"
+  },
+  "limitations": [
+    "Depends on underlying Fortran compiler",
+    "MPI implementation specific",
+    "Module environment may be needed"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Creates compiled executables",
+        "requires_privilege": "user"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "mpicc",
+        "shared_state": "Same MPI library used"
+      }
+    ]
+  }
+}

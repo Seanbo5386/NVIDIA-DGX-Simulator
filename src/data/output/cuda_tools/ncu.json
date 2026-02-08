@@ -1,0 +1,510 @@
+{
+  "command": "ncu",
+  "category": "cuda_tools",
+  "description": "NVIDIA Nsight Compute (ncu) is an interactive kernel profiler for CUDA applications. It provides detailed performance metrics and analysis for GPU kernels, enabling developers to understand compute, memory, and instruction-level performance characteristics. The tool supports roofline analysis, source correlation, and comparison between baseline and optimized implementations.",
+  "synopsis": "ncu [options] [application] [application-arguments]",
+  "version_documented": "2024.1+",
+  "source_urls": [
+    "https://docs.nvidia.com/nsight-compute/NsightComputeCli/index.html",
+    "https://developer.nvidia.com/nsight-compute"
+  ],
+  "installation": {
+    "package": "nsight-compute",
+    "notes": "Installed as part of CUDA Toolkit (11.0+) or as a standalone package. Available on Linux and Windows. Requires CUDA driver compatible with the CUDA Toolkit version."
+  },
+  "global_options": [
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help information for ncu"
+    },
+    {
+      "long": "--version",
+      "description": "Display version information"
+    },
+    {
+      "short": "-o",
+      "long": "--export",
+      "description": "Export profiling results to a file. The file extension determines format (.ncu-rep for reports)",
+      "arguments": "FILENAME",
+      "argument_type": "path",
+      "example": "ncu -o profile_report ./my_cuda_app"
+    },
+    {
+      "short": "-i",
+      "long": "--import",
+      "description": "Import and display a previously saved report file",
+      "arguments": "FILENAME",
+      "argument_type": "path",
+      "example": "ncu -i profile_report.ncu-rep"
+    },
+    {
+      "long": "--set",
+      "description": "Select a predefined metric set for collection. Available sets: basic, default, detailed, full, roofline, source",
+      "arguments": "SET_NAME",
+      "argument_type": "string",
+      "default": "default",
+      "example": "ncu --set full ./my_cuda_app"
+    },
+    {
+      "long": "--section",
+      "description": "Collect metrics for specific analysis sections. Can be specified multiple times. Use --list-sections to see available sections",
+      "arguments": "SECTION_NAME",
+      "argument_type": "string",
+      "example": "ncu --section SpeedOfLight --section MemoryWorkloadAnalysis ./my_cuda_app"
+    },
+    {
+      "long": "--list-sections",
+      "description": "List all available analysis sections and their descriptions"
+    },
+    {
+      "long": "--list-sets",
+      "description": "List all available metric sets"
+    },
+    {
+      "long": "--list-metrics",
+      "description": "List all available metrics that can be collected"
+    },
+    {
+      "long": "--metrics",
+      "description": "Specify individual metrics to collect, comma-separated",
+      "arguments": "METRICS",
+      "argument_type": "string",
+      "example": "ncu --metrics sm__throughput.avg.pct_of_peak_sustained_elapsed,dram__throughput.avg.pct_of_peak_sustained_elapsed ./my_cuda_app"
+    },
+    {
+      "short": "-k",
+      "long": "--kernel-name",
+      "description": "Filter profiling to kernels matching the specified name or regex pattern",
+      "arguments": "KERNEL_NAME",
+      "argument_type": "string",
+      "example": "ncu -k matrixMul ./my_cuda_app"
+    },
+    {
+      "long": "--kernel-id",
+      "description": "Filter profiling to specific kernel launch IDs. Format: start:increment:end or specific ID",
+      "arguments": "KERNEL_ID",
+      "argument_type": "string",
+      "example": "ncu --kernel-id 0:1:10 ./my_cuda_app"
+    },
+    {
+      "long": "--kernel-regex",
+      "description": "Use regular expression matching for kernel name filtering",
+      "arguments": "REGEX",
+      "argument_type": "string",
+      "example": "ncu --kernel-regex 'conv.*' ./my_cuda_app"
+    },
+    {
+      "long": "--launch-skip",
+      "description": "Skip the first N kernel launches before starting profiling",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "example": "ncu --launch-skip 5 ./my_cuda_app"
+    },
+    {
+      "long": "--launch-count",
+      "description": "Profile only N kernel launches after any skipped launches",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "example": "ncu --launch-count 10 ./my_cuda_app"
+    },
+    {
+      "long": "--replay-mode",
+      "description": "Control how kernels are replayed for metric collection. Modes: kernel (re-launch kernel), application (re-run app), range (user-controlled)",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "default": "kernel",
+      "example": "ncu --replay-mode application ./my_cuda_app"
+    },
+    {
+      "long": "--target-processes",
+      "description": "Specify which processes to profile: all, parent-only, or child-only",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "default": "all",
+      "example": "ncu --target-processes child-only ./my_cuda_app"
+    },
+    {
+      "short": "-f",
+      "long": "--force-overwrite",
+      "description": "Overwrite existing report files without prompting"
+    },
+    {
+      "long": "--csv",
+      "description": "Output results in CSV format for scripting and parsing"
+    },
+    {
+      "long": "--page",
+      "description": "Select which report page to display when using --import: raw, details, source",
+      "arguments": "PAGE",
+      "argument_type": "string",
+      "example": "ncu --page raw -i report.ncu-rep"
+    },
+    {
+      "long": "--print-summary",
+      "description": "Print summary of collected metrics to console. Options: per-kernel, per-gpu",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "example": "ncu --print-summary per-kernel ./my_cuda_app"
+    },
+    {
+      "long": "--nvtx",
+      "description": "Enable NVTX range filtering. Profile only kernels within specified NVTX ranges",
+      "arguments": "RANGE",
+      "argument_type": "string",
+      "example": "ncu --nvtx --nvtx-include 'myRange' ./my_cuda_app"
+    },
+    {
+      "long": "--nvtx-include",
+      "description": "Include only kernels within NVTX ranges matching the pattern",
+      "arguments": "PATTERN",
+      "argument_type": "string"
+    },
+    {
+      "long": "--nvtx-exclude",
+      "description": "Exclude kernels within NVTX ranges matching the pattern",
+      "arguments": "PATTERN",
+      "argument_type": "string"
+    },
+    {
+      "long": "--clock-control",
+      "description": "Control GPU clock behavior during profiling: base (lock to base clocks), none (no control)",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "default": "base",
+      "example": "ncu --clock-control none ./my_cuda_app"
+    },
+    {
+      "long": "--app-replay-buffer",
+      "description": "Enable application replay buffer with specified mode: circular, per-launch",
+      "arguments": "MODE",
+      "argument_type": "string"
+    },
+    {
+      "long": "--cache-control",
+      "description": "Control L2 cache behavior: all (flush all), none (no flushing)",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "example": "ncu --cache-control none ./my_cuda_app"
+    },
+    {
+      "long": "--source-folder",
+      "description": "Specify additional folders to search for source files",
+      "arguments": "PATH",
+      "argument_type": "path"
+    },
+    {
+      "long": "--import-source",
+      "description": "Import source files into the report for portability"
+    },
+    {
+      "long": "--sampling",
+      "description": "Enable PC sampling mode for lightweight profiling"
+    },
+    {
+      "long": "--sampling-interval",
+      "description": "Set the PC sampling interval in cycles",
+      "arguments": "CYCLES",
+      "argument_type": "integer",
+      "example": "ncu --sampling --sampling-interval 1000 ./my_cuda_app"
+    },
+    {
+      "long": "--injection-path-regex",
+      "description": "Regex pattern to filter which shared libraries to inject into",
+      "arguments": "REGEX",
+      "argument_type": "string"
+    },
+    {
+      "long": "--log-file",
+      "description": "Write profiler log messages to the specified file",
+      "arguments": "FILENAME",
+      "argument_type": "path"
+    },
+    {
+      "long": "--verbose",
+      "description": "Enable verbose output during profiling"
+    },
+    {
+      "long": "--apply-rules",
+      "description": "Apply analysis rules to generate optimization recommendations"
+    },
+    {
+      "long": "--query-metrics",
+      "description": "Query available metrics for the target GPU architecture"
+    },
+    {
+      "long": "--query-metrics-mode",
+      "description": "Mode for querying metrics: all, base, derived",
+      "arguments": "MODE",
+      "argument_type": "string"
+    }
+  ],
+  "output_formats": {
+    "ncu-rep": "Native binary report format (.ncu-rep). Contains all collected metrics and source information. Can be opened in Nsight Compute GUI or analyzed with CLI --import.",
+    "csv": "Comma-separated values format for scripting and data analysis. Enabled with --csv flag.",
+    "console": "Human-readable text output to terminal. Default when no export file is specified."
+  },
+  "environment_variables": [
+    {
+      "name": "CUDA_VISIBLE_DEVICES",
+      "description": "Controls which GPUs are visible to the profiled CUDA application. Affects GPU indexing within the application.",
+      "example": "CUDA_VISIBLE_DEVICES=0,1",
+      "affects_command": "Restricts profiling to only the visible GPUs. GPU indices in the profiled application are relative to this setting."
+    },
+    {
+      "name": "COMPUTE_PROFILE",
+      "description": "Legacy environment variable for enabling profiling. Not typically needed with ncu.",
+      "example": "COMPUTE_PROFILE=1",
+      "affects_command": "May enable additional profiling hooks in older applications."
+    },
+    {
+      "name": "NSIGHT_CUDA_DEBUGGER",
+      "description": "Controls debugger integration with Nsight tools.",
+      "example": "NSIGHT_CUDA_DEBUGGER=1",
+      "affects_command": "Enables debugger integration features when profiling."
+    },
+    {
+      "name": "TMPDIR",
+      "description": "Specifies the temporary directory for profiling data.",
+      "example": "TMPDIR=/scratch/tmp",
+      "affects_command": "Changes where ncu stores temporary profiling data during collection."
+    },
+    {
+      "name": "NCU_FORCE_LAUNCH_TIMEOUT",
+      "description": "Override the default kernel launch timeout for profiling.",
+      "example": "NCU_FORCE_LAUNCH_TIMEOUT=300",
+      "affects_command": "Allows longer-running kernels to be profiled without timeout errors."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - profiling completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "General error - profiling failed due to various reasons"
+    },
+    {
+      "code": 2,
+      "meaning": "Invalid command line arguments or options"
+    },
+    {
+      "code": 3,
+      "meaning": "Profiled application returned non-zero exit code"
+    },
+    {
+      "code": 4,
+      "meaning": "No kernels were found to profile with the specified filters"
+    },
+    {
+      "code": 5,
+      "meaning": "Profiling was cancelled by user"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Profile all kernels with default metrics",
+      "command": "ncu ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Profile with full metric set and save to report file",
+      "command": "ncu --set full -o profile_output ./my_cuda_app",
+      "output_example": "NVIDIA Nsight Compute report saved to profile_output.ncu-rep",
+      "requires_root": false
+    },
+    {
+      "description": "Profile a specific kernel by name",
+      "command": "ncu -k matrixMulKernel -o matrix_profile ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Profile with roofline analysis sections",
+      "command": "ncu --set roofline -o roofline_analysis ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Profile specific kernel launches (skip first 10, profile next 5)",
+      "command": "ncu --launch-skip 10 --launch-count 5 -o selective_profile ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Collect specific analysis sections",
+      "command": "ncu --section SpeedOfLight --section MemoryWorkloadAnalysis --section ComputeWorkloadAnalysis -o detailed_analysis ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Profile with application replay mode for multi-pass collection",
+      "command": "ncu --replay-mode application --set detailed -o app_replay_profile ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Export results to CSV for scripting",
+      "command": "ncu --csv --metrics sm__throughput.avg.pct_of_peak_sustained_elapsed,dram__throughput.avg.pct_of_peak_sustained_elapsed ./my_cuda_app > metrics.csv",
+      "requires_root": false
+    },
+    {
+      "description": "View previously collected report",
+      "command": "ncu -i profile_output.ncu-rep",
+      "requires_root": false
+    },
+    {
+      "description": "Compare baseline and optimized kernel reports",
+      "command": "ncu -i baseline.ncu-rep --import optimized.ncu-rep --page details",
+      "requires_root": false
+    },
+    {
+      "description": "Profile with NVTX range filtering",
+      "command": "ncu --nvtx --nvtx-include 'training_step' -o training_profile ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Profile MPI application (single rank)",
+      "command": "mpirun -np 4 ncu --target-processes parent-only -o mpi_profile ./my_mpi_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "List available metrics for the GPU",
+      "command": "ncu --list-metrics",
+      "requires_root": false
+    },
+    {
+      "description": "List available analysis sections",
+      "command": "ncu --list-sections",
+      "output_example": "Available sections:\n  ComputeWorkloadAnalysis - Detailed analysis of the compute workload\n  InstructionStats - Statistics on instruction types executed\n  LaunchStats - Statistics about kernel launches\n  MemoryWorkloadAnalysis - Detailed analysis of the memory workload\n  ...",
+      "requires_root": false
+    },
+    {
+      "description": "Profile with source correlation",
+      "command": "ncu --set source --import-source -o source_correlated ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Profile without locking GPU clocks",
+      "command": "ncu --clock-control none --set detailed -o real_clock_profile ./my_cuda_app",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "ERR_NVGPUCTRPERM - The user does not have permission to profile on the target device",
+      "meaning": "GPU profiling requires elevated permissions or admin capabilities",
+      "resolution": "Run as root/sudo, or configure the system to allow non-root profiling by setting /proc/sys/kernel/perf_event_paranoid to an appropriate value, or add user to the appropriate group"
+    },
+    {
+      "message": "No kernels were found matching the specified filters",
+      "meaning": "The kernel name filter, ID filter, or NVTX filter did not match any kernels in the application",
+      "resolution": "Verify the kernel name spelling and case. Use --list-sections with application to see available kernel names. Check NVTX range names if using NVTX filtering."
+    },
+    {
+      "message": "Failed to connect to target application",
+      "meaning": "The profiler could not attach to or launch the target CUDA application",
+      "resolution": "Ensure the application path is correct and executable. Check that CUDA drivers are properly installed. Verify the application can run without the profiler."
+    },
+    {
+      "message": "Incompatible CUDA driver version",
+      "meaning": "The installed CUDA driver is not compatible with this version of Nsight Compute",
+      "resolution": "Update the CUDA driver to a version compatible with the installed Nsight Compute, or use a version of Nsight Compute compatible with the installed driver."
+    },
+    {
+      "message": "Metric not available on this device",
+      "meaning": "The requested metric is not supported on the target GPU architecture",
+      "resolution": "Use --query-metrics to list available metrics for your GPU. Some metrics are architecture-specific."
+    },
+    {
+      "message": "Application replay failed",
+      "meaning": "The application could not be replayed for multi-pass metric collection",
+      "resolution": "Try using --replay-mode kernel instead of application. Ensure the application produces deterministic results. Check for race conditions or external dependencies."
+    },
+    {
+      "message": "Profiler attachment timed out",
+      "meaning": "The profiler could not attach to the application within the timeout period",
+      "resolution": "Increase the timeout using NCU_FORCE_LAUNCH_TIMEOUT environment variable. Check if the application is starting correctly."
+    },
+    {
+      "message": "Cannot profile kernel: insufficient resources",
+      "meaning": "The kernel uses too many resources (registers, shared memory) for profiling overhead",
+      "resolution": "Try profiling with fewer metrics using --section or --metrics. Use --set basic for minimal overhead."
+    },
+    {
+      "message": "Report file already exists",
+      "meaning": "The output file already exists and force overwrite is not enabled",
+      "resolution": "Use -f or --force-overwrite to overwrite existing files, or choose a different output filename."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "nsys",
+      "nvprof",
+      "nvidia-smi",
+      "cuda-gdb",
+      "nvcc",
+      "nv-nsight-cu"
+    ],
+    "uses_library": [
+      "CUDA Driver API",
+      "CUPTI (CUDA Profiling Tools Interface)",
+      "NVML"
+    ],
+    "notes": "ncu is the successor to nvprof for kernel-level profiling. For system-level tracing, use nsys (Nsight Systems). The GUI version (nv-nsight-cu) provides interactive visualization of reports generated by ncu CLI. Reports from ncu can be opened in the GUI for detailed analysis and roofline charts."
+  },
+  "permissions": {
+    "read_operations": "Reading GPU state and collecting basic metrics typically requires standard user permissions on consumer systems.",
+    "write_operations": "Full profiling with hardware counters may require root privileges or CAP_SYS_ADMIN capability depending on the system configuration.",
+    "notes": "On Linux, set /proc/sys/kernel/perf_event_paranoid to 2 or lower to allow non-root profiling. Enterprise GPUs in compute mode may have different permission requirements. Container environments may need additional security configurations."
+  },
+  "limitations": [
+    "Kernel replay can significantly increase profiling time as kernels are re-executed multiple times",
+    "Some metrics cannot be collected simultaneously and require multiple passes",
+    "Profiling overhead can affect timing-sensitive applications",
+    "MIG (Multi-Instance GPU) instances have limited profiling support",
+    "Concurrent kernel execution may affect metric accuracy",
+    "Some metrics are architecture-specific and not available on all GPUs",
+    "Large applications with many kernels can produce very large report files",
+    "Source correlation requires debug information compiled into the CUDA binary (-lineinfo or -G)",
+    "Dynamic parallelism kernels have limited profiling support",
+    "Very long-running kernels may timeout during profiling"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "gpu_id",
+          "uuid",
+          "name",
+          "compute_capability",
+          "memory_total",
+          "clock_graphics_max",
+          "clock_memory_max"
+        ],
+        "description": "ncu reads GPU hardware specifications to determine available metrics and theoretical peak performance"
+      },
+      {
+        "state_domain": "gpu_process_state",
+        "fields": [
+          "pid",
+          "process_name",
+          "kernel_launches",
+          "memory_allocations"
+        ],
+        "description": "ncu monitors and profiles CUDA kernel executions and memory operations of the target application"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU identification, memory capacity, and compute capability"
+      },
+      {
+        "command": "nsys",
+        "shared_state": "GPU profiling data, kernel execution timelines, NVTX markers"
+      },
+      {
+        "command": "nvprof",
+        "shared_state": "Legacy profiling metrics (nvprof is deprecated in favor of ncu/nsys)"
+      }
+    ]
+  }
+}

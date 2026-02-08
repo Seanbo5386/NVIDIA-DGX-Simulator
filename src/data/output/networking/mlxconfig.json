@@ -1,0 +1,197 @@
+{
+  "command": "mlxconfig",
+  "category": "networking",
+  "description": "Query and configure NVIDIA/Mellanox network adapter firmware configuration parameters. Used for setting device parameters such as SRIOV, VPI port configuration, PCI settings, and other firmware-level options that persist across reboots.",
+  "synopsis": "mlxconfig [options] -d <device> <command>",
+  "version_documented": "MFT 4.30.0+",
+  "source_urls": [
+    "https://docs.nvidia.com/networking/display/mftv4300/mlxconfig"
+  ],
+  "installation": {
+    "package": "mft",
+    "notes": "Part of Mellanox Firmware Tools (MFT). Install via MLNX_OFED package or download from NVIDIA website. Requires MST driver."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--device",
+      "description": "Target MST device name (required)",
+      "arguments": "<device>",
+      "argument_type": "string",
+      "required": true,
+      "example": "-d /dev/mst/mt4123_pciconf0"
+    },
+    {
+      "short": "-y",
+      "long": "--yes",
+      "description": "Answer yes to all questions (non-interactive mode)"
+    },
+    {
+      "short": "-e",
+      "long": "--show_default",
+      "description": "Show default configuration values"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Show help message"
+    },
+    {
+      "short": "-v",
+      "long": "--version",
+      "description": "Display version information"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "query",
+      "description": "Query current device configuration",
+      "synopsis": "mlxconfig -d <device> query"
+    },
+    {
+      "name": "set",
+      "description": "Set configuration parameters (requires reboot to take effect)",
+      "synopsis": "mlxconfig -d <device> set <param>=<value>"
+    },
+    {
+      "name": "reset",
+      "description": "Reset all configuration parameters to default values",
+      "synopsis": "mlxconfig -d <device> reset"
+    },
+    {
+      "name": "backup",
+      "description": "Backup current configuration to a file",
+      "synopsis": "mlxconfig -d <device> backup <file>"
+    },
+    {
+      "name": "restore",
+      "description": "Restore configuration from a backup file",
+      "synopsis": "mlxconfig -d <device> restore <file>"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "General error or operation failed"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Query all device configuration parameters",
+      "command": "mlxconfig -d /dev/mst/mt4123_pciconf0 query",
+      "output_example": "Device #1:\n----------\nDevice type:    ConnectX6\nName:           MCX653106A-HDA_Ax\nDescription:    ConnectX-6 VPI adapter card; HDR IB (200Gb/s)\nDevice:         /dev/mst/mt4123_pciconf0\n\nConfigurations:                              Next Boot\n         SRIOV_EN                            True(1)\n         NUM_OF_VFS                          16\n         LINK_TYPE_P1                        IB(1)\n         LINK_TYPE_P2                        IB(1)",
+      "requires_root": true
+    },
+    {
+      "description": "Enable SRIOV with 8 virtual functions",
+      "command": "mlxconfig -d /dev/mst/mt4123_pciconf0 set SRIOV_EN=1 NUM_OF_VFS=8",
+      "requires_root": true
+    },
+    {
+      "description": "Set port to Ethernet mode (VPI cards)",
+      "command": "mlxconfig -d /dev/mst/mt4123_pciconf0 set LINK_TYPE_P1=ETH",
+      "requires_root": true
+    },
+    {
+      "description": "Set port to InfiniBand mode",
+      "command": "mlxconfig -d /dev/mst/mt4123_pciconf0 set LINK_TYPE_P1=IB",
+      "requires_root": true
+    },
+    {
+      "description": "Query only SRIOV-related parameters",
+      "command": "mlxconfig -d /dev/mst/mt4123_pciconf0 query | grep -i sriov",
+      "requires_root": true
+    },
+    {
+      "description": "Reset configuration to factory defaults",
+      "command": "mlxconfig -d /dev/mst/mt4123_pciconf0 -y reset",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Failed to open device",
+      "meaning": "MST driver not loaded or device path incorrect",
+      "resolution": "Run 'mst start' to load MST driver, verify device path with 'mst status'"
+    },
+    {
+      "message": "Configuration change requires firmware reset",
+      "meaning": "Changes will not take effect until device is reset",
+      "resolution": "Reboot system or use mlxfwreset to apply changes"
+    },
+    {
+      "message": "Invalid parameter",
+      "meaning": "Parameter name is not valid for this device",
+      "resolution": "Use 'mlxconfig -d <device> query' to see valid parameters"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "mlxlink",
+      "mlxfwmanager",
+      "mlxfwreset",
+      "mst",
+      "ibstat"
+    ],
+    "notes": "Configuration changes require reboot or mlxfwreset to take effect. SRIOV changes affect VM/container network configurations."
+  },
+  "permissions": {
+    "read_operations": "Root required for query operations",
+    "write_operations": "Root required for all configuration changes",
+    "notes": "Changes are persistent across reboots and stored in device firmware"
+  },
+  "limitations": [
+    "Changes require reboot or firmware reset to take effect",
+    "Some parameters are device-specific and may not be available on all adapters",
+    "SRIOV changes affect running VMs if VFs are in use",
+    "VPI port type changes require link down"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["device", "link_layer"],
+        "description": "Queries device configuration that affects IB state"
+      },
+      {
+        "state_domain": "firmware_state",
+        "fields": ["device_type", "current_version"],
+        "description": "Configuration options depend on firmware version"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["link_layer"],
+        "description": "Can change port type between IB and Ethernet (after reboot)",
+        "requires_privilege": "root"
+      },
+      {
+        "state_domain": "firmware_state",
+        "fields": ["device_id"],
+        "description": "Stores configuration in device firmware NVM",
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "System boot",
+        "effect": "Configuration loaded from device NVM"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ibstat",
+        "shared_state": "Port type reflects LINK_TYPE setting after reboot"
+      },
+      {
+        "command": "mlxlink",
+        "shared_state": "Link parameters consistent with mlxconfig settings"
+      }
+    ]
+  }
+}

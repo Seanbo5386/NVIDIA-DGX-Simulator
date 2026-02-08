@@ -1,0 +1,199 @@
+{
+  "command": "bandwidthTest",
+  "category": "cuda_tools",
+  "description": "CUDA sample application that measures memory bandwidth between host and device, and device to device. Used for validating PCIe and NVLink bandwidth, diagnosing performance issues, and benchmarking system configuration.",
+  "synopsis": "bandwidthTest [options]",
+  "version_documented": "CUDA Samples 12.0+",
+  "source_urls": [
+    "https://github.com/NVIDIA/cuda-samples/tree/master/Samples/1_Utilities/bandwidthTest"
+  ],
+  "installation": {
+    "package": "cuda-samples",
+    "notes": "Part of CUDA Samples. Build from CUDA SDK: cd /usr/local/cuda/samples/1_Utilities/bandwidthTest && make"
+  },
+  "global_options": [
+    {
+      "long": "--memory",
+      "description": "Memory mode: pageable or pinned",
+      "arguments": "<mode>",
+      "argument_type": "string",
+      "default": "pinned"
+    },
+    {
+      "long": "--mode",
+      "description": "Test mode: quick, range, or shmoo",
+      "arguments": "<mode>",
+      "argument_type": "string",
+      "default": "quick"
+    },
+    {
+      "long": "--htod",
+      "description": "Test host to device transfer only"
+    },
+    {
+      "long": "--dtoh",
+      "description": "Test device to host transfer only"
+    },
+    {
+      "long": "--dtod",
+      "description": "Test device to device transfer only"
+    },
+    {
+      "long": "--wc",
+      "description": "Use write-combined memory for host"
+    },
+    {
+      "long": "--device",
+      "description": "Specify device to use",
+      "arguments": "<device_id>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--start",
+      "description": "Starting transfer size in bytes (range mode)",
+      "arguments": "<bytes>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--end",
+      "description": "Ending transfer size in bytes (range mode)",
+      "arguments": "<bytes>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--increment",
+      "description": "Transfer size increment (range mode)",
+      "arguments": "<bytes>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--csv",
+      "description": "Output in CSV format"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - PASS"
+    },
+    {
+      "code": 1,
+      "meaning": "Failure - CUDA error or test failed"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run quick bandwidth test",
+      "command": "bandwidthTest",
+      "output_example": "[CUDA Bandwidth Test] - Starting...\nRunning on...\n\n Device 0: NVIDIA A100-SXM4-80GB\n Quick Mode\n\n Host to Device Bandwidth, 1 Device(s)\n PINNED Memory Transfers\n   Transfer Size (Bytes)        Bandwidth(GB/s)\n   32000000                     25.9\n\n Device to Host Bandwidth, 1 Device(s)\n PINNED Memory Transfers\n   Transfer Size (Bytes)        Bandwidth(GB/s)\n   32000000                     26.2\n\n Device to Device Bandwidth, 1 Device(s)\n PINNED Memory Transfers\n   Transfer Size (Bytes)        Bandwidth(GB/s)\n   32000000                     1323.5\n\nResult = PASS",
+      "requires_root": false
+    },
+    {
+      "description": "Test range of transfer sizes",
+      "command": "bandwidthTest --mode=range --start=1024 --end=67108864 --increment=1024",
+      "requires_root": false
+    },
+    {
+      "description": "Test specific GPU",
+      "command": "bandwidthTest --device=0",
+      "requires_root": false
+    },
+    {
+      "description": "Test host to device only",
+      "command": "bandwidthTest --htod",
+      "requires_root": false
+    },
+    {
+      "description": "Test with pageable memory (not pinned)",
+      "command": "bandwidthTest --memory=pageable",
+      "requires_root": false
+    },
+    {
+      "description": "Output CSV for graphing",
+      "command": "bandwidthTest --mode=range --csv",
+      "requires_root": false
+    },
+    {
+      "description": "Run on all cluster nodes",
+      "command": "pdsh -w node[001-010] bandwidthTest 2>&1 | grep -E '(Host to Device|Device to Host|Result)'",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "cudaGetDeviceCount returned 100",
+      "meaning": "No CUDA-capable device detected",
+      "resolution": "Check nvidia-smi and driver status"
+    },
+    {
+      "message": "CUDA error: out of memory",
+      "meaning": "Insufficient GPU memory for test",
+      "resolution": "Free GPU memory or use smaller transfer sizes"
+    },
+    {
+      "message": "Result = FAIL",
+      "meaning": "Bandwidth below expected threshold",
+      "resolution": "Check PCIe configuration, NVLink status, or driver issues"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "deviceQuery",
+      "nvidia-smi topo -m",
+      "p2pBandwidthLatencyTest",
+      "nvbandwidth"
+    ],
+    "notes": "bandwidthTest measures PCIe bandwidth (Host-Device) and GPU memory bandwidth (Device-Device). For peer-to-peer NVLink bandwidth, use p2pBandwidthLatencyTest or nvbandwidth."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "N/A - benchmark tool",
+    "notes": "Pinned memory allocation may have system limits (ulimit -l)"
+  },
+  "limitations": [
+    "Device-to-device test uses same GPU (not peer GPUs)",
+    "For NVLink P2P testing, use p2pBandwidthLatencyTest instead",
+    "Results affected by PCIe topology and NUMA placement",
+    "Write-combined mode may show different results"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "gpu_id",
+          "memory_total",
+          "pcie_link_gen_current",
+          "pcie_link_width_current"
+        ],
+        "description": "Uses GPU memory for bandwidth testing"
+      },
+      {
+        "state_domain": "system_state",
+        "fields": ["memory_total", "memory_available"],
+        "description": "Uses host memory for transfers"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "PCIe link degradation",
+        "effect": "Lower H2D and D2H bandwidth"
+      },
+      {
+        "state_change": "GPU throttling",
+        "effect": "Reduced memory bandwidth"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi topo -m",
+        "shared_state": "PCIe topology affects bandwidth expectations"
+      },
+      {
+        "command": "lspci -vv",
+        "shared_state": "PCIe generation/width matches"
+      }
+    ]
+  }
+}

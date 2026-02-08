@@ -1,0 +1,123 @@
+{
+  "command": "xargs",
+  "category": "general",
+  "description": "Build and execute command lines from standard input. Converts input into command arguments. Essential for batch processing in HPC workflows.",
+  "synopsis": "xargs [options] [command]",
+  "version_documented": "findutils 4.8+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/xargs.1.html"],
+  "installation": {
+    "package": "findutils",
+    "notes": "Part of findutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-n",
+      "long": "--max-args",
+      "description": "Max arguments per command",
+      "arguments": "<N>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-P",
+      "long": "--max-procs",
+      "description": "Parallel processes",
+      "arguments": "<N>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-I",
+      "description": "Replace string",
+      "arguments": "<str>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-0",
+      "long": "--null",
+      "description": "Null-delimited input"
+    },
+    {
+      "short": "-t",
+      "long": "--verbose",
+      "description": "Print commands before executing"
+    },
+    {
+      "short": "-p",
+      "long": "--interactive",
+      "description": "Prompt before executing"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 123,
+      "meaning": "Command exited with 1-125"
+    },
+    {
+      "code": 124,
+      "meaning": "Command killed by signal"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Process files in parallel",
+      "command": "find . -name '*.dat' | xargs -P 8 -I {} process {}",
+      "requires_root": false
+    },
+    {
+      "description": "Delete files safely",
+      "command": "find . -name '*.tmp' -print0 | xargs -0 rm",
+      "requires_root": false
+    },
+    {
+      "description": "Run on each line",
+      "command": "cat hosts.txt | xargs -I {} ssh {} nvidia-smi",
+      "requires_root": false
+    },
+    {
+      "description": "Parallel compression",
+      "command": "ls *.log | xargs -P 4 -I {} gzip {}",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "argument line too long",
+      "meaning": "Too many arguments",
+      "resolution": "Use -n to limit arguments per invocation"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["find", "parallel", "xargs"],
+    "notes": "-P for parallelism, -0 for safe filenames. GNU parallel offers more features. -I {} for replacement pattern."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "Depends on command",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Complex quoting needed for special chars",
+    "Use -0 for files with spaces",
+    "Limited parallelism control vs GNU parallel"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads input for command arguments"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "find",
+        "shared_state": "Often piped from find"
+      }
+    ]
+  }
+}

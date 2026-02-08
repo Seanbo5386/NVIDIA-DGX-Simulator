@@ -1,0 +1,157 @@
+{
+  "command": "umount",
+  "category": "storage",
+  "description": "Unmount filesystems. Detaches mounted storage devices, network shares, or special filesystems from the directory tree. Essential for safe storage removal.",
+  "synopsis": "umount [options] <mountpoint|device>",
+  "version_documented": "util-linux 2.37+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/umount.8.html"],
+  "installation": {
+    "package": "util-linux",
+    "notes": "Part of util-linux, installed by default on all Linux distributions."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Unmount all filesystems"
+    },
+    {
+      "short": "-f",
+      "long": "--force",
+      "description": "Force unmount (for unreachable NFS)"
+    },
+    {
+      "short": "-l",
+      "long": "--lazy",
+      "description": "Lazy unmount - detach now, cleanup later"
+    },
+    {
+      "short": "-n",
+      "long": "--no-mtab",
+      "description": "Don't update /etc/mtab"
+    },
+    {
+      "short": "-r",
+      "long": "--read-only",
+      "description": "If unmount fails, remount read-only"
+    },
+    {
+      "short": "-t",
+      "long": "--types",
+      "description": "Unmount only specified types",
+      "arguments": "<types>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Verbose mode"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Unmount by mount point",
+      "command": "umount /scratch",
+      "requires_root": true
+    },
+    {
+      "description": "Unmount by device",
+      "command": "umount /dev/nvme1n1",
+      "requires_root": true
+    },
+    {
+      "description": "Force unmount stuck NFS",
+      "command": "umount -f /mnt/nfs",
+      "requires_root": true
+    },
+    {
+      "description": "Lazy unmount",
+      "command": "umount -l /lustre",
+      "requires_root": true
+    },
+    {
+      "description": "Unmount all NFS mounts",
+      "command": "umount -a -t nfs",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "umount: target is busy",
+      "meaning": "Filesystem is in use",
+      "resolution": "Close files/processes using it, or use -l for lazy unmount"
+    },
+    {
+      "message": "umount: not mounted",
+      "meaning": "Target is not mounted",
+      "resolution": "Verify mount point or device"
+    },
+    {
+      "message": "umount: only root can unmount",
+      "meaning": "Insufficient privileges",
+      "resolution": "Run with sudo"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["mount", "findmnt", "fuser", "lsof"],
+    "notes": "Use fuser -m or lsof to find processes using a mount. Lazy unmount detaches immediately but cleanup waits for processes to release."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "Root required (except user mounts)",
+    "notes": "User can unmount if mounted with user option in fstab"
+  },
+  "limitations": [
+    "Cannot unmount busy filesystems without -l or -f",
+    "Force may cause data loss",
+    "Lazy leaves mount in detached state"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["mount_point"],
+        "description": "Identifies mount to unmount"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["mount_point"],
+        "description": "Removes mount from system",
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "System shutdown",
+        "effect": "All filesystems unmounted"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "mount",
+        "shared_state": "Unmounted filesystem no longer in mount list"
+      },
+      {
+        "command": "findmnt",
+        "shared_state": "Mount disappears from tree"
+      }
+    ]
+  }
+}

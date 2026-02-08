@@ -1,0 +1,144 @@
+{
+  "command": "ibhosts",
+  "category": "networking",
+  "description": "Discover and list all InfiniBand Channel Adapters (CAs/HCAs) in the subnet. Queries the Subnet Manager to enumerate all host nodes connected to the InfiniBand fabric.",
+  "synopsis": "ibhosts [options]",
+  "version_documented": "OFED/rdma-core 30+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/ibhosts.8.html"],
+  "installation": {
+    "package": "infiniband-diags",
+    "notes": "Part of infiniband-diags package. Install via: apt install infiniband-diags or yum install infiniband-diags"
+  },
+  "global_options": [
+    {
+      "short": "-C",
+      "long": "--Ca",
+      "description": "Use specified CA name for queries",
+      "arguments": "<ca_name>",
+      "argument_type": "string",
+      "example": "-C mlx5_0"
+    },
+    {
+      "short": "-P",
+      "long": "--Port",
+      "description": "Use specified CA port for queries",
+      "arguments": "<port_num>",
+      "argument_type": "integer",
+      "example": "-P 1"
+    },
+    {
+      "short": "-t",
+      "long": "--timeout",
+      "description": "Timeout for SA queries in milliseconds",
+      "arguments": "<ms>",
+      "argument_type": "integer",
+      "default": "1000"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help message"
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version information"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error occurred (SA query failed, no fabric found)"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "List all HCAs in the InfiniBand subnet",
+      "command": "ibhosts",
+      "output_example": "Ca      : 0x0002c903001f8c30 ports 2 \"dgx-node-01 HCA-1\"\nCa      : 0x0002c903001f8c32 ports 2 \"dgx-node-02 HCA-1\"\nCa      : 0x0002c903001f8c34 ports 2 \"dgx-node-03 HCA-1\"\nCa      : 0x0002c903001f8c36 ports 2 \"dgx-node-04 HCA-1\"",
+      "requires_root": false
+    },
+    {
+      "description": "List hosts using specific HCA",
+      "command": "ibhosts -C mlx5_0",
+      "requires_root": false
+    },
+    {
+      "description": "Count total number of hosts in fabric",
+      "command": "ibhosts | wc -l",
+      "requires_root": false
+    },
+    {
+      "description": "Find specific host in fabric",
+      "command": "ibhosts | grep dgx-node-05",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "ibwarn: [0] umad_init: can't read /sys/class/infiniband",
+      "meaning": "InfiniBand driver not loaded or no IB devices present",
+      "resolution": "Load IB kernel modules with 'modprobe ib_core' or check device presence"
+    },
+    {
+      "message": "SA query failed",
+      "meaning": "Cannot communicate with Subnet Manager",
+      "resolution": "Verify SM is running (opensm) and port is active (ibstat)"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "ibswitches",
+      "iblinkinfo",
+      "ibnetdiscover",
+      "ibstat",
+      "sminfo"
+    ],
+    "notes": "Queries the Subnet Administrator (SA) database. Requires active Subnet Manager in the fabric."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required for basic queries",
+    "write_operations": "N/A - read-only command",
+    "notes": "May require access to /dev/infiniband/ devices"
+  },
+  "limitations": [
+    "Requires Subnet Manager to be running",
+    "Only shows hosts visible to the SA",
+    "Does not show disconnected or down nodes",
+    "Output depends on SM having completed discovery"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["device", "port", "guid", "node_guid"],
+        "description": "Reads HCA information from Subnet Administrator"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "New host joins fabric",
+        "effect": "Host appears in ibhosts output after SM discovery"
+      },
+      {
+        "state_change": "Host leaves fabric",
+        "effect": "Host disappears from ibhosts output"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ibnetdiscover",
+        "shared_state": "HCA GUIDs and node descriptions must match"
+      },
+      {
+        "command": "ibswitches",
+        "shared_state": "GUIDs are unique across hosts and switches"
+      }
+    ]
+  }
+}

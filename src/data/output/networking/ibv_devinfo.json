@@ -1,0 +1,119 @@
+{
+  "command": "ibv_devinfo",
+  "category": "networking",
+  "description": "Query InfiniBand devices using verbs API. Shows detailed device and port information. Essential for RDMA application debugging.",
+  "synopsis": "ibv_devinfo [options]",
+  "version_documented": "rdma-core 30+",
+  "source_urls": ["https://github.com/linux-rdma/rdma-core"],
+  "installation": {
+    "package": "libibverbs-utils",
+    "notes": "Install via: apt install libibverbs-utils or yum install libibverbs-utils"
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--ib-dev",
+      "description": "Query specific device",
+      "arguments": "<device>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-i",
+      "long": "--ib-port",
+      "description": "Query specific port",
+      "arguments": "<port>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-l",
+      "long": "--list",
+      "description": "List devices only"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Verbose output"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show all devices",
+      "command": "ibv_devinfo",
+      "output_example": "hca_id: mlx5_0\n        transport:                      InfiniBand (0)\n        fw_ver:                         20.35.1012\n        node_guid:                      0002:c903:001f:8c30\n        sys_image_guid:                 0002:c903:001f:8c30\n        vendor_id:                      0x02c9\n        vendor_part_id:                 4123\n        hw_ver:                         0x0\n        board_id:                       MT_0000000123\n        phys_port_cnt:                  1\n                port:   1\n                        state:                  PORT_ACTIVE (4)\n                        max_mtu:                4096 (5)\n                        active_mtu:             4096 (5)\n                        link_layer:             InfiniBand",
+      "requires_root": false
+    },
+    {
+      "description": "List devices only",
+      "command": "ibv_devinfo -l",
+      "requires_root": false
+    },
+    {
+      "description": "Query specific device",
+      "command": "ibv_devinfo -d mlx5_0",
+      "requires_root": false
+    },
+    {
+      "description": "Verbose output",
+      "command": "ibv_devinfo -v",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No IB devices found",
+      "meaning": "No RDMA devices available",
+      "resolution": "Check driver status and lspci"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["ibstat", "ibstatus", "rdma link", "lspci"],
+    "notes": "Uses libibverbs API directly. Shows transport type (IB, RoCE, iWARP). port state values: DOWN, INIT, ARMED, ACTIVE. Useful for verifying RDMA is working."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "N/A - read-only command",
+    "notes": "Accesses /dev/infiniband/*"
+  },
+  "limitations": [
+    "Requires libibverbs",
+    "Shows verbs-level info only",
+    "May differ from ibstat"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["hca_type", "port_state", "guid"],
+        "description": "Queries RDMA device information"
+      },
+      {
+        "state_domain": "firmware_state",
+        "fields": ["firmware_version"],
+        "description": "Shows firmware version"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Port state change",
+        "effect": "State field updates"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ibstat",
+        "shared_state": "Device and port info match"
+      }
+    ]
+  }
+}

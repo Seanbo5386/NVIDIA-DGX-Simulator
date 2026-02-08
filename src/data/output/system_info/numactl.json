@@ -1,0 +1,324 @@
+{
+  "command": "numactl",
+  "category": "system_info",
+  "description": "Control NUMA (Non-Uniform Memory Access) policy for processes and shared memory. numactl runs processes with a specific NUMA scheduling or memory placement policy, allowing administrators to bind processes to specific CPU nodes and control memory allocation across NUMA domains. This is essential for optimizing performance of memory-intensive HPC applications and GPU workloads by ensuring data locality between compute resources and memory.",
+  "synopsis": "numactl [--interleave=nodes] [--preferred=node] [--membind=nodes] [--cpunodebind=nodes] [--physcpubind=cpus] [--localalloc] [--hardware] [--show] command [arguments...]",
+  "version_documented": "numactl 2.0.14+",
+  "source_urls": [
+    "https://man7.org/linux/man-pages/man8/numactl.8.html",
+    "https://github.com/numactl/numactl"
+  ],
+  "installation": {
+    "package": "numactl",
+    "notes": "Available in standard repositories on most Linux distributions (apt install numactl, yum install numactl, dnf install numactl). The libnuma library is installed as a dependency and provides programmatic NUMA support for applications."
+  },
+  "global_options": [
+    {
+      "short": "-H",
+      "long": "--hardware",
+      "description": "Show inventory of available nodes on the system. Displays NUMA topology including node distances, CPU assignments, and memory sizes for each NUMA node."
+    },
+    {
+      "short": "-s",
+      "long": "--show",
+      "description": "Show NUMA policy settings of the current process. Displays the current memory allocation policy, preferred node, and CPU binding."
+    },
+    {
+      "short": "-C",
+      "long": "--cpunodebind",
+      "description": "Only execute process on the CPUs of the specified NUMA nodes. Accepts a comma-separated list of node numbers or ranges.",
+      "arguments": "<nodes>",
+      "argument_type": "string",
+      "example": "numactl --cpunodebind=0 ./myapp"
+    },
+    {
+      "short": "-N",
+      "long": "--cpunodebind",
+      "description": "Alias for --cpunodebind. Only execute process on CPUs of specified NUMA nodes.",
+      "arguments": "<nodes>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-m",
+      "long": "--membind",
+      "description": "Only allocate memory from the specified NUMA nodes. Memory will fail to allocate if insufficient memory is available on those nodes.",
+      "arguments": "<nodes>",
+      "argument_type": "string",
+      "example": "numactl --membind=0,1 ./myapp"
+    },
+    {
+      "short": "-p",
+      "long": "--preferred",
+      "description": "Preferably allocate memory on node, but if memory cannot be allocated there fall back to other nodes. Only a single node number can be specified.",
+      "arguments": "<node>",
+      "argument_type": "integer",
+      "example": "numactl --preferred=0 ./myapp"
+    },
+    {
+      "short": "-i",
+      "long": "--interleave",
+      "description": "Set memory interleave policy. Memory will be allocated using round robin on the specified nodes. This can improve memory bandwidth for large allocations.",
+      "arguments": "<nodes>",
+      "argument_type": "string",
+      "example": "numactl --interleave=all ./myapp"
+    },
+    {
+      "short": "-l",
+      "long": "--localalloc",
+      "description": "Always allocate memory on the current node. This is the default policy but can be used to override inherited policies."
+    },
+    {
+      "short": "-c",
+      "long": "--physcpubind",
+      "description": "Only execute process on the specified physical CPUs. Accepts a comma-separated list of CPU numbers or ranges.",
+      "arguments": "<cpus>",
+      "argument_type": "string",
+      "example": "numactl --physcpubind=0-7 ./myapp"
+    },
+    {
+      "long": "--all",
+      "description": "Use all available NUMA nodes. Shorthand for specifying all nodes explicitly. Can be used with -i/--interleave."
+    },
+    {
+      "long": "--localalloc",
+      "description": "Allocate memory on the local node of the current CPU. This ensures that memory is allocated close to where the process runs."
+    },
+    {
+      "long": "--touch",
+      "description": "Touch pages to enforce policy early. Causes numactl to touch (fault in) all allocated pages before starting the application."
+    },
+    {
+      "long": "--dump",
+      "description": "Dump the currently effective memory policy for debugging purposes."
+    },
+    {
+      "long": "--length",
+      "description": "Set the length in bytes for shared memory segment operations (used with shm commands).",
+      "arguments": "<bytes>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--offset",
+      "description": "Set the offset in bytes for shared memory segment operations.",
+      "arguments": "<bytes>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--shmmode",
+      "description": "Only valid for shmget shared memory segments. Set the mode (permissions) for the shared memory segment.",
+      "arguments": "<mode>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--strict",
+      "description": "Give an error when a page in a mapped file (with --file) is already in memory but does not follow the policy."
+    }
+  ],
+  "output_formats": {
+    "hardware": "Displays NUMA node topology with memory sizes (in MB), CPU assignments per node, and node distance matrix showing relative memory access latencies between nodes.",
+    "show": "Displays current process NUMA policy including policy type (default, preferred, bind, interleave), nodeset, physcpubind settings, and cpubind settings."
+  },
+  "environment_variables": [
+    {
+      "name": "NUMA_NO_AFFINITY",
+      "description": "When set, disables automatic CPU affinity setting. Useful when another mechanism manages CPU binding.",
+      "example": "NUMA_NO_AFFINITY=1",
+      "affects_command": "Prevents numactl from modifying CPU affinity"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - invalid arguments, NUMA not available, or specified nodes/CPUs not available"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display NUMA hardware topology",
+      "command": "numactl --hardware",
+      "output_example": "available: 2 nodes (0-1)\nnode 0 cpus: 0 1 2 3 4 5 6 7 16 17 18 19 20 21 22 23\nnode 0 size: 128854 MB\nnode 0 free: 120432 MB\nnode 1 cpus: 8 9 10 11 12 13 14 15 24 25 26 27 28 29 30 31\nnode 1 size: 128960 MB\nnode 1 free: 125678 MB\nnode distances:\nnode   0   1\n  0:  10  21\n  1:  21  10",
+      "requires_root": false
+    },
+    {
+      "description": "Show current NUMA policy",
+      "command": "numactl --show",
+      "output_example": "policy: default\npreferred node: current\nphyscpubind: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15\ncpubind: 0 1\nnodebind: 0 1\nmembind: 0 1",
+      "requires_root": false
+    },
+    {
+      "description": "Bind GPU process to NUMA node closest to GPU",
+      "command": "numactl --cpunodebind=0 --membind=0 ./cuda_application",
+      "output_example": "",
+      "requires_root": false
+    },
+    {
+      "description": "Run process with interleaved memory across all nodes",
+      "command": "numactl --interleave=all ./memory_intensive_app",
+      "output_example": "",
+      "requires_root": false
+    },
+    {
+      "description": "Bind process to specific physical CPUs",
+      "command": "numactl --physcpubind=0-7 ./myapp",
+      "output_example": "",
+      "requires_root": false
+    },
+    {
+      "description": "Prefer memory allocation on node 0 with fallback",
+      "command": "numactl --preferred=0 ./myapp",
+      "output_example": "",
+      "requires_root": false
+    },
+    {
+      "description": "Bind MPI rank to specific NUMA node for GPU affinity",
+      "command": "numactl --cpunodebind=1 --membind=1 mpirun -np 4 ./gpu_mpi_app",
+      "output_example": "",
+      "requires_root": false
+    },
+    {
+      "description": "Check NUMA node distances for topology-aware scheduling",
+      "command": "numactl -H | grep -A3 'node distances'",
+      "output_example": "node distances:\nnode   0   1\n  0:  10  21\n  1:  21  10",
+      "requires_root": false
+    },
+    {
+      "description": "Verify GPU NUMA locality with nvidia-smi",
+      "command": "nvidia-smi topo -m",
+      "output_example": "",
+      "requires_root": false
+    },
+    {
+      "description": "Run application bound to NUMA node matching GPU 0",
+      "command": "GPU_NUMA=$(nvidia-smi topo -m | grep 'GPU0' | awk '{print $NF}'); numactl --cpunodebind=$GPU_NUMA --membind=$GPU_NUMA ./cuda_app",
+      "output_example": "",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "numactl: command not found",
+      "meaning": "The numactl package is not installed on the system",
+      "resolution": "Install the numactl package: apt install numactl (Debian/Ubuntu) or yum install numactl (RHEL/CentOS)"
+    },
+    {
+      "message": "numactl: No NUMA support available on this system",
+      "meaning": "The kernel does not have NUMA support enabled or the system is not NUMA-aware",
+      "resolution": "Ensure kernel is compiled with CONFIG_NUMA=y. Check /proc/cmdline for numa=off parameter. Single-socket systems may not have NUMA support."
+    },
+    {
+      "message": "numactl: invalid node number",
+      "meaning": "A specified NUMA node number does not exist on the system",
+      "resolution": "Use 'numactl --hardware' to see available nodes and their numbers. Node numbers start at 0."
+    },
+    {
+      "message": "numactl: setting membind policy failed",
+      "meaning": "Unable to set the memory binding policy, possibly due to insufficient memory on specified nodes",
+      "resolution": "Check available memory on target nodes with 'numactl -H'. Consider using --preferred instead of --membind for more flexibility."
+    },
+    {
+      "message": "numactl: invalid cpu number",
+      "meaning": "A specified CPU number does not exist or is offline",
+      "resolution": "Use 'lscpu' or 'numactl -H' to see valid CPU numbers. Verify CPU is online with /sys/devices/system/cpu/cpuN/online."
+    },
+    {
+      "message": "libnuma: Warning: /sys not mounted or invalid",
+      "meaning": "The sysfs filesystem is not properly mounted",
+      "resolution": "Mount sysfs with: mount -t sysfs sysfs /sys"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "numastat",
+      "lstopo",
+      "hwloc-ls",
+      "hwloc-bind",
+      "nvidia-smi topo -m",
+      "lscpu",
+      "taskset",
+      "cat /sys/devices/system/node/node*/cpulist",
+      "cat /proc/self/numa_maps"
+    ],
+    "uses_library": ["libnuma"],
+    "notes": "numactl provides the foundation for NUMA-aware process execution. For GPU workloads, combine with nvidia-smi topo to identify optimal NUMA node placement. hwloc tools (lstopo, hwloc-bind) provide graphical visualization and more advanced binding options. The numastat command shows per-node memory statistics and can help diagnose NUMA imbalances."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required for --hardware and --show operations. All NUMA topology information is available to non-privileged users.",
+    "write_operations": "Process binding and memory policy operations do not require root for the user's own processes. Setting policies for other processes or system-wide settings may require root.",
+    "notes": "Memory binding with --membind can cause allocation failures if specified nodes lack sufficient memory. The --strict option requires the process to have access to modify memory mappings."
+  },
+  "limitations": [
+    "NUMA support must be enabled in the kernel (CONFIG_NUMA=y)",
+    "Single-socket systems typically have only one NUMA node, limiting the usefulness of numactl",
+    "Memory binding with --membind can cause out-of-memory errors if specified nodes lack sufficient free memory",
+    "CPU hotplug may change node topology dynamically, requiring re-evaluation of binding policies",
+    "Some virtualized environments do not expose accurate NUMA topology to guests",
+    "Memory policies are inherited by child processes but may be overridden by applications that set their own policies",
+    "Interleaved memory policy may not benefit all workloads and can increase latency for memory-local access patterns"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "numa_node_count",
+          "numa_node_cpus",
+          "numa_node_memory",
+          "numa_distances",
+          "cpu_topology"
+        ],
+        "description": "Reads NUMA topology information from /sys/devices/system/node/, including node CPU assignments, memory sizes, and inter-node distances."
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "process_numa_policy",
+          "process_cpu_affinity",
+          "process_memory_binding"
+        ],
+        "description": "Sets NUMA memory policy and CPU affinity for the launched process via the set_mempolicy() and sched_setaffinity() system calls."
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "NUMA topology changes (CPU hotplug)",
+        "effect": "Available CPUs per node may change, affecting valid CPU binding specifications."
+      },
+      {
+        "state_change": "Memory pressure on NUMA nodes",
+        "effect": "Memory binding with --membind may fail if specified nodes have insufficient free memory."
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "lscpu",
+        "shared_state": "NUMA node count and CPU-to-node mapping are consistent between commands"
+      },
+      {
+        "command": "nvidia-smi topo -m",
+        "shared_state": "GPU NUMA affinity information helps determine optimal node binding for GPU processes"
+      },
+      {
+        "command": "lstopo",
+        "shared_state": "Hardware topology including NUMA nodes, CPUs, and memory is consistent with hwloc output"
+      },
+      {
+        "command": "hwloc-ls",
+        "shared_state": "NUMA topology and CPU binding information is consistent with hwloc tools"
+      },
+      {
+        "command": "numastat",
+        "shared_state": "NUMA memory statistics reflect the impact of memory binding policies set by numactl"
+      },
+      {
+        "command": "taskset",
+        "shared_state": "CPU affinity settings are compatible and can be combined for fine-grained control"
+      }
+    ]
+  }
+}

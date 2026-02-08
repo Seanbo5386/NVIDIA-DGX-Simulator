@@ -1,0 +1,170 @@
+{
+  "command": "unzip",
+  "category": "general",
+  "description": "Extract compressed files from ZIP archives. Extracts files from .zip format. Common for extracting datasets and software packages in HPC.",
+  "synopsis": "unzip [options] <zipfile> [file...] [-d <dir>]",
+  "version_documented": "Info-ZIP UnZip 6.0+",
+  "source_urls": ["https://linux.die.net/man/1/unzip"],
+  "installation": {
+    "package": "unzip",
+    "notes": "Usually installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "description": "Extract to directory",
+      "arguments": "<dir>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-o",
+      "description": "Overwrite without prompting"
+    },
+    {
+      "short": "-n",
+      "description": "Never overwrite existing"
+    },
+    {
+      "short": "-l",
+      "description": "List contents"
+    },
+    {
+      "short": "-t",
+      "description": "Test archive integrity"
+    },
+    {
+      "short": "-q",
+      "description": "Quiet mode"
+    },
+    {
+      "short": "-v",
+      "description": "Verbose listing"
+    },
+    {
+      "short": "-x",
+      "description": "Exclude files",
+      "arguments": "<pattern>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-j",
+      "description": "Junk paths (no directories)"
+    },
+    {
+      "short": "-P",
+      "description": "Password",
+      "arguments": "<password>",
+      "argument_type": "string"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Warning (some files skipped)"
+    },
+    {
+      "code": 2,
+      "meaning": "Error"
+    },
+    {
+      "code": 9,
+      "meaning": "File not found"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Extract archive",
+      "command": "unzip dataset.zip",
+      "requires_root": false
+    },
+    {
+      "description": "Extract to directory",
+      "command": "unzip data.zip -d /scratch/user/data/",
+      "requires_root": false
+    },
+    {
+      "description": "List contents",
+      "command": "unzip -l archive.zip",
+      "requires_root": false
+    },
+    {
+      "description": "Extract silently",
+      "command": "unzip -q -o large_dataset.zip",
+      "requires_root": false
+    },
+    {
+      "description": "Extract specific files",
+      "command": "unzip archive.zip '*.csv'",
+      "requires_root": false
+    },
+    {
+      "description": "Test integrity",
+      "command": "unzip -t downloaded.zip",
+      "requires_root": false
+    },
+    {
+      "description": "Extract without directory structure",
+      "command": "unzip -j archive.zip -d output/",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "cannot find zipfile directory",
+      "meaning": "Not a valid zip file",
+      "resolution": "Check file format or re-download"
+    },
+    {
+      "message": "bad CRC",
+      "meaning": "File is corrupted",
+      "resolution": "Re-download archive"
+    },
+    {
+      "message": "unsupported compression method",
+      "meaning": "Archive uses newer compression",
+      "resolution": "Update unzip or use different tool"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["zip", "tar", "7z"],
+    "notes": "Use tar for .tar.gz files. 7z handles many formats. -o useful in scripts to avoid prompts."
+  },
+  "permissions": {
+    "read_operations": "Read archive file",
+    "write_operations": "Write extracted files",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "No .tar.gz support (use tar)",
+    "Single-threaded extraction",
+    "UTF-8 filename issues on older versions"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads zip archive"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Extracts files to filesystem",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "zip",
+        "shared_state": "Extracts what zip creates"
+      }
+    ]
+  }
+}

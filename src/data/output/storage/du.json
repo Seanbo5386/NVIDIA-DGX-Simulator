@@ -1,0 +1,166 @@
+{
+  "command": "du",
+  "category": "storage",
+  "description": "Estimate file and directory space usage. Recursively calculates disk usage for directories. Essential for finding large files and managing HPC storage quotas.",
+  "synopsis": "du [options] [file...]",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/du.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default on all Linux distributions."
+  },
+  "global_options": [
+    {
+      "short": "-h",
+      "long": "--human-readable",
+      "description": "Human readable sizes"
+    },
+    {
+      "short": "-s",
+      "long": "--summarize",
+      "description": "Show only total for each argument"
+    },
+    {
+      "short": "-c",
+      "long": "--total",
+      "description": "Show grand total"
+    },
+    {
+      "short": "-d",
+      "long": "--max-depth",
+      "description": "Maximum directory depth",
+      "arguments": "<N>",
+      "argument_type": "integer",
+      "example": "-d 1"
+    },
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Include files, not just directories"
+    },
+    {
+      "long": "--exclude",
+      "description": "Exclude files matching pattern",
+      "arguments": "<pattern>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--apparent-size",
+      "description": "Show apparent size, not disk usage"
+    },
+    {
+      "short": "-x",
+      "long": "--one-file-system",
+      "description": "Skip directories on different filesystems"
+    },
+    {
+      "long": "--time",
+      "description": "Show modification time"
+    },
+    {
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Summary of directory",
+      "command": "du -sh /home/user",
+      "output_example": "125G    /home/user",
+      "requires_root": false
+    },
+    {
+      "description": "Top-level directories sorted by size",
+      "command": "du -h --max-depth=1 /scratch | sort -hr",
+      "output_example": "2.1T    /scratch\n800G    /scratch/project1\n650G    /scratch/project2\n450G    /scratch/datasets",
+      "requires_root": false
+    },
+    {
+      "description": "Find largest directories",
+      "command": "du -h --max-depth=2 /home | sort -hr | head -20",
+      "requires_root": false
+    },
+    {
+      "description": "Total with breakdown",
+      "command": "du -shc /scratch/user/*",
+      "requires_root": false
+    },
+    {
+      "description": "Stay on same filesystem",
+      "command": "du -shx /",
+      "requires_root": false
+    },
+    {
+      "description": "Include all files",
+      "command": "du -ah /home/user | sort -hr | head -20",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "du: cannot read directory",
+      "meaning": "Permission denied",
+      "resolution": "Run as root or check permissions"
+    },
+    {
+      "message": "du: cannot access",
+      "meaning": "File or directory doesn't exist",
+      "resolution": "Verify path exists"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["df", "ncdu", "find", "lfs quota"],
+    "notes": "du counts actual disk blocks used. Sparse files may show less than apparent size. For interactive exploration, consider ncdu."
+  },
+  "permissions": {
+    "read_operations": "Need read access to directories",
+    "write_operations": "N/A - read-only command",
+    "notes": "Root needed to scan all directories"
+  },
+  "limitations": [
+    "Can be slow on large directories",
+    "Network filesystems may be very slow",
+    "Hard links counted once per scan"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Calculates directory sizes"
+      },
+      {
+        "state_domain": "storage_lustre_state",
+        "fields": ["files"],
+        "description": "Calculates Lustre directory sizes"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "File creation/deletion",
+        "effect": "Directory sizes change"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "df",
+        "shared_state": "Total usage should correlate"
+      },
+      {
+        "command": "ls -l",
+        "shared_state": "File sizes match apparent-size mode"
+      }
+    ]
+  }
+}

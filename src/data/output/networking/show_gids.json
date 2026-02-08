@@ -1,0 +1,88 @@
+{
+  "command": "show_gids",
+  "category": "networking",
+  "description": "Display InfiniBand GID table entries. Shows Global Identifiers for RDMA devices. Essential for RoCE/IB configuration and debugging.",
+  "synopsis": "show_gids [device] [port]",
+  "version_documented": "rdma-core 30+",
+  "source_urls": ["https://github.com/linux-rdma/rdma-core"],
+  "installation": {
+    "package": "rdma-core",
+    "notes": "Install via: apt install rdma-core or yum install rdma-core"
+  },
+  "global_options": [],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show all GIDs",
+      "command": "show_gids",
+      "output_example": "DEV     PORT    INDEX   GID                                     IPv4            VER     DEV\nmlx5_0  1       0       fe80:0000:0000:0000:0002:c903:001f:8c30  N/A             v2      eth0\nmlx5_0  1       1       0000:0000:0000:0000:0000:ffff:c0a8:0101  192.168.1.1     v2      eth0",
+      "requires_root": false
+    },
+    {
+      "description": "Show specific device",
+      "command": "show_gids mlx5_0",
+      "requires_root": false
+    },
+    {
+      "description": "Show specific port",
+      "command": "show_gids mlx5_0 1",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No GIDs found",
+      "meaning": "No RDMA devices or GIDs configured",
+      "resolution": "Check RDMA device status with ibstat"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["ibstat", "ibv_devinfo", "rdma link", "ip addr"],
+    "notes": "GIDs are used for RDMA addressing. RoCE uses IPv4/IPv6 addresses as GIDs. InfiniBand uses port GUID-based GIDs. GID index is used in RDMA connection setup."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "N/A - read-only command",
+    "notes": "Reads from sysfs"
+  },
+  "limitations": [
+    "Output format varies by version",
+    "Requires RDMA devices present",
+    "IPv4 mapping needs RoCE"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["guid", "gid"],
+        "description": "Shows GID table for RDMA devices"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "IP address change",
+        "effect": "GID table updates for RoCE"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ibstat",
+        "shared_state": "Port GUIDs correspond to GIDs"
+      },
+      {
+        "command": "ip addr",
+        "shared_state": "IPv4 GIDs match IP addresses"
+      }
+    ]
+  }
+}

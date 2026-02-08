@@ -1,0 +1,119 @@
+{
+  "command": "ldd",
+  "category": "general",
+  "description": "Print shared library dependencies. Lists dynamic libraries required by executables. Essential for debugging missing library issues in HPC applications.",
+  "synopsis": "ldd [options] <file>...",
+  "version_documented": "glibc 2.31+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/ldd.1.html"],
+  "installation": {
+    "package": "libc-bin",
+    "notes": "Part of glibc, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Verbose output"
+    },
+    {
+      "short": "-u",
+      "long": "--unused",
+      "description": "Print unused direct dependencies"
+    },
+    {
+      "short": "-d",
+      "long": "--data-relocs",
+      "description": "Perform relocations"
+    },
+    {
+      "short": "-r",
+      "long": "--function-relocs",
+      "description": "Perform function relocations"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "List dependencies",
+      "command": "ldd /usr/bin/python3",
+      "requires_root": false
+    },
+    {
+      "description": "Check CUDA application",
+      "command": "ldd ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Verbose output",
+      "command": "ldd -v /usr/local/cuda/bin/nvcc",
+      "requires_root": false
+    },
+    {
+      "description": "Check MPI binary",
+      "command": "ldd $(which mpirun)",
+      "requires_root": false
+    },
+    {
+      "description": "Find missing libraries",
+      "command": "ldd ./program 2>&1 | grep 'not found'",
+      "requires_root": false
+    },
+    {
+      "description": "Check shared object",
+      "command": "ldd /usr/local/cuda/lib64/libcudart.so",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "not a dynamic executable",
+      "meaning": "File is statically linked or not executable",
+      "resolution": "Check file type with 'file' command"
+    },
+    {
+      "message": "not found",
+      "meaning": "Library missing",
+      "resolution": "Install library or set LD_LIBRARY_PATH"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["ldconfig", "nm", "objdump"],
+    "notes": "'not found' indicates missing library. Set LD_LIBRARY_PATH or install package. Security: don't run on untrusted binaries."
+  },
+  "permissions": {
+    "read_operations": "Read binary file",
+    "write_operations": "N/A",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Security risk with untrusted executables",
+    "Static binaries show no dependencies",
+    "Doesn't show dlopen() dependencies"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads binary files"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ldconfig",
+        "shared_state": "Libraries in ldconfig cache"
+      }
+    ]
+  }
+}

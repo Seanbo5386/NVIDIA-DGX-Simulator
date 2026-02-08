@@ -1,0 +1,101 @@
+{
+  "command": "mkdir",
+  "category": "general",
+  "description": "Make directories. Creates new directories with specified permissions. Essential for organizing HPC project structures.",
+  "synopsis": "mkdir [options] <directory>...",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/mkdir.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-p",
+      "long": "--parents",
+      "description": "Create parent directories as needed"
+    },
+    {
+      "short": "-m",
+      "long": "--mode",
+      "description": "Set permission mode",
+      "arguments": "<mode>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Print message for each directory"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Create directory",
+      "command": "mkdir project",
+      "requires_root": false
+    },
+    {
+      "description": "Create with parents",
+      "command": "mkdir -p /scratch/user/project/data/raw",
+      "requires_root": false
+    },
+    {
+      "description": "Create with permissions",
+      "command": "mkdir -m 750 private_data",
+      "requires_root": false
+    },
+    {
+      "description": "Create multiple",
+      "command": "mkdir -p {train,test,val}/{images,labels}",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "cannot create directory: File exists",
+      "meaning": "Directory already exists",
+      "resolution": "Use -p to ignore existing"
+    },
+    {
+      "message": "Permission denied",
+      "meaning": "No write permission to parent",
+      "resolution": "Check permissions or use sudo"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["rmdir", "rm -r", "ls"],
+    "notes": "-p is invaluable for scripts - no error if exists. Brace expansion useful for project scaffolding."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "Write access to parent",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Cannot set owner (use chown after)",
+    "Parent must exist without -p"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Creates directories",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

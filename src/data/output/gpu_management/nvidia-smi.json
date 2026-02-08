@@ -1,0 +1,1269 @@
+{
+  "command": "nvidia-smi",
+  "category": "gpu_management",
+  "description": "NVIDIA System Management Interface (nvidia-smi) is a command-line utility based on the NVIDIA Management Library (NVML) that provides monitoring and management capabilities for NVIDIA GPU devices. It enables querying GPU state information, modifying GPU configurations, and monitoring processes using GPU resources in real-time.",
+  "synopsis": "nvidia-smi [OPTION1 [ARG]] [OPTION2 [ARG]] ...",
+  "version_documented": "Latest (535.x+)",
+  "source_urls": ["https://docs.nvidia.com/deploy/nvidia-smi/index.html"],
+  "installation": {
+    "package": "nvidia-driver",
+    "notes": "Installed as part of the NVIDIA driver package. Available on Linux, Windows, and other supported platforms."
+  },
+  "global_options": [
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display usage information for nvidia-smi"
+    },
+    {
+      "long": "--version",
+      "description": "Display nvidia-smi version information"
+    },
+    {
+      "short": "-L",
+      "long": "--list-gpus",
+      "description": "List each available GPU and its UUID",
+      "example": "nvidia-smi -L"
+    },
+    {
+      "short": "-B",
+      "long": "--list-excluded-gpus",
+      "description": "List excluded GPUs with their UUIDs"
+    },
+    {
+      "short": "-q",
+      "long": "--query",
+      "description": "Display detailed GPU or unit information in human-readable format",
+      "example": "nvidia-smi -q"
+    },
+    {
+      "short": "-u",
+      "long": "--unit",
+      "description": "Query unit data (for S-class Tesla enclosures only)"
+    },
+    {
+      "short": "-i",
+      "long": "--id=",
+      "description": "Target specific GPU(s) by comma-separated index, serial number, UUID, or PCI bus ID",
+      "arguments": "GPU_ID",
+      "argument_type": "string",
+      "example": "nvidia-smi -i 0,1"
+    },
+    {
+      "short": "-f",
+      "long": "--filename=",
+      "description": "Redirect query output to a file instead of stdout",
+      "arguments": "FILE",
+      "argument_type": "path",
+      "example": "nvidia-smi -q -f gpu_info.txt"
+    },
+    {
+      "short": "-x",
+      "long": "--xml-format",
+      "description": "Produce XML output instead of human-readable format"
+    },
+    {
+      "long": "--dtd",
+      "description": "Embed DTD within the XML output (use with -x)"
+    },
+    {
+      "short": "-d",
+      "long": "--display=",
+      "description": "Display only selected information categories",
+      "arguments": "TYPE",
+      "argument_type": "string",
+      "example": "nvidia-smi -q -d MEMORY,TEMPERATURE"
+    },
+    {
+      "short": "-l",
+      "long": "--loop=",
+      "description": "Continuously report query data at specified interval in seconds",
+      "arguments": "SEC",
+      "argument_type": "integer",
+      "example": "nvidia-smi -l 1"
+    },
+    {
+      "long": "--loop-ms=",
+      "description": "Continuously report query data at specified interval in milliseconds",
+      "arguments": "MS",
+      "argument_type": "integer",
+      "example": "nvidia-smi --loop-ms=500"
+    },
+    {
+      "long": "--query-gpu=",
+      "description": "Query specific GPU attributes using comma-separated property names. Must be used with --format",
+      "arguments": "PROPERTIES",
+      "argument_type": "string",
+      "example": "nvidia-smi --query-gpu=gpu_name,memory.total,memory.used --format=csv"
+    },
+    {
+      "long": "--query-supported-clocks=",
+      "description": "Query available clock frequencies for the GPU",
+      "arguments": "PROPERTIES",
+      "argument_type": "string"
+    },
+    {
+      "long": "--query-compute-apps=",
+      "description": "Query information about active compute processes",
+      "arguments": "PROPERTIES",
+      "argument_type": "string",
+      "example": "nvidia-smi --query-compute-apps=pid,used_memory --format=csv"
+    },
+    {
+      "long": "--query-accounted-apps=",
+      "description": "Query information about accounted compute processes",
+      "arguments": "PROPERTIES",
+      "argument_type": "string"
+    },
+    {
+      "long": "--query-retired-pages=",
+      "description": "Query information about retired memory pages",
+      "arguments": "PROPERTIES",
+      "argument_type": "string"
+    },
+    {
+      "long": "--query-remapped-rows=",
+      "description": "Query information about remapped memory rows",
+      "arguments": "PROPERTIES",
+      "argument_type": "string"
+    },
+    {
+      "long": "--format=",
+      "description": "Specify output format for query commands",
+      "arguments": "FORMAT",
+      "argument_type": "string",
+      "example": "nvidia-smi --query-gpu=name --format=csv,noheader,nounits"
+    },
+    {
+      "short": "-pm",
+      "long": "--persistence-mode=",
+      "description": "Set persistence mode (keeps driver loaded when no applications are using the GPU). Linux only, requires root.",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "example": "nvidia-smi -pm 1"
+    },
+    {
+      "short": "-e",
+      "long": "--ecc-config=",
+      "description": "Set ECC memory mode (0=Disabled, 1=Enabled). Requires reboot to take effect.",
+      "arguments": "MODE",
+      "argument_type": "integer",
+      "example": "nvidia-smi -e 1"
+    },
+    {
+      "short": "-p",
+      "long": "--reset-ecc-errors=",
+      "description": "Reset ECC error counters (VOLATILE or AGGREGATE)",
+      "arguments": "TYPE",
+      "argument_type": "string",
+      "example": "nvidia-smi -p VOLATILE"
+    },
+    {
+      "short": "-c",
+      "long": "--compute-mode=",
+      "description": "Set compute access mode (0=Default, 1=Exclusive_Thread, 2=Prohibited, 3=Exclusive_Process)",
+      "arguments": "MODE",
+      "argument_type": "integer",
+      "example": "nvidia-smi -c 3"
+    },
+    {
+      "short": "-dm",
+      "long": "--driver-model=",
+      "description": "Set driver model (Windows only: TCC or WDDM)",
+      "arguments": "TYPE",
+      "argument_type": "string"
+    },
+    {
+      "short": "-fdm",
+      "long": "--force-driver-model=",
+      "description": "Force driver model change (Windows only)",
+      "arguments": "TYPE",
+      "argument_type": "string"
+    },
+    {
+      "long": "--gom=",
+      "description": "Set GPU Operation Mode (0/ALL_ON, 1/COMPUTE, 2/LOW_DP)",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "example": "nvidia-smi --gom=1"
+    },
+    {
+      "short": "-r",
+      "long": "--gpu-reset",
+      "description": "Trigger a reset of the GPU. Requires root privileges.",
+      "example": "nvidia-smi -r -i 0"
+    },
+    {
+      "short": "-vm",
+      "long": "--virt-mode=",
+      "description": "Switch virtualization mode (3/VGPU, 4/VSGA)",
+      "arguments": "MODE",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-lgc",
+      "long": "--lock-gpu-clocks=",
+      "description": "Lock GPU clocks to specified frequency range (Volta and later)",
+      "arguments": "MIN,MAX",
+      "argument_type": "string",
+      "example": "nvidia-smi -lgc 1200,1500"
+    },
+    {
+      "short": "-lmc",
+      "long": "--lock-memory-clocks=",
+      "description": "Lock memory clocks to specified frequency range",
+      "arguments": "MIN,MAX",
+      "argument_type": "string"
+    },
+    {
+      "short": "-rgc",
+      "long": "--reset-gpu-clocks",
+      "description": "Reset GPU clocks to default values"
+    },
+    {
+      "short": "-rmc",
+      "long": "--reset-memory-clocks",
+      "description": "Reset memory clocks to default values"
+    },
+    {
+      "short": "-lmcd",
+      "long": "--lock-memory-clocks-deferred",
+      "description": "Set deferred memory clock locking"
+    },
+    {
+      "short": "-rmcd",
+      "long": "--reset-memory-clocks-deferred",
+      "description": "Reset deferred memory clock locking"
+    },
+    {
+      "short": "-pl",
+      "long": "--power-limit=",
+      "description": "Set maximum power consumption limit in watts. Requires root privileges.",
+      "arguments": "WATTS",
+      "argument_type": "integer",
+      "example": "nvidia-smi -pl 300"
+    },
+    {
+      "short": "-sc",
+      "long": "--scope=",
+      "description": "Set power limit scope (0/GPU, 1/TOTAL_MODULE)",
+      "arguments": "SCOPE",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-cc",
+      "long": "--cuda-clocks=",
+      "description": "Override CUDA clocks (0/RESTORE_DEFAULT, 1/OVERRIDE)",
+      "arguments": "MODE",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-am",
+      "long": "--accounting-mode=",
+      "description": "Enable or disable GPU accounting mode (0/Disabled, 1/Enabled)",
+      "arguments": "MODE",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-caa",
+      "long": "--clear-accounted-apps",
+      "description": "Clear accounting data buffer"
+    },
+    {
+      "short": "-mig",
+      "long": "--multi-instance-gpu=",
+      "description": "Enable or disable Multi-Instance GPU mode (Ampere and later)",
+      "arguments": "MODE",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-gtt",
+      "long": "--gpu-target-temp=",
+      "description": "Set target temperature for GPU thermal management",
+      "arguments": "CELSIUS",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--set-hostname=",
+      "description": "Associate a hostname with the device",
+      "arguments": "HOSTNAME",
+      "argument_type": "string"
+    },
+    {
+      "long": "--get-hostname",
+      "description": "Retrieve the hostname associated with the device"
+    },
+    {
+      "short": "-eom",
+      "long": "--error-on-warning",
+      "description": "Return non-zero exit code when warnings are generated"
+    },
+    {
+      "short": "-t",
+      "long": "--toggle-led=",
+      "description": "Set unit LED color (0/GREEN, 1/AMBER). For unit modification only.",
+      "arguments": "STATE",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-ac",
+      "long": "--applications-clocks=",
+      "description": "Set application clocks (deprecated). Format: MEM,GRAPHICS",
+      "arguments": "MEM,GRAPHICS",
+      "argument_type": "string"
+    },
+    {
+      "short": "-rac",
+      "long": "--reset-applications-clocks",
+      "description": "Reset application clocks to default (deprecated)"
+    },
+    {
+      "long": "--auto-boost-default=",
+      "description": "Set auto-boost default state (deprecated)",
+      "arguments": "MODE",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--auto-boost-permission=",
+      "description": "Set auto-boost permission (deprecated)",
+      "arguments": "MODE",
+      "argument_type": "integer"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "topo",
+      "description": "Display GPU/system topology information including interconnections, CPU/memory affinities, and RDMA-capable NICs. Linux only.",
+      "synopsis": "nvidia-smi topo [options]",
+      "options": [
+        {
+          "short": "-m",
+          "long": "--matrix",
+          "description": "Display the full GPU topology matrix showing connections between all GPUs"
+        },
+        {
+          "short": "-mp",
+          "long": "--matrix-pci",
+          "description": "Display topology matrix for PCI-only connections"
+        },
+        {
+          "short": "-c",
+          "long": "--cpu",
+          "description": "Display GPUs with affinity to specified CPU",
+          "arguments": "CPU",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-n",
+          "long": "--nearest",
+          "description": "Find connected GPUs via specified traversal path",
+          "arguments": "PATH",
+          "argument_type": "string"
+        },
+        {
+          "short": "-p",
+          "long": "--path",
+          "description": "Display direct PCIe path between two GPUs"
+        },
+        {
+          "long": "-p2p",
+          "description": "Display P2P capability status (r/read, w/write, n/nvlink, a/atomics, p/pcie)",
+          "arguments": "CAPABILITY",
+          "argument_type": "string"
+        },
+        {
+          "short": "-C",
+          "description": "Display nearest CPU NUMA ID for the GPU"
+        },
+        {
+          "short": "-M",
+          "description": "Display nearest memory NUMA ID for the GPU"
+        },
+        {
+          "long": "-gnid",
+          "description": "Display GPU NUMA ID"
+        },
+        {
+          "long": "-nvme",
+          "description": "Display GPU to NVME device connections"
+        }
+      ]
+    },
+    {
+      "name": "nvlink",
+      "description": "Display and manage NVLink status, capabilities, error counters, and throughput information",
+      "synopsis": "nvidia-smi nvlink [options]",
+      "options": [
+        {
+          "short": "-i",
+          "description": "Select specific GPU(s) by index",
+          "arguments": "GPU_IDS",
+          "argument_type": "string"
+        },
+        {
+          "short": "-l",
+          "description": "Select specific NVLink by link ID",
+          "arguments": "LINK_ID",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-s",
+          "long": "--status",
+          "description": "Query NVLink status information"
+        },
+        {
+          "short": "-c",
+          "long": "--capabilities",
+          "description": "Query NVLink capabilities"
+        },
+        {
+          "short": "-p",
+          "long": "--pcibusid",
+          "description": "Display remote node PCI bus ID"
+        },
+        {
+          "short": "-R",
+          "long": "--remotelinkinfo",
+          "description": "Display remote device information"
+        },
+        {
+          "short": "-e",
+          "long": "--errorcounters",
+          "description": "Display NVLink error counters (Replay, Recovery, CRC, etc.)"
+        },
+        {
+          "short": "-ec",
+          "long": "--crcerrorcounters",
+          "description": "Display per-lane CRC/ECC errors"
+        },
+        {
+          "short": "-re",
+          "long": "--reseterrorcounters",
+          "description": "Reset all NVLink error counters"
+        },
+        {
+          "short": "-gt",
+          "long": "--getthroughput",
+          "description": "Get NVLink throughput data (d/payload, r/raw)",
+          "arguments": "TYPE",
+          "argument_type": "string"
+        },
+        {
+          "long": "-sLowPwrThres",
+          "description": "Set low power threshold",
+          "arguments": "THRESHOLD",
+          "argument_type": "integer"
+        },
+        {
+          "long": "-gLowPwrInfo",
+          "description": "Query low power information"
+        },
+        {
+          "long": "-sBwMode",
+          "description": "Set bandwidth mode (FULL, OFF, MIN, HALF, 3QUARTER)",
+          "arguments": "MODE",
+          "argument_type": "string"
+        },
+        {
+          "long": "-gBwMode",
+          "description": "Get current bandwidth mode"
+        },
+        {
+          "long": "-cBridge",
+          "description": "Check NVLink bridge presence"
+        },
+        {
+          "long": "-sLWidth",
+          "description": "Set active link width",
+          "arguments": "WIDTH",
+          "argument_type": "integer"
+        },
+        {
+          "long": "-gLWidth",
+          "description": "Get current link width"
+        },
+        {
+          "long": "-info",
+          "description": "Display device information"
+        }
+      ]
+    },
+    {
+      "name": "c2c",
+      "description": "Manage GPU Chip-to-Chip (C2C) links",
+      "synopsis": "nvidia-smi c2c [options]",
+      "options": [
+        {
+          "short": "-i",
+          "description": "Select specific GPU(s) by index",
+          "arguments": "GPU_IDS",
+          "argument_type": "string"
+        },
+        {
+          "short": "-l",
+          "description": "Select specific C2C link",
+          "arguments": "LINK_ID",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-s",
+          "long": "--status",
+          "description": "Query C2C link status"
+        },
+        {
+          "short": "-e",
+          "long": "-errorCounters",
+          "description": "Display error counters"
+        },
+        {
+          "long": "-gLowPwrInfo",
+          "description": "Query power state information"
+        }
+      ]
+    },
+    {
+      "name": "dmon",
+      "description": "Device monitoring mode for real-time GPU statistics with configurable metrics",
+      "synopsis": "nvidia-smi dmon [options]",
+      "options": [
+        {
+          "short": "-i",
+          "description": "Select specific GPU(s) to monitor (up to 16)",
+          "arguments": "GPU_IDS",
+          "argument_type": "string"
+        },
+        {
+          "short": "-s",
+          "description": "Select metric groups (p=power+temp, u=utilization, c=clocks, v=violations, m=memory, e=ecc, t=throughput)",
+          "arguments": "METRICS",
+          "argument_type": "string"
+        },
+        {
+          "short": "-c",
+          "description": "Number of samples to collect",
+          "arguments": "COUNT",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-d",
+          "description": "Monitoring frequency in seconds",
+          "arguments": "SECS",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-o",
+          "description": "Output options: D (prepend date), T (prepend time)",
+          "arguments": "OPTIONS",
+          "argument_type": "string"
+        },
+        {
+          "long": "--gpm-metrics",
+          "description": "Select GPM metrics",
+          "arguments": "METRICS",
+          "argument_type": "string"
+        },
+        {
+          "long": "--gpm-options",
+          "description": "GPM level (d/device, m/mig, dm/both)",
+          "arguments": "MODE",
+          "argument_type": "string"
+        },
+        {
+          "long": "--format",
+          "description": "Output format (csv, nounit, noheader)",
+          "arguments": "SPEC",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "daemon",
+      "description": "Background monitoring process with log persistence. Linux only, requires root. Experimental feature.",
+      "synopsis": "nvidia-smi daemon [options]",
+      "options": [
+        {
+          "short": "-i",
+          "description": "Monitor specific GPU(s)",
+          "arguments": "GPU_IDS",
+          "argument_type": "string"
+        },
+        {
+          "short": "-s",
+          "description": "Metrics to record",
+          "arguments": "METRICS",
+          "argument_type": "string"
+        },
+        {
+          "short": "-d",
+          "description": "Monitoring interval in seconds",
+          "arguments": "SECS",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-p",
+          "description": "Log directory path (default: /var/log/nvstats/)",
+          "arguments": "PATH",
+          "argument_type": "path"
+        },
+        {
+          "short": "-j",
+          "description": "Append string to log filename",
+          "arguments": "STRING",
+          "argument_type": "string"
+        },
+        {
+          "short": "-t",
+          "description": "Terminate running daemon"
+        }
+      ]
+    },
+    {
+      "name": "replay",
+      "description": "Extract and replay daemon log data. Experimental feature.",
+      "synopsis": "nvidia-smi replay [options]",
+      "options": [
+        {
+          "short": "-f",
+          "description": "Log file to replay (mandatory)",
+          "arguments": "LOGFILE",
+          "argument_type": "path",
+          "required": true
+        },
+        {
+          "short": "-s",
+          "description": "Filter to specific metrics",
+          "arguments": "METRICS",
+          "argument_type": "string"
+        },
+        {
+          "short": "-i",
+          "description": "Limit to specific GPU(s)",
+          "arguments": "GPU_IDS",
+          "argument_type": "string"
+        },
+        {
+          "short": "-b",
+          "description": "Start time for replay (HH:MM:SS)",
+          "arguments": "TIME",
+          "argument_type": "string"
+        },
+        {
+          "short": "-e",
+          "description": "End time for replay (HH:MM:SS)",
+          "arguments": "TIME",
+          "argument_type": "string"
+        },
+        {
+          "short": "-r",
+          "description": "Redirect output to file",
+          "arguments": "OUTFILE",
+          "argument_type": "path"
+        }
+      ]
+    },
+    {
+      "name": "pmon",
+      "description": "Process monitoring mode showing compute and graphics activity per GPU",
+      "synopsis": "nvidia-smi pmon [options]",
+      "options": [
+        {
+          "short": "-i",
+          "description": "Select specific GPU(s) to monitor (up to 16)",
+          "arguments": "GPU_IDS",
+          "argument_type": "string"
+        },
+        {
+          "short": "-s",
+          "description": "Select metric groups (u=utilization, m=memory)",
+          "arguments": "METRICS",
+          "argument_type": "string"
+        },
+        {
+          "short": "-c",
+          "description": "Number of samples to collect",
+          "arguments": "COUNT",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-d",
+          "description": "Monitoring frequency in seconds (1-10)",
+          "arguments": "SECS",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-o",
+          "description": "Output options: D (prepend date), T (prepend time)",
+          "arguments": "OPTIONS",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "drain",
+      "description": "Display and modify GPU drain state. Linux only.",
+      "synopsis": "nvidia-smi drain [options]",
+      "options": [
+        {
+          "short": "-p",
+          "long": "--pciid",
+          "description": "PCI bus ID of the GPU",
+          "arguments": "PCI_ID",
+          "argument_type": "string"
+        },
+        {
+          "short": "-m",
+          "long": "--modify",
+          "description": "Modify drain state (0=enable, 1=drain)",
+          "arguments": "STATE",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-q",
+          "long": "--query",
+          "description": "Query current drain state"
+        }
+      ]
+    },
+    {
+      "name": "clocks",
+      "description": "Display and set GPU clock speeds",
+      "synopsis": "nvidia-smi clocks [options]",
+      "options": [
+        {
+          "short": "-i",
+          "description": "Select specific GPU(s)",
+          "arguments": "GPU_IDS",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "vgpu",
+      "description": "Display NVIDIA vGPU (virtual GPU) information",
+      "synopsis": "nvidia-smi vgpu [options]",
+      "options": [
+        {
+          "short": "-i",
+          "description": "Select specific GPU(s)",
+          "arguments": "GPU_IDS",
+          "argument_type": "string"
+        },
+        {
+          "short": "-q",
+          "long": "--query",
+          "description": "Query vGPU information"
+        },
+        {
+          "short": "-s",
+          "description": "Display scheduling information"
+        },
+        {
+          "short": "-c",
+          "description": "Display vGPU capabilities"
+        }
+      ]
+    },
+    {
+      "name": "mig",
+      "description": "Multi-Instance GPU (MIG) management for partitioning GPUs into isolated instances. Ampere and later architectures.",
+      "synopsis": "nvidia-smi mig [options]",
+      "options": [
+        {
+          "short": "-i",
+          "description": "Select specific GPU(s)",
+          "arguments": "GPU_IDS",
+          "argument_type": "string"
+        },
+        {
+          "short": "-lgi",
+          "long": "--list-gpu-instances",
+          "description": "List GPU instances"
+        },
+        {
+          "short": "-lci",
+          "long": "--list-compute-instances",
+          "description": "List compute instances"
+        },
+        {
+          "short": "-lgip",
+          "long": "--list-gpu-instance-profiles",
+          "description": "List available GPU instance profiles"
+        },
+        {
+          "short": "-lcip",
+          "long": "--list-compute-instance-profiles",
+          "description": "List available compute instance profiles"
+        },
+        {
+          "short": "-cgi",
+          "long": "--create-gpu-instance",
+          "description": "Create a GPU instance with specified profile",
+          "arguments": "PROFILE",
+          "argument_type": "string"
+        },
+        {
+          "short": "-cci",
+          "long": "--create-compute-instance",
+          "description": "Create a compute instance with specified profile",
+          "arguments": "PROFILE",
+          "argument_type": "string"
+        },
+        {
+          "short": "-dgi",
+          "long": "--destroy-gpu-instance",
+          "description": "Destroy a GPU instance",
+          "arguments": "INSTANCE_ID",
+          "argument_type": "string"
+        },
+        {
+          "short": "-dci",
+          "long": "--destroy-compute-instance",
+          "description": "Destroy a compute instance",
+          "arguments": "INSTANCE_ID",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "boost-slider",
+      "description": "Manage boost slider controls for GPU performance tuning",
+      "synopsis": "nvidia-smi boost-slider [options]"
+    },
+    {
+      "name": "power-hint",
+      "description": "Query power hint information for workload optimization",
+      "synopsis": "nvidia-smi power-hint [options]"
+    },
+    {
+      "name": "conf-compute",
+      "description": "Confidential computing controls and queries",
+      "synopsis": "nvidia-smi conf-compute [options]"
+    },
+    {
+      "name": "power-smoothing",
+      "description": "Power smoothing controls and settings",
+      "synopsis": "nvidia-smi power-smoothing [options]"
+    },
+    {
+      "name": "power-profiles",
+      "description": "Workload power profile management",
+      "synopsis": "nvidia-smi power-profiles [options]"
+    },
+    {
+      "name": "encodersessions",
+      "description": "Display information about active encoder sessions",
+      "synopsis": "nvidia-smi encodersessions [options]"
+    }
+  ],
+  "output_formats": {
+    "default": "Human-readable table format with header and units. Displays GPU index, name, persistence mode, bus ID, display active, volatile ECC, fan, temperature, performance state, power usage, memory usage, and GPU utilization.",
+    "csv": "Comma-separated values format for scripting. Use --format=csv with --query-gpu or similar query commands. Supports options: noheader (omit column headers), nounits (omit unit labels).",
+    "xml": "XML format with DTD reference. Enabled with -x or --xml-format flag. Use --dtd to embed DTD within the XML output."
+  },
+  "environment_variables": [
+    {
+      "name": "CUDA_VISIBLE_DEVICES",
+      "description": "Controls which GPUs are visible to CUDA applications. Can be set to a comma-separated list of GPU indices or UUIDs.",
+      "example": "CUDA_VISIBLE_DEVICES=0,1",
+      "affects_command": "Does not directly affect nvidia-smi, but affects how CUDA applications see GPUs. nvidia-smi always shows all GPUs regardless of this variable."
+    },
+    {
+      "name": "CUDA_DEVICE_ORDER",
+      "description": "Controls the enumeration order of GPUs. Can be set to FASTEST_FIRST or PCI_BUS_ID.",
+      "example": "CUDA_DEVICE_ORDER=PCI_BUS_ID",
+      "affects_command": "Affects GPU ordering for CUDA applications. nvidia-smi uses PCI bus order by default."
+    },
+    {
+      "name": "CUDA_AUTO_BOOST",
+      "description": "Controls auto-boost behavior for CUDA contexts. Set to 0 to disable or 1 to enable.",
+      "example": "CUDA_AUTO_BOOST=0",
+      "affects_command": "Affects GPU boost behavior when running CUDA applications."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - operation completed without errors"
+    },
+    {
+      "code": 2,
+      "meaning": "Invalid argument or flag provided"
+    },
+    {
+      "code": 3,
+      "meaning": "Requested operation is not available on the target device"
+    },
+    {
+      "code": 4,
+      "meaning": "User lacks permission to access the device or perform the operation"
+    },
+    {
+      "code": 6,
+      "meaning": "Object query was unsuccessful"
+    },
+    {
+      "code": 8,
+      "meaning": "External power cables are not properly attached to the GPU"
+    },
+    {
+      "code": 9,
+      "meaning": "NVIDIA driver is not loaded"
+    },
+    {
+      "code": 10,
+      "meaning": "GPU kernel interrupt issue detected"
+    },
+    {
+      "code": 12,
+      "meaning": "NVML shared library is unavailable"
+    },
+    {
+      "code": 13,
+      "meaning": "NVML function is disabled or not implemented"
+    },
+    {
+      "code": 14,
+      "meaning": "InfoROM data is corrupted"
+    },
+    {
+      "code": 15,
+      "meaning": "GPU has fallen off the bus or is inaccessible"
+    },
+    {
+      "code": 255,
+      "meaning": "Other error or internal driver error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display basic GPU status with utilization, memory, temperature, and power information",
+      "command": "nvidia-smi",
+      "output_example": "+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 535.129.03   Driver Version: 535.129.03   CUDA Version: 12.2    |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|                               |                      |               MIG M. |\n|===============================+======================+======================|\n|   0  NVIDIA A100-SXM...  On   | 00000000:07:00.0 Off |                    0 |\n| N/A   32C    P0    52W / 400W |      0MiB / 81920MiB |      0%      Default |\n|                               |                      |             Disabled |\n+-------------------------------+----------------------+----------------------+\n\n+-----------------------------------------------------------------------------+\n| Processes:                                                                  |\n|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |\n|        ID   ID                                                   Usage      |\n|=============================================================================|\n|  No running processes found                                                 |\n+-----------------------------------------------------------------------------+",
+      "requires_root": false
+    },
+    {
+      "description": "List all available GPUs with their UUIDs",
+      "command": "nvidia-smi -L",
+      "output_example": "GPU 0: NVIDIA A100-SXM4-80GB (UUID: GPU-12345678-1234-1234-1234-123456789abc)\nGPU 1: NVIDIA A100-SXM4-80GB (UUID: GPU-87654321-4321-4321-4321-cba987654321)",
+      "requires_root": false
+    },
+    {
+      "description": "Query GPU temperature in CSV format for scripting",
+      "command": "nvidia-smi --query-gpu=index,name,temperature.gpu --format=csv",
+      "output_example": "index, name, temperature.gpu\n0, NVIDIA A100-SXM4-80GB, 32\n1, NVIDIA A100-SXM4-80GB, 34",
+      "requires_root": false
+    },
+    {
+      "description": "Query GPU memory usage without headers or units",
+      "command": "nvidia-smi --query-gpu=memory.total,memory.used,memory.free --format=csv,noheader,nounits",
+      "output_example": "81920, 0, 81920\n81920, 16384, 65536",
+      "requires_root": false
+    },
+    {
+      "description": "Continuously monitor GPU status every second",
+      "command": "nvidia-smi -l 1",
+      "output_example": "[Refreshes every second showing current GPU status table]",
+      "requires_root": false
+    },
+    {
+      "description": "Display detailed GPU query information",
+      "command": "nvidia-smi -q -i 0",
+      "output_example": "==============NVSMI LOG==============\n\nTimestamp                                 : Mon Jan 15 10:30:00 2024\nDriver Version                            : 535.129.03\nCUDA Version                              : 12.2\n\nAttached GPUs                             : 8\n\nGPU 00000000:07:00.0\n    Product Name                          : NVIDIA A100-SXM4-80GB\n    Product Brand                         : NVIDIA\n    Product Architecture                  : Ampere\n    ...",
+      "requires_root": false
+    },
+    {
+      "description": "Display GPU topology matrix showing NVLink and PCIe connections",
+      "command": "nvidia-smi topo -m",
+      "output_example": "        GPU0    GPU1    GPU2    GPU3    GPU4    GPU5    GPU6    GPU7    CPU Affinity    NUMA Affinity\nGPU0     X      NV12    NV12    NV12    NV12    NV12    NV12    NV12    0-63            0\nGPU1    NV12     X      NV12    NV12    NV12    NV12    NV12    NV12    0-63            0\nGPU2    NV12    NV12     X      NV12    NV12    NV12    NV12    NV12    0-63            0\nGPU3    NV12    NV12    NV12     X      NV12    NV12    NV12    NV12    0-63            0\n\nLegend:\n  X    = Self\n  SYS  = Connection traversing PCIe as well as NUMA node link\n  NODE = Connection traversing PCIe as well as between NUMA nodes\n  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge\n  PXB  = Connection traversing multiple PCIe bridges\n  PIX  = Connection traversing a single PCIe bridge\n  NV#  = Connection traversing a bonded set of # NVLinks",
+      "requires_root": false
+    },
+    {
+      "description": "Query NVLink status for all GPUs",
+      "command": "nvidia-smi nvlink -s",
+      "output_example": "GPU 0: NVIDIA A100-SXM4-80GB\n\t Link 0: 25.781 GB/s\n\t Link 1: 25.781 GB/s\n\t Link 2: 25.781 GB/s\n...",
+      "requires_root": false
+    },
+    {
+      "description": "Real-time device monitoring with power, utilization, and clocks",
+      "command": "nvidia-smi dmon -s puc -d 1",
+      "output_example": "# gpu   pwr gtemp mtemp    sm   mem   enc   dec  mclk  pclk\n# Idx     W     C     C     %     %     %     %   MHz   MHz\n    0    52    32    28     0     0     0     0  1593  1410\n    1    54    34    30     0     0     0     0  1593  1410",
+      "requires_root": false
+    },
+    {
+      "description": "Process monitoring showing GPU usage per process",
+      "command": "nvidia-smi pmon -i 0 -d 1 -c 5",
+      "output_example": "# gpu        pid  type    sm   mem   enc   dec   fb    command\n# Idx          #   C/G     %     %     %     %   MB    name\n    0      12345     C    75    45     0     0  8192  python",
+      "requires_root": false
+    },
+    {
+      "description": "Query running compute applications",
+      "command": "nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv",
+      "output_example": "pid, process_name, used_memory [MiB]\n12345, python, 8192\n12346, pytorch_training, 16384",
+      "requires_root": false
+    },
+    {
+      "description": "Set GPU power limit (requires root)",
+      "command": "nvidia-smi -pl 300 -i 0",
+      "output_example": "Power limit for GPU 00000000:07:00.0 was set to 300.00 W from 400.00 W.",
+      "requires_root": true
+    },
+    {
+      "description": "Enable persistence mode (requires root, Linux only)",
+      "command": "nvidia-smi -pm 1 -i 0",
+      "output_example": "Enabled persistence mode for GPU 00000000:07:00.0.",
+      "requires_root": true
+    },
+    {
+      "description": "Set compute mode to exclusive process (requires root)",
+      "command": "nvidia-smi -c 3 -i 0",
+      "output_example": "Set compute mode to EXCLUSIVE_PROCESS for GPU 00000000:07:00.0.",
+      "requires_root": true
+    },
+    {
+      "description": "Reset GPU (requires root)",
+      "command": "nvidia-smi -r -i 0",
+      "output_example": "GPU 00000000:07:00.0 was successfully reset.",
+      "requires_root": true
+    },
+    {
+      "description": "Lock GPU clocks to a specific range (requires root)",
+      "command": "nvidia-smi -lgc 1200,1500 -i 0",
+      "output_example": "GPU clocks set to \"(1200, 1500)\" MHz for GPU 00000000:07:00.0.",
+      "requires_root": true
+    },
+    {
+      "description": "Output GPU information in XML format",
+      "command": "nvidia-smi -q -x",
+      "output_example": "<?xml version=\"1.0\" ?>\n<!DOCTYPE nvidia_smi_log SYSTEM \"nvsmi_device_v12.dtd\">\n<nvidia_smi_log>\n  <timestamp>Mon Jan 15 10:30:00 2024</timestamp>\n  <driver_version>535.129.03</driver_version>\n  <cuda_version>12.2</cuda_version>\n  ...\n</nvidia_smi_log>",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "NVIDIA-SMI has failed because it couldn't communicate with the NVIDIA driver. Make sure that the latest NVIDIA driver is installed and running.",
+      "meaning": "The NVIDIA kernel driver is not loaded or is not functioning properly",
+      "resolution": "Check if the nvidia driver module is loaded with 'lsmod | grep nvidia'. Try loading it with 'modprobe nvidia'. If that fails, reinstall the NVIDIA driver or check dmesg for driver errors."
+    },
+    {
+      "message": "No devices were found",
+      "meaning": "nvidia-smi cannot detect any NVIDIA GPUs in the system",
+      "resolution": "Verify GPUs are physically installed and detected by the system with 'lspci | grep -i nvidia'. Check if the driver is loaded. Ensure the GPU is not disabled in BIOS/UEFI settings."
+    },
+    {
+      "message": "GPU has fallen off the bus",
+      "meaning": "The GPU is no longer responding to the system, indicating a hardware or driver failure",
+      "resolution": "This typically indicates a hardware issue. Try a system reboot. Check PCIe slot seating. Verify power connections. Check system and GPU temperatures. If persistent, the GPU may need replacement."
+    },
+    {
+      "message": "Insufficient Permissions",
+      "meaning": "The operation requires elevated privileges that the current user does not have",
+      "resolution": "Run the command with sudo or as root. Operations like setting power limits, persistence mode, compute mode, and GPU reset require root privileges."
+    },
+    {
+      "message": "GPU is lost",
+      "meaning": "The GPU was present but is no longer accessible",
+      "resolution": "Similar to 'fallen off bus'. Attempt a system reboot. Check hardware connections and PCIe slot. Review dmesg for GPU-related errors."
+    },
+    {
+      "message": "Unable to determine the device handle for GPU",
+      "meaning": "nvidia-smi cannot obtain a handle to communicate with the specified GPU",
+      "resolution": "Check if the GPU index is valid. Verify driver is functioning. Try nvidia-smi -L to list available GPUs. May indicate driver or hardware issues."
+    },
+    {
+      "message": "Setting applications clocks is not supported for GPU",
+      "meaning": "The GPU model does not support the requested clock configuration feature",
+      "resolution": "This feature may not be available on consumer GPUs or certain models. Check GPU specifications for supported features."
+    },
+    {
+      "message": "Xid (PCI:xxxx:xx:xx): xxx, pid=xxxx",
+      "meaning": "An Xid error has occurred, indicating a GPU error condition",
+      "resolution": "Xid errors are logged in system logs. Common Xid values: 13=Graphics Engine Exception, 31=GPU memory page fault, 43=GPU stopped processing, 45=Preemptive cleanup, 48=Double bit ECC error. Investigate based on the specific Xid code."
+    },
+    {
+      "message": "ERR! returned from nvmlDeviceGetPowerManagementLimit",
+      "meaning": "Failed to query or set power management limits",
+      "resolution": "The GPU may not support power management queries, or there may be a driver issue. Verify GPU supports the feature and driver is up to date."
+    },
+    {
+      "message": "Unable to reset GPU",
+      "meaning": "The GPU reset operation failed",
+      "resolution": "Ensure no processes are using the GPU. Stop all GPU applications before reset. May require a full system reboot if GPU is in an unrecoverable state."
+    },
+    {
+      "message": "Feature not supported on this GPU",
+      "meaning": "The requested feature is not available on the current GPU model or driver version",
+      "resolution": "Check GPU specifications and driver documentation. Some features like MIG are only available on specific GPU architectures (Ampere and later)."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "dcgmi",
+      "nvtop",
+      "nvitop",
+      "cuda-smi",
+      "gpustat",
+      "nvidia-settings",
+      "nvidia-modprobe",
+      "nvidia-persistenced",
+      "nvidia-cuda-mps-control",
+      "lspci"
+    ],
+    "uses_library": ["NVML (NVIDIA Management Library)"],
+    "notes": "nvidia-smi is built on top of NVML and provides the same functionality as the NVML API. The NVML library can be accessed programmatically through C/C++ or Python bindings (nvidia-ml-py/pynvml). nvidia-smi output can be parsed programmatically, but using NVML directly is recommended for robust applications."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required. Any user can query GPU status, temperature, memory usage, utilization, and process information.",
+    "write_operations": "Root or equivalent privileges (CAP_SYS_ADMIN capability) required for: setting persistence mode (-pm), power limits (-pl), compute mode (-c), ECC mode (-e), GPU reset (-r), clock locking (-lgc, -lmc), and MIG configuration (-mig).",
+    "notes": "On Linux, the nvidia-modprobe utility can be configured with setuid to allow non-root users to perform certain operations. Some operations may also be delegated through nvidia-persistenced daemon configuration."
+  },
+  "limitations": [
+    "Some features are Linux-only (persistence mode, topology queries, drain state)",
+    "Some features are Windows-only (driver model TCC/WDDM switching)",
+    "MIG (Multi-Instance GPU) is only available on Ampere architecture and later (A100, A30, H100)",
+    "Clock locking features require Volta architecture or later",
+    "Process monitoring (pmon) can only track up to 16 GPUs simultaneously",
+    "Some metrics may not be available depending on GPU model and driver version",
+    "XML output schema may change between driver versions",
+    "Utilization samples are collected over 1 second intervals and may not reflect instantaneous usage",
+    "ECC memory features are not available on all GPU models"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "gpu_id",
+          "uuid",
+          "name",
+          "temperature",
+          "power_draw",
+          "power_limit",
+          "utilization_gpu",
+          "utilization_memory",
+          "memory_total",
+          "memory_used",
+          "memory_free",
+          "ecc_mode",
+          "ecc_errors_correctable",
+          "ecc_errors_uncorrectable",
+          "persistence_mode",
+          "compute_mode",
+          "pci_bus_id",
+          "pcie_link_gen_current",
+          "pcie_link_width_current",
+          "driver_version",
+          "cuda_version",
+          "status",
+          "throttle_reason"
+        ],
+        "description": "nvidia-smi reads comprehensive GPU hardware and driver state through NVML"
+      },
+      {
+        "state_domain": "gpu_process_state",
+        "fields": [
+          "pid",
+          "gpu_id",
+          "process_name",
+          "used_memory",
+          "compute_utilization",
+          "type"
+        ],
+        "description": "nvidia-smi reads process information for all applications using GPU resources"
+      },
+      {
+        "state_domain": "fabric_state",
+        "fields": ["nvlink_version", "links"],
+        "description": "nvidia-smi nvlink subcommand reads NVLink topology and status"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "gpu_state",
+        "fields": ["power_limit"],
+        "description": "Sets the software power limit for the GPU",
+        "requires_flags": ["-pl", "--power-limit"],
+        "requires_privilege": "root"
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["persistence_mode"],
+        "description": "Enables or disables persistence mode (Linux only)",
+        "requires_flags": ["-pm", "--persistence-mode"],
+        "requires_privilege": "root"
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["compute_mode"],
+        "description": "Sets the compute access mode (Default, Exclusive_Thread, Exclusive_Process, Prohibited)",
+        "requires_flags": ["-c", "--compute-mode"],
+        "requires_privilege": "root"
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["ecc_mode"],
+        "description": "Enables or disables ECC memory mode (requires reboot)",
+        "requires_flags": ["-e", "--ecc-config"],
+        "requires_privilege": "root"
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["ecc_errors_correctable", "ecc_errors_uncorrectable"],
+        "description": "Resets ECC error counters (volatile or aggregate)",
+        "requires_flags": ["-p", "--reset-ecc-errors"],
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "GPU temperature exceeds threshold",
+        "effect": "Shows thermal throttling in performance state and throttle reasons"
+      },
+      {
+        "state_change": "GPU power draw exceeds limit",
+        "effect": "Shows power throttling in throttle reasons"
+      },
+      {
+        "state_change": "GPU process starts or stops",
+        "effect": "Updates process list in default output and pmon/query-compute-apps results"
+      },
+      {
+        "state_change": "ECC error occurs",
+        "effect": "Updates ECC error counters in query output"
+      },
+      {
+        "state_change": "GPU utilization changes",
+        "effect": "Updates utilization percentages in real-time monitoring modes"
+      },
+      {
+        "state_change": "NVLink state changes",
+        "effect": "Updates NVLink status and error counters in nvlink subcommand output"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "dcgmi discovery -l",
+        "shared_state": "GPU enumeration and basic properties (UUID, name, PCI bus ID)"
+      },
+      {
+        "command": "nvtop",
+        "shared_state": "GPU utilization, memory usage, temperature, power draw, and process information"
+      },
+      {
+        "command": "lspci | grep -i nvidia",
+        "shared_state": "PCI bus IDs and device identification"
+      },
+      {
+        "command": "nvidia-persistenced",
+        "shared_state": "Persistence mode state (daemon maintains state set by nvidia-smi)"
+      },
+      {
+        "command": "nvidia-cuda-mps-control",
+        "shared_state": "Compute mode and GPU sharing configuration"
+      },
+      {
+        "command": "dcgmi config --set",
+        "shared_state": "Power limits, compute mode, and ECC settings"
+      }
+    ]
+  }
+}

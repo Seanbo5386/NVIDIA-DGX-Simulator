@@ -1,0 +1,119 @@
+{
+  "command": "id",
+  "category": "general",
+  "description": "Print user and group IDs. Shows user identity and group memberships. Useful for verifying permissions on HPC systems.",
+  "synopsis": "id [options] [user]",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/id.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-u",
+      "long": "--user",
+      "description": "Print only user ID"
+    },
+    {
+      "short": "-g",
+      "long": "--group",
+      "description": "Print only primary group ID"
+    },
+    {
+      "short": "-G",
+      "long": "--groups",
+      "description": "Print all group IDs"
+    },
+    {
+      "short": "-n",
+      "long": "--name",
+      "description": "Print names instead of IDs"
+    },
+    {
+      "short": "-r",
+      "long": "--real",
+      "description": "Print real IDs"
+    },
+    {
+      "short": "-Z",
+      "long": "--context",
+      "description": "Print SELinux context"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show all identity info",
+      "command": "id",
+      "requires_root": false
+    },
+    {
+      "description": "Show user name",
+      "command": "id -un",
+      "requires_root": false
+    },
+    {
+      "description": "Show group memberships",
+      "command": "id -Gn",
+      "requires_root": false
+    },
+    {
+      "description": "Check another user",
+      "command": "id slurm",
+      "requires_root": false
+    },
+    {
+      "description": "Get numeric user ID",
+      "command": "id -u",
+      "requires_root": false
+    },
+    {
+      "description": "Check GPU group membership",
+      "command": "id -Gn | grep -E '(video|render)'",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "no such user",
+      "meaning": "User does not exist",
+      "resolution": "Check username spelling"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["whoami", "groups", "getent"],
+    "notes": "groups command is similar to id -Gn. Useful in scripts for permission checks."
+  },
+  "permissions": {
+    "read_operations": "Read user/group database",
+    "write_operations": "N/A",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Cannot modify identity",
+    "LDAP/NIS may add latency",
+    "Supplementary groups limited"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["users"],
+        "description": "Reads user identity information"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

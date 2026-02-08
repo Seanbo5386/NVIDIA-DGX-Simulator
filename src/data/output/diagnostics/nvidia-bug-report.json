@@ -1,0 +1,267 @@
+{
+  "command": "nvidia-bug-report.sh",
+  "category": "diagnostics",
+  "description": "NVIDIA bug report generation script for collecting comprehensive system and GPU diagnostic information. This script gathers a wide variety of system data useful for debugging GPU-related issues including driver version, GPU configuration, kernel logs, system configuration, and NVIDIA-specific diagnostic information. The resulting log file can be submitted to NVIDIA support or used for internal troubleshooting of GPU problems on HPC clusters.",
+  "synopsis": "nvidia-bug-report.sh [options]",
+  "version_documented": "NVIDIA Driver 535.x+",
+  "source_urls": [
+    "https://docs.nvidia.com/deploy/gpu-debug-guidelines/index.html",
+    "https://download.nvidia.com/XFree86/Linux-x86_64/"
+  ],
+  "installation": {
+    "package": "nvidia-driver",
+    "notes": "Included with the NVIDIA proprietary driver package. Located at /usr/bin/nvidia-bug-report.sh or /usr/share/nvidia/nvidia-bug-report.sh depending on the distribution and driver installation method."
+  },
+  "global_options": [
+    {
+      "long": "--output-file",
+      "description": "Specify the output file name for the bug report archive. By default, the report is saved to nvidia-bug-report.log.gz in the current directory.",
+      "arguments": "<filename>",
+      "argument_type": "path",
+      "default": "nvidia-bug-report.log.gz",
+      "required": false,
+      "example": "nvidia-bug-report.sh --output-file /tmp/gpu-debug.log.gz"
+    },
+    {
+      "long": "--safe-mode",
+      "description": "Run in safe mode, skipping commands that may hang on systems with problematic GPU states. Useful when GPU has fallen off the bus or is unresponsive.",
+      "required": false,
+      "example": "nvidia-bug-report.sh --safe-mode"
+    },
+    {
+      "long": "--extra-system-data",
+      "description": "Collect additional system data beyond the default set, including more detailed hardware information and configuration files.",
+      "required": false,
+      "example": "nvidia-bug-report.sh --extra-system-data"
+    },
+    {
+      "long": "--dmesg-file",
+      "description": "Specify an alternative dmesg log file to include instead of collecting live dmesg output.",
+      "arguments": "<filename>",
+      "argument_type": "path",
+      "required": false,
+      "example": "nvidia-bug-report.sh --dmesg-file /var/log/dmesg.old"
+    },
+    {
+      "long": "--journalctl-file",
+      "description": "Specify an alternative journalctl log file to include instead of collecting live journal output.",
+      "arguments": "<filename>",
+      "argument_type": "path",
+      "required": false,
+      "example": "nvidia-bug-report.sh --journalctl-file /tmp/journal-export.log"
+    },
+    {
+      "long": "--no-nvidia-smi",
+      "description": "Skip running nvidia-smi commands during report collection. Useful when nvidia-smi is hanging or causing system instability.",
+      "required": false,
+      "example": "nvidia-bug-report.sh --no-nvidia-smi"
+    },
+    {
+      "long": "--silent",
+      "description": "Run in silent mode with minimal console output. The report is still generated but progress messages are suppressed.",
+      "required": false,
+      "example": "nvidia-bug-report.sh --silent"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display usage information and available options.",
+      "required": false,
+      "example": "nvidia-bug-report.sh --help"
+    }
+  ],
+  "output_formats": {
+    "default": "Gzip-compressed log file (nvidia-bug-report.log.gz) containing concatenated diagnostic information from multiple sources.",
+    "uncompressed": "When extracted, produces a plain text log file with clear section headers for each collected data type."
+  },
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - bug report generated successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - failed to generate bug report or encountered fatal error during collection"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Generate standard bug report (basic usage)",
+      "command": "nvidia-bug-report.sh",
+      "output_example": "nvidia-bug-report.sh will now collect information about your\nsystem and create the file 'nvidia-bug-report.log.gz' in the current\ndirectory.  It may take several seconds to run.  In some\ncases, it may hang trying to capture data generated dynamically\nby the NVIDIA kernel module...\n\nIf nvidia-bug-report.sh hangs, consider running with --safe-mode.\n\nnvidia-bug-report.sh has completed.",
+      "requires_root": true
+    },
+    {
+      "description": "Generate bug report with custom output location",
+      "command": "nvidia-bug-report.sh --output-file /var/log/nvidia/debug-$(date +%Y%m%d-%H%M%S).log.gz",
+      "requires_root": true
+    },
+    {
+      "description": "Generate bug report in safe mode for problematic GPU",
+      "command": "nvidia-bug-report.sh --safe-mode",
+      "output_example": "Running in safe mode, skipping potentially hanging commands...\nnvidia-bug-report.sh has completed.",
+      "requires_root": true
+    },
+    {
+      "description": "Generate bug report without nvidia-smi (when nvidia-smi hangs)",
+      "command": "nvidia-bug-report.sh --no-nvidia-smi --safe-mode",
+      "requires_root": true
+    },
+    {
+      "description": "Generate silent bug report for automated collection",
+      "command": "nvidia-bug-report.sh --silent --output-file /var/log/nvidia/automated-report.log.gz",
+      "requires_root": true
+    },
+    {
+      "description": "Generate bug report with extra system data for support ticket",
+      "command": "nvidia-bug-report.sh --extra-system-data --output-file /tmp/nvidia-support-case.log.gz",
+      "requires_root": true
+    },
+    {
+      "description": "Extract and view the bug report contents",
+      "command": "gunzip -c nvidia-bug-report.log.gz | less",
+      "requires_root": false
+    },
+    {
+      "description": "Search bug report for Xid errors",
+      "command": "gunzip -c nvidia-bug-report.log.gz | grep -i 'xid'",
+      "output_example": "Jan 15 10:30:45 node01 kernel: NVRM: Xid (PCI:0000:3b:00): 79, pid=1234, GPU has fallen off the bus.",
+      "requires_root": false
+    },
+    {
+      "description": "Generate bug report after GPU error for HPC support",
+      "command": "nvidia-bug-report.sh --output-file /shared/logs/node-$(hostname)-gpu-error-$(date +%Y%m%d).log.gz",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Please run nvidia-bug-report.sh as root.",
+      "meaning": "The script requires root privileges to collect complete system information",
+      "resolution": "Run the script with sudo: sudo nvidia-bug-report.sh"
+    },
+    {
+      "message": "nvidia-smi not found or not working",
+      "meaning": "The NVIDIA driver may not be installed or loaded properly",
+      "resolution": "Check NVIDIA driver installation with 'modprobe nvidia' or reinstall drivers. Use --no-nvidia-smi to generate partial report."
+    },
+    {
+      "message": "NVIDIA kernel module not loaded",
+      "meaning": "The nvidia kernel module is not loaded in the kernel",
+      "resolution": "Load the module with 'modprobe nvidia' or check for driver installation issues. Check dmesg for driver load errors."
+    },
+    {
+      "message": "nvidia-bug-report.sh appears to be hanging",
+      "meaning": "A command during collection is not responding, possibly due to GPU in bad state",
+      "resolution": "Kill the script with Ctrl+C and re-run with --safe-mode flag to skip potentially hanging commands"
+    },
+    {
+      "message": "Cannot write to output file",
+      "meaning": "Insufficient permissions or disk space to write the bug report",
+      "resolution": "Check disk space with 'df -h' and ensure write permissions to the output directory. Use --output-file to specify a different location."
+    },
+    {
+      "message": "gzip: stdout: No space left on device",
+      "meaning": "Insufficient disk space to complete the bug report archive",
+      "resolution": "Free up disk space or specify output to a different filesystem with --output-file"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "nvidia-smi",
+      "dmesg",
+      "journalctl",
+      "lspci",
+      "lsmod",
+      "cat /proc/driver/nvidia/version",
+      "nvidia-debugdump",
+      "dcgmi diag"
+    ],
+    "notes": "nvidia-bug-report.sh internally invokes many diagnostic commands including nvidia-smi, dmesg, journalctl, lspci, lsmod, and reads various /proc and /sys files. The script collects outputs from these tools and aggregates them into a single compressed report file suitable for NVIDIA support analysis. For DCGM-managed clusters, dcgmi diag provides complementary diagnostic capabilities."
+  },
+  "permissions": {
+    "read_operations": "Reads GPU state via nvidia-smi, kernel logs via dmesg/journalctl, hardware configuration via lspci/lsmod, and various system files under /proc and /sys.",
+    "write_operations": "Writes the compressed bug report file to the specified output location (default: current directory).",
+    "notes": "Root privileges are strongly recommended for complete data collection. Without root, some information will be missing from the report including certain kernel logs and hardware details."
+  },
+  "limitations": [
+    "Requires root privileges for complete information collection",
+    "May hang on systems with GPUs in bad states (use --safe-mode to mitigate)",
+    "Report file can be large (tens of megabytes) on systems with many GPUs",
+    "Some collected information may be stale if system state changes during collection",
+    "Does not collect GPU memory dumps or detailed firmware logs",
+    "Collection may take several minutes on large multi-GPU systems",
+    "Network-related GPU diagnostics (NVLink, NVSwitch) may require additional tools"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "driver_version",
+          "gpu_count",
+          "gpu_uuid",
+          "temperature",
+          "power_state",
+          "ecc_errors",
+          "xid_errors",
+          "pcie_link_state",
+          "memory_usage",
+          "clock_speeds",
+          "gpu_utilization"
+        ],
+        "description": "Collects comprehensive GPU state information via nvidia-smi including hardware configuration, utilization metrics, error counts, and thermal data."
+      },
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "kernel_version",
+          "kernel_modules",
+          "kernel_messages",
+          "system_logs",
+          "hardware_configuration",
+          "pci_devices",
+          "cpu_info",
+          "memory_info"
+        ],
+        "description": "Collects system-level information including kernel logs (dmesg, journalctl), loaded modules (lsmod), PCI device list (lspci), and general system configuration."
+      },
+      {
+        "state_domain": "gpu_process_state",
+        "fields": [
+          "running_processes",
+          "compute_processes",
+          "graphics_processes"
+        ],
+        "description": "Captures information about processes using GPU resources at the time of report generation."
+      },
+      {
+        "state_domain": "fabric_state",
+        "fields": ["nvlink_status", "nvswitch_status"],
+        "description": "On multi-GPU systems with NVLink, collects fabric topology and link status information."
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "Bug report includes nvidia-smi output showing same GPU state as direct nvidia-smi queries"
+      },
+      {
+        "command": "dmesg",
+        "shared_state": "Bug report includes dmesg output with kernel messages including NVIDIA driver and Xid error messages"
+      },
+      {
+        "command": "journalctl",
+        "shared_state": "Bug report includes systemd journal entries related to NVIDIA driver and GPU events"
+      },
+      {
+        "command": "lspci",
+        "shared_state": "Bug report includes PCI device information matching lspci output for GPU devices"
+      },
+      {
+        "command": "nvidia-debugdump",
+        "shared_state": "Both tools collect GPU diagnostic information; nvidia-debugdump provides more detailed GPU-internal data"
+      }
+    ]
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "command": "mpicc",
+  "category": "mpi",
+  "description": "MPI C compiler wrapper. Compiles C programs with MPI library linking automatically handled. Wraps the underlying C compiler (gcc, icc, etc.) and adds necessary MPI include paths and libraries.",
+  "synopsis": "mpicc [options] source_files",
+  "version_documented": "Open MPI 4.1+ / MPICH 4.0+",
+  "source_urls": ["https://www.open-mpi.org/doc/current/man1/mpicc.1.php"],
+  "installation": {
+    "package": "openmpi or mpich",
+    "notes": "Install via: apt install openmpi-bin libopenmpi-dev or module load openmpi"
+  },
+  "global_options": [
+    {
+      "long": "--showme",
+      "description": "Show compilation command without executing"
+    },
+    {
+      "long": "--showme:compile",
+      "description": "Show compiler flags"
+    },
+    {
+      "long": "--showme:link",
+      "description": "Show linker flags"
+    },
+    {
+      "long": "--showme:command",
+      "description": "Show underlying compiler command"
+    },
+    {
+      "long": "--showme:incdirs",
+      "description": "Show include directories"
+    },
+    {
+      "long": "--showme:libdirs",
+      "description": "Show library directories"
+    },
+    {
+      "long": "--showme:libs",
+      "description": "Show libraries"
+    },
+    {
+      "long": "--showme:version",
+      "description": "Show MPI version"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Compilation successful"
+    },
+    {
+      "code": 1,
+      "meaning": "Compilation error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Compile simple MPI program",
+      "command": "mpicc -o hello_mpi hello_mpi.c",
+      "requires_root": false
+    },
+    {
+      "description": "Compile with optimization",
+      "command": "mpicc -O3 -o program program.c",
+      "requires_root": false
+    },
+    {
+      "description": "Compile with OpenMP support",
+      "command": "mpicc -fopenmp -o hybrid hybrid.c",
+      "requires_root": false
+    },
+    {
+      "description": "Show full compilation command",
+      "command": "mpicc --showme -o program program.c",
+      "output_example": "gcc -I/usr/lib/x86_64-linux-gnu/openmpi/include -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lmpi -o program program.c",
+      "requires_root": false
+    },
+    {
+      "description": "Show MPI include directories",
+      "command": "mpicc --showme:incdirs",
+      "output_example": "/usr/lib/x86_64-linux-gnu/openmpi/include",
+      "requires_root": false
+    },
+    {
+      "description": "Compile with debugging symbols",
+      "command": "mpicc -g -O0 -o debug_program program.c",
+      "requires_root": false
+    },
+    {
+      "description": "Link with math library",
+      "command": "mpicc -o program program.c -lm",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "mpicc: command not found",
+      "meaning": "MPI compiler wrapper not in PATH",
+      "resolution": "Install MPI development package or load MPI module"
+    },
+    {
+      "message": "mpi.h: No such file or directory",
+      "meaning": "MPI headers not found",
+      "resolution": "Install MPI development headers"
+    },
+    {
+      "message": "undefined reference to MPI_*",
+      "meaning": "MPI library not linked",
+      "resolution": "Use mpicc instead of gcc directly"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["mpicxx", "mpif90", "mpirun", "ompi_info", "gcc"],
+    "notes": "mpicc wraps the system C compiler. Use mpicxx for C++ and mpif90 for Fortran. The underlying compiler can be changed with environment variables (OMPI_CC for Open MPI)."
+  },
+  "permissions": {
+    "read_operations": "Read access to source files and MPI headers",
+    "write_operations": "Write access to output directory",
+    "notes": "No special permissions required"
+  },
+  "limitations": [
+    "Compiler-specific flags may not be portable",
+    "MPI implementation specific (Open MPI vs MPICH)",
+    "Module conflicts can cause issues"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["path"],
+        "description": "Finds compiler and libraries via PATH and LD_LIBRARY_PATH"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Module load/unload",
+        "effect": "Different MPI implementation may be used"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ompi_info",
+        "shared_state": "MPI version and configuration matches"
+      },
+      {
+        "command": "which mpicc",
+        "shared_state": "Same MPI installation"
+      }
+    ]
+  }
+}

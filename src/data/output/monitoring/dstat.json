@@ -1,0 +1,187 @@
+{
+  "command": "dstat",
+  "category": "monitoring",
+  "description": "Versatile resource statistics tool combining vmstat, iostat, netstat, and ifstat. Shows real-time system metrics in customizable columns. Useful for HPC performance monitoring.",
+  "synopsis": "dstat [options] [interval [count]]",
+  "version_documented": "dstat 0.7+",
+  "source_urls": ["https://github.com/dstat-real/dstat"],
+  "installation": {
+    "package": "dstat",
+    "notes": "Install via: apt install dstat or yum install dstat. On newer systems may be pcp-system-tools."
+  },
+  "global_options": [
+    {
+      "short": "-c",
+      "long": "--cpu",
+      "description": "Enable CPU stats"
+    },
+    {
+      "short": "-d",
+      "long": "--disk",
+      "description": "Enable disk stats"
+    },
+    {
+      "short": "-n",
+      "long": "--net",
+      "description": "Enable network stats"
+    },
+    {
+      "short": "-m",
+      "long": "--mem",
+      "description": "Enable memory stats"
+    },
+    {
+      "short": "-g",
+      "long": "--page",
+      "description": "Enable paging stats"
+    },
+    {
+      "short": "-s",
+      "long": "--swap",
+      "description": "Enable swap stats"
+    },
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Enable all default stats (cpu, disk, net, page, sys)"
+    },
+    {
+      "long": "--top-cpu",
+      "description": "Show most CPU-intensive process"
+    },
+    {
+      "long": "--top-mem",
+      "description": "Show most memory-intensive process"
+    },
+    {
+      "long": "--top-io",
+      "description": "Show most I/O-intensive process"
+    },
+    {
+      "short": "-o",
+      "long": "--output",
+      "description": "Write to CSV file",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Default stats",
+      "command": "dstat",
+      "output_example": "----total-cpu-usage---- -dsk/total- -net/total- ---paging-- ---system--\nusr sys idl wai stl| read  writ| recv  send|  in   out | int   csw \n  5   2  90   3   0| 120M  45M | 100M  80M |   0     0 |  25k   50k",
+      "requires_root": false
+    },
+    {
+      "description": "CPU and memory every 2 seconds",
+      "command": "dstat -cm 2",
+      "requires_root": false
+    },
+    {
+      "description": "Disk I/O with top process",
+      "command": "dstat -d --top-io",
+      "requires_root": false
+    },
+    {
+      "description": "Network stats for specific interface",
+      "command": "dstat -n -N eth0,ib0",
+      "requires_root": false
+    },
+    {
+      "description": "All stats with CSV output",
+      "command": "dstat -a -o /tmp/stats.csv 1 60",
+      "requires_root": false
+    },
+    {
+      "description": "Show top CPU/memory/IO processes",
+      "command": "dstat --top-cpu --top-mem --top-io",
+      "requires_root": false
+    },
+    {
+      "description": "Full system overview",
+      "command": "dstat -cdnmgsp --top-cpu",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "dstat: command not found",
+      "meaning": "Package not installed",
+      "resolution": "Install dstat package"
+    },
+    {
+      "message": "Unknown option",
+      "meaning": "Invalid flag specified",
+      "resolution": "Check available options with dstat -h"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["vmstat", "iostat", "netstat", "sar", "nmon"],
+    "notes": "dstat is a replacement for vmstat, iostat, and ifstat. Color-coded output helps identify bottlenecks. CSV output useful for post-processing."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for basic stats",
+    "write_operations": "N/A - read-only monitoring",
+    "notes": "Some plugins may need root"
+  },
+  "limitations": [
+    "Project discontinued, replaced by pcp-dstat in some distros",
+    "Some plugins not available on all systems",
+    "No GPU monitoring"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["cpu_count", "memory_total"],
+        "description": "Reads CPU and memory statistics"
+      },
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["device"],
+        "description": "Reads disk I/O statistics"
+      },
+      {
+        "state_domain": "network_eth_state",
+        "fields": ["interface", "rx_bytes", "tx_bytes"],
+        "description": "Reads network interface statistics"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "System activity",
+        "effect": "Metrics update in real-time"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "vmstat",
+        "shared_state": "CPU and memory stats match"
+      },
+      {
+        "command": "iostat",
+        "shared_state": "Disk I/O stats match"
+      },
+      {
+        "command": "free",
+        "shared_state": "Memory stats consistent"
+      }
+    ]
+  }
+}

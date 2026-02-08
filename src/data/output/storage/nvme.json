@@ -1,0 +1,208 @@
+{
+  "command": "nvme",
+  "category": "storage",
+  "description": "NVMe management command-line interface for managing NVMe SSDs. Essential in HPC environments for managing high-speed local scratch storage, checking drive health, and monitoring NVMe performance on compute nodes.",
+  "synopsis": "nvme <command> [<device>] [<options>]",
+  "version_documented": "nvme-cli 2.0+",
+  "source_urls": [
+    "https://github.com/linux-nvme/nvme-cli",
+    "https://man7.org/linux/man-pages/man1/nvme.1.html"
+  ],
+  "installation": {
+    "package": "nvme-cli",
+    "notes": "Install via package manager: apt install nvme-cli, yum install nvme-cli. Requires Linux kernel 3.3+ with NVMe support."
+  },
+  "global_options": [
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Increase verbosity of output"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help information"
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version information"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "list",
+      "description": "List all NVMe devices and namespaces",
+      "synopsis": "nvme list [-o format]"
+    },
+    {
+      "name": "id-ctrl",
+      "description": "Display NVMe controller identification",
+      "synopsis": "nvme id-ctrl <device> [-H]"
+    },
+    {
+      "name": "id-ns",
+      "description": "Display NVMe namespace identification",
+      "synopsis": "nvme id-ns <device> [-H]"
+    },
+    {
+      "name": "smart-log",
+      "description": "Retrieve SMART / health information log",
+      "synopsis": "nvme smart-log <device> [-H]"
+    },
+    {
+      "name": "error-log",
+      "description": "Retrieve error log",
+      "synopsis": "nvme error-log <device>"
+    },
+    {
+      "name": "fw-log",
+      "description": "Retrieve firmware log",
+      "synopsis": "nvme fw-log <device>"
+    },
+    {
+      "name": "format",
+      "description": "Format NVMe namespace (destructive)",
+      "synopsis": "nvme format <device>"
+    },
+    {
+      "name": "sanitize",
+      "description": "Sanitize NVMe device (secure erase)",
+      "synopsis": "nvme sanitize <device>"
+    },
+    {
+      "name": "reset",
+      "description": "Reset NVMe controller",
+      "synopsis": "nvme reset <device>"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Command failed or error occurred"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "List all NVMe devices",
+      "command": "nvme list",
+      "output_example": "Node             SN                   Model                    Namespace Usage                      Format           FW Rev\n---------------- -------------------- ------------------------ --------- -------------------------- ---------------- --------\n/dev/nvme0n1     S5GXNG0R123456       Samsung SSD 980 PRO 2TB  1         2.00  TB /   2.00  TB    512   B +  0 B   5B2QGXA7",
+      "requires_root": false
+    },
+    {
+      "description": "Show SMART health information",
+      "command": "nvme smart-log /dev/nvme0n1",
+      "output_example": "Smart Log for NVME device:nvme0n1 namespace-id:ffffffff\ncritical_warning                    : 0\ntemperature                         : 38 C\navailable_spare                     : 100%\navailable_spare_threshold           : 10%\npercentage_used                     : 1%\ndata_units_read                     : 12,345,678\ndata_units_written                  : 23,456,789",
+      "requires_root": true
+    },
+    {
+      "description": "Show controller identification",
+      "command": "nvme id-ctrl /dev/nvme0 -H",
+      "requires_root": true
+    },
+    {
+      "description": "Show SMART log in JSON format",
+      "command": "nvme smart-log /dev/nvme0n1 -o json",
+      "requires_root": true
+    },
+    {
+      "description": "Check error log for drive issues",
+      "command": "nvme error-log /dev/nvme0n1",
+      "requires_root": true
+    },
+    {
+      "description": "Check firmware version",
+      "command": "nvme fw-log /dev/nvme0",
+      "requires_root": true
+    },
+    {
+      "description": "List devices across cluster nodes",
+      "command": "pdsh -w node[001-100] 'nvme list' | dshbak -c",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "nvme: command not found",
+      "meaning": "nvme-cli package not installed",
+      "resolution": "Install nvme-cli package"
+    },
+    {
+      "message": "Failed to open device",
+      "meaning": "Permission denied or device does not exist",
+      "resolution": "Run with sudo or check device path"
+    },
+    {
+      "message": "NVMe Status: Invalid Namespace or Format",
+      "meaning": "Namespace does not exist or invalid format",
+      "resolution": "Verify device path with nvme list"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["lsblk", "smartctl", "hdparm", "iostat", "fio"],
+    "uses_library": ["libnvme"],
+    "notes": "NVMe drives are commonly used as fast local scratch storage in HPC compute nodes. Monitor drive health regularly to prevent data loss during long-running jobs."
+  },
+  "permissions": {
+    "read_operations": "Most read operations require root or appropriate permissions",
+    "write_operations": "Format, sanitize, and reset operations require root",
+    "notes": "nvme list may work without root but detailed logs typically require elevated privileges"
+  },
+  "limitations": [
+    "Most operations require root privileges",
+    "Format and sanitize operations are destructive",
+    "Some features depend on drive firmware support",
+    "Not all SMART attributes are standardized across vendors"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": [
+          "device_path",
+          "model",
+          "serial_number",
+          "firmware_version",
+          "capacity",
+          "temperature",
+          "smart_status",
+          "wear_level",
+          "power_on_hours"
+        ],
+        "description": "Reads NVMe device identification and SMART data"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["namespace_format", "device_state"],
+        "description": "Format and reset operations modify device state",
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "NVMe device hot-plug",
+        "effect": "New device appears in nvme list"
+      },
+      {
+        "state_change": "Drive temperature increase",
+        "effect": "SMART temperature reading changes"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "lsblk",
+        "shared_state": "NVMe devices shown as block devices"
+      },
+      {
+        "command": "smartctl",
+        "shared_state": "SMART data (though format may differ)"
+      }
+    ]
+  }
+}

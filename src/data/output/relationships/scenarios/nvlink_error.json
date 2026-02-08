@@ -1,0 +1,85 @@
+{
+  "$schema": "../../schema.json",
+  "scenario_id": "nvlink_error",
+  "scenario_name": "NVLink Error Between GPUs",
+  "description": "Simulates NVLink connectivity issues between GPUs, causing fallback to PCIe for peer-to-peer communication",
+  "severity": "warning",
+  "initial_state_change": {
+    "domain": "fabric_state",
+    "affected_entity": "NVLink between GPU 0 and GPU 2 on node dgx-node-01",
+    "changes": {
+      "link_status": "inactive",
+      "rx_errors": 1523,
+      "replay_errors": 847
+    }
+  },
+  "affected_commands": [
+    {
+      "command": "nvidia-smi nvlink -s",
+      "category": "gpu_management",
+      "output_before": "GPU 0: NVIDIA A100-SXM4-80GB\n         Link 0: 25 GB/s\n         Link 1: 25 GB/s",
+      "output_after": "GPU 0: NVIDIA A100-SXM4-80GB\n         Link 0: inactive\n         Link 1: 25 GB/s",
+      "key_differences": ["Link 0 shows inactive instead of speed"]
+    },
+    {
+      "command": "nvidia-smi nvlink -e",
+      "category": "gpu_management",
+      "output_before": "GPU 0: NVIDIA A100-SXM4-80GB\n         Link 0: CRC Errors: 0, Replay Errors: 0, Recovery Errors: 0",
+      "output_after": "GPU 0: NVIDIA A100-SXM4-80GB\n         Link 0: CRC Errors: 1523, Replay Errors: 847, Recovery Errors: 12",
+      "key_differences": [
+        "Non-zero error counts",
+        "CRC, Replay, and Recovery errors accumulated"
+      ]
+    },
+    {
+      "command": "nvidia-smi topo -m",
+      "category": "gpu_management",
+      "output_before": "        GPU0  GPU1  GPU2  GPU3\nGPU0     X    NV4   NV4   NV4\nGPU2    NV4   NV4    X    NV4",
+      "output_after": "        GPU0  GPU1  GPU2  GPU3\nGPU0     X    NV4   SYS   NV4\nGPU2    SYS   NV4    X    NV4",
+      "key_differences": [
+        "GPU0-GPU2 connection shows SYS (PCIe) instead of NV4 (NVLink)"
+      ]
+    },
+    {
+      "command": "dcgmi nvlink -e -g 0",
+      "category": "gpu_management",
+      "output_before": "NVLink Error Counts for GPU 0:\n  Link 0: CRC Flit Errors: 0, CRC Data Errors: 0",
+      "output_after": "NVLink Error Counts for GPU 0:\n  Link 0: CRC Flit Errors: 1523, CRC Data Errors: 847\n  Status: DEGRADED",
+      "key_differences": ["Non-zero error counts", "Degraded status"]
+    },
+    {
+      "command": "nv-fabricmanager --version",
+      "category": "gpu_fabric",
+      "output_after": "Check /var/log/fabricmanager.log for NVLink error details"
+    }
+  ],
+  "recovery_actions": [
+    {
+      "action": "Check NVLink error counts",
+      "command": "nvidia-smi nvlink -e"
+    },
+    {
+      "action": "Reset NVLink error counters",
+      "command": "nvidia-smi nvlink -r"
+    },
+    {
+      "action": "Check fabric manager logs",
+      "command": "tail -100 /var/log/fabricmanager.log"
+    },
+    {
+      "action": "Attempt GPU reset",
+      "command": "nvidia-smi -r -i 0"
+    },
+    {
+      "action": "If persistent, schedule hardware inspection",
+      "command": "scontrol update NodeName=dgx-node-01 State=DRAIN Reason='NVLink errors - hardware inspection'"
+    }
+  ],
+  "simulator_notes": [
+    "NVLink errors cause performance degradation, not complete failure",
+    "Peer-to-peer transfers fall back to slower PCIe path",
+    "Multi-GPU training workloads will see reduced performance",
+    "nvidia-smi topo -m shows actual connectivity path",
+    "Fabric manager may attempt automatic recovery"
+  ]
+}

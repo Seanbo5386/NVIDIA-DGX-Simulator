@@ -1,0 +1,186 @@
+{
+  "command": "glances",
+  "category": "monitoring",
+  "description": "Cross-platform system monitoring tool with web interface. Displays comprehensive system metrics including CPU, memory, network, disk, processes, and sensors. Supports remote monitoring.",
+  "synopsis": "glances [options]",
+  "version_documented": "glances 3.2+",
+  "source_urls": ["https://nicolargo.github.io/glances/"],
+  "installation": {
+    "package": "glances",
+    "notes": "Install via: apt install glances, yum install glances, or pip install glances"
+  },
+  "global_options": [
+    {
+      "short": "-w",
+      "long": "--webserver",
+      "description": "Start web server mode"
+    },
+    {
+      "short": "-s",
+      "long": "--server",
+      "description": "Start server mode"
+    },
+    {
+      "short": "-c",
+      "long": "--client",
+      "description": "Connect to server",
+      "arguments": "<host>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-p",
+      "long": "--port",
+      "description": "Port for web/server mode",
+      "arguments": "<port>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-t",
+      "long": "--time",
+      "description": "Refresh interval seconds",
+      "arguments": "<seconds>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--export",
+      "description": "Export data to backend",
+      "arguments": "<backend>",
+      "argument_type": "string",
+      "example": "--export influxdb"
+    },
+    {
+      "short": "-1",
+      "description": "Per-CPU stats"
+    },
+    {
+      "long": "--disable-gpu",
+      "description": "Disable GPU monitoring"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Interactive mode",
+      "command": "glances",
+      "output_example": "[Curses TUI showing all system metrics with color-coded alerts]",
+      "requires_root": false
+    },
+    {
+      "description": "Web interface",
+      "command": "glances -w",
+      "output_example": "Glances web server started on http://0.0.0.0:61208/",
+      "requires_root": false
+    },
+    {
+      "description": "Connect to remote server",
+      "command": "glances -c hostname",
+      "requires_root": false
+    },
+    {
+      "description": "Custom refresh rate",
+      "command": "glances -t 2",
+      "requires_root": false
+    },
+    {
+      "description": "Export to InfluxDB",
+      "command": "glances --export influxdb",
+      "requires_root": false
+    },
+    {
+      "description": "Per-CPU stats",
+      "command": "glances -1",
+      "requires_root": false
+    },
+    {
+      "description": "Start as server",
+      "command": "glances -s",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "glances: command not found",
+      "meaning": "Package not installed",
+      "resolution": "Install via pip or package manager"
+    },
+    {
+      "message": "Cannot connect to server",
+      "meaning": "Remote server unreachable",
+      "resolution": "Check hostname and port, ensure server is running"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["top", "htop", "nmon", "nvidia-smi"],
+    "notes": "Supports plugins for GPU (NVIDIA), Docker, and other sources. Export backends: InfluxDB, Prometheus, CSV, JSON. REST API available in web mode."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for basic stats",
+    "write_operations": "N/A - read-only monitoring",
+    "notes": "Some sensors may need root"
+  },
+  "limitations": [
+    "GPU plugin may need separate installation",
+    "High refresh rates increase CPU usage",
+    "Web mode requires additional dependencies",
+    "InfiniBand stats not built-in"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["cpu_count", "memory_total"],
+        "description": "Reads CPU and memory statistics"
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["gpu_utilization", "memory_used"],
+        "description": "Reads GPU stats via plugin"
+      },
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["device", "total_size", "available_size"],
+        "description": "Reads disk statistics"
+      },
+      {
+        "state_domain": "network_eth_state",
+        "fields": ["interface", "rx_bytes", "tx_bytes"],
+        "description": "Reads network statistics"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "System activity",
+        "effect": "Metrics update at refresh interval"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "top",
+        "shared_state": "Process and CPU metrics correlate"
+      },
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU metrics match when plugin enabled"
+      },
+      {
+        "command": "free",
+        "shared_state": "Memory statistics consistent"
+      }
+    ]
+  }
+}

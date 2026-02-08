@@ -1,0 +1,151 @@
+{
+  "command": "uptime",
+  "category": "monitoring",
+  "description": "Display how long the system has been running, along with current time, number of logged-in users, and system load averages. Essential for HPC node health monitoring to verify nodes have not rebooted unexpectedly and to assess current load.",
+  "synopsis": "uptime [options]",
+  "version_documented": "procps-ng 3.3.17+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/uptime.1.html"],
+  "installation": {
+    "package": "procps-ng",
+    "notes": "Part of procps-ng package, installed by default on all Linux distributions."
+  },
+  "global_options": [
+    {
+      "short": "-p",
+      "long": "--pretty",
+      "description": "Show uptime in pretty (human-readable) format"
+    },
+    {
+      "short": "-s",
+      "long": "--since",
+      "description": "Show system up since, in yyyy-mm-dd HH:MM:SS format"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help text"
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version information"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show standard uptime with load averages",
+      "command": "uptime",
+      "output_example": " 14:30:22 up 45 days,  3:22,  5 users,  load average: 0.52, 0.48, 0.45",
+      "requires_root": false
+    },
+    {
+      "description": "Show uptime in human-readable format",
+      "command": "uptime -p",
+      "output_example": "up 6 weeks, 3 days, 3 hours, 22 minutes",
+      "requires_root": false
+    },
+    {
+      "description": "Show when system booted",
+      "command": "uptime -s",
+      "output_example": "2024-01-15 11:08:15",
+      "requires_root": false
+    },
+    {
+      "description": "Check load averages across cluster (with pdsh)",
+      "command": "pdsh -w node[001-100] uptime | dshbak -c",
+      "requires_root": false
+    },
+    {
+      "description": "Extract just load averages for scripting",
+      "command": "uptime | awk -F'load average:' '{print $2}'",
+      "output_example": " 0.52, 0.48, 0.45",
+      "requires_root": false
+    },
+    {
+      "description": "Check if node recently rebooted",
+      "command": "uptime -s",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "uptime: cannot open /proc/uptime",
+      "meaning": "/proc filesystem not mounted",
+      "resolution": "Ensure /proc is mounted (should be automatic on normal Linux systems)"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "top",
+      "htop",
+      "w",
+      "who",
+      "last",
+      "cat /proc/uptime",
+      "cat /proc/loadavg"
+    ],
+    "notes": "Load averages represent 1, 5, and 15 minute averages of processes in runnable or uninterruptible state. On HPC systems, load average should be checked before job submission to assess node availability."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "N/A - read-only command",
+    "notes": "Reads from /proc/uptime and /proc/loadavg"
+  },
+  "limitations": [
+    "Load average interpretation depends on CPU count",
+    "Does not show per-CPU load breakdown",
+    "User count may include system services on some systems",
+    "Does not distinguish between CPU-bound and I/O-bound load"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "uptime_seconds",
+          "load_average_1min",
+          "load_average_5min",
+          "load_average_15min",
+          "logged_in_users",
+          "boot_time"
+        ],
+        "description": "Reads system uptime and load metrics from /proc"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "System reboot",
+        "effect": "Uptime resets to zero"
+      },
+      {
+        "state_change": "Process start/stop",
+        "effect": "Load averages adjust over time"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "top",
+        "shared_state": "Load averages shown in top header match uptime"
+      },
+      {
+        "command": "w",
+        "shared_state": "Shows same uptime and load averages"
+      },
+      {
+        "command": "cat /proc/loadavg",
+        "shared_state": "Same load average values"
+      }
+    ]
+  }
+}

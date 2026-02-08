@@ -1,0 +1,191 @@
+{
+  "command": "systemctl",
+  "category": "general",
+  "description": "Control systemd system and service manager. Manages services, targets, and system state. Used on HPC nodes for service management.",
+  "synopsis": "systemctl [options] <command> [unit]",
+  "version_documented": "systemd 249+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/systemctl.1.html"],
+  "installation": {
+    "package": "systemd",
+    "notes": "Part of systemd, default on most Linux."
+  },
+  "subcommands": [
+    {
+      "name": "start",
+      "description": "Start unit",
+      "synopsis": "systemctl start <unit>"
+    },
+    {
+      "name": "stop",
+      "description": "Stop unit",
+      "synopsis": "systemctl stop <unit>"
+    },
+    {
+      "name": "restart",
+      "description": "Restart unit",
+      "synopsis": "systemctl restart <unit>"
+    },
+    {
+      "name": "status",
+      "description": "Show unit status",
+      "synopsis": "systemctl status <unit>"
+    },
+    {
+      "name": "enable",
+      "description": "Enable unit at boot",
+      "synopsis": "systemctl enable <unit>"
+    },
+    {
+      "name": "disable",
+      "description": "Disable unit at boot",
+      "synopsis": "systemctl disable <unit>"
+    },
+    {
+      "name": "list-units",
+      "description": "List loaded units",
+      "synopsis": "systemctl list-units"
+    },
+    {
+      "name": "daemon-reload",
+      "description": "Reload systemd",
+      "synopsis": "systemctl daemon-reload"
+    }
+  ],
+  "global_options": [
+    {
+      "long": "--user",
+      "description": "User service manager"
+    },
+    {
+      "long": "--system",
+      "description": "System service manager"
+    },
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Show all units"
+    },
+    {
+      "short": "-t",
+      "long": "--type",
+      "description": "Unit type filter",
+      "arguments": "<type>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--state",
+      "description": "State filter",
+      "arguments": "<state>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--no-pager",
+      "description": "Disable pager"
+    },
+    {
+      "short": "-q",
+      "long": "--quiet",
+      "description": "Quiet mode"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    },
+    {
+      "code": 3,
+      "meaning": "Unit not active"
+    },
+    {
+      "code": 4,
+      "meaning": "No such unit"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Check service status",
+      "command": "systemctl status slurmctld",
+      "requires_root": false
+    },
+    {
+      "description": "Restart service",
+      "command": "systemctl restart slurmd",
+      "requires_root": true
+    },
+    {
+      "description": "Enable at boot",
+      "command": "systemctl enable nvidia-persistenced",
+      "requires_root": true
+    },
+    {
+      "description": "List failed units",
+      "command": "systemctl --failed",
+      "requires_root": false
+    },
+    {
+      "description": "List all services",
+      "command": "systemctl list-units --type=service",
+      "requires_root": false
+    },
+    {
+      "description": "Reload config",
+      "command": "systemctl daemon-reload",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Unit not found",
+      "meaning": "Service does not exist",
+      "resolution": "Check service name or install package"
+    },
+    {
+      "message": "Access denied",
+      "meaning": "Need elevated privileges",
+      "resolution": "Use sudo"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["journalctl", "service", "systemd-analyze"],
+    "notes": "Modern replacement for service/init.d. journalctl shows logs. systemd-analyze for boot performance."
+  },
+  "permissions": {
+    "read_operations": "Status is readable by all",
+    "write_operations": "Start/stop/enable need root",
+    "notes": "Some user services work without root"
+  },
+  "limitations": [
+    "systemd-specific",
+    "Not available on non-systemd systems",
+    "Learning curve from SysV init"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["services"],
+        "description": "Reads service status"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "system_state",
+        "fields": ["services"],
+        "description": "Controls system services",
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "journalctl",
+        "shared_state": "journalctl shows service logs"
+      }
+    ]
+  }
+}

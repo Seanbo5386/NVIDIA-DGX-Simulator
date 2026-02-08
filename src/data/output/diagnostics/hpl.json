@@ -1,0 +1,355 @@
+{
+  "command": "xhpl",
+  "category": "diagnostics",
+  "description": "High-Performance Linpack (HPL) benchmark - solves dense linear systems using LU factorization with partial pivoting to measure floating-point performance (TFLOPS). HPL is the standard benchmark used for TOP500 supercomputer rankings and HPC cluster validation. Measures sustained double-precision (FP64) floating-point computational rate by solving an N x N dense system of linear equations Ax = b.",
+  "synopsis": "xhpl or mpirun -np N xhpl",
+  "source_urls": [
+    "https://www.netlib.org/benchmark/hpl/",
+    "https://docs.nvidia.com/nvidia-hpc-benchmarks/HPL_benchmark.html"
+  ],
+  "installation": {
+    "package": "hpl",
+    "notes": "Available via multiple methods: (1) NVIDIA HPC Benchmarks container from NGC: nvcr.io/nvidia/hpc-benchmarks, (2) Build from source at netlib.org/benchmark/hpl requiring BLAS library and MPI, (3) Pre-built packages in some HPC Linux distributions. GPU-accelerated version requires CUDA and cuBLAS. For GPU clusters, NVIDIA's optimized HPL implementation is recommended."
+  },
+  "global_options": [
+    {
+      "flag": "N",
+      "description": "Problem size - the dimension of the dense matrix (N x N). Larger N values increase computational intensity and memory usage. Should be chosen to utilize 80-90% of available memory for optimal performance. Typical values range from 10,000 to 500,000+ depending on system memory.",
+      "arguments": "<matrix_size>",
+      "argument_type": "integer",
+      "example": "N = 100000"
+    },
+    {
+      "flag": "NB",
+      "description": "Block size for matrix partitioning. Affects cache efficiency and GPU utilization. Typical values are 192-256 for GPUs, 128-256 for CPUs. Must evenly divide N for optimal performance.",
+      "arguments": "<block_size>",
+      "argument_type": "integer",
+      "default": "192 (GPU) or 256 (CPU)",
+      "example": "NB = 256"
+    },
+    {
+      "flag": "P",
+      "description": "Number of process rows in the 2D process grid. P x Q must equal the total number of MPI processes. For multi-node runs, P and Q should be chosen to minimize communication (typically P <= Q).",
+      "arguments": "<process_rows>",
+      "argument_type": "integer",
+      "example": "P = 2"
+    },
+    {
+      "flag": "Q",
+      "description": "Number of process columns in the 2D process grid. P x Q must equal the total number of MPI processes. Q is typically >= P for optimal performance due to communication patterns.",
+      "arguments": "<process_cols>",
+      "argument_type": "integer",
+      "example": "Q = 4"
+    },
+    {
+      "flag": "PFACT",
+      "description": "Panel factorization algorithm. Options: 0 = left-looking, 1 = Crout, 2 = right-looking. Affects numerical stability and performance.",
+      "arguments": "<algorithm>",
+      "argument_type": "integer",
+      "default": "2 (right-looking)",
+      "example": "PFACT = 2"
+    },
+    {
+      "flag": "RFACT",
+      "description": "Recursive panel factorization algorithm. Options: 0 = left-looking, 1 = Crout, 2 = right-looking. Used for recursive subdivision of panel factorization.",
+      "arguments": "<algorithm>",
+      "argument_type": "integer",
+      "default": "1 (Crout)",
+      "example": "RFACT = 1"
+    },
+    {
+      "flag": "BCAST",
+      "description": "Broadcast algorithm for panel distribution. Options: 0 = 1-ring, 1 = 1-ring modified, 2 = 2-ring, 3 = 2-ring modified, 4 = long, 5 = long modified. Affects inter-node communication efficiency.",
+      "arguments": "<algorithm>",
+      "argument_type": "integer",
+      "default": "1 (1-ring modified)",
+      "example": "BCAST = 1"
+    },
+    {
+      "flag": "DEPTH",
+      "description": "Look-ahead depth for overlapping computation and communication. Higher values increase parallelism but also memory usage. Typical values: 0-2.",
+      "arguments": "<depth>",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "DEPTH = 1"
+    },
+    {
+      "flag": "SWAP",
+      "description": "Swapping algorithm for pivoting. Options: 0 = binary exchange, 1 = spread-roll (long), 2 = mix of both. Affects pivoting communication overhead.",
+      "arguments": "<algorithm>",
+      "argument_type": "integer",
+      "default": "2 (mix)",
+      "example": "SWAP = 2"
+    },
+    {
+      "flag": "L1",
+      "description": "L1 transposed storage option. 0 = transposed, 1 = not transposed. Affects memory access patterns.",
+      "arguments": "<option>",
+      "argument_type": "integer",
+      "default": "0",
+      "example": "L1 = 0"
+    },
+    {
+      "flag": "U",
+      "description": "U transposed storage option. 0 = transposed, 1 = not transposed. Affects memory access patterns.",
+      "arguments": "<option>",
+      "argument_type": "integer",
+      "default": "0",
+      "example": "U = 0"
+    },
+    {
+      "flag": "EQUIL",
+      "description": "Equilibration option. 0 = no equilibration, 1 = equilibration. Improves numerical stability at slight performance cost.",
+      "arguments": "<option>",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "EQUIL = 1"
+    }
+  ],
+  "environment_variables": [
+    {
+      "name": "OMP_NUM_THREADS",
+      "description": "Number of OpenMP threads per MPI process for hybrid MPI+OpenMP execution",
+      "example": "OMP_NUM_THREADS=4",
+      "affects_command": "Controls CPU thread parallelism within each MPI rank"
+    },
+    {
+      "name": "CUDA_VISIBLE_DEVICES",
+      "description": "Specifies which GPUs are visible to the process",
+      "example": "CUDA_VISIBLE_DEVICES=0,1,2,3",
+      "affects_command": "Controls GPU assignment for GPU-accelerated HPL"
+    },
+    {
+      "name": "UCX_TLS",
+      "description": "UCX transport layers for MPI communication",
+      "example": "UCX_TLS=rc,cuda_copy,cuda_ipc",
+      "affects_command": "Enables RDMA and GPU-direct communication paths"
+    },
+    {
+      "name": "NVIDIA_VISIBLE_DEVICES",
+      "description": "NVIDIA container toolkit device specification",
+      "example": "NVIDIA_VISIBLE_DEVICES=all",
+      "affects_command": "Controls GPU visibility in containerized environments"
+    },
+    {
+      "name": "HPL_HOST_NODE",
+      "description": "NUMA node binding for NVIDIA HPL",
+      "example": "HPL_HOST_NODE=0",
+      "affects_command": "Binds CPU memory allocations to specific NUMA node"
+    }
+  ],
+  "output_formats": {
+    "default": "Tabular text output showing problem configuration (N, NB, P, Q), performance metrics (Time in seconds, Gflops), and validation results (residual check, PASSED/FAILED status). Results follow the TOP500 standard output format."
+  },
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - benchmark completed and residual check passed"
+    },
+    {
+      "code": 1,
+      "meaning": "Failure - benchmark failed or residual check did not pass threshold"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Single node CPU-only HPL run",
+      "command": "./xhpl",
+      "output_example": "================================================================================\nHPLinpack 2.3  --  High-Performance Linpack benchmark  --   December 2, 2018\nWritten by A. Petitet and R. Clint Whaley,  Innovative Computing Laboratory, UTK\n================================================================================\n\nN      NB     P     Q               Time                 Gflops\n--------------------------------------------------------------------------------\n10000  256    1     1              12.34              5.405e+01\n--------------------------------------------------------------------------------\n||Ax-b||_oo/(eps*(||A||_oo*||x||_oo+||b||_oo)*N)=   0.00123456 ...... PASSED",
+      "requires_root": false
+    },
+    {
+      "description": "Multi-node MPI run across 8 processes",
+      "command": "mpirun -np 8 ./xhpl",
+      "output_example": "N      NB     P     Q               Time                 Gflops\n--------------------------------------------------------------------------------\n50000  256    2     4              45.67              1.821e+03\n--------------------------------------------------------------------------------\n||Ax-b||_oo/(eps*(||A||_oo*||x||_oo+||b||_oo)*N)=   0.00234567 ...... PASSED",
+      "requires_root": false
+    },
+    {
+      "description": "NVIDIA GPU-accelerated HPL via container",
+      "command": "nvidia-docker run --rm --gpus all -v $(pwd):/workspace nvcr.io/nvidia/hpc-benchmarks:latest ./hpl.sh --dat /workspace/HPL.dat",
+      "output_example": "N      NB     P     Q               Time                 Gflops\n--------------------------------------------------------------------------------\n100000 256    1     8              28.45              2.345e+04\n--------------------------------------------------------------------------------\n||Ax-b||_oo/(eps*(||A||_oo*||x||_oo+||b||_oo)*N)=   0.00012345 ...... PASSED",
+      "requires_root": false
+    },
+    {
+      "description": "Multi-GPU run with explicit GPU binding (8 GPUs, DGX system)",
+      "command": "mpirun -np 8 --map-by ppr:8:node --bind-to none -x CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 ./xhpl",
+      "output_example": "N      NB     P     Q               Time                 Gflops\n--------------------------------------------------------------------------------\n200000 256    2     4             123.45              4.312e+04\n--------------------------------------------------------------------------------\n||Ax-b||_oo/(eps*(||A||_oo*||x||_oo+||b||_oo)*N)=   0.00098765 ...... PASSED",
+      "requires_root": false
+    },
+    {
+      "description": "Slurm-based multi-node HPL job",
+      "command": "srun -N 4 -n 32 --ntasks-per-node=8 --gpus-per-node=8 ./xhpl",
+      "output_example": "N      NB     P     Q               Time                 Gflops\n--------------------------------------------------------------------------------\n400000 256    4     8             234.56              9.123e+04\n--------------------------------------------------------------------------------\n||Ax-b||_oo/(eps*(||A||_oo*||x||_oo+||b||_oo)*N)=   0.00054321 ...... PASSED",
+      "requires_root": false
+    },
+    {
+      "description": "NVIDIA HPC Benchmarks container with InfiniBand",
+      "command": "mpirun --allow-run-as-root -np 8 -x UCX_TLS=rc,cuda_copy,cuda_ipc --hostfile hosts.txt singularity exec --nv hpc-benchmarks.sif ./hpl.sh",
+      "output_example": "N      NB     P     Q               Time                 Gflops\n--------------------------------------------------------------------------------\n300000 256    2     4             156.78              1.156e+05\n--------------------------------------------------------------------------------\n||Ax-b||_oo/(eps*(||A||_oo*||x||_oo+||b||_oo)*N)=   0.00087654 ...... PASSED",
+      "requires_root": false
+    },
+    {
+      "description": "Quick validation run with small problem size",
+      "command": "./xhpl < HPL-small.dat",
+      "output_example": "N      NB     P     Q               Time                 Gflops\n--------------------------------------------------------------------------------\n1000   128    1     1               0.12              5.556e+00\n--------------------------------------------------------------------------------\n||Ax-b||_oo/(eps*(||A||_oo*||x||_oo+||b||_oo)*N)=   0.00345678 ...... PASSED",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "FAILED",
+      "meaning": "Residual check did not pass - computed solution differs from expected within tolerance. The norm ||Ax-b||/(eps*(||A||*||x||+||b||)*N) exceeds threshold (typically 16.0).",
+      "resolution": "Check for hardware issues (ECC errors, thermal throttling). Verify memory is functioning correctly. Reduce problem size or check HPL.dat configuration. Run GPU memory diagnostics with cuda-memcheck."
+    },
+    {
+      "message": "CUDA error: out of memory",
+      "meaning": "Insufficient GPU memory for the specified problem size N and block size NB.",
+      "resolution": "Reduce problem size N in HPL.dat. Memory required is approximately N^2 * 8 bytes for the matrix plus workspace. For multi-GPU, ensure proper distribution across GPUs."
+    },
+    {
+      "message": "MPI_Init failed",
+      "meaning": "MPI initialization error, typically due to misconfiguration or resource unavailability.",
+      "resolution": "Verify MPI installation and configuration. Check that hostfile is correct for multi-node runs. Ensure network connectivity between nodes."
+    },
+    {
+      "message": "P * Q != number of processes",
+      "meaning": "The process grid dimensions in HPL.dat do not match the number of MPI processes launched.",
+      "resolution": "Edit HPL.dat to ensure P * Q equals the number of MPI ranks, or adjust mpirun -np value to match P * Q."
+    },
+    {
+      "message": "HPL.dat not found",
+      "meaning": "HPL configuration file is missing from the current working directory.",
+      "resolution": "Create HPL.dat configuration file or copy from HPL distribution. Run from directory containing HPL.dat."
+    },
+    {
+      "message": "CUDA error: no CUDA-capable device is detected",
+      "meaning": "GPU-accelerated HPL cannot find NVIDIA GPUs.",
+      "resolution": "Verify NVIDIA driver is installed with nvidia-smi. Check CUDA_VISIBLE_DEVICES environment variable. Ensure GPUs are not in exclusive mode or used by other processes."
+    },
+    {
+      "message": "UCX ERROR: Transport 'rc' is not available",
+      "meaning": "Requested InfiniBand transport is not available for MPI communication.",
+      "resolution": "Check InfiniBand adapter status with ibstat. Verify UCX and MPI are built with InfiniBand support. Try alternative transports: UCX_TLS=tcp,cuda_copy."
+    },
+    {
+      "message": "NaN detected in residual",
+      "meaning": "Numerical instability caused not-a-number results during computation.",
+      "resolution": "Indicates potential hardware issue (GPU memory errors, arithmetic unit failure). Run diagnostic tests with dcgmi diag. Check for thermal throttling or power issues."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "nvidia-smi",
+      "mpirun",
+      "srun",
+      "dcgmi",
+      "nccl-tests",
+      "all_reduce_perf",
+      "gpu_burn",
+      "cuda-memcheck",
+      "ibstat",
+      "numactl"
+    ],
+    "uses_library": [
+      "BLAS (cuBLAS for GPU)",
+      "MPI (OpenMPI, MVAPICH2, Intel MPI)",
+      "CUDA Runtime",
+      "UCX",
+      "InfiniBand Verbs"
+    ],
+    "notes": "HPL requires careful tuning of HPL.dat parameters for optimal performance. Problem size N should be maximized while fitting in available memory. Block size NB affects cache/GPU efficiency - typical values are 192-256 for GPUs. Process grid P x Q should minimize communication (P <= Q). For GPU-accelerated runs, use NVIDIA's optimized HPL from NGC containers. Performance results are used for TOP500 submissions and require following strict benchmark rules including residual checks. Multi-node runs require high-bandwidth, low-latency interconnect (InfiniBand, NVLink) for good scaling."
+  },
+  "permissions": {
+    "read_operations": "Requires read access to HPL.dat configuration file. Needs access to GPU devices (/dev/nvidia*) for GPU-accelerated version.",
+    "write_operations": "Creates output file HPL.out with benchmark results. No persistent system changes.",
+    "notes": "Running in containers requires --gpus all or equivalent GPU passthrough. Multi-node runs require SSH access between nodes or Slurm/PBS job scheduler. May require IPC capabilities for GPU peer-to-peer communication."
+  },
+  "limitations": [
+    "Peak performance requires extensive tuning of HPL.dat parameters for specific hardware",
+    "Problem size limited by total available memory across all nodes/GPUs",
+    "GPU version requires NVIDIA GPUs with CUDA support - no AMD or Intel GPU support",
+    "Single benchmark run can take hours for large problem sizes",
+    "Does not test memory bandwidth, only floating-point throughput",
+    "Real application performance may differ significantly from HPL results",
+    "Requires MPI for multi-process/multi-node execution",
+    "Configuration file format is specific and error-prone",
+    "TOP500 submissions require specific rules and verification procedures",
+    "Network performance critical for multi-node scaling efficiency"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "gpu_uuid",
+          "gpu_name",
+          "memory_total",
+          "memory_free",
+          "temperature",
+          "power_draw",
+          "utilization_gpu",
+          "ecc_errors",
+          "pcie_link_width",
+          "pcie_link_gen"
+        ],
+        "description": "Reads GPU configuration and availability for GPU-accelerated HPL. Monitors GPU metrics during benchmark execution including temperature, power, and utilization."
+      },
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "cpu_model",
+          "cpu_count",
+          "memory_total",
+          "memory_available",
+          "numa_topology"
+        ],
+        "description": "Reads system CPU and memory configuration to determine problem size limits and optimal process placement."
+      },
+      {
+        "state_domain": "fabric_state",
+        "fields": [
+          "nvlink_status",
+          "nvswitch_status",
+          "nvlink_bandwidth",
+          "gpu_topology"
+        ],
+        "description": "Reads NVLink/NVSwitch fabric configuration for GPU-to-GPU communication paths in multi-GPU setups."
+      },
+      {
+        "state_domain": "network_ib_state",
+        "fields": [
+          "port_state",
+          "link_width",
+          "link_speed",
+          "hca_type",
+          "rdma_capability"
+        ],
+        "description": "Reads InfiniBand network state for multi-node MPI communication. Verifies RDMA capability for optimal data transfer."
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU utilization, temperature, and power readings during HPL execution should show high utilization (near 100%), elevated temperature, and power draw near TDP"
+      },
+      {
+        "command": "nccl-tests",
+        "shared_state": "Both tools test multi-GPU communication infrastructure. NCCL all-reduce bandwidth affects HPL multi-GPU scaling"
+      },
+      {
+        "command": "all_reduce_perf",
+        "shared_state": "Collective communication performance measured by all_reduce_perf directly impacts HPL panel broadcast and reduction operations"
+      },
+      {
+        "command": "dcgmi diag",
+        "shared_state": "GPU diagnostic results should correlate with HPL success/failure. ECC errors or hardware issues detected by dcgmi will cause HPL failures"
+      },
+      {
+        "command": "ibstat",
+        "shared_state": "InfiniBand link state and speed affect multi-node HPL performance and must be Active for optimal results"
+      }
+    ]
+  }
+}

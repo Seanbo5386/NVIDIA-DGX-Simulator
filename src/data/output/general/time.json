@@ -1,0 +1,118 @@
+{
+  "command": "time",
+  "category": "general",
+  "description": "Time command execution. Measures wall-clock, user CPU, and system CPU time. Essential for benchmarking HPC applications.",
+  "synopsis": "time [options] <command> [args]",
+  "version_documented": "GNU time 1.9+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/time.1.html"],
+  "installation": {
+    "package": "time",
+    "notes": "GNU time may need separate install; shell builtin also exists."
+  },
+  "global_options": [
+    {
+      "short": "-f",
+      "long": "--format",
+      "description": "Custom output format",
+      "arguments": "<format>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-o",
+      "long": "--output",
+      "description": "Output to file",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-a",
+      "long": "--append",
+      "description": "Append to output file"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Verbose output"
+    },
+    {
+      "short": "-p",
+      "long": "--portability",
+      "description": "POSIX format"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success (command succeeded)"
+    },
+    {
+      "code": 1,
+      "meaning": "Error or command failed"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Time a command",
+      "command": "/usr/bin/time ./my_application",
+      "requires_root": false
+    },
+    {
+      "description": "Verbose output",
+      "command": "/usr/bin/time -v ./benchmark",
+      "requires_root": false
+    },
+    {
+      "description": "Custom format",
+      "command": "/usr/bin/time -f 'Wall: %e User: %U Sys: %S' ./app",
+      "requires_root": false
+    },
+    {
+      "description": "Save to file",
+      "command": "/usr/bin/time -o timing.txt -v ./training_job",
+      "requires_root": false
+    },
+    {
+      "description": "Append results",
+      "command": "/usr/bin/time -a -o results.txt -f '%e' ./run_$i",
+      "requires_root": false
+    },
+    {
+      "description": "Shell builtin time",
+      "command": "time ./my_script.sh",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Command not found",
+      "meaning": "time or target command not found",
+      "resolution": "Use full path /usr/bin/time or check command"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["perf stat", "hyperfine"],
+    "notes": "Use /usr/bin/time for GNU version (shell builtin is different). -v shows memory usage too. %e is wall time, %U user, %S system."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "Write output file if specified",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Shell builtin differs from GNU time",
+    "Overhead affects very short commands",
+    "Memory stats may not be accurate"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["processes"],
+        "description": "Measures process resource usage"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

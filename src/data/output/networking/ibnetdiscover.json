@@ -1,0 +1,358 @@
+{
+  "command": "ibnetdiscover",
+  "category": "networking",
+  "description": "Discover InfiniBand fabric topology and generate topology files. ibnetdiscover performs a subnet discovery sweep of the InfiniBand fabric, querying all reachable nodes to map the complete network topology. It generates output in a format compatible with OpenSM topology files, including node GUIDs, port connections, switch routing, and host connectivity. This tool is essential for fabric documentation, debugging connectivity issues, and providing input for fabric management and simulation tools.",
+  "synopsis": "ibnetdiscover [options]",
+  "version_documented": "rdma-core 44.0+",
+  "source_urls": [
+    "https://github.com/linux-rdma/rdma-core",
+    "https://linux.die.net/man/8/ibnetdiscover"
+  ],
+  "installation": {
+    "package": "infiniband-diags",
+    "notes": "On RHEL/CentOS: yum install infiniband-diags. On Ubuntu/Debian: apt install infiniband-diags. Part of the InfiniBand diagnostic utilities that work with the rdma-core stack."
+  },
+  "global_options": [
+    {
+      "short": "-l",
+      "long": "--list",
+      "description": "List all node GUIDs found in the fabric discovery. Shows a simple listing of nodes without topology connections."
+    },
+    {
+      "short": "-g",
+      "long": "--grouping",
+      "description": "Show grouping information. Groups nodes by switch and displays connectivity in a hierarchical manner. Useful for understanding fabric structure."
+    },
+    {
+      "short": "-s",
+      "long": "--show",
+      "description": "Show additional details including port GUIDs and more verbose output about discovered nodes and connections."
+    },
+    {
+      "short": "-H",
+      "long": "--Hca_list",
+      "description": "List only HCA (Host Channel Adapter) nodes, filtering out switches. Useful when you only need to see compute nodes and storage targets."
+    },
+    {
+      "short": "-S",
+      "long": "--Switch_list",
+      "description": "List only switch nodes, filtering out HCAs. Useful for viewing the switching infrastructure of the fabric."
+    },
+    {
+      "short": "-R",
+      "long": "--Router_list",
+      "description": "List only router nodes. Shows InfiniBand routers that connect different subnets."
+    },
+    {
+      "short": "-p",
+      "long": "--ports",
+      "description": "Show port information including port numbers and connection details for each link."
+    },
+    {
+      "short": "-m",
+      "long": "--map",
+      "description": "Display a simple node map showing connections in an easier-to-read format."
+    },
+    {
+      "short": "-n",
+      "long": "--node-name-map",
+      "arguments": "<file>",
+      "argument_type": "path",
+      "description": "Use the specified node name map file to translate node GUIDs to human-readable names. The map file format is: GUID \"node description\".",
+      "example": "ibnetdiscover -n /etc/opensm/ib-node-name-map"
+    },
+    {
+      "short": "-f",
+      "long": "--full-info",
+      "description": "Show full node information including device IDs, vendor IDs, and revision information."
+    },
+    {
+      "short": "-o",
+      "long": "--out-file",
+      "arguments": "<file>",
+      "argument_type": "path",
+      "description": "Write output to the specified file instead of stdout. Useful for generating topology files.",
+      "example": "ibnetdiscover -o /tmp/topology.txt"
+    },
+    {
+      "short": "-t",
+      "long": "--timeout",
+      "arguments": "<msec>",
+      "argument_type": "integer",
+      "default": "100",
+      "description": "Set the transaction timeout in milliseconds for subnet management packets. Increase for large or congested fabrics.",
+      "example": "ibnetdiscover -t 500"
+    },
+    {
+      "short": "-C",
+      "long": "--Ca",
+      "arguments": "<ca_name>",
+      "argument_type": "string",
+      "description": "Use the specified HCA device for the discovery operation. Defaults to the first available HCA.",
+      "example": "ibnetdiscover -C mlx5_0"
+    },
+    {
+      "short": "-P",
+      "long": "--Port",
+      "arguments": "<port_num>",
+      "argument_type": "integer",
+      "default": "1",
+      "description": "Use the specified port number on the HCA for discovery. Port numbers start from 1.",
+      "example": "ibnetdiscover -P 2"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display usage information and available options."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display the ibnetdiscover version information."
+    },
+    {
+      "long": "--config",
+      "arguments": "<file>",
+      "argument_type": "path",
+      "description": "Use the specified configuration file for default options.",
+      "example": "ibnetdiscover --config /etc/infiniband-diags/ibdiag.conf"
+    }
+  ],
+  "output_formats": {
+    "default": "OpenSM-compatible topology format showing switches, HCAs, and their port connections. Each node entry includes node type, GUID, port count, device description, and port connectivity with remote node information.",
+    "list": "Simple list of node GUIDs with -l option. Shows GUID values for all discovered nodes.",
+    "grouping": "Hierarchical grouping format with -g option showing nodes grouped by their connectivity to switches.",
+    "map": "Simplified node map format with -m option showing basic connectivity information."
+  },
+  "environment_variables": [
+    {
+      "name": "IB_DEVICE",
+      "description": "Default InfiniBand device to use for discovery operations.",
+      "example": "IB_DEVICE=mlx5_0 ibnetdiscover",
+      "affects_command": "Sets the HCA device used for subnet management operations when -C is not specified."
+    },
+    {
+      "name": "IB_PORT",
+      "description": "Default port number to use on the InfiniBand device.",
+      "example": "IB_PORT=2 ibnetdiscover",
+      "affects_command": "Sets the port used for discovery when -P is not specified."
+    },
+    {
+      "name": "IBDIAG_TIMEOUT",
+      "description": "Default timeout in milliseconds for InfiniBand diagnostic operations.",
+      "example": "IBDIAG_TIMEOUT=500 ibnetdiscover",
+      "affects_command": "Sets the transaction timeout when -t is not specified."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - fabric discovery completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - failed to perform discovery, no fabric access, or invalid arguments"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Discover the complete InfiniBand fabric topology",
+      "command": "ibnetdiscover",
+      "output_example": "vendid=0x2c9\ndevid=0xcf08\nsysimgguid=0x506b4b0300ab1234\nswitchguid=0x506b4b0300ab1234(506b4b0300ab1234)\nSwitch\t36 \"SwitchIB Mellanox Technologies\"\t# \"MF0;switch-01:SX6036/U1\" enhanced port 0 lid 1 lmc 0\n[1]\t\"H-506b4b0300cd5678\"[1](506b4b0300cd5678)\t# \"node-001 mlx5_0\" lid 2 4xEDR\n[2]\t\"H-506b4b0300cd5679\"[1](506b4b0300cd5679)\t# \"node-002 mlx5_0\" lid 3 4xEDR",
+      "requires_root": false
+    },
+    {
+      "description": "Generate and save a topology file for documentation",
+      "command": "ibnetdiscover -o /tmp/fabric_topology.txt",
+      "requires_root": false
+    },
+    {
+      "description": "List only host nodes (HCAs) in the fabric",
+      "command": "ibnetdiscover -H",
+      "output_example": "Ca\t1 \"H-506b4b0300cd5678\"\t# \"node-001 mlx5_0\"\nCa\t1 \"H-506b4b0300cd5679\"\t# \"node-002 mlx5_0\"\nCa\t1 \"H-506b4b0300cd567a\"\t# \"node-003 mlx5_0\"",
+      "requires_root": false
+    },
+    {
+      "description": "List only switches in the fabric",
+      "command": "ibnetdiscover -S",
+      "output_example": "Switch\t36 \"S-506b4b0300ab1234\"\t# \"MF0;switch-01:SX6036/U1\" lid 1\nSwitch\t36 \"S-506b4b0300ab1235\"\t# \"MF0;switch-02:SX6036/U1\" lid 2",
+      "requires_root": false
+    },
+    {
+      "description": "Discover fabric with human-readable node names",
+      "command": "ibnetdiscover -n /etc/opensm/ib-node-name-map",
+      "requires_root": false
+    },
+    {
+      "description": "Show detailed grouping information for fabric analysis",
+      "command": "ibnetdiscover -g",
+      "output_example": "Switch\t36 \"S-506b4b0300ab1234\"\t# \"spine-switch-01\"\n  [1] -> [1] \"H-506b4b0300cd5678\" (node-001)\n  [2] -> [1] \"H-506b4b0300cd5679\" (node-002)",
+      "requires_root": false
+    },
+    {
+      "description": "Discover fabric using a specific HCA and port",
+      "command": "ibnetdiscover -C mlx5_0 -P 1",
+      "requires_root": false
+    },
+    {
+      "description": "Show all node GUIDs in list format",
+      "command": "ibnetdiscover -l",
+      "output_example": "506b4b0300ab1234\n506b4b0300cd5678\n506b4b0300cd5679",
+      "requires_root": false
+    },
+    {
+      "description": "Discovery with increased timeout for large fabrics",
+      "command": "ibnetdiscover -t 500",
+      "requires_root": false
+    },
+    {
+      "description": "Count total switches in the fabric",
+      "command": "ibnetdiscover -S | wc -l",
+      "requires_root": false
+    },
+    {
+      "description": "Count total HCAs in the fabric",
+      "command": "ibnetdiscover -H | wc -l",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "ibnetdiscover: iberror: failed: no umad device found",
+      "meaning": "No InfiniBand User MAD (Management Datagram) device is available for subnet management operations",
+      "resolution": "Verify InfiniBand hardware is installed with 'lspci | grep -i mellanox'. Check if ib_umad kernel module is loaded with 'lsmod | grep ib_umad'. Load with 'modprobe ib_umad' if needed. Ensure /dev/infiniband/umad* devices exist."
+    },
+    {
+      "message": "ibnetdiscover: iberror: failed: can't open UMAD port",
+      "meaning": "Cannot access the specified UMAD port for sending management packets",
+      "resolution": "Check permissions on /dev/infiniband/umad* devices. User may need to be in the 'rdma' group. Try running with sudo to verify if it's a permissions issue."
+    },
+    {
+      "message": "ibnetdiscover: timeout waiting for response",
+      "meaning": "A subnet management packet timed out waiting for response from a node",
+      "resolution": "The fabric may be congested or a node may be unresponsive. Try increasing timeout with -t option. Check if the subnet manager (opensm) is running properly."
+    },
+    {
+      "message": "ibnetdiscover: failed to find any nodes",
+      "meaning": "Discovery sweep found no InfiniBand nodes in the fabric",
+      "resolution": "Verify local port is Active with 'ibstat'. Ensure the subnet manager (opensm) is running and has assigned LIDs. Check physical cable connections."
+    },
+    {
+      "message": "ibnetdiscover: node name map file not found",
+      "meaning": "The specified node name map file does not exist",
+      "resolution": "Verify the path to the node name map file. Create the file if it doesn't exist. Default location is often /etc/opensm/ib-node-name-map."
+    },
+    {
+      "message": "ibnetdiscover: CA not found",
+      "meaning": "The specified HCA device name does not exist",
+      "resolution": "Use 'ibstat -l' to list available HCA device names. Device names are typically mlx5_0, mlx5_1, etc."
+    },
+    {
+      "message": "ibnetdiscover: port out of range",
+      "meaning": "The specified port number does not exist on the HCA",
+      "resolution": "Check available ports with 'ibstat <device>'. Most HCAs have ports numbered starting from 1."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "ibstat",
+      "iblinkinfo",
+      "opensm",
+      "ibdiagnet",
+      "ibhosts",
+      "ibswitches",
+      "ibrouters",
+      "ibportstate",
+      "smpquery",
+      "sminfo",
+      "saquery"
+    ],
+    "uses_library": ["libibmad", "libibumad", "libibnetdisc"],
+    "notes": "ibnetdiscover performs active fabric discovery using Subnet Management Packets (SMPs). The output is compatible with OpenSM topology file format and can be used as input for fabric simulation and planning tools. For detailed link error diagnostics, use iblinkinfo. For comprehensive fabric diagnostics, use ibdiagnet. The discovery requires an active subnet manager (opensm) to have assigned LIDs to nodes. ibnetdiscover is often used to create baseline topology documentation and to verify fabric connectivity after changes."
+  },
+  "permissions": {
+    "read_operations": "Requires access to /dev/infiniband/umad* devices. User typically needs to be in the 'rdma' group or have appropriate permissions.",
+    "write_operations": "ibnetdiscover is read-only and does not modify fabric state. It only queries nodes for their configuration.",
+    "notes": "While ibnetdiscover itself doesn't require root, access to UMAD devices may be restricted. Running with sudo is a common workaround for permission issues."
+  },
+  "limitations": [
+    "Requires an active subnet manager (opensm) to have configured the fabric with LIDs",
+    "Discovery time increases with fabric size - large fabrics may take several seconds",
+    "Cannot discover nodes that are physically disconnected or in Polling state",
+    "Does not show detailed error counters (use perfquery or iblinkinfo for that)",
+    "Output format is primarily designed for machine parsing, not human readability",
+    "Does not detect or report link quality issues or signal degradation",
+    "Cannot discover nodes in other subnets without routers being configured",
+    "Timeout errors may occur in congested fabrics requiring parameter tuning"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": [
+          "node_guid",
+          "port_guid",
+          "system_image_guid",
+          "node_description",
+          "node_type",
+          "port_count",
+          "port_state",
+          "lid",
+          "link_speed",
+          "link_width",
+          "vendor_id",
+          "device_id",
+          "port_connections",
+          "switch_ports",
+          "hca_ports"
+        ],
+        "description": "ibnetdiscover reads InfiniBand fabric topology information by sending Subnet Management Packets to all reachable nodes, querying their node info, port info, and switch forwarding tables"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "New node added to fabric",
+        "effect": "Newly connected nodes will appear in discovery output after subnet manager reconfiguration"
+      },
+      {
+        "state_change": "Node removed or link failure",
+        "effect": "Missing nodes or disconnected links will not appear in topology output"
+      },
+      {
+        "state_change": "Subnet manager reconfiguration",
+        "effect": "LID assignments and routing changes will be reflected in discovery output"
+      },
+      {
+        "state_change": "Link speed or width negotiation",
+        "effect": "Connection speed information updated in topology output"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ibstat",
+        "shared_state": "Local HCA node GUID and port information"
+      },
+      {
+        "command": "iblinkinfo",
+        "shared_state": "Fabric topology, link connectivity, and port states"
+      },
+      {
+        "command": "opensm",
+        "shared_state": "Subnet manager's view of fabric topology and LID assignments"
+      },
+      {
+        "command": "ibdiagnet",
+        "shared_state": "Fabric topology discovery and connectivity verification"
+      },
+      {
+        "command": "ibhosts",
+        "shared_state": "List of HCA nodes in the fabric"
+      },
+      {
+        "command": "ibswitches",
+        "shared_state": "List of switches in the fabric"
+      }
+    ]
+  }
+}

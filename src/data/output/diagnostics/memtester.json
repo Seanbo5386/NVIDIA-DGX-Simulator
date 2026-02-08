@@ -1,0 +1,131 @@
+{
+  "command": "memtester",
+  "category": "diagnostics",
+  "description": "Userspace utility for testing memory subsystem reliability. Useful in HPC environments for validating system memory before running long computational jobs, diagnosing memory-related crashes, and qualifying new compute nodes.",
+  "synopsis": "memtester <mem> [iterations]",
+  "version_documented": "4.5.1+",
+  "source_urls": ["https://pyropus.ca/software/memtester/"],
+  "installation": {
+    "package": "memtester",
+    "notes": "Install via package manager: apt install memtester, yum install memtester. Runs in userspace, no kernel module required."
+  },
+  "global_options": [
+    {
+      "short": "-p",
+      "description": "Use physical memory address (requires root)",
+      "arguments": "PHYSADDR",
+      "argument_type": "string"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "All tests passed"
+    },
+    {
+      "code": 1,
+      "meaning": "Error allocating or locking memory, or bad parameters"
+    },
+    {
+      "code": 2,
+      "meaning": "Memory error detected during testing"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Test 4GB of memory with 5 iterations",
+      "command": "memtester 4G 5",
+      "output_example": "memtester version 4.5.1 (64-bit)\nCopyright (C) 2001-2020 Charles Cazabon.\nLicensed under the GNU General Public License version 2 (only).\n\nwant 4096MB (4294967296 bytes)\ngot  4096MB (4294967296 bytes), trying mlock ...locked.\nLoop 1/5:\n  Stuck Address       : ok\n  Random Value        : ok\n  Compare XOR         : ok\n  Compare SUB         : ok\n  Compare MUL         : ok\n  Compare DIV         : ok\n  Compare OR          : ok\n  Compare AND         : ok\n  Sequential Increment: ok\n  Solid Bits          : ok\n  Block Sequential    : ok\n  Checkerboard        : ok\n  Bit Spread          : ok\n  Bit Flip            : ok\n  Walking Ones        : ok\n  Walking Zeroes      : ok\n  8-bit Writes        : ok\n  16-bit Writes       : ok",
+      "requires_root": false
+    },
+    {
+      "description": "Test maximum available memory",
+      "command": "memtester $(free -m | awk '/Mem:/ {print int($7*0.9)}')M 1",
+      "requires_root": false
+    },
+    {
+      "description": "Quick single-pass test",
+      "command": "memtester 1G 1",
+      "requires_root": false
+    },
+    {
+      "description": "Extended stress test overnight",
+      "command": "memtester 32G 100",
+      "requires_root": false
+    },
+    {
+      "description": "Test with physical address (advanced)",
+      "command": "memtester -p 0x100000000 1G 1",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "failed allocating memory",
+      "meaning": "Requested memory amount not available",
+      "resolution": "Request smaller amount or free memory by stopping processes"
+    },
+    {
+      "message": "failed locking memory",
+      "meaning": "Cannot lock memory pages (ulimit restriction)",
+      "resolution": "Run as root or increase memlock ulimit"
+    },
+    {
+      "message": "FAILURE: possible bad memory",
+      "meaning": "Memory test detected an error",
+      "resolution": "Hardware memory fault detected - run further diagnostics, may need memory replacement"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "stress-ng",
+      "prime95",
+      "mcelog",
+      "edac-util",
+      "dmidecode -t memory"
+    ],
+    "notes": "memtester tests from userspace and may not catch all hardware errors. For comprehensive memory testing, use BIOS/UEFI memory test or memtest86+. ECC memory errors should be monitored via mcelog or EDAC."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for basic testing",
+    "write_operations": "N/A - tests memory without persistent changes",
+    "notes": "Physical address mode (-p) requires root. Large allocations may require increased memlock ulimit."
+  },
+  "limitations": [
+    "Cannot test memory used by kernel and system processes",
+    "Userspace testing may not catch all hardware faults",
+    "Long tests on large memory can take many hours",
+    "Does not test ECC functionality directly",
+    "Memory must be free to be tested"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["memory_total", "memory_free", "memory_available"],
+        "description": "Checks available memory for allocation"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Memory allocation failure in application",
+        "effect": "May indicate need for memory testing"
+      },
+      {
+        "state_change": "MCE (Machine Check Exception) logged",
+        "effect": "Should run memtester to validate memory"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "free",
+        "shared_state": "Available memory determines maximum test size"
+      },
+      {
+        "command": "dmidecode -t memory",
+        "shared_state": "Shows physical memory configuration being tested"
+      }
+    ]
+  }
+}

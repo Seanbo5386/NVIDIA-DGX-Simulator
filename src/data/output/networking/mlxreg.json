@@ -1,0 +1,161 @@
+{
+  "command": "mlxreg",
+  "category": "networking",
+  "description": "Access NVIDIA/Mellanox device registers directly. Reads and writes hardware registers for advanced diagnostics and configuration. Low-level tool for hardware debugging.",
+  "synopsis": "mlxreg [options] -d <device> --reg_name <register> [--set <field>=<value>]",
+  "version_documented": "MFT 4.20+",
+  "source_urls": ["https://docs.nvidia.com/networking/display/MFTv4200/mlxreg"],
+  "installation": {
+    "package": "mft",
+    "notes": "Part of NVIDIA Firmware Tools (MFT). Install from NVIDIA MLNX_OFED package."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--device",
+      "description": "Specify device to access",
+      "arguments": "<device>",
+      "argument_type": "string",
+      "example": "-d /dev/mst/mt4123_pciconf0"
+    },
+    {
+      "long": "--reg_name",
+      "description": "Register name to access",
+      "arguments": "<register>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--get",
+      "description": "Read register value"
+    },
+    {
+      "long": "--set",
+      "description": "Write register value",
+      "arguments": "<field>=<value>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--yes",
+      "description": "Skip confirmation for writes"
+    },
+    {
+      "long": "--reg_id",
+      "description": "Register ID (alternative to name)",
+      "arguments": "<id>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Read port counters",
+      "command": "mlxreg -d /dev/mst/mt4123_pciconf0 --reg_name PPCNT --get",
+      "output_example": "Port Counters:\n   port_rcv_data........1234567890\n   port_xmit_data.......9876543210\n   port_rcv_packets.....12345678\n   port_xmit_packets....87654321",
+      "requires_root": true
+    },
+    {
+      "description": "Read temperature sensor",
+      "command": "mlxreg -d /dev/mst/mt4123_pciconf0 --reg_name MTMP --get",
+      "requires_root": true
+    },
+    {
+      "description": "Read link status",
+      "command": "mlxreg -d /dev/mst/mt4123_pciconf0 --reg_name PTYS --get",
+      "requires_root": true
+    },
+    {
+      "description": "Set port speed",
+      "command": "mlxreg -d /dev/mst/mt4123_pciconf0 --reg_name PTYS --set proto_mask=0x1 --yes",
+      "requires_root": true
+    },
+    {
+      "description": "Read power consumption",
+      "command": "mlxreg -d /dev/mst/mt4123_pciconf0 --reg_name MPCNT --get",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Register not found",
+      "meaning": "Invalid register name",
+      "resolution": "Check register name spelling and device support"
+    },
+    {
+      "message": "Access denied",
+      "meaning": "Insufficient privileges",
+      "resolution": "Run with sudo"
+    },
+    {
+      "message": "Device not found",
+      "meaning": "MST device not available",
+      "resolution": "Run 'mst start' first"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["mlxconfig", "mlxlink", "mst", "mlxdump"],
+    "notes": "Low-level register access. Common registers: PPCNT (port counters), PTYS (port type/speed), MTMP (temperature), PDDR (port diagnostics). Use with caution."
+  },
+  "permissions": {
+    "read_operations": "Root required",
+    "write_operations": "Root required, can affect hardware operation",
+    "notes": "Writing incorrect values can damage hardware or cause instability"
+  },
+  "limitations": [
+    "Requires MST service running",
+    "Register names vary by device generation",
+    "Writing can cause hardware issues",
+    "Advanced tool for experts"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["port_counters", "link_speed"],
+        "description": "Reads hardware registers for port information"
+      },
+      {
+        "state_domain": "firmware_state",
+        "fields": ["device_path"],
+        "description": "Accesses device via MST"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["link_speed", "port_config"],
+        "description": "Can modify port configuration registers",
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Hardware state change",
+        "effect": "Register values reflect new state"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "mlxlink",
+        "shared_state": "Port counters and link status match"
+      },
+      {
+        "command": "ibstat",
+        "shared_state": "Link state reflects register values"
+      }
+    ]
+  }
+}

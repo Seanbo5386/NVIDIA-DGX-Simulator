@@ -1,0 +1,124 @@
+{
+  "command": "cat",
+  "category": "general",
+  "description": "Concatenate files and print to stdout. Displays file contents and combines files. Widely used in HPC scripts for viewing configs and logs.",
+  "synopsis": "cat [options] [file]...",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/cat.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-n",
+      "long": "--number",
+      "description": "Number all output lines"
+    },
+    {
+      "short": "-b",
+      "long": "--number-nonblank",
+      "description": "Number non-empty lines"
+    },
+    {
+      "short": "-s",
+      "long": "--squeeze-blank",
+      "description": "Suppress repeated empty lines"
+    },
+    {
+      "short": "-E",
+      "long": "--show-ends",
+      "description": "Display $ at end of lines"
+    },
+    {
+      "short": "-T",
+      "long": "--show-tabs",
+      "description": "Display TAB as ^I"
+    },
+    {
+      "short": "-A",
+      "long": "--show-all",
+      "description": "Equivalent to -vET"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display file contents",
+      "command": "cat config.yaml",
+      "requires_root": false
+    },
+    {
+      "description": "Concatenate files",
+      "command": "cat part1.txt part2.txt > combined.txt",
+      "requires_root": false
+    },
+    {
+      "description": "With line numbers",
+      "command": "cat -n script.sh",
+      "requires_root": false
+    },
+    {
+      "description": "View job output",
+      "command": "cat slurm-${SLURM_JOB_ID}.out",
+      "requires_root": false
+    },
+    {
+      "description": "Create file from stdin",
+      "command": "cat > newfile.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Append to file",
+      "command": "cat additional.txt >> existing.txt",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No such file or directory",
+      "meaning": "File does not exist",
+      "resolution": "Check filename and path"
+    },
+    {
+      "message": "Permission denied",
+      "meaning": "Cannot read file",
+      "resolution": "Check file permissions"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["less", "more", "head", "tail"],
+    "notes": "Use less/more for large files. cat is for quick viewing and piping. Avoid useless cat in pipelines."
+  },
+  "permissions": {
+    "read_operations": "Read access to files",
+    "write_operations": "N/A (unless redirecting)",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Loads entire file to memory for display",
+    "No pagination for large files",
+    "Binary files may corrupt terminal"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads file contents"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

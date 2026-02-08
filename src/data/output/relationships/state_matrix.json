@@ -1,0 +1,3927 @@
+{
+  "$schema": "../schema.json",
+  "title": "HPC Command State Matrix",
+  "description": "Mapping of commands to state domains they read from and write to",
+  "generated": "2026-02-04T05:06:16.160998",
+  "state_domains": {
+    "gpu_state": {
+      "readers": [
+        "all_gather_perf",
+        "all_reduce_perf",
+        "apptainer",
+        "bandwidthTest",
+        "broadcast_perf",
+        "compute-sanitizer",
+        "cuda-gdb",
+        "cuda-memcheck",
+        "dcgmi",
+        "deviceQuery",
+        "dmesg",
+        "docker",
+        "enroot",
+        "gather_perf",
+        "gdrcopy_copybw",
+        "gdrcopy_copylat",
+        "glances",
+        "gpu_burn",
+        "gpustat",
+        "hwloc-ls",
+        "ib_read_bw",
+        "ib_write_bw",
+        "ib_write_lat",
+        "journalctl",
+        "lspci",
+        "lstopo",
+        "mpiexec",
+        "mpirun",
+        "ncu",
+        "nsys",
+        "nv-fabricmanager",
+        "nvbandwidth",
+        "nvcc",
+        "nvidia-bug-report.sh",
+        "nvidia-container-cli",
+        "nvidia-cuda-mps-control",
+        "nvidia-persistenced",
+        "nvidia-smi",
+        "nvitop",
+        "nvprof",
+        "nvtop",
+        "p2pBandwidthLatencyTest",
+        "podman",
+        "reduce_perf",
+        "reduce_scatter_perf",
+        "scatter_perf",
+        "sendrecv_perf",
+        "singularity",
+        "ucx_info",
+        "xhpl"
+      ],
+      "writers": [
+        "dcgmi",
+        "docker",
+        "enroot",
+        "gpu_burn",
+        "nv-fabricmanager",
+        "nvidia-cuda-mps-control",
+        "nvidia-persistenced",
+        "nvidia-smi",
+        "podman",
+        "singularity"
+      ],
+      "fields": {
+        "gpu_id": {
+          "readers": [
+            "all_gather_perf",
+            "all_reduce_perf",
+            "apptainer",
+            "bandwidthTest",
+            "broadcast_perf",
+            "cuda-memcheck",
+            "dcgmi",
+            "deviceQuery",
+            "docker",
+            "enroot",
+            "gather_perf",
+            "gdrcopy_copybw",
+            "gdrcopy_copylat",
+            "gpustat",
+            "ncu",
+            "nsys",
+            "nv-fabricmanager",
+            "nvbandwidth",
+            "nvidia-container-cli",
+            "nvidia-cuda-mps-control",
+            "nvidia-persistenced",
+            "nvidia-smi",
+            "nvitop",
+            "nvtop",
+            "p2pBandwidthLatencyTest",
+            "podman",
+            "reduce_perf",
+            "reduce_scatter_perf",
+            "scatter_perf",
+            "sendrecv_perf",
+            "singularity"
+          ],
+          "writers": []
+        },
+        "driver_version": {
+          "readers": [
+            "apptainer",
+            "compute-sanitizer",
+            "dcgmi",
+            "deviceQuery",
+            "docker",
+            "enroot",
+            "nvidia-bug-report.sh",
+            "nvidia-smi",
+            "singularity"
+          ],
+          "writers": []
+        },
+        "cuda_version": {
+          "readers": [
+            "apptainer",
+            "deviceQuery",
+            "nvidia-smi",
+            "singularity",
+            "ucx_info"
+          ],
+          "writers": []
+        },
+        "uuid": {
+          "readers": [
+            "all_gather_perf",
+            "all_reduce_perf",
+            "broadcast_perf",
+            "dcgmi",
+            "docker",
+            "enroot",
+            "ncu",
+            "nsys",
+            "nv-fabricmanager",
+            "nvidia-container-cli",
+            "nvidia-smi",
+            "podman",
+            "reduce_scatter_perf",
+            "sendrecv_perf",
+            "singularity"
+          ],
+          "writers": []
+        },
+        "name": {
+          "readers": [
+            "all_gather_perf",
+            "all_reduce_perf",
+            "broadcast_perf",
+            "dcgmi",
+            "deviceQuery",
+            "docker",
+            "gpustat",
+            "ncu",
+            "nsys",
+            "nvidia-container-cli",
+            "nvidia-smi",
+            "nvitop",
+            "nvtop",
+            "podman",
+            "reduce_scatter_perf",
+            "sendrecv_perf"
+          ],
+          "writers": []
+        },
+        "memory_total": {
+          "readers": [
+            "all_gather_perf",
+            "all_reduce_perf",
+            "bandwidthTest",
+            "broadcast_perf",
+            "dcgmi",
+            "deviceQuery",
+            "docker",
+            "enroot",
+            "gather_perf",
+            "gpu_burn",
+            "gpustat",
+            "ncu",
+            "nvbandwidth",
+            "nvidia-smi",
+            "nvitop",
+            "nvtop",
+            "p2pBandwidthLatencyTest",
+            "reduce_scatter_perf",
+            "scatter_perf",
+            "sendrecv_perf",
+            "singularity",
+            "xhpl"
+          ],
+          "writers": []
+        },
+        "memory_used": {
+          "readers": [
+            "dcgmi",
+            "docker",
+            "glances",
+            "gpu_burn",
+            "gpustat",
+            "nsys",
+            "nvidia-smi",
+            "nvitop",
+            "nvtop"
+          ],
+          "writers": ["docker", "enroot", "gpu_burn", "podman", "singularity"]
+        },
+        "bus_location": {
+          "readers": ["nvidia-container-cli"],
+          "writers": []
+        },
+        "architecture": {
+          "readers": ["nvidia-container-cli", "nvidia-cuda-mps-control"],
+          "writers": []
+        },
+        "mig_mode": {
+          "readers": ["nvidia-container-cli"],
+          "writers": []
+        },
+        "mig_devices": {
+          "readers": ["nvidia-container-cli", "podman"],
+          "writers": []
+        },
+        "compute_processes": {
+          "readers": [],
+          "writers": ["singularity"]
+        },
+        "pcie_link_gen_current": {
+          "readers": ["bandwidthTest", "nvbandwidth", "nvidia-smi"],
+          "writers": []
+        },
+        "pcie_link_width_current": {
+          "readers": ["bandwidthTest", "nvbandwidth", "nvidia-smi"],
+          "writers": []
+        },
+        "device_memory": {
+          "readers": ["compute-sanitizer"],
+          "writers": []
+        },
+        "compute_capability": {
+          "readers": [
+            "compute-sanitizer",
+            "cuda-gdb",
+            "gpu_burn",
+            "ncu",
+            "nvcc"
+          ],
+          "writers": []
+        },
+        "memory_state": {
+          "readers": ["cuda-gdb"],
+          "writers": []
+        },
+        "register_state": {
+          "readers": ["cuda-gdb"],
+          "writers": []
+        },
+        "warp_state": {
+          "readers": ["cuda-gdb"],
+          "writers": []
+        },
+        "block_state": {
+          "readers": ["cuda-gdb"],
+          "writers": []
+        },
+        "grid_state": {
+          "readers": ["cuda-gdb"],
+          "writers": []
+        },
+        "pci_bus_id": {
+          "readers": [
+            "all_gather_perf",
+            "all_reduce_perf",
+            "broadcast_perf",
+            "dcgmi",
+            "deviceQuery",
+            "gdrcopy_copybw",
+            "gdrcopy_copylat",
+            "hwloc-ls",
+            "lspci",
+            "lstopo",
+            "nv-fabricmanager",
+            "nvidia-smi",
+            "p2pBandwidthLatencyTest",
+            "reduce_scatter_perf",
+            "sendrecv_perf"
+          ],
+          "writers": []
+        },
+        "ecc_mode": {
+          "readers": ["dcgmi", "deviceQuery", "nvidia-smi"],
+          "writers": ["dcgmi", "nvidia-smi"]
+        },
+        "clock_graphics_max": {
+          "readers": ["ncu"],
+          "writers": []
+        },
+        "clock_memory_max": {
+          "readers": ["ncu"],
+          "writers": []
+        },
+        "utilization_gpu": {
+          "readers": [
+            "dcgmi",
+            "gpu_burn",
+            "gpustat",
+            "nsys",
+            "nvidia-smi",
+            "nvitop",
+            "nvtop",
+            "xhpl"
+          ],
+          "writers": ["gpu_burn"]
+        },
+        "utilization_memory": {
+          "readers": [
+            "dcgmi",
+            "gpu_burn",
+            "nsys",
+            "nvidia-smi",
+            "nvitop",
+            "nvtop"
+          ],
+          "writers": ["gpu_burn"]
+        },
+        "temperature": {
+          "readers": [
+            "dcgmi",
+            "gpu_burn",
+            "gpustat",
+            "nsys",
+            "nvidia-bug-report.sh",
+            "nvidia-smi",
+            "nvitop",
+            "nvtop",
+            "xhpl"
+          ],
+          "writers": ["gpu_burn"]
+        },
+        "power_draw": {
+          "readers": [
+            "dcgmi",
+            "gpu_burn",
+            "gpustat",
+            "nsys",
+            "nvidia-smi",
+            "nvitop",
+            "nvtop",
+            "xhpl"
+          ],
+          "writers": ["gpu_burn"]
+        },
+        "processes": {
+          "readers": ["nvprof"],
+          "writers": []
+        },
+        "performance_counters": {
+          "readers": ["nvprof"],
+          "writers": []
+        },
+        "driver_load_status": {
+          "readers": ["dmesg"],
+          "writers": []
+        },
+        "gpu_errors": {
+          "readers": ["dmesg"],
+          "writers": []
+        },
+        "xid_errors": {
+          "readers": ["dmesg", "journalctl", "nvidia-bug-report.sh"],
+          "writers": []
+        },
+        "pcie_events": {
+          "readers": ["dmesg"],
+          "writers": []
+        },
+        "gpu_name": {
+          "readers": ["gpu_burn", "xhpl"],
+          "writers": []
+        },
+        "gpu_uuid": {
+          "readers": ["nvidia-bug-report.sh", "xhpl"],
+          "writers": []
+        },
+        "memory_free": {
+          "readers": [
+            "all_gather_perf",
+            "all_reduce_perf",
+            "broadcast_perf",
+            "dcgmi",
+            "nvidia-smi",
+            "nvitop",
+            "nvtop",
+            "reduce_perf",
+            "reduce_scatter_perf",
+            "sendrecv_perf",
+            "xhpl"
+          ],
+          "writers": []
+        },
+        "ecc_errors": {
+          "readers": ["nvidia-bug-report.sh", "xhpl"],
+          "writers": []
+        },
+        "pcie_link_width": {
+          "readers": ["dcgmi", "xhpl"],
+          "writers": []
+        },
+        "pcie_link_gen": {
+          "readers": ["dcgmi", "xhpl"],
+          "writers": []
+        },
+        "driver_logs": {
+          "readers": ["journalctl"],
+          "writers": []
+        },
+        "persistenced_logs": {
+          "readers": ["journalctl"],
+          "writers": []
+        },
+        "fabricmanager_logs": {
+          "readers": ["journalctl"],
+          "writers": []
+        },
+        "dcgm_logs": {
+          "readers": ["journalctl"],
+          "writers": []
+        },
+        "gpu_count": {
+          "readers": ["mpiexec", "mpirun", "nvidia-bug-report.sh"],
+          "writers": []
+        },
+        "power_state": {
+          "readers": ["nvidia-bug-report.sh"],
+          "writers": []
+        },
+        "pcie_link_state": {
+          "readers": ["nvidia-bug-report.sh"],
+          "writers": []
+        },
+        "memory_usage": {
+          "readers": ["nvidia-bug-report.sh"],
+          "writers": []
+        },
+        "clock_speeds": {
+          "readers": ["nvidia-bug-report.sh"],
+          "writers": []
+        },
+        "gpu_utilization": {
+          "readers": ["glances", "nvidia-bug-report.sh"],
+          "writers": []
+        },
+        "nvlink_link_count": {
+          "readers": ["nv-fabricmanager"],
+          "writers": []
+        },
+        "nvlink_version": {
+          "readers": ["nv-fabricmanager"],
+          "writers": []
+        },
+        "nvlink_active": {
+          "readers": [],
+          "writers": ["nv-fabricmanager"]
+        },
+        "fabric_attached": {
+          "readers": [],
+          "writers": ["nv-fabricmanager"]
+        },
+        "serial_number": {
+          "readers": ["dcgmi"],
+          "writers": []
+        },
+        "power_limit": {
+          "readers": ["dcgmi", "gpustat", "nvidia-smi", "nvitop", "nvtop"],
+          "writers": ["dcgmi", "nvidia-smi"]
+        },
+        "ecc_errors_correctable": {
+          "readers": ["dcgmi", "nvidia-smi"],
+          "writers": ["nvidia-smi"]
+        },
+        "ecc_errors_uncorrectable": {
+          "readers": ["dcgmi", "nvidia-smi"],
+          "writers": ["nvidia-smi"]
+        },
+        "persistence_mode": {
+          "readers": ["dcgmi", "nvidia-smi", "nvitop"],
+          "writers": ["nvidia-persistenced", "nvidia-smi"]
+        },
+        "compute_mode": {
+          "readers": [
+            "dcgmi",
+            "nvidia-cuda-mps-control",
+            "nvidia-smi",
+            "nvitop"
+          ],
+          "writers": ["dcgmi", "nvidia-smi"]
+        },
+        "vbios_version": {
+          "readers": ["dcgmi"],
+          "writers": []
+        },
+        "inforom_version": {
+          "readers": ["dcgmi"],
+          "writers": []
+        },
+        "throttle_reason": {
+          "readers": ["dcgmi", "nvidia-smi"],
+          "writers": []
+        },
+        "clock_sm": {
+          "readers": ["dcgmi", "nvitop", "nvtop"],
+          "writers": []
+        },
+        "clock_memory": {
+          "readers": ["dcgmi", "nvitop", "nvtop"],
+          "writers": []
+        },
+        "retired_pages": {
+          "readers": ["dcgmi"],
+          "writers": []
+        },
+        "fan_speed": {
+          "readers": ["gpustat", "nvitop", "nvtop"],
+          "writers": []
+        },
+        "encoder_utilization": {
+          "readers": ["gpustat", "nvitop", "nvtop"],
+          "writers": []
+        },
+        "decoder_utilization": {
+          "readers": ["gpustat", "nvitop", "nvtop"],
+          "writers": []
+        },
+        "mps_compute_running_processes": {
+          "readers": ["nvidia-cuda-mps-control"],
+          "writers": []
+        },
+        "mps_server_active": {
+          "readers": [],
+          "writers": ["nvidia-cuda-mps-control"]
+        },
+        "mps_active_thread_percentage": {
+          "readers": [],
+          "writers": ["nvidia-cuda-mps-control"]
+        },
+        "status": {
+          "readers": ["nvidia-smi"],
+          "writers": []
+        },
+        "pcie_rx_throughput": {
+          "readers": ["nvitop", "nvtop"],
+          "writers": []
+        },
+        "pcie_tx_throughput": {
+          "readers": ["nvitop", "nvtop"],
+          "writers": []
+        },
+        "gpu_index": {
+          "readers": ["mpiexec", "mpirun"],
+          "writers": []
+        },
+        "cuda_visible_devices": {
+          "readers": ["mpiexec", "mpirun"],
+          "writers": []
+        },
+        "device_index": {
+          "readers": ["ib_read_bw", "ib_write_bw", "ib_write_lat"],
+          "writers": []
+        },
+        "memory": {
+          "readers": ["ib_read_bw", "ib_write_bw", "ib_write_lat"],
+          "writers": []
+        },
+        "pcie_info": {
+          "readers": ["ib_read_bw", "ib_write_bw", "ib_write_lat"],
+          "writers": []
+        },
+        "pci_device_id": {
+          "readers": ["lspci"],
+          "writers": []
+        },
+        "pci_subsystem_id": {
+          "readers": ["lspci"],
+          "writers": []
+        }
+      }
+    },
+    "gpu_process_state": {
+      "readers": [
+        "compute-sanitizer",
+        "cuda-gdb",
+        "cuda-memcheck",
+        "dcgmi",
+        "gpustat",
+        "iotop",
+        "ncu",
+        "nsys",
+        "nvidia-bug-report.sh",
+        "nvidia-cuda-mps-control",
+        "nvidia-smi",
+        "nvitop",
+        "nvtop",
+        "perf",
+        "pgrep"
+      ],
+      "writers": [
+        "cuda-gdb",
+        "kill",
+        "mpiexec",
+        "mpirun",
+        "nohup",
+        "nvidia-cuda-mps-control",
+        "nvitop",
+        "pkill",
+        "screen",
+        "tmux"
+      ],
+      "fields": {
+        "kernel_launches": {
+          "readers": ["compute-sanitizer", "ncu"],
+          "writers": []
+        },
+        "memory_allocations": {
+          "readers": ["compute-sanitizer", "cuda-gdb", "ncu"],
+          "writers": []
+        },
+        "synchronization_calls": {
+          "readers": ["compute-sanitizer"],
+          "writers": []
+        },
+        "active_kernels": {
+          "readers": ["cuda-gdb"],
+          "writers": []
+        },
+        "stream_state": {
+          "readers": ["cuda-gdb"],
+          "writers": []
+        },
+        "context_state": {
+          "readers": ["cuda-gdb"],
+          "writers": []
+        },
+        "execution_state": {
+          "readers": [],
+          "writers": ["cuda-gdb"]
+        },
+        "breakpoint_state": {
+          "readers": [],
+          "writers": ["cuda-gdb"]
+        },
+        "pid": {
+          "readers": [
+            "cuda-memcheck",
+            "dcgmi",
+            "gpustat",
+            "iotop",
+            "ncu",
+            "nsys",
+            "nvidia-cuda-mps-control",
+            "nvidia-smi",
+            "nvitop",
+            "nvtop",
+            "perf",
+            "pgrep"
+          ],
+          "writers": ["kill", "nohup", "pkill", "screen", "tmux"]
+        },
+        "gpu_memory_used": {
+          "readers": ["cuda-memcheck"],
+          "writers": ["mpiexec", "mpirun"]
+        },
+        "process_name": {
+          "readers": [
+            "dcgmi",
+            "gpustat",
+            "ncu",
+            "nsys",
+            "nvidia-cuda-mps-control",
+            "nvidia-smi",
+            "nvitop",
+            "nvtop",
+            "pgrep"
+          ],
+          "writers": []
+        },
+        "gpu_id": {
+          "readers": [
+            "dcgmi",
+            "gpustat",
+            "nsys",
+            "nvidia-smi",
+            "nvitop",
+            "nvtop"
+          ],
+          "writers": []
+        },
+        "used_memory": {
+          "readers": [
+            "dcgmi",
+            "gpustat",
+            "nsys",
+            "nvidia-cuda-mps-control",
+            "nvidia-smi",
+            "nvitop",
+            "nvtop"
+          ],
+          "writers": []
+        },
+        "compute_utilization": {
+          "readers": ["dcgmi", "nsys", "nvidia-smi", "nvtop"],
+          "writers": ["mpiexec", "mpirun"]
+        },
+        "running_processes": {
+          "readers": ["nvidia-bug-report.sh"],
+          "writers": []
+        },
+        "compute_processes": {
+          "readers": ["nvidia-bug-report.sh"],
+          "writers": []
+        },
+        "graphics_processes": {
+          "readers": ["nvidia-bug-report.sh"],
+          "writers": []
+        },
+        "user": {
+          "readers": ["gpustat", "nvitop", "nvtop"],
+          "writers": []
+        },
+        "command_line": {
+          "readers": ["gpustat"],
+          "writers": []
+        },
+        "mps_client_id": {
+          "readers": [],
+          "writers": ["nvidia-cuda-mps-control"]
+        },
+        "mps_resource_limit": {
+          "readers": [],
+          "writers": ["nvidia-cuda-mps-control"]
+        },
+        "type": {
+          "readers": ["nvidia-smi"],
+          "writers": []
+        },
+        "sm_utilization": {
+          "readers": ["nvitop"],
+          "writers": []
+        },
+        "compute_type": {
+          "readers": ["nvitop"],
+          "writers": []
+        },
+        "command": {
+          "readers": ["nvitop"],
+          "writers": []
+        },
+        "cpu_percent": {
+          "readers": ["nvitop"],
+          "writers": []
+        },
+        "memory_percent": {
+          "readers": ["nvitop"],
+          "writers": []
+        },
+        "running_time": {
+          "readers": ["nvitop"],
+          "writers": []
+        },
+        "process_signal": {
+          "readers": [],
+          "writers": ["nvitop"]
+        },
+        "process_id": {
+          "readers": [],
+          "writers": ["mpiexec", "mpirun"]
+        }
+      }
+    },
+    "job_state": {
+      "readers": [
+        "journalctl",
+        "mpiexec",
+        "mpirun",
+        "pyxis",
+        "sacct",
+        "sacctmgr",
+        "sbcast",
+        "scancel",
+        "scontrol",
+        "sdiag",
+        "sgather",
+        "sprio",
+        "squeue",
+        "sreport",
+        "srun",
+        "sshare",
+        "sstat",
+        "strigger"
+      ],
+      "writers": [
+        "sacctmgr",
+        "salloc",
+        "sbatch",
+        "scancel",
+        "scontrol",
+        "scrontab",
+        "srun",
+        "strigger"
+      ],
+      "fields": {
+        "job_id": {
+          "readers": [
+            "mpiexec",
+            "mpirun",
+            "pyxis",
+            "sacct",
+            "sbcast",
+            "scancel",
+            "scontrol",
+            "sgather",
+            "sprio",
+            "squeue",
+            "sreport",
+            "srun",
+            "sstat",
+            "strigger"
+          ],
+          "writers": ["salloc", "sbatch", "srun"]
+        },
+        "job_name": {
+          "readers": ["sacct"],
+          "writers": []
+        },
+        "user": {
+          "readers": [
+            "sacct",
+            "scontrol",
+            "sprio",
+            "squeue",
+            "sreport",
+            "sshare"
+          ],
+          "writers": ["salloc", "sbatch", "srun"]
+        },
+        "group": {
+          "readers": ["sacct"],
+          "writers": []
+        },
+        "account": {
+          "readers": [
+            "sacct",
+            "sacctmgr",
+            "scancel",
+            "scontrol",
+            "squeue",
+            "sreport",
+            "sshare"
+          ],
+          "writers": ["sacctmgr", "salloc", "sbatch", "scontrol", "srun"]
+        },
+        "partition": {
+          "readers": [
+            "sacct",
+            "scancel",
+            "scontrol",
+            "sprio",
+            "squeue",
+            "sreport"
+          ],
+          "writers": ["salloc", "sbatch", "scontrol", "srun"]
+        },
+        "qos": {
+          "readers": ["sacct", "scancel", "scontrol", "sprio", "squeue"],
+          "writers": ["salloc", "sbatch", "scontrol"]
+        },
+        "state": {
+          "readers": ["sacct", "scancel", "scontrol", "squeue"],
+          "writers": ["salloc", "sbatch", "scancel", "srun"]
+        },
+        "exit_code": {
+          "readers": ["sacct"],
+          "writers": ["scancel"]
+        },
+        "submit_time": {
+          "readers": ["sacct", "scontrol", "squeue"],
+          "writers": ["salloc", "sbatch"]
+        },
+        "start_time": {
+          "readers": ["sacct", "scontrol", "squeue"],
+          "writers": ["salloc", "srun"]
+        },
+        "end_time": {
+          "readers": ["sacct", "scontrol", "squeue"],
+          "writers": ["scancel"]
+        },
+        "elapsed": {
+          "readers": ["sacct"],
+          "writers": []
+        },
+        "time_limit": {
+          "readers": ["sacct", "scontrol", "squeue"],
+          "writers": ["salloc", "sbatch", "scontrol"]
+        },
+        "node_list": {
+          "readers": [
+            "mpiexec",
+            "mpirun",
+            "sacct",
+            "sbcast",
+            "scancel",
+            "scontrol",
+            "sgather",
+            "squeue",
+            "sstat"
+          ],
+          "writers": []
+        },
+        "alloc_cpus": {
+          "readers": ["sacct"],
+          "writers": []
+        },
+        "alloc_nodes": {
+          "readers": ["sacct"],
+          "writers": []
+        },
+        "alloc_tres": {
+          "readers": ["sacct"],
+          "writers": []
+        },
+        "req_cpus": {
+          "readers": ["sacct"],
+          "writers": []
+        },
+        "req_mem": {
+          "readers": ["sacct"],
+          "writers": []
+        },
+        "req_tres": {
+          "readers": ["sacct"],
+          "writers": []
+        },
+        "max_rss": {
+          "readers": ["sacct", "sstat"],
+          "writers": []
+        },
+        "max_vmsize": {
+          "readers": ["sacct", "sstat"],
+          "writers": []
+        },
+        "max_disk_read": {
+          "readers": ["sacct", "sstat"],
+          "writers": []
+        },
+        "max_disk_write": {
+          "readers": ["sacct", "sstat"],
+          "writers": []
+        },
+        "cpu_time": {
+          "readers": ["sacct"],
+          "writers": []
+        },
+        "user_cpu": {
+          "readers": ["sacct"],
+          "writers": []
+        },
+        "system_cpu": {
+          "readers": ["sacct"],
+          "writers": []
+        },
+        "energy_consumed": {
+          "readers": ["sacct"],
+          "writers": []
+        },
+        "priority": {
+          "readers": ["sacct", "scontrol", "sprio", "squeue"],
+          "writers": ["sbatch", "scontrol"]
+        },
+        "work_dir": {
+          "readers": ["sacct"],
+          "writers": []
+        },
+        "std_out": {
+          "readers": ["sacct"],
+          "writers": []
+        },
+        "std_err": {
+          "readers": ["sacct"],
+          "writers": []
+        },
+        "comment": {
+          "readers": ["sacct", "scontrol"],
+          "writers": ["scontrol"]
+        },
+        "name": {
+          "readers": ["scancel", "scontrol", "squeue"],
+          "writers": ["salloc", "sbatch", "scontrol", "srun"]
+        },
+        "nodes_allocated": {
+          "readers": ["scontrol", "squeue"],
+          "writers": ["salloc", "srun"]
+        },
+        "cpus_allocated": {
+          "readers": [],
+          "writers": ["salloc"]
+        },
+        "gpus_allocated": {
+          "readers": [],
+          "writers": ["salloc"]
+        },
+        "memory_allocated": {
+          "readers": [],
+          "writers": ["salloc"]
+        },
+        "nodes_requested": {
+          "readers": ["squeue"],
+          "writers": ["sbatch"]
+        },
+        "cpus_requested": {
+          "readers": ["scontrol", "squeue"],
+          "writers": ["sbatch"]
+        },
+        "memory_requested": {
+          "readers": ["scontrol", "squeue"],
+          "writers": ["sbatch"]
+        },
+        "gpus_requested": {
+          "readers": [],
+          "writers": ["sbatch"]
+        },
+        "dependencies": {
+          "readers": ["scontrol", "squeue"],
+          "writers": ["sbatch", "scontrol"]
+        },
+        "work_directory": {
+          "readers": ["scontrol", "squeue"],
+          "writers": ["sbatch"]
+        },
+        "command": {
+          "readers": ["scontrol", "squeue"],
+          "writers": ["sbatch"]
+        },
+        "array_job_id": {
+          "readers": ["scancel", "squeue"],
+          "writers": []
+        },
+        "array_task_id": {
+          "readers": ["scancel", "squeue"],
+          "writers": []
+        },
+        "user_id": {
+          "readers": ["scancel"],
+          "writers": []
+        },
+        "reservation": {
+          "readers": ["scancel", "squeue"],
+          "writers": []
+        },
+        "time_used": {
+          "readers": ["scontrol", "squeue", "sreport"],
+          "writers": []
+        },
+        "reason": {
+          "readers": ["scontrol", "squeue"],
+          "writers": []
+        },
+        "features": {
+          "readers": ["scontrol", "squeue"],
+          "writers": ["scontrol"]
+        },
+        "gres_requested": {
+          "readers": ["scontrol"],
+          "writers": []
+        },
+        "stdout": {
+          "readers": ["scontrol"],
+          "writers": ["scontrol"]
+        },
+        "stderr": {
+          "readers": ["scontrol"],
+          "writers": ["scontrol"]
+        },
+        "environment": {
+          "readers": ["scontrol"],
+          "writers": []
+        },
+        "hold_state": {
+          "readers": [],
+          "writers": ["scontrol"]
+        },
+        "num_nodes": {
+          "readers": [],
+          "writers": ["scontrol"]
+        },
+        "num_cpus": {
+          "readers": ["sreport"],
+          "writers": ["scontrol"]
+        },
+        "min_memory": {
+          "readers": [],
+          "writers": ["scontrol"]
+        },
+        "gres": {
+          "readers": [],
+          "writers": ["scontrol"]
+        },
+        "req_nodes": {
+          "readers": [],
+          "writers": ["scontrol"]
+        },
+        "exc_nodes": {
+          "readers": [],
+          "writers": ["scontrol"]
+        },
+        "nice": {
+          "readers": [],
+          "writers": ["scontrol"]
+        },
+        "suspended_state": {
+          "readers": [],
+          "writers": ["scontrol"]
+        },
+        "scheduled_jobs": {
+          "readers": [],
+          "writers": ["scrontab"]
+        },
+        "scheduler_stats": {
+          "readers": ["sdiag"],
+          "writers": []
+        },
+        "time_remaining": {
+          "readers": ["squeue", "srun"],
+          "writers": []
+        },
+        "num_gpus": {
+          "readers": ["sreport"],
+          "writers": []
+        },
+        "allocated_nodes": {
+          "readers": ["mpiexec", "mpirun", "srun"],
+          "writers": []
+        },
+        "allocated_cpus": {
+          "readers": ["srun"],
+          "writers": []
+        },
+        "allocated_gpus": {
+          "readers": ["srun"],
+          "writers": []
+        },
+        "allocated_memory": {
+          "readers": ["srun"],
+          "writers": []
+        },
+        "step_id": {
+          "readers": ["sstat"],
+          "writers": ["srun"]
+        },
+        "step_name": {
+          "readers": [],
+          "writers": ["srun"]
+        },
+        "step_state": {
+          "readers": [],
+          "writers": ["srun"]
+        },
+        "step_nodes": {
+          "readers": [],
+          "writers": ["srun"]
+        },
+        "step_tasks": {
+          "readers": [],
+          "writers": ["srun"]
+        },
+        "step_cpus_per_task": {
+          "readers": [],
+          "writers": ["srun"]
+        },
+        "step_start_time": {
+          "readers": [],
+          "writers": ["srun"]
+        },
+        "num_tasks": {
+          "readers": ["sstat"],
+          "writers": []
+        },
+        "ave_rss": {
+          "readers": ["sstat"],
+          "writers": []
+        },
+        "ave_vmsize": {
+          "readers": ["sstat"],
+          "writers": []
+        },
+        "max_pages": {
+          "readers": ["sstat"],
+          "writers": []
+        },
+        "ave_pages": {
+          "readers": ["sstat"],
+          "writers": []
+        },
+        "min_cpu": {
+          "readers": ["sstat"],
+          "writers": []
+        },
+        "ave_cpu": {
+          "readers": ["sstat"],
+          "writers": []
+        },
+        "ave_disk_read": {
+          "readers": ["sstat"],
+          "writers": []
+        },
+        "ave_disk_write": {
+          "readers": ["sstat"],
+          "writers": []
+        },
+        "consumed_energy": {
+          "readers": ["sstat"],
+          "writers": []
+        },
+        "tres_usage_in": {
+          "readers": ["sstat"],
+          "writers": []
+        },
+        "tres_usage_out": {
+          "readers": ["sstat"],
+          "writers": []
+        },
+        "job_state": {
+          "readers": ["strigger"],
+          "writers": []
+        },
+        "triggers": {
+          "readers": [],
+          "writers": ["strigger"]
+        },
+        "nodes": {
+          "readers": ["pyxis"],
+          "writers": []
+        },
+        "slurmctld_logs": {
+          "readers": ["journalctl"],
+          "writers": []
+        },
+        "slurmd_logs": {
+          "readers": ["journalctl"],
+          "writers": []
+        },
+        "slurmdbd_logs": {
+          "readers": ["journalctl"],
+          "writers": []
+        },
+        "job_events": {
+          "readers": ["journalctl"],
+          "writers": []
+        },
+        "scheduler_decisions": {
+          "readers": ["journalctl"],
+          "writers": []
+        },
+        "tasks_per_node": {
+          "readers": ["mpiexec", "mpirun"],
+          "writers": []
+        }
+      }
+    },
+    "node_state": {
+      "readers": [
+        "clush",
+        "ipmitool",
+        "mpiexec",
+        "mpirun",
+        "nodeset",
+        "nproc",
+        "pdcp",
+        "pdsh",
+        "sacct",
+        "salloc",
+        "sbatch",
+        "scontrol",
+        "sinfo",
+        "squeue",
+        "srun",
+        "ssh",
+        "sstat",
+        "strigger"
+      ],
+      "writers": ["ipmitool", "salloc", "scontrol"],
+      "fields": {
+        "hostname": {
+          "readers": [
+            "clush",
+            "mpiexec",
+            "mpirun",
+            "nodeset",
+            "pdcp",
+            "pdsh",
+            "sacct",
+            "salloc",
+            "sbatch",
+            "scontrol",
+            "sinfo",
+            "squeue",
+            "srun",
+            "sstat"
+          ],
+          "writers": []
+        },
+        "state": {
+          "readers": [
+            "salloc",
+            "sbatch",
+            "scontrol",
+            "sinfo",
+            "squeue",
+            "srun"
+          ],
+          "writers": ["scontrol"]
+        },
+        "cpus": {
+          "readers": ["nproc", "salloc", "sbatch", "srun"],
+          "writers": []
+        },
+        "memory": {
+          "readers": ["salloc", "sbatch", "srun"],
+          "writers": []
+        },
+        "gpus": {
+          "readers": ["salloc", "sbatch", "srun"],
+          "writers": []
+        },
+        "features": {
+          "readers": ["salloc", "sbatch", "scontrol", "sinfo", "srun"],
+          "writers": ["scontrol"]
+        },
+        "partitions": {
+          "readers": ["salloc", "scontrol"],
+          "writers": []
+        },
+        "allocated_to": {
+          "readers": [],
+          "writers": ["salloc"]
+        },
+        "allocated_cpus": {
+          "readers": [],
+          "writers": ["salloc"]
+        },
+        "allocated_memory": {
+          "readers": [],
+          "writers": ["salloc"]
+        },
+        "allocated_gpus": {
+          "readers": [],
+          "writers": ["salloc"]
+        },
+        "reason": {
+          "readers": ["scontrol", "sinfo"],
+          "writers": ["scontrol"]
+        },
+        "cpus_total": {
+          "readers": ["scontrol"],
+          "writers": []
+        },
+        "cpus_allocated": {
+          "readers": ["scontrol"],
+          "writers": []
+        },
+        "memory_total": {
+          "readers": ["scontrol", "sinfo"],
+          "writers": []
+        },
+        "memory_allocated": {
+          "readers": ["scontrol"],
+          "writers": []
+        },
+        "gres": {
+          "readers": ["scontrol", "sinfo"],
+          "writers": []
+        },
+        "weight": {
+          "readers": ["scontrol", "sinfo"],
+          "writers": ["scontrol"]
+        },
+        "boot_time": {
+          "readers": ["scontrol", "sinfo"],
+          "writers": []
+        },
+        "slurmd_start_time": {
+          "readers": ["scontrol"],
+          "writers": []
+        },
+        "arch": {
+          "readers": ["scontrol", "sinfo"],
+          "writers": []
+        },
+        "os": {
+          "readers": ["scontrol", "sinfo"],
+          "writers": []
+        },
+        "active_features": {
+          "readers": [],
+          "writers": ["scontrol"]
+        },
+        "available_features": {
+          "readers": [],
+          "writers": ["scontrol"]
+        },
+        "comment": {
+          "readers": [],
+          "writers": ["scontrol"]
+        },
+        "extra": {
+          "readers": [],
+          "writers": ["scontrol"]
+        },
+        "cpu_count": {
+          "readers": ["mpiexec", "mpirun", "sinfo"],
+          "writers": []
+        },
+        "cpu_load": {
+          "readers": ["sinfo"],
+          "writers": []
+        },
+        "memory_free": {
+          "readers": ["sinfo"],
+          "writers": []
+        },
+        "tmp_disk": {
+          "readers": ["sinfo"],
+          "writers": []
+        },
+        "gres_used": {
+          "readers": ["sinfo"],
+          "writers": []
+        },
+        "reason_time": {
+          "readers": ["sinfo"],
+          "writers": []
+        },
+        "reason_user": {
+          "readers": ["sinfo"],
+          "writers": []
+        },
+        "slurmd_version": {
+          "readers": ["sinfo"],
+          "writers": []
+        },
+        "sockets": {
+          "readers": ["sinfo"],
+          "writers": []
+        },
+        "cores_per_socket": {
+          "readers": ["sinfo"],
+          "writers": []
+        },
+        "threads_per_core": {
+          "readers": ["sinfo"],
+          "writers": []
+        },
+        "real_memory": {
+          "readers": ["sinfo"],
+          "writers": []
+        },
+        "alloc_cpus": {
+          "readers": ["sinfo"],
+          "writers": []
+        },
+        "alloc_memory": {
+          "readers": ["sinfo"],
+          "writers": []
+        },
+        "node_state": {
+          "readers": ["ssh", "strigger"],
+          "writers": []
+        },
+        "power_state": {
+          "readers": ["ipmitool"],
+          "writers": ["ipmitool"]
+        },
+        "boot_device": {
+          "readers": ["ipmitool"],
+          "writers": ["ipmitool"]
+        },
+        "chassis_status": {
+          "readers": ["ipmitool"],
+          "writers": []
+        },
+        "identify_led": {
+          "readers": ["ipmitool"],
+          "writers": ["ipmitool"]
+        },
+        "memory_available": {
+          "readers": ["mpiexec", "mpirun"],
+          "writers": []
+        },
+        "numa_topology": {
+          "readers": ["mpiexec", "mpirun"],
+          "writers": []
+        },
+        "network_reachability": {
+          "readers": ["clush", "pdsh"],
+          "writers": []
+        },
+        "ssh_service_status": {
+          "readers": ["clush", "pdsh"],
+          "writers": []
+        }
+      }
+    },
+    "partition_state": {
+      "readers": [
+        "sacct",
+        "salloc",
+        "sbatch",
+        "scontrol",
+        "sinfo",
+        "sprio",
+        "squeue",
+        "srun"
+      ],
+      "writers": ["scontrol"],
+      "fields": {
+        "partition_name": {
+          "readers": [
+            "sacct",
+            "salloc",
+            "sbatch",
+            "scontrol",
+            "sinfo",
+            "sprio",
+            "squeue",
+            "srun"
+          ],
+          "writers": []
+        },
+        "state": {
+          "readers": [
+            "salloc",
+            "sbatch",
+            "scontrol",
+            "sinfo",
+            "squeue",
+            "srun"
+          ],
+          "writers": ["scontrol"]
+        },
+        "max_time": {
+          "readers": ["salloc", "sbatch", "scontrol", "sinfo", "srun"],
+          "writers": ["scontrol"]
+        },
+        "max_nodes": {
+          "readers": ["salloc", "sbatch", "scontrol", "sinfo"],
+          "writers": ["scontrol"]
+        },
+        "available_nodes": {
+          "readers": ["salloc", "srun"],
+          "writers": []
+        },
+        "available_cpus": {
+          "readers": ["salloc", "srun"],
+          "writers": []
+        },
+        "available_gpus": {
+          "readers": ["salloc"],
+          "writers": []
+        },
+        "default_time": {
+          "readers": ["salloc", "scontrol", "sinfo"],
+          "writers": ["scontrol"]
+        },
+        "max_cpus_per_node": {
+          "readers": ["sbatch"],
+          "writers": []
+        },
+        "max_mem_per_node": {
+          "readers": ["sbatch"],
+          "writers": []
+        },
+        "available_features": {
+          "readers": ["sbatch"],
+          "writers": []
+        },
+        "default_resources": {
+          "readers": ["sbatch"],
+          "writers": []
+        },
+        "min_nodes": {
+          "readers": ["scontrol", "sinfo"],
+          "writers": ["scontrol"]
+        },
+        "nodes": {
+          "readers": ["scontrol", "sinfo"],
+          "writers": []
+        },
+        "total_cpus": {
+          "readers": ["scontrol", "sinfo"],
+          "writers": []
+        },
+        "total_nodes": {
+          "readers": ["scontrol", "sinfo"],
+          "writers": []
+        },
+        "allow_groups": {
+          "readers": ["scontrol"],
+          "writers": ["scontrol"]
+        },
+        "allow_accounts": {
+          "readers": ["scontrol", "sinfo"],
+          "writers": ["scontrol"]
+        },
+        "deny_accounts": {
+          "readers": ["scontrol", "sinfo"],
+          "writers": ["scontrol"]
+        },
+        "qos": {
+          "readers": ["scontrol"],
+          "writers": ["scontrol"]
+        },
+        "priority_tier": {
+          "readers": ["scontrol", "sinfo", "sprio"],
+          "writers": []
+        },
+        "preempt_mode": {
+          "readers": ["scontrol", "sinfo"],
+          "writers": []
+        },
+        "availability": {
+          "readers": ["sinfo", "squeue"],
+          "writers": []
+        },
+        "root_only": {
+          "readers": ["sinfo"],
+          "writers": []
+        },
+        "oversubscribe": {
+          "readers": ["sinfo"],
+          "writers": []
+        },
+        "groups": {
+          "readers": ["sinfo"],
+          "writers": []
+        },
+        "priority_job_factor": {
+          "readers": ["sinfo"],
+          "writers": []
+        },
+        "allow_qos": {
+          "readers": ["sinfo"],
+          "writers": []
+        },
+        "deny_qos": {
+          "readers": ["sinfo"],
+          "writers": []
+        }
+      }
+    },
+    "network_ib_state": {
+      "readers": [
+        "all_gather_perf",
+        "all_reduce_perf",
+        "broadcast_perf",
+        "dmesg",
+        "flint",
+        "ib_read_bw",
+        "ib_read_lat",
+        "ib_send_bw",
+        "ib_send_lat",
+        "ib_write_bw",
+        "ib_write_lat",
+        "ibdiagnet",
+        "ibhosts",
+        "iblinkinfo",
+        "ibnetdiscover",
+        "ibping",
+        "ibportstate",
+        "ibstat",
+        "ibstatus",
+        "ibswitches",
+        "ibtracert",
+        "ibv_devinfo",
+        "journalctl",
+        "lspci",
+        "mlxcables",
+        "mlxconfig",
+        "mlxfwmanager",
+        "mlxfwreset",
+        "mlxlink",
+        "mlxreg",
+        "mpi_test_suite",
+        "mpirun",
+        "perfquery",
+        "rdma",
+        "reduce_perf",
+        "reduce_scatter_perf",
+        "saquery",
+        "sendrecv_perf",
+        "show_gids",
+        "sminfo",
+        "smpquery",
+        "ucx_info",
+        "xhpl"
+      ],
+      "writers": [
+        "flint",
+        "ibportstate",
+        "mlxconfig",
+        "mlxfwmanager",
+        "mlxfwreset",
+        "mlxlink",
+        "mlxreg",
+        "perfquery",
+        "rdma"
+      ],
+      "fields": {
+        "driver_status": {
+          "readers": ["dmesg"],
+          "writers": []
+        },
+        "link_events": {
+          "readers": ["dmesg"],
+          "writers": []
+        },
+        "firmware_version": {
+          "readers": ["dmesg", "ibstat"],
+          "writers": []
+        },
+        "port_state": {
+          "readers": [
+            "all_gather_perf",
+            "all_reduce_perf",
+            "broadcast_perf",
+            "flint",
+            "ibnetdiscover",
+            "ibportstate",
+            "ibv_devinfo",
+            "mlxfwmanager",
+            "mpirun",
+            "reduce_scatter_perf",
+            "sendrecv_perf",
+            "smpquery",
+            "xhpl"
+          ],
+          "writers": ["ibportstate", "mlxlink"]
+        },
+        "link_width": {
+          "readers": [
+            "ib_read_bw",
+            "ib_write_bw",
+            "ib_write_lat",
+            "ibdiagnet",
+            "iblinkinfo",
+            "ibnetdiscover",
+            "ibportstate",
+            "ibstat",
+            "mlxlink",
+            "smpquery",
+            "xhpl"
+          ],
+          "writers": []
+        },
+        "link_speed": {
+          "readers": [
+            "ib_read_bw",
+            "ib_write_bw",
+            "ib_write_lat",
+            "ibdiagnet",
+            "iblinkinfo",
+            "ibnetdiscover",
+            "ibportstate",
+            "ibstat",
+            "mlxlink",
+            "mlxreg",
+            "smpquery",
+            "xhpl"
+          ],
+          "writers": ["mlxlink", "mlxreg"]
+        },
+        "hca_type": {
+          "readers": ["ibv_devinfo", "xhpl"],
+          "writers": []
+        },
+        "rdma_capability": {
+          "readers": ["xhpl"],
+          "writers": []
+        },
+        "opensm_logs": {
+          "readers": ["journalctl"],
+          "writers": []
+        },
+        "ib_driver_events": {
+          "readers": ["journalctl"],
+          "writers": []
+        },
+        "rdma_events": {
+          "readers": ["journalctl"],
+          "writers": []
+        },
+        "device": {
+          "readers": [
+            "flint",
+            "ib_read_bw",
+            "ib_read_lat",
+            "ib_send_bw",
+            "ib_send_lat",
+            "ib_write_bw",
+            "ib_write_lat",
+            "ibdiagnet",
+            "ibhosts",
+            "ibstat",
+            "ibstatus",
+            "lspci",
+            "mlxconfig",
+            "mlxfwmanager",
+            "mlxfwreset",
+            "rdma",
+            "reduce_perf",
+            "ucx_info"
+          ],
+          "writers": []
+        },
+        "device_state": {
+          "readers": [],
+          "writers": ["flint", "mlxfwmanager"]
+        },
+        "link_state": {
+          "readers": ["iblinkinfo", "mlxfwmanager"],
+          "writers": ["flint", "mlxfwmanager"]
+        },
+        "state": {
+          "readers": [
+            "ib_read_bw",
+            "ib_read_lat",
+            "ib_send_bw",
+            "ib_send_lat",
+            "ib_write_bw",
+            "ib_write_lat",
+            "ibdiagnet",
+            "ibstat",
+            "ibstatus",
+            "mlxfwreset",
+            "mlxlink",
+            "rdma",
+            "reduce_perf"
+          ],
+          "writers": ["mlxfwreset", "rdma"]
+        },
+        "physical_state": {
+          "readers": ["iblinkinfo", "ibstat", "ibstatus", "mlxlink", "rdma"],
+          "writers": ["mlxfwreset"]
+        },
+        "device_name": {
+          "readers": ["mpirun"],
+          "writers": []
+        },
+        "port_number": {
+          "readers": ["mpirun"],
+          "writers": []
+        },
+        "link_layer": {
+          "readers": [
+            "all_gather_perf",
+            "all_reduce_perf",
+            "broadcast_perf",
+            "ibstat",
+            "mlxconfig",
+            "mpirun",
+            "reduce_scatter_perf",
+            "sendrecv_perf"
+          ],
+          "writers": ["mlxconfig"]
+        },
+        "connectivity": {
+          "readers": ["ibping", "mpi_test_suite"],
+          "writers": []
+        },
+        "rate": {
+          "readers": [
+            "all_gather_perf",
+            "all_reduce_perf",
+            "broadcast_perf",
+            "ib_read_lat",
+            "ib_send_bw",
+            "ibstatus",
+            "reduce_perf",
+            "reduce_scatter_perf",
+            "sendrecv_perf"
+          ],
+          "writers": []
+        },
+        "gid": {
+          "readers": [
+            "ib_read_bw",
+            "ib_write_bw",
+            "ib_write_lat",
+            "ibstatus",
+            "sendrecv_perf",
+            "show_gids"
+          ],
+          "writers": []
+        },
+        "port": {
+          "readers": [
+            "ib_read_bw",
+            "ib_read_lat",
+            "ib_send_bw",
+            "ib_send_lat",
+            "ib_write_bw",
+            "ib_write_lat",
+            "ibdiagnet",
+            "ibhosts",
+            "ibstat",
+            "ibstatus",
+            "rdma"
+          ],
+          "writers": []
+        },
+        "error_counters": {
+          "readers": ["ibdiagnet", "mlxlink"],
+          "writers": []
+        },
+        "guid": {
+          "readers": [
+            "ibhosts",
+            "ibstat",
+            "ibswitches",
+            "ibv_devinfo",
+            "rdma",
+            "saquery",
+            "show_gids",
+            "smpquery"
+          ],
+          "writers": []
+        },
+        "node_guid": {
+          "readers": ["ibhosts", "ibnetdiscover"],
+          "writers": []
+        },
+        "fabric_topology": {
+          "readers": ["iblinkinfo"],
+          "writers": []
+        },
+        "switch_ports": {
+          "readers": ["iblinkinfo", "ibnetdiscover"],
+          "writers": []
+        },
+        "remote_node_guid": {
+          "readers": ["iblinkinfo"],
+          "writers": []
+        },
+        "remote_port": {
+          "readers": ["iblinkinfo"],
+          "writers": []
+        },
+        "node_description": {
+          "readers": ["iblinkinfo", "ibnetdiscover"],
+          "writers": []
+        },
+        "port_guid": {
+          "readers": ["ibnetdiscover"],
+          "writers": []
+        },
+        "system_image_guid": {
+          "readers": ["ibnetdiscover"],
+          "writers": []
+        },
+        "node_type": {
+          "readers": ["ibnetdiscover"],
+          "writers": []
+        },
+        "port_count": {
+          "readers": ["ibnetdiscover"],
+          "writers": []
+        },
+        "lid": {
+          "readers": [
+            "ib_read_bw",
+            "ib_read_lat",
+            "ib_write_bw",
+            "ib_write_lat",
+            "ibnetdiscover",
+            "ibstat",
+            "ibstatus",
+            "ibswitches",
+            "saquery",
+            "smpquery"
+          ],
+          "writers": []
+        },
+        "vendor_id": {
+          "readers": ["ibnetdiscover"],
+          "writers": []
+        },
+        "device_id": {
+          "readers": ["ibnetdiscover"],
+          "writers": []
+        },
+        "port_connections": {
+          "readers": ["ibnetdiscover"],
+          "writers": []
+        },
+        "hca_ports": {
+          "readers": ["ibnetdiscover"],
+          "writers": []
+        },
+        "port_physical_state": {
+          "readers": ["ibportstate"],
+          "writers": []
+        },
+        "sm_lid": {
+          "readers": ["ibstat", "ibstatus", "sminfo"],
+          "writers": []
+        },
+        "capability_mask": {
+          "readers": ["ibstat"],
+          "writers": []
+        },
+        "hardware_version": {
+          "readers": ["ibstat"],
+          "writers": []
+        },
+        "routes": {
+          "readers": ["ibtracert"],
+          "writers": []
+        },
+        "topology": {
+          "readers": ["ibtracert"],
+          "writers": []
+        },
+        "cable_type": {
+          "readers": ["mlxcables"],
+          "writers": []
+        },
+        "cable_vendor": {
+          "readers": ["mlxcables"],
+          "writers": []
+        },
+        "cable_serial": {
+          "readers": ["mlxcables"],
+          "writers": []
+        },
+        "fec_mode": {
+          "readers": ["mlxlink"],
+          "writers": ["mlxlink"]
+        },
+        "symbol_errors": {
+          "readers": ["mlxlink"],
+          "writers": []
+        },
+        "crc_errors": {
+          "readers": ["mlxlink"],
+          "writers": []
+        },
+        "ber": {
+          "readers": ["mlxlink"],
+          "writers": []
+        },
+        "eye_opening": {
+          "readers": ["mlxlink"],
+          "writers": []
+        },
+        "loopback_mode": {
+          "readers": [],
+          "writers": ["mlxlink"]
+        },
+        "port_counters": {
+          "readers": ["mlxreg"],
+          "writers": []
+        },
+        "port_config": {
+          "readers": [],
+          "writers": ["mlxreg"]
+        },
+        "port_xmit_data": {
+          "readers": ["perfquery"],
+          "writers": ["perfquery"]
+        },
+        "port_rcv_data": {
+          "readers": ["perfquery"],
+          "writers": ["perfquery"]
+        },
+        "port_xmit_pkts": {
+          "readers": ["perfquery"],
+          "writers": ["perfquery"]
+        },
+        "port_rcv_pkts": {
+          "readers": ["perfquery"],
+          "writers": ["perfquery"]
+        },
+        "symbol_error_counter": {
+          "readers": ["perfquery"],
+          "writers": ["perfquery"]
+        },
+        "link_error_recovery_counter": {
+          "readers": ["perfquery"],
+          "writers": ["perfquery"]
+        },
+        "link_downed_counter": {
+          "readers": ["perfquery"],
+          "writers": ["perfquery"]
+        },
+        "port_rcv_errors": {
+          "readers": ["perfquery"],
+          "writers": ["perfquery"]
+        },
+        "port_rcv_remote_physical_errors": {
+          "readers": ["perfquery"],
+          "writers": []
+        },
+        "port_rcv_switch_relay_errors": {
+          "readers": ["perfquery"],
+          "writers": []
+        },
+        "port_xmit_discards": {
+          "readers": ["perfquery"],
+          "writers": ["perfquery"]
+        },
+        "port_xmit_constraint_errors": {
+          "readers": ["perfquery"],
+          "writers": []
+        },
+        "port_rcv_constraint_errors": {
+          "readers": ["perfquery"],
+          "writers": []
+        },
+        "local_link_integrity_errors": {
+          "readers": ["perfquery"],
+          "writers": ["perfquery"]
+        },
+        "excessive_buffer_overrun_errors": {
+          "readers": ["perfquery"],
+          "writers": ["perfquery"]
+        },
+        "vl15_dropped": {
+          "readers": ["perfquery"],
+          "writers": ["perfquery"]
+        },
+        "port_xmit_wait": {
+          "readers": ["perfquery"],
+          "writers": ["perfquery"]
+        },
+        "port_unicast_xmit_pkts": {
+          "readers": ["perfquery"],
+          "writers": []
+        },
+        "port_unicast_rcv_pkts": {
+          "readers": ["perfquery"],
+          "writers": []
+        },
+        "port_multicast_xmit_pkts": {
+          "readers": ["perfquery"],
+          "writers": []
+        },
+        "port_multicast_rcv_pkts": {
+          "readers": ["perfquery"],
+          "writers": []
+        },
+        "mtu": {
+          "readers": ["ib_read_bw", "ib_write_bw", "ib_write_lat"],
+          "writers": []
+        },
+        "pci_address": {
+          "readers": ["lspci"],
+          "writers": []
+        }
+      }
+    },
+    "network_eth_state": {
+      "readers": [
+        "atop",
+        "dstat",
+        "ethtool",
+        "glances",
+        "ip",
+        "netstat",
+        "nmon",
+        "ping",
+        "sar",
+        "ss",
+        "traceroute"
+      ],
+      "writers": ["ethtool", "ip"],
+      "fields": {
+        "interface": {
+          "readers": ["atop", "dstat", "glances", "nmon"],
+          "writers": []
+        },
+        "rx_bytes": {
+          "readers": ["dstat", "ethtool", "glances", "ip", "nmon"],
+          "writers": []
+        },
+        "tx_bytes": {
+          "readers": ["dstat", "ethtool", "glances", "ip", "nmon"],
+          "writers": []
+        },
+        "interface_name": {
+          "readers": ["ip", "sar"],
+          "writers": []
+        },
+        "rx_packets_per_second": {
+          "readers": ["sar"],
+          "writers": []
+        },
+        "tx_packets_per_second": {
+          "readers": ["sar"],
+          "writers": []
+        },
+        "rx_bytes_per_second": {
+          "readers": ["sar"],
+          "writers": []
+        },
+        "tx_bytes_per_second": {
+          "readers": ["sar"],
+          "writers": []
+        },
+        "rx_errors_per_second": {
+          "readers": ["sar"],
+          "writers": []
+        },
+        "tx_errors_per_second": {
+          "readers": ["sar"],
+          "writers": []
+        },
+        "collisions_per_second": {
+          "readers": ["sar"],
+          "writers": []
+        },
+        "rx_dropped_per_second": {
+          "readers": ["sar"],
+          "writers": []
+        },
+        "tx_dropped_per_second": {
+          "readers": ["sar"],
+          "writers": []
+        },
+        "link_speed": {
+          "readers": ["ethtool"],
+          "writers": ["ethtool"]
+        },
+        "duplex": {
+          "readers": ["ethtool"],
+          "writers": ["ethtool"]
+        },
+        "auto_negotiation": {
+          "readers": ["ethtool"],
+          "writers": ["ethtool"]
+        },
+        "link_detected": {
+          "readers": ["ethtool"],
+          "writers": []
+        },
+        "driver_name": {
+          "readers": ["ethtool"],
+          "writers": []
+        },
+        "driver_version": {
+          "readers": ["ethtool"],
+          "writers": []
+        },
+        "firmware_version": {
+          "readers": ["ethtool"],
+          "writers": []
+        },
+        "bus_info": {
+          "readers": ["ethtool"],
+          "writers": []
+        },
+        "rx_packets": {
+          "readers": ["ethtool", "ip"],
+          "writers": []
+        },
+        "tx_packets": {
+          "readers": ["ethtool", "ip"],
+          "writers": []
+        },
+        "rx_errors": {
+          "readers": ["ethtool", "ip"],
+          "writers": []
+        },
+        "tx_errors": {
+          "readers": ["ethtool", "ip"],
+          "writers": []
+        },
+        "ring_buffer_rx": {
+          "readers": ["ethtool"],
+          "writers": ["ethtool"]
+        },
+        "ring_buffer_tx": {
+          "readers": ["ethtool"],
+          "writers": ["ethtool"]
+        },
+        "offload_features": {
+          "readers": ["ethtool"],
+          "writers": ["ethtool"]
+        },
+        "coalesce_settings": {
+          "readers": ["ethtool"],
+          "writers": ["ethtool"]
+        },
+        "pause_settings": {
+          "readers": ["ethtool"],
+          "writers": ["ethtool"]
+        },
+        "channel_count": {
+          "readers": ["ethtool"],
+          "writers": ["ethtool"]
+        },
+        "fec_mode": {
+          "readers": ["ethtool"],
+          "writers": ["ethtool"]
+        },
+        "module_info": {
+          "readers": ["ethtool"],
+          "writers": []
+        },
+        "rss_config": {
+          "readers": [],
+          "writers": ["ethtool"]
+        },
+        "mac_address": {
+          "readers": ["ip"],
+          "writers": ["ip"]
+        },
+        "mtu": {
+          "readers": ["ip"],
+          "writers": ["ip"]
+        },
+        "state": {
+          "readers": ["ip"],
+          "writers": ["ip"]
+        },
+        "operstate": {
+          "readers": ["ip"],
+          "writers": []
+        },
+        "ip_addresses": {
+          "readers": ["ip"],
+          "writers": ["ip"]
+        },
+        "ipv6_addresses": {
+          "readers": ["ip"],
+          "writers": ["ip"]
+        },
+        "broadcast": {
+          "readers": ["ip"],
+          "writers": []
+        },
+        "flags": {
+          "readers": ["ip"],
+          "writers": ["ip"]
+        },
+        "qdisc": {
+          "readers": ["ip"],
+          "writers": []
+        },
+        "group": {
+          "readers": ["ip"],
+          "writers": []
+        },
+        "txqlen": {
+          "readers": ["ip"],
+          "writers": []
+        },
+        "connections": {
+          "readers": ["netstat", "ss"],
+          "writers": []
+        },
+        "routes": {
+          "readers": ["netstat", "traceroute"],
+          "writers": []
+        },
+        "interfaces": {
+          "readers": ["netstat"],
+          "writers": []
+        },
+        "connectivity": {
+          "readers": ["ping"],
+          "writers": []
+        }
+      }
+    },
+    "storage_lustre_state": {
+      "readers": ["df", "du", "findmnt", "fio", "lfs"],
+      "writers": ["lfs"],
+      "fields": {
+        "mount_point": {
+          "readers": ["df", "findmnt", "fio"],
+          "writers": []
+        },
+        "total_space": {
+          "readers": ["df", "lfs"],
+          "writers": []
+        },
+        "used_space": {
+          "readers": ["df", "lfs"],
+          "writers": []
+        },
+        "free_space": {
+          "readers": ["df", "lfs"],
+          "writers": []
+        },
+        "files": {
+          "readers": ["du"],
+          "writers": []
+        },
+        "filesystem": {
+          "readers": ["findmnt"],
+          "writers": []
+        },
+        "ost_status": {
+          "readers": ["lfs"],
+          "writers": []
+        },
+        "mdt_status": {
+          "readers": ["lfs"],
+          "writers": []
+        },
+        "stripe_count": {
+          "readers": ["lfs"],
+          "writers": ["lfs"]
+        },
+        "stripe_size": {
+          "readers": ["lfs"],
+          "writers": ["lfs"]
+        },
+        "free_inodes": {
+          "readers": ["lfs"],
+          "writers": []
+        },
+        "used_inodes": {
+          "readers": ["lfs"],
+          "writers": []
+        },
+        "quota_used": {
+          "readers": [],
+          "writers": ["lfs"]
+        }
+      }
+    },
+    "storage_local_state": {
+      "readers": [
+        "atop",
+        "awk",
+        "cat",
+        "cmake",
+        "cp",
+        "cuobjdump",
+        "dd",
+        "df",
+        "diff",
+        "dstat",
+        "du",
+        "find",
+        "findmnt",
+        "fio",
+        "git",
+        "glances",
+        "grep",
+        "gzip",
+        "head",
+        "iostat",
+        "iotop",
+        "ldconfig",
+        "ldd",
+        "lsblk",
+        "make",
+        "mount",
+        "nmon",
+        "nvdisasm",
+        "nvme",
+        "ptxas",
+        "rsync",
+        "sar",
+        "scp",
+        "sed",
+        "sgather",
+        "smartctl",
+        "sort",
+        "tail",
+        "tar",
+        "umount",
+        "unzip",
+        "vmstat",
+        "wc",
+        "xargs"
+      ],
+      "writers": [
+        "chmod",
+        "chown",
+        "cmake",
+        "cp",
+        "cuobjdump",
+        "curl",
+        "dd",
+        "find",
+        "fio",
+        "git",
+        "gzip",
+        "ln",
+        "make",
+        "mkdir",
+        "mount",
+        "mpif90",
+        "mv",
+        "nvme",
+        "nvprof",
+        "ptxas",
+        "rm",
+        "rsync",
+        "sbcast",
+        "scp",
+        "sed",
+        "sgather",
+        "tar",
+        "tee",
+        "touch",
+        "umount",
+        "unzip",
+        "wget"
+      ],
+      "fields": {
+        "files": {
+          "readers": [
+            "awk",
+            "cat",
+            "cmake",
+            "cp",
+            "cuobjdump",
+            "diff",
+            "du",
+            "find",
+            "git",
+            "grep",
+            "gzip",
+            "head",
+            "ldconfig",
+            "ldd",
+            "make",
+            "nvdisasm",
+            "ptxas",
+            "rsync",
+            "scp",
+            "sed",
+            "sgather",
+            "sort",
+            "tail",
+            "tar",
+            "unzip",
+            "wc",
+            "xargs"
+          ],
+          "writers": [
+            "chmod",
+            "chown",
+            "cmake",
+            "cp",
+            "cuobjdump",
+            "curl",
+            "dd",
+            "find",
+            "fio",
+            "git",
+            "gzip",
+            "ln",
+            "make",
+            "mkdir",
+            "mpif90",
+            "mv",
+            "nvprof",
+            "ptxas",
+            "rm",
+            "rsync",
+            "sbcast",
+            "scp",
+            "sed",
+            "sgather",
+            "tar",
+            "tee",
+            "touch",
+            "unzip",
+            "wget"
+          ]
+        },
+        "device": {
+          "readers": [
+            "atop",
+            "dd",
+            "df",
+            "dstat",
+            "findmnt",
+            "fio",
+            "glances",
+            "iotop",
+            "mount",
+            "nmon",
+            "smartctl"
+          ],
+          "writers": ["dd"]
+        },
+        "mount_point": {
+          "readers": ["df", "findmnt", "fio", "lsblk", "mount", "umount"],
+          "writers": ["mount", "umount"]
+        },
+        "total_size": {
+          "readers": ["df", "findmnt", "glances"],
+          "writers": []
+        },
+        "available_size": {
+          "readers": ["df", "findmnt", "glances"],
+          "writers": []
+        },
+        "device_name": {
+          "readers": ["iostat", "lsblk", "sar"],
+          "writers": []
+        },
+        "read_ops_per_second": {
+          "readers": ["iostat", "sar"],
+          "writers": []
+        },
+        "write_ops_per_second": {
+          "readers": ["iostat", "sar"],
+          "writers": []
+        },
+        "read_bytes_per_second": {
+          "readers": ["iostat", "sar"],
+          "writers": []
+        },
+        "write_bytes_per_second": {
+          "readers": ["iostat", "sar"],
+          "writers": []
+        },
+        "read_merge_per_second": {
+          "readers": ["iostat"],
+          "writers": []
+        },
+        "write_merge_per_second": {
+          "readers": ["iostat"],
+          "writers": []
+        },
+        "await_ms": {
+          "readers": ["iostat", "sar"],
+          "writers": []
+        },
+        "read_await_ms": {
+          "readers": ["iostat"],
+          "writers": []
+        },
+        "write_await_ms": {
+          "readers": ["iostat"],
+          "writers": []
+        },
+        "queue_length": {
+          "readers": ["iostat", "sar"],
+          "writers": []
+        },
+        "utilization_percent": {
+          "readers": ["iostat", "sar"],
+          "writers": []
+        },
+        "service_time_ms": {
+          "readers": ["iostat"],
+          "writers": []
+        },
+        "disk_reads": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "disk_writes": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "disk_read_sectors": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "disk_write_sectors": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "disk_io_time": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "fs_type": {
+          "readers": ["df", "findmnt", "mount"],
+          "writers": ["mount"]
+        },
+        "used_size": {
+          "readers": ["df"],
+          "writers": []
+        },
+        "use_percent": {
+          "readers": ["df"],
+          "writers": []
+        },
+        "mount_options": {
+          "readers": ["findmnt", "mount"],
+          "writers": ["mount"]
+        },
+        "device_path": {
+          "readers": ["lsblk", "nvme"],
+          "writers": []
+        },
+        "device_type": {
+          "readers": ["lsblk"],
+          "writers": []
+        },
+        "size": {
+          "readers": ["lsblk"],
+          "writers": []
+        },
+        "model": {
+          "readers": ["lsblk", "nvme"],
+          "writers": []
+        },
+        "serial": {
+          "readers": ["lsblk"],
+          "writers": []
+        },
+        "vendor": {
+          "readers": ["lsblk"],
+          "writers": []
+        },
+        "filesystem_type": {
+          "readers": ["lsblk"],
+          "writers": []
+        },
+        "partition_table_type": {
+          "readers": ["lsblk"],
+          "writers": []
+        },
+        "uuid": {
+          "readers": ["lsblk"],
+          "writers": []
+        },
+        "label": {
+          "readers": ["lsblk"],
+          "writers": []
+        },
+        "serial_number": {
+          "readers": ["nvme"],
+          "writers": []
+        },
+        "firmware_version": {
+          "readers": ["nvme"],
+          "writers": []
+        },
+        "capacity": {
+          "readers": ["nvme"],
+          "writers": []
+        },
+        "temperature": {
+          "readers": ["nvme"],
+          "writers": []
+        },
+        "smart_status": {
+          "readers": ["nvme"],
+          "writers": []
+        },
+        "wear_level": {
+          "readers": ["nvme"],
+          "writers": []
+        },
+        "power_on_hours": {
+          "readers": ["nvme"],
+          "writers": []
+        },
+        "namespace_format": {
+          "readers": [],
+          "writers": ["nvme"]
+        },
+        "device_state": {
+          "readers": [],
+          "writers": ["nvme"]
+        }
+      }
+    },
+    "system_state": {
+      "readers": [
+        "atop",
+        "bandwidthTest",
+        "dmesg",
+        "dmidecode",
+        "dstat",
+        "env",
+        "free",
+        "fwupdmgr",
+        "glances",
+        "hostname",
+        "hostnamectl",
+        "htop",
+        "hwloc-info",
+        "hwloc-ls",
+        "id",
+        "iostat",
+        "ip",
+        "ipmitool",
+        "journalctl",
+        "lscpu",
+        "lsmem",
+        "lsmod",
+        "lspci",
+        "lstopo",
+        "memtester",
+        "module",
+        "mpicc",
+        "mpstat",
+        "nmon",
+        "numactl",
+        "numastat",
+        "nvidia-bug-report.sh",
+        "nvitop",
+        "ompi_info",
+        "perf",
+        "pidstat",
+        "ps",
+        "sar",
+        "sensors",
+        "strace",
+        "stress-ng",
+        "systemctl",
+        "taskset",
+        "time",
+        "timedatectl",
+        "top",
+        "turbostat",
+        "uname",
+        "uptime",
+        "vmstat",
+        "watch",
+        "which",
+        "whoami",
+        "xhpl"
+      ],
+      "writers": [
+        "crontab",
+        "dmesg",
+        "hostname",
+        "hostnamectl",
+        "htop",
+        "ip",
+        "ipmitool",
+        "journalctl",
+        "ldconfig",
+        "module",
+        "mpiexec",
+        "mpirun",
+        "nice",
+        "numactl",
+        "sudo",
+        "systemctl",
+        "taskset",
+        "timedatectl",
+        "timeout"
+      ],
+      "fields": {
+        "memory_total": {
+          "readers": [
+            "atop",
+            "bandwidthTest",
+            "dstat",
+            "free",
+            "glances",
+            "htop",
+            "hwloc-ls",
+            "lsmem",
+            "lstopo",
+            "memtester",
+            "nmon",
+            "numastat",
+            "sar",
+            "stress-ng",
+            "top",
+            "vmstat",
+            "xhpl"
+          ],
+          "writers": []
+        },
+        "memory_available": {
+          "readers": ["bandwidthTest", "free", "memtester", "top", "xhpl"],
+          "writers": []
+        },
+        "kernel_messages": {
+          "readers": ["dmesg", "nvidia-bug-report.sh"],
+          "writers": []
+        },
+        "boot_messages": {
+          "readers": ["dmesg", "journalctl"],
+          "writers": []
+        },
+        "hardware_events": {
+          "readers": ["dmesg"],
+          "writers": []
+        },
+        "driver_messages": {
+          "readers": ["dmesg"],
+          "writers": []
+        },
+        "error_logs": {
+          "readers": ["dmesg"],
+          "writers": []
+        },
+        "kernel_ring_buffer": {
+          "readers": [],
+          "writers": ["dmesg"]
+        },
+        "console_logging_state": {
+          "readers": [],
+          "writers": ["dmesg"]
+        },
+        "cpu_model": {
+          "readers": ["lscpu", "sensors", "turbostat", "xhpl"],
+          "writers": []
+        },
+        "cpu_count": {
+          "readers": [
+            "atop",
+            "dstat",
+            "glances",
+            "htop",
+            "hwloc-info",
+            "hwloc-ls",
+            "lscpu",
+            "lstopo",
+            "mpstat",
+            "nmon",
+            "perf",
+            "pidstat",
+            "stress-ng",
+            "turbostat",
+            "xhpl"
+          ],
+          "writers": ["nice"]
+        },
+        "numa_topology": {
+          "readers": ["xhpl"],
+          "writers": []
+        },
+        "temperature": {
+          "readers": ["ipmitool"],
+          "writers": []
+        },
+        "voltage": {
+          "readers": ["ipmitool"],
+          "writers": []
+        },
+        "fan_speed": {
+          "readers": ["ipmitool"],
+          "writers": []
+        },
+        "power_consumption": {
+          "readers": ["ipmitool"],
+          "writers": []
+        },
+        "intrusion_status": {
+          "readers": ["ipmitool"],
+          "writers": []
+        },
+        "bmc_firmware_version": {
+          "readers": ["ipmitool"],
+          "writers": []
+        },
+        "bmc_network_config": {
+          "readers": [],
+          "writers": ["ipmitool"]
+        },
+        "bmc_users": {
+          "readers": [],
+          "writers": ["ipmitool"]
+        },
+        "sel_entries": {
+          "readers": [],
+          "writers": ["ipmitool"]
+        },
+        "sensor_thresholds": {
+          "readers": [],
+          "writers": ["ipmitool"]
+        },
+        "bmc_time": {
+          "readers": [],
+          "writers": ["ipmitool"]
+        },
+        "service_logs": {
+          "readers": ["journalctl"],
+          "writers": []
+        },
+        "system_events": {
+          "readers": ["journalctl"],
+          "writers": []
+        },
+        "authentication_logs": {
+          "readers": ["journalctl"],
+          "writers": []
+        },
+        "cron_logs": {
+          "readers": ["journalctl"],
+          "writers": []
+        },
+        "journal_storage": {
+          "readers": [],
+          "writers": ["journalctl"]
+        },
+        "memory_free": {
+          "readers": [
+            "free",
+            "htop",
+            "memtester",
+            "numastat",
+            "sar",
+            "top",
+            "vmstat"
+          ],
+          "writers": []
+        },
+        "kernel_version": {
+          "readers": ["hostnamectl", "lsmod", "nvidia-bug-report.sh", "uname"],
+          "writers": []
+        },
+        "kernel_modules": {
+          "readers": ["nvidia-bug-report.sh"],
+          "writers": []
+        },
+        "system_logs": {
+          "readers": ["nvidia-bug-report.sh"],
+          "writers": []
+        },
+        "hardware_configuration": {
+          "readers": ["nvidia-bug-report.sh"],
+          "writers": []
+        },
+        "pci_devices": {
+          "readers": ["nvidia-bug-report.sh"],
+          "writers": []
+        },
+        "cpu_info": {
+          "readers": ["nvidia-bug-report.sh"],
+          "writers": []
+        },
+        "memory_info": {
+          "readers": ["nvidia-bug-report.sh"],
+          "writers": []
+        },
+        "bios_version": {
+          "readers": ["dmidecode", "fwupdmgr"],
+          "writers": []
+        },
+        "scheduled_tasks": {
+          "readers": [],
+          "writers": ["crontab"]
+        },
+        "environment_variables": {
+          "readers": ["env", "module"],
+          "writers": ["module"]
+        },
+        "path": {
+          "readers": ["env", "mpicc", "which"],
+          "writers": []
+        },
+        "library_path": {
+          "readers": ["env"],
+          "writers": []
+        },
+        "users": {
+          "readers": ["id", "whoami"],
+          "writers": []
+        },
+        "system_libraries": {
+          "readers": [],
+          "writers": ["ldconfig"]
+        },
+        "processes": {
+          "readers": ["strace", "taskset", "time"],
+          "writers": ["sudo", "taskset", "timeout"]
+        },
+        "services": {
+          "readers": ["systemctl"],
+          "writers": ["systemctl"]
+        },
+        "hostname": {
+          "readers": [
+            "hostname",
+            "hostnamectl",
+            "nvitop",
+            "ompi_info",
+            "uname"
+          ],
+          "writers": ["hostname", "hostnamectl"]
+        },
+        "cpu_usage": {
+          "readers": ["htop", "nvitop"],
+          "writers": []
+        },
+        "memory_usage": {
+          "readers": ["nvitop"],
+          "writers": []
+        },
+        "shell_type": {
+          "readers": ["module"],
+          "writers": []
+        },
+        "module_cache": {
+          "readers": ["module"],
+          "writers": []
+        },
+        "memory_used": {
+          "readers": ["free", "htop", "numastat", "sar", "top", "vmstat"],
+          "writers": []
+        },
+        "memory_cached": {
+          "readers": ["free", "htop", "sar", "top", "vmstat"],
+          "writers": []
+        },
+        "memory_buffers": {
+          "readers": ["free", "htop", "sar", "top", "vmstat"],
+          "writers": []
+        },
+        "swap_total": {
+          "readers": ["free", "htop", "sar", "top", "vmstat"],
+          "writers": []
+        },
+        "swap_used": {
+          "readers": ["free", "htop", "sar", "top", "vmstat"],
+          "writers": []
+        },
+        "load_average": {
+          "readers": ["htop"],
+          "writers": []
+        },
+        "uptime": {
+          "readers": ["htop", "top"],
+          "writers": []
+        },
+        "process_signals": {
+          "readers": [],
+          "writers": ["htop"]
+        },
+        "process_priority": {
+          "readers": ["ps"],
+          "writers": ["htop"]
+        },
+        "cpu_usage_user": {
+          "readers": ["iostat", "sar", "top"],
+          "writers": []
+        },
+        "cpu_usage_system": {
+          "readers": ["iostat", "sar", "top"],
+          "writers": []
+        },
+        "cpu_usage_nice": {
+          "readers": ["iostat", "sar", "top"],
+          "writers": []
+        },
+        "cpu_usage_idle": {
+          "readers": ["iostat", "sar", "top"],
+          "writers": []
+        },
+        "cpu_usage_iowait": {
+          "readers": ["iostat", "sar", "top"],
+          "writers": []
+        },
+        "cpu_usage_steal": {
+          "readers": ["iostat", "sar", "top"],
+          "writers": []
+        },
+        "load_1min": {
+          "readers": ["mpstat"],
+          "writers": []
+        },
+        "load_5min": {
+          "readers": ["mpstat"],
+          "writers": []
+        },
+        "load_15min": {
+          "readers": ["mpstat"],
+          "writers": []
+        },
+        "process_list": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "process_pid": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "process_ppid": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "process_user": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "process_uid": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "process_gid": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "process_state": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "process_nice": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "process_cpu_percent": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "process_memory_percent": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "process_virtual_memory": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "process_resident_memory": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "process_shared_memory": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "process_start_time": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "process_cpu_time": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "process_command": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "process_args": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "process_tty": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "process_threads": {
+          "readers": ["ps"],
+          "writers": []
+        },
+        "swap_free": {
+          "readers": ["free", "sar", "top", "vmstat"],
+          "writers": []
+        },
+        "load_average_1min": {
+          "readers": ["sar", "top", "uptime"],
+          "writers": []
+        },
+        "load_average_5min": {
+          "readers": ["sar", "top", "uptime"],
+          "writers": []
+        },
+        "load_average_15min": {
+          "readers": ["sar", "top", "uptime"],
+          "writers": []
+        },
+        "context_switches_per_second": {
+          "readers": ["sar"],
+          "writers": []
+        },
+        "process_creations_per_second": {
+          "readers": ["sar"],
+          "writers": []
+        },
+        "interrupts_per_second": {
+          "readers": ["sar"],
+          "writers": []
+        },
+        "cpu_usage_irq": {
+          "readers": ["top"],
+          "writers": []
+        },
+        "cpu_usage_softirq": {
+          "readers": ["top"],
+          "writers": []
+        },
+        "process_count_total": {
+          "readers": ["top"],
+          "writers": []
+        },
+        "process_count_running": {
+          "readers": ["top"],
+          "writers": []
+        },
+        "process_count_sleeping": {
+          "readers": ["top"],
+          "writers": []
+        },
+        "process_count_stopped": {
+          "readers": ["top"],
+          "writers": []
+        },
+        "process_count_zombie": {
+          "readers": ["top"],
+          "writers": []
+        },
+        "uptime_seconds": {
+          "readers": ["uptime"],
+          "writers": []
+        },
+        "logged_in_users": {
+          "readers": ["uptime"],
+          "writers": []
+        },
+        "boot_time": {
+          "readers": ["uptime"],
+          "writers": []
+        },
+        "memory_active": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "memory_inactive": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "swap_in_rate": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "swap_out_rate": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "cpu_user": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "cpu_system": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "cpu_idle": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "cpu_iowait": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "cpu_steal": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "context_switches": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "interrupts": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "forks": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "processes_running": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "processes_blocked": {
+          "readers": ["vmstat"],
+          "writers": []
+        },
+        "running_processes": {
+          "readers": [],
+          "writers": ["mpiexec", "mpirun"]
+        },
+        "network_connections": {
+          "readers": [],
+          "writers": ["mpiexec", "mpirun"]
+        },
+        "shared_memory_segments": {
+          "readers": [],
+          "writers": ["mpiexec", "mpirun"]
+        },
+        "architecture": {
+          "readers": ["hostnamectl", "lscpu", "ompi_info", "uname"],
+          "writers": []
+        },
+        "routing_table": {
+          "readers": ["ip"],
+          "writers": ["ip"]
+        },
+        "neighbor_table": {
+          "readers": ["ip"],
+          "writers": ["ip"]
+        },
+        "network_namespaces": {
+          "readers": ["ip"],
+          "writers": ["ip"]
+        },
+        "routing_rules": {
+          "readers": ["ip"],
+          "writers": ["ip"]
+        },
+        "multicast_groups": {
+          "readers": ["ip"],
+          "writers": []
+        },
+        "system_manufacturer": {
+          "readers": ["dmidecode"],
+          "writers": []
+        },
+        "system_model": {
+          "readers": ["dmidecode"],
+          "writers": []
+        },
+        "system_serial": {
+          "readers": ["dmidecode"],
+          "writers": []
+        },
+        "bios_date": {
+          "readers": ["dmidecode"],
+          "writers": []
+        },
+        "chassis_type": {
+          "readers": ["dmidecode"],
+          "writers": []
+        },
+        "processor_info": {
+          "readers": ["dmidecode"],
+          "writers": []
+        },
+        "memory_configuration": {
+          "readers": ["dmidecode"],
+          "writers": []
+        },
+        "pcie_slots": {
+          "readers": ["dmidecode"],
+          "writers": []
+        },
+        "memory_shared": {
+          "readers": ["free"],
+          "writers": []
+        },
+        "fqdn": {
+          "readers": ["hostname", "hostnamectl"],
+          "writers": []
+        },
+        "domain_name": {
+          "readers": ["hostname"],
+          "writers": []
+        },
+        "ip_addresses": {
+          "readers": ["hostname"],
+          "writers": []
+        },
+        "os_name": {
+          "readers": ["hostnamectl"],
+          "writers": []
+        },
+        "os_version": {
+          "readers": ["hostnamectl"],
+          "writers": []
+        },
+        "numa_nodes": {
+          "readers": ["hwloc-info", "hwloc-ls"],
+          "writers": []
+        },
+        "cache_sizes": {
+          "readers": ["hwloc-info"],
+          "writers": []
+        },
+        "cpu_sockets": {
+          "readers": ["lscpu", "lstopo"],
+          "writers": []
+        },
+        "cpu_cores_per_socket": {
+          "readers": ["lscpu", "lstopo"],
+          "writers": []
+        },
+        "pcie_topology": {
+          "readers": ["lspci"],
+          "writers": []
+        },
+        "numa_node_mapping": {
+          "readers": ["lspci"],
+          "writers": []
+        },
+        "kernel_drivers": {
+          "readers": ["lspci"],
+          "writers": []
+        },
+        "numa_node_count": {
+          "readers": ["numactl"],
+          "writers": []
+        },
+        "numa_node_cpus": {
+          "readers": ["numactl"],
+          "writers": []
+        },
+        "numa_node_memory": {
+          "readers": ["numactl"],
+          "writers": []
+        },
+        "numa_distances": {
+          "readers": ["numactl"],
+          "writers": []
+        },
+        "cpu_topology": {
+          "readers": ["numactl"],
+          "writers": []
+        },
+        "process_numa_policy": {
+          "readers": [],
+          "writers": ["numactl"]
+        },
+        "process_cpu_affinity": {
+          "readers": [],
+          "writers": ["numactl"]
+        },
+        "process_memory_binding": {
+          "readers": [],
+          "writers": ["numactl"]
+        },
+        "timezone": {
+          "readers": ["timedatectl"],
+          "writers": ["timedatectl"]
+        },
+        "ntp_synchronized": {
+          "readers": ["timedatectl"],
+          "writers": ["timedatectl"]
+        },
+        "kernel_name": {
+          "readers": ["uname"],
+          "writers": []
+        },
+        "kernel_release": {
+          "readers": ["uname"],
+          "writers": []
+        }
+      }
+    },
+    "container_state": {
+      "readers": [
+        "apptainer",
+        "docker",
+        "enroot",
+        "journalctl",
+        "ngc",
+        "nvidia-container-cli",
+        "podman",
+        "pyxis",
+        "singularity"
+      ],
+      "writers": [
+        "apptainer",
+        "docker",
+        "enroot",
+        "nvidia-container-cli",
+        "podman",
+        "pyxis",
+        "singularity"
+      ],
+      "fields": {
+        "image": {
+          "readers": ["apptainer", "docker", "ngc", "podman", "pyxis"],
+          "writers": ["docker", "podman"]
+        },
+        "container_id": {
+          "readers": ["docker", "podman"],
+          "writers": ["apptainer", "docker", "podman", "pyxis"]
+        },
+        "status": {
+          "readers": ["docker", "podman"],
+          "writers": ["apptainer", "docker", "podman", "pyxis"]
+        },
+        "pid": {
+          "readers": ["nvidia-container-cli"],
+          "writers": ["apptainer", "docker", "enroot", "podman"]
+        },
+        "name": {
+          "readers": ["docker", "podman"],
+          "writers": ["docker", "podman"]
+        },
+        "ports": {
+          "readers": ["docker", "podman"],
+          "writers": ["docker", "podman"]
+        },
+        "mounts": {
+          "readers": ["docker", "podman"],
+          "writers": ["docker", "podman"]
+        },
+        "gpus_attached": {
+          "readers": ["docker"],
+          "writers": ["docker"]
+        },
+        "created": {
+          "readers": [],
+          "writers": ["docker", "podman"]
+        },
+        "started": {
+          "readers": [],
+          "writers": ["docker", "podman"]
+        },
+        "runtime": {
+          "readers": [],
+          "writers": ["docker"]
+        },
+        "container_name": {
+          "readers": ["enroot"],
+          "writers": ["enroot"]
+        },
+        "root_filesystem_path": {
+          "readers": ["enroot"],
+          "writers": ["enroot"]
+        },
+        "squashfs_image_path": {
+          "readers": ["enroot"],
+          "writers": []
+        },
+        "created_timestamp": {
+          "readers": [],
+          "writers": ["enroot"]
+        },
+        "rootfs": {
+          "readers": ["nvidia-container-cli"],
+          "writers": []
+        },
+        "namespaces": {
+          "readers": ["nvidia-container-cli"],
+          "writers": []
+        },
+        "device_mounts": {
+          "readers": [],
+          "writers": ["nvidia-container-cli"]
+        },
+        "library_mounts": {
+          "readers": [],
+          "writers": ["nvidia-container-cli"]
+        },
+        "environment": {
+          "readers": [],
+          "writers": ["nvidia-container-cli"]
+        },
+        "cgroup_devices": {
+          "readers": [],
+          "writers": ["nvidia-container-cli"]
+        },
+        "devices": {
+          "readers": ["podman"],
+          "writers": ["podman"]
+        },
+        "image_path": {
+          "readers": ["singularity"],
+          "writers": ["singularity"]
+        },
+        "instance_name": {
+          "readers": ["singularity"],
+          "writers": ["singularity"]
+        },
+        "instance_pid": {
+          "readers": ["singularity"],
+          "writers": []
+        },
+        "container_metadata": {
+          "readers": ["singularity"],
+          "writers": []
+        },
+        "container_pid": {
+          "readers": [],
+          "writers": ["singularity"]
+        },
+        "instance_state": {
+          "readers": [],
+          "writers": ["singularity"]
+        },
+        "cache_layers": {
+          "readers": [],
+          "writers": ["singularity"]
+        },
+        "docker_logs": {
+          "readers": ["journalctl"],
+          "writers": []
+        },
+        "containerd_logs": {
+          "readers": ["journalctl"],
+          "writers": []
+        },
+        "container_events": {
+          "readers": ["journalctl"],
+          "writers": []
+        }
+      }
+    },
+    "firmware_state": {
+      "readers": [
+        "flint",
+        "fwupdmgr",
+        "ibv_devinfo",
+        "mlxcables",
+        "mlxconfig",
+        "mlxdump",
+        "mlxfwmanager",
+        "mlxfwreset",
+        "mlxlink",
+        "mlxreg",
+        "mlxup"
+      ],
+      "writers": [
+        "flint",
+        "fwupdmgr",
+        "mlxconfig",
+        "mlxdump",
+        "mlxfwmanager",
+        "mlxfwreset",
+        "mlxup"
+      ],
+      "fields": {
+        "current_fw_version": {
+          "readers": ["flint", "mlxfwmanager"],
+          "writers": ["flint", "mlxfwmanager"]
+        },
+        "psid": {
+          "readers": ["flint", "mlxfwmanager", "mlxup"],
+          "writers": []
+        },
+        "guid": {
+          "readers": ["flint"],
+          "writers": ["flint"]
+        },
+        "mac": {
+          "readers": ["flint"],
+          "writers": ["flint"]
+        },
+        "vpd": {
+          "readers": ["flint"],
+          "writers": ["flint"]
+        },
+        "rom_version": {
+          "readers": ["flint"],
+          "writers": ["flint"]
+        },
+        "secure_boot_status": {
+          "readers": ["flint"],
+          "writers": []
+        },
+        "flash_contents": {
+          "readers": [],
+          "writers": ["flint"]
+        },
+        "firmware_version": {
+          "readers": ["fwupdmgr", "ibv_devinfo", "mlxdump", "mlxlink", "mlxup"],
+          "writers": ["fwupdmgr", "mlxup"]
+        },
+        "part_number": {
+          "readers": ["mlxfwmanager"],
+          "writers": []
+        },
+        "device_type": {
+          "readers": ["mlxconfig", "mlxfwmanager", "mlxfwreset", "mlxlink"],
+          "writers": []
+        },
+        "pxe_version": {
+          "readers": ["mlxfwmanager"],
+          "writers": ["mlxfwmanager"]
+        },
+        "uefi_version": {
+          "readers": ["mlxfwmanager"],
+          "writers": ["mlxfwmanager"]
+        },
+        "base_guid": {
+          "readers": ["mlxfwmanager"],
+          "writers": []
+        },
+        "current_version": {
+          "readers": ["mlxconfig", "mlxfwreset"],
+          "writers": []
+        },
+        "device_state": {
+          "readers": [],
+          "writers": ["mlxfwreset"]
+        },
+        "device_path": {
+          "readers": ["mlxcables", "mlxdump", "mlxreg", "mlxup"],
+          "writers": []
+        },
+        "device_id": {
+          "readers": [],
+          "writers": ["mlxconfig"]
+        },
+        "dump_state": {
+          "readers": [],
+          "writers": ["mlxdump"]
+        },
+        "hardware_version": {
+          "readers": ["mlxlink"],
+          "writers": []
+        }
+      }
+    },
+    "fabric_state": {
+      "readers": [
+        "all_gather_perf",
+        "all_reduce_perf",
+        "broadcast_perf",
+        "dcgmi",
+        "nv-fabricmanager",
+        "nvbandwidth",
+        "nvidia-bug-report.sh",
+        "nvidia-smi",
+        "p2pBandwidthLatencyTest",
+        "reduce_perf",
+        "reduce_scatter_perf",
+        "sendrecv_perf",
+        "xhpl"
+      ],
+      "writers": ["nv-fabricmanager"],
+      "fields": {
+        "nvlink_status": {
+          "readers": [
+            "dcgmi",
+            "nv-fabricmanager",
+            "nvidia-bug-report.sh",
+            "xhpl"
+          ],
+          "writers": ["nv-fabricmanager"]
+        },
+        "nvswitch_status": {
+          "readers": [
+            "all_gather_perf",
+            "all_reduce_perf",
+            "broadcast_perf",
+            "nvidia-bug-report.sh",
+            "reduce_scatter_perf",
+            "sendrecv_perf",
+            "xhpl"
+          ],
+          "writers": ["nv-fabricmanager"]
+        },
+        "nvlink_bandwidth": {
+          "readers": ["dcgmi", "xhpl"],
+          "writers": []
+        },
+        "gpu_topology": {
+          "readers": ["xhpl"],
+          "writers": []
+        },
+        "nvswitch_count": {
+          "readers": ["nv-fabricmanager"],
+          "writers": []
+        },
+        "nvswitch_id": {
+          "readers": ["nv-fabricmanager"],
+          "writers": []
+        },
+        "nvswitch_port_count": {
+          "readers": ["nv-fabricmanager"],
+          "writers": []
+        },
+        "nvlink_errors": {
+          "readers": ["dcgmi", "nv-fabricmanager"],
+          "writers": []
+        },
+        "nvlink_routing_table": {
+          "readers": [],
+          "writers": ["nv-fabricmanager"]
+        },
+        "fabric_initialized": {
+          "readers": [],
+          "writers": ["nv-fabricmanager"]
+        },
+        "nvlink_version": {
+          "readers": [
+            "all_gather_perf",
+            "all_reduce_perf",
+            "broadcast_perf",
+            "dcgmi",
+            "nvbandwidth",
+            "nvidia-smi",
+            "p2pBandwidthLatencyTest",
+            "reduce_perf",
+            "reduce_scatter_perf",
+            "sendrecv_perf"
+          ],
+          "writers": []
+        },
+        "links": {
+          "readers": [
+            "all_gather_perf",
+            "all_reduce_perf",
+            "broadcast_perf",
+            "nvbandwidth",
+            "nvidia-smi",
+            "p2pBandwidthLatencyTest",
+            "reduce_perf",
+            "reduce_scatter_perf",
+            "sendrecv_perf"
+          ],
+          "writers": []
+        },
+        "nvlink_link_count": {
+          "readers": ["dcgmi"],
+          "writers": []
+        },
+        "nvlink_throughput": {
+          "readers": ["dcgmi"],
+          "writers": []
+        },
+        "peer_access": {
+          "readers": ["sendrecv_perf"],
+          "writers": []
+        }
+      }
+    }
+  }
+}

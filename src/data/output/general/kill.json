@@ -1,0 +1,106 @@
+{
+  "command": "kill",
+  "category": "general",
+  "description": "Send signals to processes. Terminates or controls processes by PID. Essential for managing runaway HPC jobs and GPU processes.",
+  "synopsis": "kill [options] <pid>...",
+  "version_documented": "procps/util-linux",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/kill.1.html"],
+  "installation": {
+    "package": "procps",
+    "notes": "Built-in shell command and standalone utility."
+  },
+  "global_options": [
+    {
+      "short": "-s",
+      "long": "--signal",
+      "description": "Signal to send",
+      "arguments": "<signal>",
+      "argument_type": "string",
+      "example": "-s SIGTERM"
+    },
+    {
+      "short": "-l",
+      "long": "--list",
+      "description": "List signal names"
+    },
+    {
+      "short": "-9",
+      "description": "Send SIGKILL (force kill)"
+    },
+    {
+      "short": "-15",
+      "description": "Send SIGTERM (graceful)"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Graceful termination",
+      "command": "kill 12345",
+      "requires_root": false
+    },
+    {
+      "description": "Force kill",
+      "command": "kill -9 12345",
+      "requires_root": false
+    },
+    {
+      "description": "Kill multiple processes",
+      "command": "kill -9 12345 12346 12347",
+      "requires_root": false
+    },
+    {
+      "description": "List signals",
+      "command": "kill -l",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "kill: Operation not permitted",
+      "meaning": "Cannot kill process owned by another user",
+      "resolution": "Run as root or process owner"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["pkill", "killall", "ps", "nvidia-smi"],
+    "notes": "SIGTERM (15) allows graceful shutdown. SIGKILL (9) forces immediate termination. Use nvidia-smi to find GPU process PIDs."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "Can only kill own processes unless root",
+    "notes": "Root can kill any process"
+  },
+  "limitations": [
+    "Cannot kill zombie processes",
+    "SIGKILL may leave resources unfreed",
+    "Need PID (use pgrep to find)"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "gpu_process_state",
+        "fields": ["pid"],
+        "description": "Terminates processes including GPU processes",
+        "requires_privilege": "process owner or root"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ps",
+        "shared_state": "Killed process disappears from ps"
+      }
+    ]
+  }
+}

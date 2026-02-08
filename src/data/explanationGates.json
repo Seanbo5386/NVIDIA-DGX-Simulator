@@ -1,0 +1,766 @@
+{
+  "explanationGates": [
+    {
+      "id": "gate-domain1-bmc-config",
+      "scenarioId": "domain1-bmc-config",
+      "familyId": "bmc-hardware",
+      "question": "Which ipmitool command displays both the IP address and subnet mask of the BMC interface?",
+      "choices": [
+        "ipmitool mc info",
+        "ipmitool lan print 1",
+        "ipmitool chassis status",
+        "ipmitool sensor list"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The 'ipmitool lan print 1' command displays LAN channel 1 configuration including IP address, subnet mask, gateway, and MAC address. Channel 1 is the primary management interface on most BMCs."
+    },
+    {
+      "id": "gate-domain1-bmc-security",
+      "scenarioId": "domain1-bmc-security",
+      "familyId": "bmc-hardware",
+      "question": "What is the recommended action when auditing BMC security and finding Cipher Suite 0 enabled?",
+      "choices": [
+        "Leave it enabled for backward compatibility",
+        "Disable it because Cipher 0 provides no authentication",
+        "Configure it to use AES encryption",
+        "Reset the BMC to factory defaults"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Cipher Suite 0 provides no authentication or encryption, making it a critical security vulnerability. It should always be disabled in production environments. Use Cipher Suite 3 (AES-CBC-128) or higher for secure BMC access."
+    },
+    {
+      "id": "gate-domain1-firmware-verification",
+      "scenarioId": "domain1-firmware-verification",
+      "familyId": "gpu-monitoring",
+      "question": "Which command quickly retrieves both the GPU driver version and VBIOS version in CSV format?",
+      "choices": [
+        "nvidia-smi -L",
+        "nvidia-smi --query-gpu=driver_version,vbios_version --format=csv",
+        "nvidia-smi -q | head -20",
+        "nvidia-smi topo -m"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The nvidia-smi --query-gpu flag with CSV format allows querying specific GPU attributes efficiently. This is useful for scripting and automation when checking firmware compliance across multiple systems."
+    },
+    {
+      "id": "gate-domain1-driver-troubleshoot",
+      "scenarioId": "domain1-driver-troubleshoot",
+      "familyId": "gpu-monitoring",
+      "question": "When nvidia-smi reports 'NVIDIA-SMI has failed because it couldn't communicate with the NVIDIA driver', what is the most likely first troubleshooting step?",
+      "choices": [
+        "Reinstall CUDA toolkit",
+        "Check if nvidia kernel modules are loaded with 'lsmod | grep nvidia'",
+        "Update the GPU VBIOS",
+        "Run nvidia-smi with sudo"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The nvidia-smi communication failure usually indicates the NVIDIA kernel driver modules are not loaded. Using 'lsmod | grep nvidia' verifies if nvidia, nvidia_uvm, and nvidia_modeset modules are present. If missing, a modprobe or driver reinstall may be needed."
+    },
+    {
+      "id": "gate-domain1-gpu-discovery",
+      "scenarioId": "domain1-gpu-discovery",
+      "familyId": "gpu-monitoring",
+      "question": "What nvidia-smi flag displays the full GPU topology including NVLink connections between GPUs?",
+      "choices": [
+        "nvidia-smi -L",
+        "nvidia-smi topo -m",
+        "nvidia-smi --query-gpu=gpu_name",
+        "nvidia-smi -q"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The 'nvidia-smi topo -m' command displays the GPU topology matrix showing connections between GPUs via NVLink, PCIe, or NVSwitch. The matrix notation (NV#, SYS, PHB) indicates connection types and speeds."
+    },
+    {
+      "id": "gate-domain1-uefi-validation",
+      "scenarioId": "domain1-uefi-validation",
+      "familyId": "bmc-hardware",
+      "question": "Which dmidecode command retrieves BIOS version information?",
+      "choices": [
+        "dmidecode -t processor",
+        "dmidecode -s bios-version",
+        "dmidecode -t memory",
+        "dmidecode --dump"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The 'dmidecode -s bios-version' command retrieves just the BIOS version string. The -s flag (string) outputs a single DMI string value, useful for scripting. Alternatively, 'dmidecode -t bios' shows full BIOS information."
+    },
+    {
+      "id": "gate-domain2-nvlink-topo",
+      "scenarioId": "domain2-nvlink-topo",
+      "familyId": "gpu-monitoring",
+      "question": "In nvidia-smi topology output, what does 'NV18' indicate between two GPUs?",
+      "choices": [
+        "18 GPUs total in the system",
+        "PCIe Gen 1.8 connection",
+        "18 NVLink lanes connecting the GPUs",
+        "GPU index 18"
+      ],
+      "correctAnswer": 2,
+      "explanation": "In the nvidia-smi topo matrix, 'NV#' indicates the number of NVLink connections between GPUs. 'NV18' means 18 NVLink lanes connect those GPUs, which is typical for H100 GPUs connected via NVSwitch providing maximum bandwidth."
+    },
+    {
+      "id": "gate-domain2-nvlink-recovery",
+      "scenarioId": "domain2-nvlink-recovery",
+      "familyId": "gpu-monitoring",
+      "question": "Which command displays NVLink error counters including CRC and replay errors?",
+      "choices": [
+        "nvidia-smi nvlink --status",
+        "nvidia-smi nvlink -e",
+        "nvidia-smi topo -m",
+        "nvidia-smi -q -d MEMORY"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The 'nvidia-smi nvlink -e' (or --errors) command displays NVLink error counters for all links. High CRC or replay error counts indicate signal integrity issues, potentially caused by faulty cables or connectors."
+    },
+    {
+      "id": "gate-domain2-mig-setup",
+      "scenarioId": "domain2-mig-setup",
+      "familyId": "gpu-monitoring",
+      "question": "What must be done before creating MIG instances on a GPU?",
+      "choices": [
+        "Disable persistence mode",
+        "Stop the Fabric Manager service",
+        "Enable MIG mode with 'nvidia-smi -mig 1'",
+        "Reset the NVLink counters"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Before creating GPU instances or compute instances, MIG mode must be enabled on the GPU using 'nvidia-smi -i <gpu_id> -mig 1'. This requires no active processes on the GPU and may require a GPU reset to take effect."
+    },
+    {
+      "id": "gate-domain2-advanced-mig",
+      "scenarioId": "domain2-advanced-mig",
+      "familyId": "gpu-monitoring",
+      "question": "What is the correct order of operations when configuring MIG partitions?",
+      "choices": [
+        "Create compute instances, then GPU instances, then enable MIG",
+        "Enable MIG, create GPU instances, then create compute instances",
+        "Create GPU instances, enable MIG, then create compute instances",
+        "Enable MIG and create instances simultaneously"
+      ],
+      "correctAnswer": 1,
+      "explanation": "MIG configuration follows a strict hierarchy: first enable MIG mode on the GPU, then create GPU Instances (GI) which partition memory and SMs, and finally create Compute Instances (CI) within each GI to enable job scheduling."
+    },
+    {
+      "id": "gate-domain2-gpu-power",
+      "scenarioId": "domain2-gpu-power",
+      "familyId": "gpu-monitoring",
+      "question": "Which nvidia-smi command sets a power limit of 350W on GPU 0?",
+      "choices": [
+        "nvidia-smi -i 0 -pl 350",
+        "nvidia-smi --power-limit=350",
+        "nvidia-smi -pm 350",
+        "nvidia-smi -i 0 --tdp 350"
+      ],
+      "correctAnswer": 0,
+      "explanation": "The 'nvidia-smi -i 0 -pl 350' command sets the power limit to 350 watts on GPU 0. The -pl flag (power limit) accepts values in watts and must be within the GPU's allowed range shown by nvidia-smi -q -d POWER."
+    },
+    {
+      "id": "gate-domain2-bluefield-dpu",
+      "scenarioId": "domain2-bluefield-dpu",
+      "familyId": "infiniband-tools",
+      "question": "What is the primary advantage of using BlueField DPU for network processing?",
+      "choices": [
+        "It increases GPU memory capacity",
+        "It offloads network, storage, and security processing from the host CPU",
+        "It provides additional NVLink connections",
+        "It replaces the need for InfiniBand switches"
+      ],
+      "correctAnswer": 1,
+      "explanation": "BlueField DPUs (Data Processing Units) offload infrastructure tasks like networking, storage, and security from the host CPU to dedicated ARM cores. This frees CPU cycles for application workloads and improves overall system efficiency."
+    },
+    {
+      "id": "gate-domain3-storage",
+      "scenarioId": "domain3-storage",
+      "familyId": "diagnostics",
+      "question": "What tool is commonly used to benchmark storage I/O performance for AI training workloads?",
+      "choices": ["nvidia-smi", "fio", "dcgmi", "ibstat"],
+      "correctAnswer": 1,
+      "explanation": "FIO (Flexible I/O Tester) is the standard tool for benchmarking storage performance. It can simulate various workload patterns including sequential and random I/O, which is essential for validating storage systems for AI training data pipelines."
+    },
+    {
+      "id": "gate-domain3-slurm-config",
+      "scenarioId": "domain3-slurm-config",
+      "familyId": "cluster-tools",
+      "question": "Which Slurm command shows the current configuration of the scheduler including partitions and node settings?",
+      "choices": ["squeue -a", "scontrol show config", "sinfo -N", "sacct -a"],
+      "correctAnswer": 1,
+      "explanation": "The 'scontrol show config' command displays the complete Slurm configuration including partition definitions, scheduling parameters, and node settings. This is essential for verifying proper cluster setup."
+    },
+    {
+      "id": "gate-domain3-slurm-gres",
+      "scenarioId": "domain3-slurm-gres",
+      "familyId": "cluster-tools",
+      "question": "What is the correct sbatch flag to request 4 GPUs for a job?",
+      "choices": [
+        "--gpu=4",
+        "--gres=gpu:4",
+        "--gpus-per-node=4",
+        "Both B and C are valid"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Both '--gres=gpu:4' and '--gpus-per-node=4' are valid ways to request GPUs in Slurm. The --gres flag uses the Generic RESources system, while --gpus-per-node is a newer, more intuitive option. Both accomplish the same result."
+    },
+    {
+      "id": "gate-domain3-containers",
+      "scenarioId": "domain3-containers",
+      "familyId": "container-tools",
+      "question": "What Docker flag exposes all host GPUs to a container?",
+      "choices": [
+        "--runtime=nvidia",
+        "--gpus all",
+        "--device=/dev/nvidia",
+        "--nvidia-visible-devices=all"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The '--gpus all' flag, introduced with NVIDIA Container Toolkit, exposes all host GPUs to the container. This is the recommended method replacing the older '--runtime=nvidia' approach. Specific GPUs can be selected with '--gpus device=0,1'."
+    },
+    {
+      "id": "gate-domain3-nfs-tuning",
+      "scenarioId": "domain3-nfs-tuning",
+      "familyId": "diagnostics",
+      "question": "What mount option improves NFS performance by enabling asynchronous writes?",
+      "choices": ["sync", "async", "noatime", "hard"],
+      "correctAnswer": 1,
+      "explanation": "The 'async' mount option allows NFS to buffer writes before sending to the server, significantly improving write performance. However, it trades durability for speed - a client crash could lose unwritten data. For AI training checkpoints, consider using 'sync'."
+    },
+    {
+      "id": "gate-domain3-dcgm-policy",
+      "scenarioId": "domain3-dcgm-policy",
+      "familyId": "diagnostics",
+      "question": "What is the purpose of DCGM policy-based management?",
+      "choices": [
+        "To automatically update GPU drivers",
+        "To define thresholds and actions for GPU health metrics",
+        "To partition GPUs for MIG mode",
+        "To configure NVLink topology"
+      ],
+      "correctAnswer": 1,
+      "explanation": "DCGM policies allow administrators to define thresholds for GPU metrics (temperature, power, ECC errors) and configure automated actions when those thresholds are exceeded. This enables proactive monitoring and automated response to GPU issues."
+    },
+    {
+      "id": "gate-domain3-k8s-gpu-operator",
+      "scenarioId": "domain3-k8s-gpu-operator",
+      "familyId": "container-tools",
+      "question": "What is the primary function of the NVIDIA GPU Operator in Kubernetes?",
+      "choices": [
+        "To schedule GPU workloads across nodes",
+        "To automate GPU driver, container toolkit, and device plugin deployment",
+        "To provide GPU monitoring dashboards",
+        "To manage MIG configurations"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The NVIDIA GPU Operator automates the deployment and management of all components needed for GPU support in Kubernetes: drivers, container toolkit, device plugin, and monitoring. This simplifies GPU cluster operations and ensures consistency."
+    },
+    {
+      "id": "gate-domain3-mixed-gpu-gres",
+      "scenarioId": "domain3-mixed-gpu-gres",
+      "familyId": "cluster-tools",
+      "question": "How do you configure Slurm GRES to support multiple GPU types (e.g., A100 and V100)?",
+      "choices": [
+        "Use separate partitions for each GPU type",
+        "Define typed GRES like 'gres/gpu:a100' and 'gres/gpu:v100' in gres.conf",
+        "Install different Slurm versions per GPU type",
+        "GPU types cannot be mixed in a single Slurm cluster"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Slurm supports typed GRES resources allowing heterogeneous GPU clusters. By defining types in gres.conf (e.g., Name=gpu Type=a100 File=/dev/nvidia0), users can request specific GPU types with '--gres=gpu:a100:2'."
+    },
+    {
+      "id": "gate-domain3-slurm-full-setup",
+      "scenarioId": "domain3-slurm-full-setup",
+      "familyId": "cluster-tools",
+      "question": "What Slurm component must run on every compute node?",
+      "choices": ["slurmctld", "slurmdbd", "slurmd", "slurmrestd"],
+      "correctAnswer": 2,
+      "explanation": "The slurmd daemon must run on every compute node in the cluster. It manages local job execution, resource monitoring, and communication with the central slurmctld controller. Without slurmd, a node cannot participate in the cluster."
+    },
+    {
+      "id": "gate-domain3-lustre-validation",
+      "scenarioId": "domain3-lustre-validation",
+      "familyId": "diagnostics",
+      "question": "Which command shows Lustre filesystem statistics including read/write throughput?",
+      "choices": [
+        "df -h /lustre",
+        "lctl get_param llite.*.stats",
+        "lustre-status",
+        "cat /proc/fs/lustre/health_check"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The 'lctl get_param llite.*.stats' command displays detailed Lustre client statistics including read/write bytes, operations counts, and cache hits. This is essential for diagnosing performance issues in HPC storage systems."
+    },
+    {
+      "id": "gate-domain3-bcm-ha",
+      "scenarioId": "domain3-bcm-ha",
+      "familyId": "cluster-tools",
+      "question": "What is the primary purpose of NVIDIA Base Command Manager (BCM)?",
+      "choices": [
+        "To manage GPU driver installations",
+        "To provide cluster provisioning, monitoring, and lifecycle management",
+        "To configure NVLink topology",
+        "To run GPU diagnostics"
+      ],
+      "correctAnswer": 1,
+      "explanation": "NVIDIA Base Command Manager is a comprehensive cluster management solution that handles node provisioning, software deployment, monitoring, and lifecycle management. Its high-availability mode ensures management continuity for production clusters."
+    },
+    {
+      "id": "gate-domain3-ngc-pipeline",
+      "scenarioId": "domain3-ngc-pipeline",
+      "familyId": "container-tools",
+      "question": "What is the correct format for pulling a container from NVIDIA NGC registry?",
+      "choices": [
+        "docker pull nvidia/pytorch:latest",
+        "docker pull nvcr.io/nvidia/pytorch:24.01-py3",
+        "docker pull ngc.nvidia.com/pytorch:24.01",
+        "docker pull registry.nvidia/pytorch:24.01-py3"
+      ],
+      "correctAnswer": 1,
+      "explanation": "NGC containers are hosted at nvcr.io registry. The format is 'nvcr.io/nvidia/<framework>:<tag>'. Tags typically include year.month format (e.g., 24.01) and Python version suffix for framework containers."
+    },
+    {
+      "id": "gate-domain3-pyxis-advanced",
+      "scenarioId": "domain3-pyxis-advanced",
+      "familyId": "container-tools",
+      "question": "What is the relationship between Pyxis and Enroot in HPC environments?",
+      "choices": [
+        "Pyxis replaces Enroot entirely",
+        "Pyxis is a Slurm plugin that uses Enroot as the container runtime",
+        "Enroot is a plugin for Pyxis",
+        "They are competing container solutions"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Pyxis is a Slurm SPANK plugin that integrates container support directly into Slurm job submission. It uses Enroot as the underlying container runtime, allowing users to submit containerized jobs using '--container-image' flag in sbatch/srun."
+    },
+    {
+      "id": "gate-domain4-perf-baseline",
+      "scenarioId": "domain4-perf-baseline",
+      "familyId": "diagnostics",
+      "question": "What metrics should be collected when establishing a GPU performance baseline?",
+      "choices": [
+        "Only GPU utilization percentage",
+        "GPU temperature, power draw, memory bandwidth, SM utilization, and NVLink throughput",
+        "Just the nvidia-smi output",
+        "CPU metrics only since GPUs have fixed performance"
+      ],
+      "correctAnswer": 1,
+      "explanation": "A comprehensive performance baseline includes multiple metrics: GPU utilization, memory bandwidth, power consumption, temperature under load, NVLink throughput for multi-GPU work, and PCIe bandwidth. This enables accurate comparison and issue detection."
+    },
+    {
+      "id": "gate-domain4-gpu-reset",
+      "scenarioId": "domain4-gpu-reset",
+      "familyId": "gpu-monitoring",
+      "question": "What command attempts to reset a GPU that has become unresponsive?",
+      "choices": [
+        "nvidia-smi -r -i 0",
+        "nvidia-smi --gpu-reset -i 0",
+        "nvidia-smi -pm 0 -i 0",
+        "dcgmi reset -g 0"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The 'nvidia-smi --gpu-reset -i <gpu_id>' command attempts to reset an unresponsive GPU. This terminates all processes using the GPU and reinitializes it. Note that this only works if the GPU is still on the PCIe bus."
+    },
+    {
+      "id": "gate-domain4-clusterkit",
+      "scenarioId": "domain4-clusterkit",
+      "familyId": "diagnostics",
+      "question": "What is the purpose of NVIDIA Cluster Kit (NVCK)?",
+      "choices": [
+        "To install GPU drivers cluster-wide",
+        "To provide comprehensive cluster-level diagnostics and validation",
+        "To manage container orchestration",
+        "To configure Slurm scheduling"
+      ],
+      "correctAnswer": 1,
+      "explanation": "NVIDIA Cluster Kit provides cluster-level health checks, diagnostics, and validation tests. It verifies GPU functionality, NVLink fabric integrity, InfiniBand connectivity, and inter-node communication essential for HPC workloads."
+    },
+    {
+      "id": "gate-domain4-burn-in",
+      "scenarioId": "domain4-burn-in",
+      "familyId": "diagnostics",
+      "question": "What is the primary purpose of a GPU burn-in test?",
+      "choices": [
+        "To update GPU firmware",
+        "To stress test GPUs for extended periods to identify early hardware failures",
+        "To measure GPU power consumption",
+        "To configure MIG partitions"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Burn-in testing runs intensive GPU workloads (like gpu-burn or DCGM Level 3) for extended periods to identify infant mortality failures - hardware defects that appear under sustained load. This is crucial for new hardware acceptance."
+    },
+    {
+      "id": "gate-domain4-ecc-investigation",
+      "scenarioId": "domain4-ecc-investigation",
+      "familyId": "gpu-monitoring",
+      "question": "What is the significance of uncorrectable ECC errors (DBE - Double Bit Errors)?",
+      "choices": [
+        "They are automatically corrected and can be ignored",
+        "They indicate data corruption that cannot be recovered",
+        "They only affect GPU temperature readings",
+        "They are expected during normal operation"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Double Bit Errors (DBE) are uncorrectable ECC errors that indicate actual data corruption in GPU memory. Unlike single-bit errors which ECC can fix, DBEs compromise data integrity and typically indicate failing GPU memory requiring replacement."
+    },
+    {
+      "id": "gate-domain4-dcgmi-diag",
+      "scenarioId": "domain4-dcgmi-diag",
+      "familyId": "diagnostics",
+      "question": "What is the difference between DCGM diagnostic levels 1, 2, and 3?",
+      "choices": [
+        "They test different GPUs in the system",
+        "Level 1 is software checks, Level 2 adds short stress tests, Level 3 runs extended stress tests",
+        "They represent different GPU generations",
+        "Higher levels test more GPU memory"
+      ],
+      "correctAnswer": 1,
+      "explanation": "DCGM Level 1 performs quick software and deployment checks. Level 2 adds short hardware stress tests (1-2 minutes). Level 3 runs comprehensive extended stress tests (10-15 minutes per GPU) for thorough hardware validation."
+    },
+    {
+      "id": "gate-domain4-ai-validation",
+      "scenarioId": "domain4-ai-validation",
+      "familyId": "diagnostics",
+      "question": "Why is running a real AI training job important for system validation?",
+      "choices": [
+        "It tests all components together: GPU compute, memory, NVLink, storage, and networking",
+        "It is faster than running diagnostics",
+        "It only tests the GPU compute capabilities",
+        "It validates software licenses"
+      ],
+      "correctAnswer": 0,
+      "explanation": "End-to-end AI training validation tests the complete system stack: GPU compute, HBM memory, NVLink/NVSwitch for multi-GPU communication, storage I/O for data loading, and potentially networking for distributed training. Synthetic benchmarks may miss integration issues."
+    },
+    {
+      "id": "gate-domain4-cluster-health",
+      "scenarioId": "domain4-cluster-health",
+      "familyId": "diagnostics",
+      "question": "What should be the first step when monitoring cluster health?",
+      "choices": [
+        "Run stress tests on all nodes",
+        "Collect baseline metrics and establish normal operating ranges",
+        "Update all GPU drivers",
+        "Configure alerting rules"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Before configuring monitoring alerts or running diagnostics, you must establish baseline metrics during normal operation. This includes GPU utilization, temperatures, power draw, and error rates. Alerts can then be configured based on deviations from baseline."
+    },
+    {
+      "id": "gate-domain4-gpu-bandwidth",
+      "scenarioId": "domain4-gpu-bandwidth",
+      "familyId": "diagnostics",
+      "question": "Which tool measures GPU memory bandwidth and PCIe throughput?",
+      "choices": [
+        "nvidia-smi -q",
+        "bandwidthTest from CUDA samples",
+        "dcgmi diag",
+        "ibstat"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The 'bandwidthTest' utility from CUDA samples measures host-to-device, device-to-host, and device-to-device memory transfer speeds. It validates PCIe link health and can identify bandwidth degradation due to link issues."
+    },
+    {
+      "id": "gate-domain4-nccl-tuning",
+      "scenarioId": "domain4-nccl-tuning",
+      "familyId": "diagnostics",
+      "question": "What environment variable enables NCCL debugging output?",
+      "choices": [
+        "CUDA_VISIBLE_DEVICES=debug",
+        "NCCL_DEBUG=INFO",
+        "NVIDIA_DEBUG=1",
+        "NCCL_LOG_LEVEL=verbose"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Setting 'NCCL_DEBUG=INFO' enables informational debug output from NCCL showing topology detection, algorithm selection, and communication operations. Use NCCL_DEBUG=WARN for only warnings, or NCCL_DEBUG=TRACE for detailed tracing."
+    },
+    {
+      "id": "gate-domain4-ib-stress",
+      "scenarioId": "domain4-ib-stress",
+      "familyId": "infiniband-tools",
+      "question": "What tool from the perftest package measures InfiniBand latency?",
+      "choices": ["ibstat", "ib_write_lat", "iblinkinfo", "ibdiagnet"],
+      "correctAnswer": 1,
+      "explanation": "The 'ib_write_lat' tool from the perftest package measures InfiniBand RDMA write latency between two nodes. Related tools include ib_read_lat for read latency and ib_write_bw for bandwidth testing."
+    },
+    {
+      "id": "gate-domain4-nccl-test",
+      "scenarioId": "domain4-nccl-test",
+      "familyId": "diagnostics",
+      "question": "What does the nccl-tests all_reduce_perf benchmark measure?",
+      "choices": [
+        "Individual GPU compute performance",
+        "Collective communication performance for all-reduce operations across GPUs",
+        "Network latency between nodes",
+        "Storage I/O throughput"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The all_reduce_perf test measures the performance of all-reduce collective operations, which are critical for distributed deep learning. It tests bandwidth and latency of summing/averaging gradients across all GPUs."
+    },
+    {
+      "id": "gate-domain4-nccl-multinode",
+      "scenarioId": "domain4-nccl-multinode",
+      "familyId": "diagnostics",
+      "triggerCondition": {
+        "toolsUsed": ["nccl-tests"]
+      },
+      "question": "What network interface should NCCL use for multi-node communication in an InfiniBand cluster?",
+      "choices": [
+        "Ethernet (eth0)",
+        "InfiniBand (mlx5_0)",
+        "Loopback (lo)",
+        "Any interface automatically"
+      ],
+      "correctAnswer": 1,
+      "explanation": "For optimal multi-node performance, NCCL should use InfiniBand interfaces (mlx5_*) which provide much higher bandwidth and lower latency than Ethernet. Set NCCL_IB_HCA to specify the InfiniBand interface."
+    },
+    {
+      "id": "gate-domain4-multinode-nccl",
+      "scenarioId": "domain4-multinode-nccl",
+      "familyId": "diagnostics",
+      "question": "What is the purpose of NCCL_IB_GID_INDEX environment variable?",
+      "choices": [
+        "To set the GPU device index",
+        "To specify the RoCE GID index for InfiniBand communication",
+        "To configure NVLink topology",
+        "To set the process rank"
+      ],
+      "correctAnswer": 1,
+      "explanation": "NCCL_IB_GID_INDEX specifies which GID (Global ID) index to use for RoCE (RDMA over Converged Ethernet). This is important when multiple GIDs are available, such as when using RoCEv2 which requires the correct GID for routing."
+    },
+    {
+      "id": "gate-domain4-gpudirect-rdma",
+      "scenarioId": "domain4-gpudirect-rdma",
+      "familyId": "infiniband-tools",
+      "question": "What is the benefit of GPUDirect RDMA?",
+      "choices": [
+        "It increases GPU memory capacity",
+        "It enables direct memory access between GPU memory and network adapters, bypassing CPU",
+        "It improves GPU compute performance",
+        "It provides GPU power management"
+      ],
+      "correctAnswer": 1,
+      "explanation": "GPUDirect RDMA allows InfiniBand adapters to directly access GPU memory without staging through host memory. This reduces latency and CPU overhead, significantly improving distributed training performance across nodes."
+    },
+    {
+      "id": "gate-domain4-hpl-optimization",
+      "scenarioId": "domain4-hpl-optimization",
+      "familyId": "diagnostics",
+      "question": "What does HPL (High Performance Linpack) benchmark measure?",
+      "choices": [
+        "GPU memory bandwidth",
+        "System floating-point computation performance (FLOPS)",
+        "Network latency",
+        "Storage I/O throughput"
+      ],
+      "correctAnswer": 1,
+      "explanation": "HPL measures floating-point computation performance by solving a dense linear system of equations. It's the standard benchmark for TOP500 supercomputer rankings and validates the system's peak computational throughput in TFLOPS."
+    },
+    {
+      "id": "gate-domain4-hpl-workflow",
+      "scenarioId": "domain4-hpl-workflow",
+      "familyId": "diagnostics",
+      "question": "What is the recommended approach for running HPL on a GPU cluster?",
+      "choices": [
+        "Use the standard CPU-only HPL binary",
+        "Use NVIDIA's optimized HPL container from NGC",
+        "Run HPL only on the management node",
+        "HPL cannot utilize GPUs"
+      ],
+      "correctAnswer": 1,
+      "explanation": "NVIDIA provides an optimized HPL container on NGC (nvcr.io/nvidia/hpc-benchmarks) that leverages GPU acceleration. This container includes tuned configurations for various DGX systems and achieves maximum performance."
+    },
+    {
+      "id": "gate-domain5-physical-inspection",
+      "scenarioId": "domain5-physical-inspection",
+      "familyId": "bmc-hardware",
+      "question": "What should you check first when performing physical inspection of a DGX system?",
+      "choices": [
+        "Run nvidia-smi",
+        "Check power LEDs, cable connections, and physical damage indicators",
+        "Install the latest drivers",
+        "Run DCGM diagnostics"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Physical inspection starts with visual checks: power indicator LEDs, cable connections (power, network, NVLink bridges), airflow obstructions, and signs of physical damage. Software diagnostics come after confirming basic physical health."
+    },
+    {
+      "id": "gate-domain5-cable-diagnostics",
+      "scenarioId": "domain5-cable-diagnostics",
+      "familyId": "infiniband-tools",
+      "question": "Which command provides detailed InfiniBand cable and link diagnostics?",
+      "choices": [
+        "ibstat",
+        "mlxlink -d mlx5_0",
+        "nvidia-smi nvlink -s",
+        "ipmitool lan print"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The 'mlxlink' command provides comprehensive InfiniBand/Ethernet link diagnostics including cable type, length, vendor, signal quality (eye opening), and error counters. It's essential for troubleshooting cable and connectivity issues."
+    },
+    {
+      "id": "gate-domain5-container-gpu",
+      "scenarioId": "domain5-container-gpu",
+      "familyId": "container-tools",
+      "question": "When a container cannot see GPUs, what should you check first?",
+      "choices": [
+        "GPU driver version",
+        "Whether --gpus flag was used and NVIDIA Container Toolkit is installed",
+        "Container image size",
+        "Network connectivity"
+      ],
+      "correctAnswer": 1,
+      "explanation": "GPU visibility in containers requires the '--gpus' flag (or '--runtime=nvidia') and a properly installed NVIDIA Container Toolkit. Verify with 'docker info | grep nvidia' to confirm the runtime is available."
+    },
+    {
+      "id": "gate-domain5-memory-leak",
+      "scenarioId": "domain5-memory-leak",
+      "familyId": "gpu-monitoring",
+      "question": "How do you identify GPU memory leaks?",
+      "choices": [
+        "Check CPU memory usage",
+        "Monitor GPU memory with nvidia-smi over time; memory should be released when processes exit",
+        "Run nvidia-smi -L",
+        "Check disk space"
+      ],
+      "correctAnswer": 1,
+      "explanation": "GPU memory leaks appear as increasing memory usage over time that persists after processes complete. Use 'nvidia-smi' or 'nvidia-smi dmon' to monitor memory usage. Memory should return to baseline when GPU processes exit."
+    },
+    {
+      "id": "gate-domain5-pcie-diagnosis",
+      "scenarioId": "domain5-pcie-diagnosis",
+      "familyId": "gpu-monitoring",
+      "question": "What nvidia-smi query shows current PCIe link generation and width?",
+      "choices": [
+        "nvidia-smi -L",
+        "nvidia-smi --query-gpu=pci.link.gen.current,pci.link.width.current --format=csv",
+        "nvidia-smi topo -m",
+        "nvidia-smi -q -d MEMORY"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The query 'nvidia-smi --query-gpu=pci.link.gen.current,pci.link.width.current --format=csv' shows PCIe link speed and width. H100 should show Gen4/Gen5 x16. Degraded links (e.g., x8 instead of x16) indicate slot or cable issues."
+    },
+    {
+      "id": "gate-domain5-xid-hardware",
+      "scenarioId": "domain5-xid-hardware",
+      "familyId": "diagnostics",
+      "question": "Which XID error typically indicates a hardware failure requiring GPU replacement?",
+      "choices": [
+        "XID 13 (Graphics Engine Exception)",
+        "XID 48 (Double Bit ECC Error)",
+        "XID 31 (GPU memory page fault)",
+        "All XID errors require GPU replacement"
+      ],
+      "correctAnswer": 1,
+      "explanation": "XID 48 (DBE - Double Bit ECC Error) indicates uncorrectable memory errors, typically signaling failing GPU memory that requires RMA. XID 13 and 31 can be caused by software bugs and don't always indicate hardware failure."
+    },
+    {
+      "id": "gate-domain5-xid-nvlink",
+      "scenarioId": "domain5-xid-nvlink",
+      "familyId": "gpu-monitoring",
+      "question": "What should you check when seeing XID 74 (NVLink Error)?",
+      "choices": [
+        "CPU temperature",
+        "NVLink cable/bridge connections and error counters with nvidia-smi nvlink -e",
+        "Disk space",
+        "Network configuration"
+      ],
+      "correctAnswer": 1,
+      "explanation": "XID 74 indicates NVLink communication failures. Check physical NVLink bridge connections, use 'nvidia-smi nvlink -e' to view error counters, and inspect cables for damage. High CRC errors suggest signal integrity issues."
+    },
+    {
+      "id": "gate-domain5-xid-triage",
+      "scenarioId": "domain5-xid-triage",
+      "familyId": "diagnostics",
+      "question": "What is the correct approach to XID error triage?",
+      "choices": [
+        "Immediately replace the GPU",
+        "Identify XID code, check frequency, correlate with workload, run diagnostics, then decide on action",
+        "Ignore XID errors as they are informational",
+        "Reboot the system without investigation"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Proper XID triage involves: identifying the specific XID code and its meaning, checking error frequency (one-time vs recurring), correlating with workload conditions, running DCGM diagnostics, and then determining appropriate action from driver update to RMA."
+    },
+    {
+      "id": "gate-domain5-ib-partitioning",
+      "scenarioId": "domain5-ib-partitioning",
+      "familyId": "infiniband-tools",
+      "question": "What is the purpose of InfiniBand partition keys (PKeys)?",
+      "choices": [
+        "To increase InfiniBand bandwidth",
+        "To provide network isolation and access control between nodes",
+        "To configure GPU topology",
+        "To manage storage volumes"
+      ],
+      "correctAnswer": 1,
+      "explanation": "InfiniBand partition keys (PKeys) provide network segmentation similar to VLANs. Nodes can only communicate if they share a common PKey. The default PKey (0x7fff) allows full membership; limited membership PKeys (0x0001-0x7ffe) restrict access."
+    },
+    {
+      "id": "gate-domain5-driver-mismatch",
+      "scenarioId": "domain5-driver-mismatch",
+      "familyId": "gpu-monitoring",
+      "question": "What can cause a driver version mismatch error after kernel update?",
+      "choices": [
+        "GPU overheating",
+        "DKMS failed to rebuild NVIDIA modules for the new kernel",
+        "Insufficient disk space",
+        "Network connectivity issues"
+      ],
+      "correctAnswer": 1,
+      "explanation": "After kernel updates, DKMS should automatically rebuild NVIDIA kernel modules. If this fails, the driver won't load with the new kernel. Check 'dkms status' and rebuild with 'dkms install nvidia/<version>' if needed."
+    },
+    {
+      "id": "gate-domain5-critical-xid",
+      "scenarioId": "domain5-critical-xid",
+      "familyId": "diagnostics",
+      "question": "What is XID 79 and why is it critical?",
+      "choices": [
+        "Minor thermal warning",
+        "GPU has fallen off the PCIe bus - complete loss of GPU communication",
+        "Memory utilization warning",
+        "Driver update notification"
+      ],
+      "correctAnswer": 1,
+      "explanation": "XID 79 'GPU has fallen off the bus' indicates complete PCIe communication failure. The GPU becomes invisible to the system. This is critical as it requires at minimum a system reboot, often indicating hardware issues with the GPU, PCIe slot, or power delivery."
+    },
+    {
+      "id": "gate-domain5-xid-errors",
+      "scenarioId": "domain5-xid-errors",
+      "familyId": "diagnostics",
+      "question": "Where do XID errors appear in system logs?",
+      "choices": [
+        "Only in nvidia-smi output",
+        "In dmesg/kernel logs with 'NVRM: Xid' prefix",
+        "Only in DCGM logs",
+        "In /var/log/gpu.log"
+      ],
+      "correctAnswer": 1,
+      "explanation": "XID errors are logged by the NVIDIA kernel driver (NVRM) and appear in kernel message buffer (dmesg) and system logs (journalctl). The format is 'NVRM: Xid (PCI:0000:xx:xx.x): <error_number>, <description>'."
+    },
+    {
+      "id": "gate-domain5-sel-analysis",
+      "scenarioId": "domain5-sel-analysis",
+      "familyId": "bmc-hardware",
+      "question": "What command retrieves BMC System Event Log entries?",
+      "choices": [
+        "ipmitool sensor list",
+        "ipmitool sel list",
+        "ipmitool lan print",
+        "ipmitool chassis status"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The 'ipmitool sel list' command displays System Event Log entries recording hardware events like temperature thresholds, power events, and chassis intrusion. Use 'ipmitool sel info' to check SEL capacity before it fills up."
+    },
+    {
+      "id": "gate-domain5-thermal",
+      "scenarioId": "domain5-thermal",
+      "familyId": "gpu-monitoring",
+      "question": "At what temperature do most datacenter GPUs begin thermal throttling?",
+      "choices": [
+        "50°C",
+        "65°C",
+        "83°C (A100/H100 typical throttle point)",
+        "100°C"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Most datacenter GPUs like A100 and H100 begin thermal throttling around 83°C to prevent damage. Sustained temperatures above 80°C indicate cooling issues. Check 'nvidia-smi -q -d TEMPERATURE' for throttle thresholds."
+    }
+  ]
+}

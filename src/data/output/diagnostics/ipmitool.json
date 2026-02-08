@@ -1,0 +1,763 @@
+{
+  "command": "ipmitool",
+  "category": "diagnostics",
+  "description": "Utility for managing and configuring IPMI-enabled devices (BMC) including power control, sensor monitoring, and system event logs. ipmitool provides a command-line interface to manage Baseboard Management Controllers (BMC) on servers, enabling out-of-band management for power operations, hardware monitoring, serial-over-LAN access, and event logging. It supports both local (in-band) and remote (out-of-band) IPMI access through various interfaces.",
+  "synopsis": "ipmitool [options] <command>",
+  "version_documented": "1.8.19+",
+  "source_urls": [
+    "https://github.com/ipmitool/ipmitool",
+    "https://linux.die.net/man/1/ipmitool"
+  ],
+  "installation": {
+    "package": "ipmitool",
+    "notes": "On RHEL/CentOS: yum install ipmitool. On Ubuntu/Debian: apt install ipmitool. Requires IPMI kernel modules (ipmi_devintf, ipmi_si) for local access. Remote access requires network connectivity to BMC and valid credentials."
+  },
+  "global_options": [
+    {
+      "short": "-I",
+      "long": "--interface",
+      "description": "Select IPMI interface to use. Available interfaces include: open (local OpenIPMI driver), lanplus (IPMI v2.0 RMCP+ encrypted), lan (IPMI v1.5), serial (direct serial port), and others.",
+      "arguments": "<interface>",
+      "argument_type": "string",
+      "example": "-I lanplus"
+    },
+    {
+      "short": "-H",
+      "long": "--host",
+      "description": "Remote BMC host IP address or hostname. Required for remote IPMI operations.",
+      "arguments": "<address>",
+      "argument_type": "string",
+      "example": "-H 192.168.1.100"
+    },
+    {
+      "short": "-U",
+      "long": "--user",
+      "description": "Username for remote IPMI session authentication.",
+      "arguments": "<username>",
+      "argument_type": "string",
+      "example": "-U admin"
+    },
+    {
+      "short": "-P",
+      "long": "--password",
+      "description": "Remote session password. Note: Using -P on command line may expose password in process list. Consider using -f for password file or -E for environment variable.",
+      "arguments": "<password>",
+      "argument_type": "string",
+      "example": "-P secretpass"
+    },
+    {
+      "short": "-f",
+      "long": "--password-file",
+      "description": "Read password from file. More secure than command-line password.",
+      "arguments": "<file>",
+      "argument_type": "path",
+      "example": "-f /etc/ipmi-pass"
+    },
+    {
+      "short": "-E",
+      "long": "--password-env",
+      "description": "Read password from IPMI_PASSWORD environment variable.",
+      "example": "-E"
+    },
+    {
+      "short": "-p",
+      "long": "--port",
+      "description": "Remote IPMI RMCP port. Default is 623 (UDP).",
+      "arguments": "<port>",
+      "argument_type": "integer",
+      "default": "623",
+      "example": "-p 623"
+    },
+    {
+      "short": "-L",
+      "long": "--privlevel",
+      "description": "Force session privilege level. Levels are: CALLBACK, USER, OPERATOR, ADMIN. Different operations require different privilege levels.",
+      "arguments": "<level>",
+      "argument_type": "string",
+      "example": "-L ADMIN"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Increase verbose output level. Can be specified multiple times (-vvv) for more detail.",
+      "example": "-v"
+    },
+    {
+      "short": "-c",
+      "long": "--csv",
+      "description": "Display output in comma-separated format for easier parsing.",
+      "example": "-c"
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display ipmitool version information.",
+      "example": "-V"
+    },
+    {
+      "short": "-C",
+      "long": "--ciphersuite",
+      "description": "Cipher suite to use for lanplus interface. Common values: 3 (uses AES-128-CBC), 17 (AES-128-CBC with RAKP-HMAC-SHA256).",
+      "arguments": "<cipher>",
+      "argument_type": "integer",
+      "default": "3",
+      "example": "-C 17"
+    },
+    {
+      "short": "-t",
+      "long": "--target",
+      "description": "Bridge IPMI requests to a remote target address (for multi-node chassis).",
+      "arguments": "<addr>",
+      "argument_type": "string",
+      "example": "-t 0x82"
+    },
+    {
+      "short": "-b",
+      "long": "--channel",
+      "description": "Specify the channel number for bridged requests.",
+      "arguments": "<channel>",
+      "argument_type": "integer",
+      "example": "-b 6"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "power status",
+      "description": "Get the current power status of the system. Returns 'on' or 'off' indicating whether the host is powered on.",
+      "synopsis": "ipmitool power status"
+    },
+    {
+      "name": "power on",
+      "description": "Power on the system. Equivalent to pressing the power button when system is off.",
+      "synopsis": "ipmitool power on"
+    },
+    {
+      "name": "power off",
+      "description": "Power off the system immediately. Hard power off - does not gracefully shutdown OS.",
+      "synopsis": "ipmitool power off"
+    },
+    {
+      "name": "power cycle",
+      "description": "Power cycle the system. Performs a hard power off followed by power on after a brief delay.",
+      "synopsis": "ipmitool power cycle"
+    },
+    {
+      "name": "power reset",
+      "description": "Reset the system. Performs a hard reset without power cycling (warm reboot).",
+      "synopsis": "ipmitool power reset"
+    },
+    {
+      "name": "power soft",
+      "description": "Initiate soft shutdown via ACPI. Signals the OS to perform graceful shutdown, similar to pressing power button briefly.",
+      "synopsis": "ipmitool power soft"
+    },
+    {
+      "name": "sdr list",
+      "description": "List all Sensor Data Records (SDRs) with current readings. Shows all sensors known to the BMC including temperature, voltage, fan speed, and discrete sensors.",
+      "synopsis": "ipmitool sdr list [type]",
+      "options": [
+        {
+          "flag": "all",
+          "description": "List all SDR entries"
+        },
+        {
+          "flag": "full",
+          "description": "List full sensor records only"
+        },
+        {
+          "flag": "compact",
+          "description": "List compact sensor records only"
+        },
+        {
+          "flag": "event",
+          "description": "List event-only records"
+        },
+        {
+          "flag": "mcloc",
+          "description": "List management controller locator records"
+        },
+        {
+          "flag": "fru",
+          "description": "List FRU locator records"
+        }
+      ]
+    },
+    {
+      "name": "sdr type",
+      "description": "List sensors of a specific type. Common types include Temperature, Voltage, Fan, Current, and various discrete sensor types.",
+      "synopsis": "ipmitool sdr type <type>",
+      "options": [
+        {
+          "flag": "Temperature",
+          "description": "List all temperature sensors"
+        },
+        {
+          "flag": "Voltage",
+          "description": "List all voltage sensors"
+        },
+        {
+          "flag": "Fan",
+          "description": "List all fan/cooling sensors"
+        },
+        {
+          "flag": "Current",
+          "description": "List all current sensors"
+        },
+        {
+          "flag": "Power Supply",
+          "description": "List power supply sensors"
+        }
+      ]
+    },
+    {
+      "name": "sdr info",
+      "description": "Display information about the SDR repository including version, record count, free space, and timestamps.",
+      "synopsis": "ipmitool sdr info"
+    },
+    {
+      "name": "sensor list",
+      "description": "List all sensors with current readings, states, thresholds, and units. Provides more detailed output than sdr list.",
+      "synopsis": "ipmitool sensor list"
+    },
+    {
+      "name": "sensor get",
+      "description": "Get detailed information about a specific sensor including current reading, thresholds, and event status.",
+      "synopsis": "ipmitool sensor get <sensor_name>"
+    },
+    {
+      "name": "sensor thresh",
+      "description": "Set sensor thresholds. Can set upper and lower thresholds for warning (non-critical), critical, and non-recoverable levels.",
+      "synopsis": "ipmitool sensor thresh <sensor_name> <threshold> <value>"
+    },
+    {
+      "name": "sel list",
+      "description": "List System Event Log (SEL) entries. Shows hardware events such as temperature excursions, power events, memory errors, and other critical system events.",
+      "synopsis": "ipmitool sel list"
+    },
+    {
+      "name": "sel info",
+      "description": "Display SEL information including version, entries count, free space, and timestamps.",
+      "synopsis": "ipmitool sel info"
+    },
+    {
+      "name": "sel clear",
+      "description": "Clear the System Event Log. Use with caution as this permanently removes all logged events.",
+      "synopsis": "ipmitool sel clear"
+    },
+    {
+      "name": "sel time get",
+      "description": "Get the current BMC time used for SEL timestamps.",
+      "synopsis": "ipmitool sel time get"
+    },
+    {
+      "name": "sel time set",
+      "description": "Set the BMC time for SEL timestamps. Time should be in format: MM/DD/YYYY HH:MM:SS",
+      "synopsis": "ipmitool sel time set <time>"
+    },
+    {
+      "name": "sel elist",
+      "description": "List SEL entries with extended sensor descriptions for more readable output.",
+      "synopsis": "ipmitool sel elist"
+    },
+    {
+      "name": "chassis status",
+      "description": "Display chassis status including power state, power restore policy, last power event, chassis intrusion, and front panel buttons status.",
+      "synopsis": "ipmitool chassis status"
+    },
+    {
+      "name": "chassis identify",
+      "description": "Control the chassis identify LED. Used to physically locate a server in a datacenter. Default is 15 seconds if no interval specified.",
+      "synopsis": "ipmitool chassis identify [interval]",
+      "options": [
+        {
+          "flag": "<interval>",
+          "description": "Number of seconds to blink identify LED. Use 0 for off, or 'force' for indefinite."
+        }
+      ]
+    },
+    {
+      "name": "chassis bootdev",
+      "description": "Set the next boot device for the system. Options include pxe, disk, cdrom, bios, and safe.",
+      "synopsis": "ipmitool chassis bootdev <device>",
+      "options": [
+        {
+          "flag": "pxe",
+          "description": "Boot from network (PXE)"
+        },
+        {
+          "flag": "disk",
+          "description": "Boot from default hard disk"
+        },
+        {
+          "flag": "cdrom",
+          "description": "Boot from CD/DVD-ROM"
+        },
+        {
+          "flag": "bios",
+          "description": "Boot into BIOS setup"
+        },
+        {
+          "flag": "safe",
+          "description": "Boot from default hard disk in safe mode"
+        },
+        {
+          "flag": "floppy",
+          "description": "Boot from floppy/removable media"
+        }
+      ]
+    },
+    {
+      "name": "chassis bootparam",
+      "description": "Get or set boot parameters for more advanced boot configuration.",
+      "synopsis": "ipmitool chassis bootparam <param>"
+    },
+    {
+      "name": "chassis power",
+      "description": "Alias for power command. Controls system power state.",
+      "synopsis": "ipmitool chassis power <action>"
+    },
+    {
+      "name": "lan print",
+      "description": "Print LAN channel configuration including IP address, MAC address, subnet mask, gateway, and other network settings.",
+      "synopsis": "ipmitool lan print [channel]"
+    },
+    {
+      "name": "lan set",
+      "description": "Configure LAN channel settings. Allows setting IP address, netmask, gateway, VLAN, and various authentication parameters.",
+      "synopsis": "ipmitool lan set <channel> <parameter> <value>",
+      "options": [
+        {
+          "flag": "ipaddr",
+          "description": "Set BMC IP address"
+        },
+        {
+          "flag": "netmask",
+          "description": "Set subnet mask"
+        },
+        {
+          "flag": "defgw ipaddr",
+          "description": "Set default gateway IP"
+        },
+        {
+          "flag": "ipsrc",
+          "description": "Set IP source (static, dhcp, bios)"
+        },
+        {
+          "flag": "access",
+          "description": "Set LAN channel access mode"
+        },
+        {
+          "flag": "vlan id",
+          "description": "Set VLAN ID"
+        }
+      ]
+    },
+    {
+      "name": "fru print",
+      "description": "Print Field Replaceable Unit (FRU) information including product name, manufacturer, serial number, and other asset data.",
+      "synopsis": "ipmitool fru print [fru_id]"
+    },
+    {
+      "name": "fru list",
+      "description": "List all FRU devices in the system.",
+      "synopsis": "ipmitool fru list"
+    },
+    {
+      "name": "fru read",
+      "description": "Read FRU data to a file.",
+      "synopsis": "ipmitool fru read <fru_id> <filename>"
+    },
+    {
+      "name": "fru write",
+      "description": "Write FRU data from a file.",
+      "synopsis": "ipmitool fru write <fru_id> <filename>"
+    },
+    {
+      "name": "mc info",
+      "description": "Display Management Controller (BMC) information including device ID, firmware revision, IPMI version, manufacturer, and product ID.",
+      "synopsis": "ipmitool mc info"
+    },
+    {
+      "name": "mc reset cold",
+      "description": "Perform a cold reset of the BMC. This fully resets the BMC and may temporarily interrupt IPMI connectivity.",
+      "synopsis": "ipmitool mc reset cold"
+    },
+    {
+      "name": "mc reset warm",
+      "description": "Perform a warm reset of the BMC. Less disruptive than cold reset but may not clear all BMC state.",
+      "synopsis": "ipmitool mc reset warm"
+    },
+    {
+      "name": "mc guid",
+      "description": "Display the BMC globally unique identifier (GUID).",
+      "synopsis": "ipmitool mc guid"
+    },
+    {
+      "name": "mc watchdog get",
+      "description": "Get current watchdog timer settings and status.",
+      "synopsis": "ipmitool mc watchdog get"
+    },
+    {
+      "name": "mc watchdog reset",
+      "description": "Reset the watchdog timer countdown.",
+      "synopsis": "ipmitool mc watchdog reset"
+    },
+    {
+      "name": "mc watchdog off",
+      "description": "Disable the watchdog timer.",
+      "synopsis": "ipmitool mc watchdog off"
+    },
+    {
+      "name": "user list",
+      "description": "List IPMI users configured on the BMC for a specific channel.",
+      "synopsis": "ipmitool user list [channel]"
+    },
+    {
+      "name": "user set name",
+      "description": "Set the username for a user ID.",
+      "synopsis": "ipmitool user set name <user_id> <username>"
+    },
+    {
+      "name": "user set password",
+      "description": "Set the password for a user ID.",
+      "synopsis": "ipmitool user set password <user_id> [password]"
+    },
+    {
+      "name": "user enable",
+      "description": "Enable a user account.",
+      "synopsis": "ipmitool user enable <user_id>"
+    },
+    {
+      "name": "user disable",
+      "description": "Disable a user account.",
+      "synopsis": "ipmitool user disable <user_id>"
+    },
+    {
+      "name": "user priv",
+      "description": "Set user privilege level.",
+      "synopsis": "ipmitool user priv <user_id> <privilege> [channel]"
+    },
+    {
+      "name": "sol activate",
+      "description": "Activate Serial-over-LAN (SOL) session to access system console remotely.",
+      "synopsis": "ipmitool sol activate"
+    },
+    {
+      "name": "sol deactivate",
+      "description": "Deactivate an active SOL session.",
+      "synopsis": "ipmitool sol deactivate"
+    },
+    {
+      "name": "sol info",
+      "description": "Display SOL configuration and status.",
+      "synopsis": "ipmitool sol info [channel]"
+    },
+    {
+      "name": "sol set",
+      "description": "Configure SOL parameters.",
+      "synopsis": "ipmitool sol set <parameter> <value> [channel]"
+    },
+    {
+      "name": "channel info",
+      "description": "Display information about an IPMI channel.",
+      "synopsis": "ipmitool channel info [channel]"
+    },
+    {
+      "name": "channel getaccess",
+      "description": "Get user access settings for a channel.",
+      "synopsis": "ipmitool channel getaccess <channel> <user_id>"
+    },
+    {
+      "name": "channel setaccess",
+      "description": "Set user access settings for a channel.",
+      "synopsis": "ipmitool channel setaccess <channel> <user_id> [options]"
+    },
+    {
+      "name": "raw",
+      "description": "Send a raw IPMI command. Used for advanced operations not covered by other subcommands.",
+      "synopsis": "ipmitool raw <netfn> <cmd> [data]"
+    },
+    {
+      "name": "bmc info",
+      "description": "Alias for 'mc info'. Display BMC information.",
+      "synopsis": "ipmitool bmc info"
+    },
+    {
+      "name": "bmc reset",
+      "description": "Alias for 'mc reset'. Reset the BMC.",
+      "synopsis": "ipmitool bmc reset <warm|cold>"
+    }
+  ],
+  "output_formats": {
+    "default": "Human-readable format with labeled fields and values. Sensor readings include units and status.",
+    "csv": "Comma-separated values format enabled with -c flag. Useful for scripting and parsing.",
+    "verbose": "Detailed output with additional diagnostic information, enabled with -v flag."
+  },
+  "environment_variables": [
+    {
+      "name": "IPMI_PASSWORD",
+      "description": "Password for IPMI session authentication when using -E flag.",
+      "example": "export IPMI_PASSWORD=mysecretpass",
+      "affects_command": "Provides password for remote IPMI sessions without exposing it on command line."
+    },
+    {
+      "name": "IPMITOOL_DEBUG",
+      "description": "Enable debug output when set.",
+      "example": "export IPMITOOL_DEBUG=1",
+      "affects_command": "Produces verbose diagnostic output for troubleshooting."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - command failed or returned an error"
+    },
+    {
+      "code": 2,
+      "meaning": "Usage error - invalid command syntax"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "List all sensor data records (local system)",
+      "command": "ipmitool sdr list",
+      "output_example": "CPU1 Temp        | 45 degrees C      | ok\nCPU2 Temp        | 43 degrees C      | ok\nSys Fan 1        | 5400 RPM          | ok\nPSU1 Status      | 0x01              | ok",
+      "requires_root": true
+    },
+    {
+      "description": "Check power status of remote server",
+      "command": "ipmitool -I lanplus -H 10.0.0.1 -U admin -P password power status",
+      "output_example": "Chassis Power is on",
+      "requires_root": false
+    },
+    {
+      "description": "List all sensors with detailed readings",
+      "command": "ipmitool sensor list",
+      "output_example": "CPU1 Temp        | 45.000     | degrees C  | ok    | 0.000     | 0.000     | 0.000     | 85.000    | 90.000    | 95.000",
+      "requires_root": true
+    },
+    {
+      "description": "Power cycle a remote server",
+      "command": "ipmitool -I lanplus -H 10.0.0.1 -U admin -P password chassis power cycle",
+      "output_example": "Chassis Power Control: Cycle",
+      "requires_root": false
+    },
+    {
+      "description": "View System Event Log entries",
+      "command": "ipmitool sel list",
+      "output_example": "   1 | 01/15/2024 | 10:30:15 | Temperature #0x01 | Upper Critical going high | Asserted\n   2 | 01/15/2024 | 10:31:20 | Temperature #0x01 | Upper Critical going high | Deasserted",
+      "requires_root": true
+    },
+    {
+      "description": "Check all temperature sensors",
+      "command": "ipmitool sdr type temperature",
+      "output_example": "CPU1 Temp        | 01h | ok  |  3.1 | 45 degrees C\nCPU2 Temp        | 02h | ok  |  3.2 | 43 degrees C\nInlet Temp       | 03h | ok  |  7.1 | 22 degrees C\nExhaust Temp     | 04h | ok  |  7.2 | 35 degrees C",
+      "requires_root": true
+    },
+    {
+      "description": "Get BMC/management controller information",
+      "command": "ipmitool mc info",
+      "output_example": "Device ID                 : 32\nDevice Revision           : 1\nFirmware Revision         : 2.50\nIPMI Version              : 2.0\nManufacturer ID           : 10876\nProduct ID                : 256",
+      "requires_root": true
+    },
+    {
+      "description": "Set next boot device to PXE",
+      "command": "ipmitool -I lanplus -H 10.0.0.1 -U admin -P password chassis bootdev pxe",
+      "output_example": "Set Boot Device to pxe",
+      "requires_root": false
+    },
+    {
+      "description": "Print BMC LAN configuration",
+      "command": "ipmitool lan print 1",
+      "output_example": "Set in Progress         : Set Complete\nAuth Type Support       : NONE MD5 PASSWORD\nIP Address Source       : Static Address\nIP Address              : 10.0.0.100\nSubnet Mask             : 255.255.255.0\nMAC Address             : 00:25:90:ab:cd:ef",
+      "requires_root": true
+    },
+    {
+      "description": "Identify server by blinking LED for 30 seconds",
+      "command": "ipmitool chassis identify 30",
+      "output_example": "Chassis identify interval: 30 seconds",
+      "requires_root": true
+    },
+    {
+      "description": "Clear the System Event Log",
+      "command": "ipmitool sel clear",
+      "output_example": "Clearing SEL.  Please allow a few seconds to erase.",
+      "requires_root": true
+    },
+    {
+      "description": "List IPMI users",
+      "command": "ipmitool user list 1",
+      "output_example": "ID  Name             Callin  Link Auth  IPMI Msg   Channel Priv Limit\n1   admin            true    false      true       ADMINISTRATOR\n2   operator         true    false      true       OPERATOR",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Could not open device at /dev/ipmi0 or /dev/ipmi/0 or /dev/ipmidev/0",
+      "meaning": "IPMI device driver not loaded or not accessible",
+      "resolution": "Load IPMI kernel modules: 'modprobe ipmi_devintf' and 'modprobe ipmi_si'. Verify with 'lsmod | grep ipmi'. May require enabling IPMI in BIOS."
+    },
+    {
+      "message": "Error: Unable to establish IPMI v2 / RMCP+ session",
+      "meaning": "Cannot connect to remote BMC via lanplus interface",
+      "resolution": "Verify BMC IP address is reachable, credentials are correct, and IPMI-over-LAN is enabled. Check firewall rules for UDP port 623."
+    },
+    {
+      "message": "Get Session Challenge command failed",
+      "meaning": "Authentication failed during session establishment",
+      "resolution": "Verify username and password are correct. Check that the user has appropriate privilege level for the operation."
+    },
+    {
+      "message": "Insufficient privilege level",
+      "meaning": "User does not have permission for the requested operation",
+      "resolution": "Use -L ADMIN flag if operation requires administrator privileges. Verify user privilege configuration with 'user priv' command."
+    },
+    {
+      "message": "BMC returned invalid response",
+      "meaning": "BMC firmware issue or communication problem",
+      "resolution": "Try again with increased timeout. Consider resetting BMC with 'mc reset cold' if accessible. May indicate BMC firmware bug."
+    },
+    {
+      "message": "Error in open session response message: no matching cipher suite",
+      "meaning": "Cipher suite mismatch between client and BMC",
+      "resolution": "Try specifying a different cipher suite with -C flag. Common values are 3 (default) or 17. Check BMC cipher suite configuration."
+    },
+    {
+      "message": "Unable to get Sensor Data Record",
+      "meaning": "SDR repository read failed",
+      "resolution": "BMC may be busy or SEL/SDR repository corrupted. Try again, or reset BMC if problem persists."
+    },
+    {
+      "message": "RAKP2 HMAC is invalid",
+      "meaning": "Authentication integrity check failed",
+      "resolution": "Password may be incorrect or contains special characters. Try with simpler password or use password file (-f) instead."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "ipmiutil",
+      "freeipmi",
+      "bmc-info",
+      "ipmi-sensors",
+      "ipmi-sel",
+      "ipmi-power",
+      "ipmiconsole",
+      "dcmi",
+      "sensors",
+      "lm-sensors"
+    ],
+    "uses_library": ["libcrypto", "libssl"],
+    "notes": "ipmitool is the most widely used IPMI management tool. FreeIPMI provides similar functionality with slightly different syntax. For large-scale deployments, consider tools like ipmiutil or vendor-specific management platforms. BMC sensor readings should generally correlate with OS-level sensors from lm-sensors."
+  },
+  "permissions": {
+    "read_operations": "Local IPMI access typically requires root or membership in 'ipmi' group. Access to /dev/ipmi0 device is required. Remote operations require valid BMC credentials.",
+    "write_operations": "All write operations (power control, configuration changes, BMC reset) require appropriate IPMI privilege level (OPERATOR or ADMIN). Local access requires root.",
+    "notes": "Some systems allow non-root users to access IPMI through device permissions or sudo configuration. Remote access security depends on network isolation and strong credentials."
+  },
+  "limitations": [
+    "Password on command line may be visible in process listings - use -f or -E for security",
+    "IPMI v1.5 (lan interface) sends authentication in clear text - use lanplus for encryption",
+    "BMC firmware bugs may cause inconsistent behavior across different vendors",
+    "Sensor thresholds are BMC-dependent and may not match OS-reported values exactly",
+    "SOL (Serial-over-LAN) performance depends on network conditions and BMC implementation",
+    "Some operations may require vendor-specific extensions not covered by standard IPMI",
+    "Rate limiting by BMC may affect bulk operations on sensor or SEL queries",
+    "Maximum SEL size is limited; old events are lost when full unless cleared"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "temperature",
+          "voltage",
+          "fan_speed",
+          "power_consumption",
+          "intrusion_status",
+          "bmc_firmware_version"
+        ],
+        "description": "Reads hardware sensor data from BMC including temperature, voltage, fan speed, and power metrics. Also reads system event logs for hardware events."
+      },
+      {
+        "state_domain": "node_state",
+        "fields": [
+          "power_state",
+          "boot_device",
+          "chassis_status",
+          "identify_led"
+        ],
+        "description": "Reads power state and boot configuration from BMC/chassis management interface."
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "node_state",
+        "fields": ["power_state", "boot_device", "identify_led"],
+        "description": "Controls system power (on/off/cycle/reset), sets boot device, and controls identify LED for physical server location.",
+        "requires_flags": ["power", "chassis bootdev", "chassis identify"],
+        "requires_privilege": "OPERATOR or ADMIN"
+      },
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "bmc_network_config",
+          "bmc_users",
+          "sel_entries",
+          "sensor_thresholds",
+          "bmc_time"
+        ],
+        "description": "Modifies BMC configuration including network settings, user accounts, clears SEL, and sets sensor thresholds.",
+        "requires_flags": ["lan set", "user set", "sel clear", "sensor thresh"],
+        "requires_privilege": "ADMIN"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Hardware temperature exceeds threshold",
+        "effect": "SEL event logged, sensor reading reflects current temperature"
+      },
+      {
+        "state_change": "Power supply failure or restoration",
+        "effect": "SEL event logged, PSU sensor status updated"
+      },
+      {
+        "state_change": "Fan speed drops below threshold",
+        "effect": "SEL event logged, fan sensor shows warning or critical status"
+      },
+      {
+        "state_change": "Chassis intrusion detected",
+        "effect": "SEL event logged, intrusion sensor asserted"
+      },
+      {
+        "state_change": "System power state change",
+        "effect": "Power status command reflects new state, SEL may log event"
+      },
+      {
+        "state_change": "Memory or CPU error detected",
+        "effect": "SEL event logged with error details"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "sensors",
+        "shared_state": "Temperature readings should generally correlate between IPMI and lm-sensors, though values may differ slightly due to different sensor locations and sampling"
+      },
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU temperature from nvidia-smi should correlate with ambient/inlet temperatures from IPMI sensors in typical thermal relationship"
+      },
+      {
+        "command": "freeipmi",
+        "shared_state": "FreeIPMI tools (ipmi-sensors, ipmi-sel, etc.) read same BMC data as ipmitool"
+      },
+      {
+        "command": "dcgmi",
+        "shared_state": "DCGM health checks may reflect conditions also visible in IPMI sensors (thermal, power)"
+      }
+    ]
+  }
+}

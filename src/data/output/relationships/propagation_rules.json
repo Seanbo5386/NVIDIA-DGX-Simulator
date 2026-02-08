@@ -1,0 +1,649 @@
+{
+  "$schema": "../schema.json",
+  "title": "HPC State Propagation Rules",
+  "description": "Rules defining how state changes in one domain cascade to affect other domains",
+  "version": "1.0.0",
+  "propagation_rules": [
+    {
+      "id": "gpu_falls_off_bus",
+      "name": "GPU Falls Off Bus",
+      "description": "GPU becomes unavailable due to hardware error, driver crash, or uncorrectable ECC error",
+      "trigger": {
+        "domain": "gpu_state",
+        "condition": "status == 'fallen_off_bus' OR ecc_errors_uncorrectable > threshold"
+      },
+      "propagations": [
+        {
+          "target_domain": "gpu_state",
+          "field_changes": {
+            "status": "fallen_off_bus",
+            "utilization_gpu": "N/A",
+            "utilization_memory": "N/A",
+            "temperature": "N/A",
+            "power_draw": "N/A"
+          }
+        },
+        {
+          "target_domain": "gpu_process_state",
+          "action": "terminate_all",
+          "condition": "processes on affected GPU",
+          "description": "All processes using the GPU are terminated"
+        },
+        {
+          "target_domain": "job_state",
+          "field_changes": {
+            "state": "FAILED",
+            "reason": "GPU failure on node"
+          },
+          "condition": "job uses affected GPU"
+        },
+        {
+          "target_domain": "node_state",
+          "field_changes": {
+            "state": "drain",
+            "reason": "GPU X fell off bus"
+          },
+          "condition": "SLURM configured to drain on GPU failure"
+        }
+      ],
+      "affected_commands": [
+        {
+          "command": "nvidia-smi",
+          "output_change": "GPU shows ERR! or [Unknown Error]"
+        },
+        {
+          "command": "nvidia-smi -L",
+          "output_change": "GPU may be missing or show error"
+        },
+        {
+          "command": "dcgmi health",
+          "output_change": "Shows GPU health failure"
+        },
+        { "command": "sinfo", "output_change": "Node shows drain state" },
+        {
+          "command": "scontrol show node",
+          "output_change": "Reason field shows GPU failure"
+        }
+      ]
+    },
+    {
+      "id": "gpu_thermal_throttle",
+      "name": "GPU Thermal Throttling",
+      "description": "GPU reduces clocks due to high temperature",
+      "trigger": {
+        "domain": "gpu_state",
+        "condition": "temperature >= throttle_threshold"
+      },
+      "propagations": [
+        {
+          "target_domain": "gpu_state",
+          "field_changes": {
+            "throttle_reason": "thermal",
+            "clocks_current_sm": "reduced",
+            "clocks_current_memory": "reduced"
+          }
+        }
+      ],
+      "affected_commands": [
+        {
+          "command": "nvidia-smi",
+          "output_change": "Shows SW Thermal Slowdown: Active"
+        },
+        {
+          "command": "nvidia-smi -q -d PERFORMANCE",
+          "output_change": "Clocks Throttle Reasons show thermal"
+        },
+        {
+          "command": "dcgmi health",
+          "output_change": "May show thermal warning"
+        }
+      ]
+    },
+    {
+      "id": "job_submission",
+      "name": "Job Submitted to SLURM",
+      "description": "New job enters the queue",
+      "trigger": {
+        "domain": "job_state",
+        "condition": "new job created via sbatch/salloc"
+      },
+      "propagations": [
+        {
+          "target_domain": "job_state",
+          "action": "create",
+          "field_changes": {
+            "state": "PENDING",
+            "submit_time": "current_time"
+          }
+        }
+      ],
+      "affected_commands": [
+        { "command": "squeue", "output_change": "New job appears in queue" },
+        {
+          "command": "squeue -u $USER",
+          "output_change": "Job visible to submitting user"
+        },
+        { "command": "sprio", "output_change": "Job appears in priority list" }
+      ]
+    },
+    {
+      "id": "job_starts_running",
+      "name": "Job Starts Running",
+      "description": "Pending job gets scheduled and starts execution",
+      "trigger": {
+        "domain": "job_state",
+        "condition": "state changes from PENDING to RUNNING"
+      },
+      "propagations": [
+        {
+          "target_domain": "job_state",
+          "field_changes": {
+            "state": "RUNNING",
+            "start_time": "current_time",
+            "nodes": "allocated_nodelist"
+          }
+        },
+        {
+          "target_domain": "node_state",
+          "field_changes": {
+            "state": "alloc OR mix",
+            "cpus_alloc": "increased",
+            "memory_alloc": "increased",
+            "gpus_alloc": "increased if GPU job"
+          },
+          "condition": "for each allocated node"
+        },
+        {
+          "target_domain": "gpu_process_state",
+          "action": "create",
+          "description": "Process entries created as job tasks start on GPUs"
+        }
+      ],
+      "affected_commands": [
+        {
+          "command": "squeue",
+          "output_change": "Job shows RUNNING state, node list populated"
+        },
+        {
+          "command": "sinfo",
+          "output_change": "Nodes show alloc or mix state"
+        },
+        {
+          "command": "scontrol show job",
+          "output_change": "StartTime populated, NodeList set"
+        },
+        {
+          "command": "nvidia-smi",
+          "output_change": "GPU processes appear (on GPU nodes)"
+        }
+      ]
+    },
+    {
+      "id": "job_completes",
+      "name": "Job Completes Successfully",
+      "description": "Running job finishes normally",
+      "trigger": {
+        "domain": "job_state",
+        "condition": "state changes from RUNNING to COMPLETED"
+      },
+      "propagations": [
+        {
+          "target_domain": "job_state",
+          "field_changes": {
+            "state": "COMPLETED",
+            "end_time": "current_time",
+            "exit_code": "0:0"
+          }
+        },
+        {
+          "target_domain": "node_state",
+          "field_changes": {
+            "cpus_alloc": "decreased",
+            "memory_alloc": "decreased",
+            "gpus_alloc": "decreased",
+            "state": "idle OR mix (depending on other jobs)"
+          }
+        },
+        {
+          "target_domain": "gpu_process_state",
+          "action": "remove",
+          "description": "Process entries removed as job tasks exit"
+        },
+        {
+          "target_domain": "gpu_state",
+          "field_changes": {
+            "memory_used": "decreased",
+            "utilization_gpu": "decreased"
+          }
+        }
+      ],
+      "affected_commands": [
+        { "command": "squeue", "output_change": "Job no longer in queue" },
+        {
+          "command": "sacct -j <jobid>",
+          "output_change": "Shows COMPLETED state"
+        },
+        { "command": "sinfo", "output_change": "Nodes may return to idle" },
+        {
+          "command": "nvidia-smi",
+          "output_change": "GPU processes gone, memory freed"
+        }
+      ]
+    },
+    {
+      "id": "job_fails",
+      "name": "Job Fails",
+      "description": "Running job exits with error",
+      "trigger": {
+        "domain": "job_state",
+        "condition": "state changes from RUNNING to FAILED"
+      },
+      "propagations": [
+        {
+          "target_domain": "job_state",
+          "field_changes": {
+            "state": "FAILED",
+            "end_time": "current_time",
+            "exit_code": "non-zero"
+          }
+        },
+        {
+          "target_domain": "node_state",
+          "field_changes": {
+            "cpus_alloc": "decreased",
+            "memory_alloc": "decreased",
+            "gpus_alloc": "decreased"
+          }
+        },
+        {
+          "target_domain": "gpu_process_state",
+          "action": "remove",
+          "description": "Process entries removed"
+        }
+      ],
+      "affected_commands": [
+        {
+          "command": "sacct -j <jobid>",
+          "output_change": "Shows FAILED state with exit code"
+        },
+        {
+          "command": "scontrol show job <jobid>",
+          "output_change": "ExitCode shows error"
+        },
+        { "command": "sinfo", "output_change": "Nodes release resources" }
+      ]
+    },
+    {
+      "id": "job_cancelled",
+      "name": "Job Cancelled",
+      "description": "Job cancelled via scancel",
+      "trigger": {
+        "domain": "job_state",
+        "condition": "scancel executed on job"
+      },
+      "propagations": [
+        {
+          "target_domain": "job_state",
+          "field_changes": {
+            "state": "CANCELLED",
+            "end_time": "current_time"
+          }
+        },
+        {
+          "target_domain": "node_state",
+          "field_changes": {
+            "cpus_alloc": "decreased if was RUNNING",
+            "memory_alloc": "decreased if was RUNNING",
+            "gpus_alloc": "decreased if was RUNNING"
+          }
+        },
+        {
+          "target_domain": "gpu_process_state",
+          "action": "terminate_and_remove",
+          "condition": "if job was RUNNING"
+        }
+      ],
+      "affected_commands": [
+        { "command": "squeue", "output_change": "Job removed from queue" },
+        {
+          "command": "sacct -j <jobid>",
+          "output_change": "Shows CANCELLED state"
+        },
+        {
+          "command": "nvidia-smi",
+          "output_change": "Processes terminated if was running"
+        }
+      ]
+    },
+    {
+      "id": "node_drain",
+      "name": "Node Drained",
+      "description": "Admin drains node for maintenance",
+      "trigger": {
+        "domain": "node_state",
+        "condition": "scontrol update NodeName=X State=DRAIN executed"
+      },
+      "propagations": [
+        {
+          "target_domain": "node_state",
+          "field_changes": {
+            "state": "drain OR draining",
+            "reason": "admin specified reason"
+          }
+        },
+        {
+          "target_domain": "job_state",
+          "description": "New jobs will not be scheduled to this node"
+        }
+      ],
+      "affected_commands": [
+        {
+          "command": "sinfo",
+          "output_change": "Node shows drain/draining state"
+        },
+        {
+          "command": "scontrol show node",
+          "output_change": "State=DRAIN, Reason populated"
+        },
+        {
+          "command": "squeue",
+          "output_change": "Pending jobs may stay pending longer"
+        }
+      ]
+    },
+    {
+      "id": "ib_link_down",
+      "name": "InfiniBand Link Down",
+      "description": "IB port goes down due to cable or switch issue",
+      "trigger": {
+        "domain": "network_ib_state",
+        "condition": "state changes to 'Down'"
+      },
+      "propagations": [
+        {
+          "target_domain": "network_ib_state",
+          "field_changes": {
+            "state": "Down",
+            "physical_state": "Polling OR Disabled",
+            "rate": "0"
+          }
+        },
+        {
+          "target_domain": "node_state",
+          "field_changes": {
+            "state": "drain",
+            "reason": "IB link down"
+          },
+          "condition": "if configured to drain on network failure"
+        }
+      ],
+      "affected_commands": [
+        { "command": "ibstat", "output_change": "State: Down" },
+        { "command": "ibstatus", "output_change": "Shows port down" },
+        {
+          "command": "iblinkinfo",
+          "output_change": "Link missing or shows error"
+        },
+        { "command": "mlxlink", "output_change": "Shows link down status" },
+        {
+          "command": "sinfo",
+          "output_change": "Node may show drain if configured"
+        }
+      ]
+    },
+    {
+      "id": "ib_errors_threshold",
+      "name": "IB Error Threshold Exceeded",
+      "description": "InfiniBand error counters exceed threshold",
+      "trigger": {
+        "domain": "network_ib_state",
+        "condition": "error_counters exceed configured threshold"
+      },
+      "propagations": [
+        {
+          "target_domain": "network_ib_state",
+          "field_changes": {
+            "error_counters": "incremented"
+          }
+        }
+      ],
+      "affected_commands": [
+        {
+          "command": "perfquery",
+          "output_change": "Shows elevated error counts"
+        },
+        {
+          "command": "ibdiagnet",
+          "output_change": "Reports errors in diagnostic"
+        },
+        {
+          "command": "mlxlink --show_counters",
+          "output_change": "Shows error counters"
+        }
+      ]
+    },
+    {
+      "id": "nvlink_error",
+      "name": "NVLink Error",
+      "description": "NVLink between GPUs experiences errors",
+      "trigger": {
+        "domain": "fabric_state",
+        "condition": "nvlink errors or link down"
+      },
+      "propagations": [
+        {
+          "target_domain": "fabric_state",
+          "field_changes": {
+            "links.status": "error OR inactive",
+            "links.rx_errors": "incremented",
+            "links.replay_errors": "incremented"
+          }
+        },
+        {
+          "target_domain": "gpu_state",
+          "description": "Peer-to-peer transfers may fall back to PCIe"
+        }
+      ],
+      "affected_commands": [
+        {
+          "command": "nvidia-smi nvlink -s",
+          "output_change": "Shows link inactive or errors"
+        },
+        {
+          "command": "nvidia-smi nvlink -e",
+          "output_change": "Shows error counts"
+        },
+        { "command": "dcgmi nvlink", "output_change": "Reports NVLink issues" },
+        {
+          "command": "nv-fabricmanager",
+          "output_change": "Logs may show link errors"
+        }
+      ]
+    },
+    {
+      "id": "storage_full",
+      "name": "Storage Full",
+      "description": "Filesystem reaches capacity",
+      "trigger": {
+        "domain": "storage_local_state",
+        "condition": "use_percent >= 100 OR available_size == 0"
+      },
+      "propagations": [
+        {
+          "target_domain": "storage_local_state",
+          "field_changes": {
+            "available_size": "0",
+            "use_percent": "100"
+          }
+        },
+        {
+          "target_domain": "job_state",
+          "field_changes": {
+            "state": "FAILED",
+            "reason": "No space left on device"
+          },
+          "condition": "jobs writing to full filesystem"
+        }
+      ],
+      "affected_commands": [
+        { "command": "df", "output_change": "Shows 100% usage" },
+        { "command": "df -h", "output_change": "Shows 0 available" },
+        {
+          "command": "sacct",
+          "output_change": "Jobs may show FAILED with disk error"
+        }
+      ]
+    },
+    {
+      "id": "lustre_ost_down",
+      "name": "Lustre OST Down",
+      "description": "Lustre Object Storage Target becomes unavailable",
+      "trigger": {
+        "domain": "storage_lustre_state",
+        "condition": "OST status changes to unavailable"
+      },
+      "propagations": [
+        {
+          "target_domain": "storage_lustre_state",
+          "field_changes": {
+            "ost_status": "contains unavailable",
+            "mdt_status": "possibly degraded"
+          }
+        }
+      ],
+      "affected_commands": [
+        {
+          "command": "lfs df",
+          "output_change": "OST shows unavailable or missing"
+        },
+        { "command": "lfs check servers", "output_change": "Shows OST error" },
+        { "command": "lfs osts", "output_change": "Missing or degraded OST" }
+      ]
+    },
+    {
+      "id": "driver_reload",
+      "name": "NVIDIA Driver Reload",
+      "description": "NVIDIA driver is reloaded (e.g., after GPU reset)",
+      "trigger": {
+        "domain": "gpu_state",
+        "condition": "driver module reload"
+      },
+      "propagations": [
+        {
+          "target_domain": "gpu_state",
+          "action": "reset_all",
+          "field_changes": {
+            "memory_used": "0 (briefly)",
+            "ecc_errors_correctable": "may reset",
+            "ecc_errors_uncorrectable": "may reset"
+          }
+        },
+        {
+          "target_domain": "gpu_process_state",
+          "action": "clear_all",
+          "description": "All GPU processes terminated"
+        }
+      ],
+      "affected_commands": [
+        {
+          "command": "nvidia-smi",
+          "output_change": "Shows fresh state after reload"
+        },
+        { "command": "nvidia-smi -L", "output_change": "GPUs re-enumerated" },
+        { "command": "dmesg", "output_change": "Shows driver load messages" }
+      ]
+    },
+    {
+      "id": "container_start",
+      "name": "Container Started",
+      "description": "Container runtime starts a new container",
+      "trigger": {
+        "domain": "container_state",
+        "condition": "docker run / enroot start executed"
+      },
+      "propagations": [
+        {
+          "target_domain": "container_state",
+          "action": "create",
+          "field_changes": {
+            "status": "running",
+            "started": "current_time"
+          }
+        },
+        {
+          "target_domain": "gpu_state",
+          "condition": "if --gpus flag used",
+          "description": "GPU resources allocated to container"
+        },
+        {
+          "target_domain": "gpu_process_state",
+          "condition": "if GPU container",
+          "description": "Container processes appear on GPU"
+        }
+      ],
+      "affected_commands": [
+        {
+          "command": "docker ps",
+          "output_change": "Container appears in list"
+        },
+        {
+          "command": "nvidia-smi",
+          "output_change": "Container processes visible if GPU attached"
+        },
+        {
+          "command": "enroot list",
+          "output_change": "Container appears in enroot list"
+        }
+      ]
+    },
+    {
+      "id": "persistence_mode_change",
+      "name": "GPU Persistence Mode Changed",
+      "description": "nvidia-smi -pm command changes persistence mode",
+      "trigger": {
+        "domain": "gpu_state",
+        "condition": "nvidia-smi -pm 0|1 executed"
+      },
+      "propagations": [
+        {
+          "target_domain": "gpu_state",
+          "field_changes": {
+            "persistence_mode": "Enabled OR Disabled"
+          }
+        }
+      ],
+      "affected_commands": [
+        {
+          "command": "nvidia-smi -q",
+          "output_change": "Persistence Mode field updated"
+        },
+        {
+          "command": "nvidia-smi",
+          "output_change": "Shows new persistence mode"
+        }
+      ]
+    },
+    {
+      "id": "ecc_mode_change",
+      "name": "GPU ECC Mode Changed",
+      "description": "ECC memory mode changed (requires reboot)",
+      "trigger": {
+        "domain": "gpu_state",
+        "condition": "nvidia-smi -e 0|1 executed"
+      },
+      "propagations": [
+        {
+          "target_domain": "gpu_state",
+          "description": "Pending ECC mode change, effective after reboot"
+        }
+      ],
+      "affected_commands": [
+        {
+          "command": "nvidia-smi -q",
+          "output_change": "Shows pending ECC mode change"
+        },
+        { "command": "nvidia-smi", "output_change": "May show reboot required" }
+      ]
+    }
+  ]
+}

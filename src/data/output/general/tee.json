@@ -1,0 +1,87 @@
+{
+  "command": "tee",
+  "category": "general",
+  "description": "Read from stdin and write to stdout and files. Duplicates output to files while displaying. Essential for logging HPC job output.",
+  "synopsis": "tee [options] <file>...",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/tee.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--append",
+      "description": "Append to files instead of overwriting"
+    },
+    {
+      "short": "-i",
+      "long": "--ignore-interrupts",
+      "description": "Ignore interrupt signals"
+    },
+    {
+      "short": "-p",
+      "description": "Diagnose errors writing to non-pipes"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Log and display output",
+      "command": "nvidia-smi | tee gpu_status.log",
+      "requires_root": false
+    },
+    {
+      "description": "Append to log",
+      "command": "python train.py 2>&1 | tee -a training.log",
+      "requires_root": false
+    },
+    {
+      "description": "Multiple output files",
+      "command": "command | tee file1.log file2.log",
+      "requires_root": false
+    },
+    {
+      "description": "With sudo",
+      "command": "echo 'config' | sudo tee /etc/file",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [],
+  "interoperability": {
+    "related_commands": ["script", "cat", "redirect"],
+    "notes": "Useful for logging while watching output. Combine with 2>&1 to capture stderr. sudo tee pattern needed for privileged file writes."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "Write access to output files",
+    "notes": "sudo tee for privileged files"
+  },
+  "limitations": [
+    "Buffering can delay output",
+    "Not real-time for large buffers"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Creates log files",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

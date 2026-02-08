@@ -1,0 +1,288 @@
+{
+  "command": "htop",
+  "category": "monitoring",
+  "description": "Interactive process viewer with visual CPU and memory bars. htop is an enhanced alternative to the traditional top command, providing a real-time, color-coded display of system processes with CPU, memory, and swap usage visualizations. It supports mouse interaction, vertical and horizontal scrolling through the process list, and allows killing or renicing processes without requiring their PID. htop is particularly useful on HPC systems for monitoring resource utilization and identifying runaway processes.",
+  "synopsis": "htop [-dChstuv] [-p PID[,PID...]] [-u USERNAME]",
+  "version_documented": "htop 3.2.x",
+  "source_urls": [
+    "https://htop.dev/",
+    "https://man7.org/linux/man-pages/man1/htop.1.html",
+    "https://github.com/htop-dev/htop"
+  ],
+  "installation": {
+    "package": "htop",
+    "notes": "Available in standard repositories for most Linux distributions. Install via 'apt install htop' (Debian/Ubuntu), 'yum install htop' (RHEL/CentOS), 'dnf install htop' (Fedora), or 'zypper install htop' (SUSE)."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--delay",
+      "description": "Set the delay between screen updates, in tenths of a second. Overrides the default value in the configuration file.",
+      "arguments": "<DELAY>",
+      "argument_type": "integer",
+      "default": "15",
+      "example": "htop -d 10"
+    },
+    {
+      "short": "-C",
+      "long": "--no-color",
+      "description": "Start htop in monochrome mode, disabling colors. Useful for terminals that do not support colors or for accessibility."
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display a help message and exit."
+    },
+    {
+      "short": "-p",
+      "long": "--pid",
+      "description": "Show only the specified PIDs. This option can be specified multiple times or with comma-separated PIDs.",
+      "arguments": "<PID>[,<PID>...]",
+      "argument_type": "integer",
+      "example": "htop -p 1234,5678"
+    },
+    {
+      "short": "-s",
+      "long": "--sort-key",
+      "description": "Sort by the specified column. Use --sort-key=help for a list of available column names.",
+      "arguments": "<COLUMN>",
+      "argument_type": "string",
+      "example": "htop -s PERCENT_MEM"
+    },
+    {
+      "short": "-u",
+      "long": "--user",
+      "description": "Show only processes owned by the specified user.",
+      "arguments": "<USERNAME>",
+      "argument_type": "string",
+      "example": "htop -u root"
+    },
+    {
+      "short": "-t",
+      "long": "--tree",
+      "description": "Show processes in tree view, displaying the parent-child relationships between processes."
+    },
+    {
+      "short": "-H",
+      "long": "--highlight-changes",
+      "description": "Highlight new and old processes with colors to show changes between updates.",
+      "arguments": "<DELAY>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-M",
+      "long": "--no-mouse",
+      "description": "Disable mouse support. Useful when running in environments where mouse events interfere with operation."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Output version information and exit."
+    },
+    {
+      "short": "-F",
+      "long": "--filter",
+      "description": "Filter processes by command name at startup.",
+      "arguments": "<FILTER>",
+      "argument_type": "string",
+      "example": "htop -F python"
+    }
+  ],
+  "environment_variables": [
+    {
+      "name": "HTOPRC",
+      "description": "Path to an alternative htop configuration file.",
+      "example": "HTOPRC=/etc/htop/htoprc htop",
+      "affects_command": "Changes the location of the configuration file that htop reads for settings and column configuration."
+    },
+    {
+      "name": "HOME",
+      "description": "Used to locate the default configuration file at ~/.config/htop/htoprc.",
+      "affects_command": "Determines the location of the user's htop configuration file."
+    },
+    {
+      "name": "TERM",
+      "description": "Terminal type, affects color support and display capabilities.",
+      "affects_command": "htop uses this to determine terminal capabilities for rendering colors and special characters."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - htop exited normally (user pressed q or F10)"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - general failure, invalid option, or configuration error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Start htop in interactive mode",
+      "command": "htop",
+      "requires_root": false
+    },
+    {
+      "description": "Start htop in tree view mode",
+      "command": "htop -t",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor processes for a specific user",
+      "command": "htop -u username",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor specific processes by PID",
+      "command": "htop -p 1234,5678,9012",
+      "requires_root": false
+    },
+    {
+      "description": "Sort by memory usage",
+      "command": "htop -s PERCENT_MEM",
+      "requires_root": false
+    },
+    {
+      "description": "Sort by CPU usage",
+      "command": "htop -s PERCENT_CPU",
+      "requires_root": false
+    },
+    {
+      "description": "Start with faster update interval (0.5 seconds)",
+      "command": "htop -d 5",
+      "requires_root": false
+    },
+    {
+      "description": "Start in monochrome mode for terminals without color support",
+      "command": "htop -C",
+      "requires_root": false
+    },
+    {
+      "description": "Filter to show only Python processes",
+      "command": "htop -F python",
+      "requires_root": false
+    },
+    {
+      "description": "Show processes in tree view for a specific user",
+      "command": "htop -t -u slurm",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "htop: cannot open /proc",
+      "meaning": "The /proc filesystem is not mounted or accessible",
+      "resolution": "Ensure /proc is mounted (mount -t proc proc /proc). This is typically done automatically at boot."
+    },
+    {
+      "message": "Error reading process data",
+      "meaning": "htop could not read process information, possibly due to permissions or a race condition with a short-lived process",
+      "resolution": "This is usually transient. If persistent, check that /proc is accessible and you have read permissions."
+    },
+    {
+      "message": "htop: No such user: username",
+      "meaning": "The specified username for the -u option does not exist on the system",
+      "resolution": "Verify the username exists with 'id username' or check /etc/passwd."
+    },
+    {
+      "message": "htop: invalid option",
+      "meaning": "An unrecognized option was specified",
+      "resolution": "Check the option syntax with 'htop --help' and verify the option is supported by your version."
+    },
+    {
+      "message": "Cannot allocate memory",
+      "meaning": "System is out of memory and htop cannot allocate resources",
+      "resolution": "Free up system memory by terminating unnecessary processes. The system may be under severe memory pressure."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "top",
+      "nvtop",
+      "ps",
+      "nvidia-smi",
+      "free",
+      "vmstat",
+      "iotop",
+      "atop"
+    ],
+    "uses_library": ["ncurses", "libsensors"],
+    "notes": "htop reads process information from /proc and provides a more user-friendly interface than traditional top. On HPC systems with GPUs, use in conjunction with nvtop or nvidia-smi for complete resource monitoring. htop configuration is stored in ~/.config/htop/htoprc. The tool supports custom meters and columns through its setup screen (F2)."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required for viewing processes owned by the current user. Viewing all processes requires read access to /proc.",
+    "write_operations": "Killing or renicing processes owned by other users requires root privileges. Users can only send signals to their own processes without elevated permissions.",
+    "notes": "Running htop as root allows full visibility and control of all processes. Some features like changing process priority (nice value) to negative values require root."
+  },
+  "limitations": [
+    "htop is an interactive tool and does not support batch mode output like top -b",
+    "Resource usage of htop itself can be noticeable on systems with thousands of processes",
+    "Does not directly display GPU utilization - use nvtop or nvidia-smi for GPU monitoring",
+    "Configuration changes through the interface are saved to the user's config file, which may not exist in all environments",
+    "Mouse support depends on terminal capabilities and may not work in all environments",
+    "Network I/O per process is not displayed by default; requires additional columns to be configured",
+    "On NUMA systems, CPU display may not clearly indicate NUMA node boundaries"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "cpu_usage",
+          "cpu_count",
+          "memory_total",
+          "memory_used",
+          "memory_free",
+          "memory_cached",
+          "memory_buffers",
+          "swap_total",
+          "swap_used",
+          "load_average",
+          "uptime"
+        ],
+        "description": "Reads system-wide resource utilization including CPU, memory, swap, and load averages from /proc/stat, /proc/meminfo, and /proc/loadavg."
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "system_state",
+        "fields": ["process_signals", "process_priority"],
+        "description": "Can send signals to processes (kill) and change process priority (renice) through interactive commands.",
+        "requires_flags": ["F9 (Kill)", "F7/F8 (Nice)"],
+        "requires_privilege": "root for other users' processes, user privileges for own processes"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Process creation/termination",
+        "effect": "New processes appear in the list; terminated processes are removed on the next update cycle."
+      },
+      {
+        "state_change": "CPU usage changes",
+        "effect": "CPU meters and per-process CPU percentages update to reflect current utilization."
+      },
+      {
+        "state_change": "Memory allocation/deallocation",
+        "effect": "Memory meters and per-process memory values update to reflect current usage."
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "top",
+        "shared_state": "Both read from /proc and should show consistent process lists and resource utilization, though display formats differ."
+      },
+      {
+        "command": "ps",
+        "shared_state": "Process information (PID, USER, CPU%, MEM%, command) should be consistent between htop and ps output."
+      },
+      {
+        "command": "free",
+        "shared_state": "Memory statistics displayed in htop header should match values reported by free command."
+      },
+      {
+        "command": "nvidia-smi",
+        "shared_state": "Processes using GPUs shown in nvidia-smi should appear in htop process list with their CPU/memory usage."
+      }
+    ]
+  }
+}

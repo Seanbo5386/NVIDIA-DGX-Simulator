@@ -1,0 +1,1040 @@
+{
+  "command": "dcgmi",
+  "category": "gpu_management",
+  "description": "NVIDIA Data Center GPU Manager (DCGM) CLI for enterprise GPU management, monitoring, and diagnostics. DCGM provides a suite of tools for managing and monitoring NVIDIA GPUs in cluster environments, including health monitoring, diagnostics, profiling, policy management, and job statistics collection. It is designed for data center deployments and integrates with workload managers like Slurm.",
+  "synopsis": "dcgmi [subsystem] [command] [options]",
+  "version_documented": "Latest (3.x+)",
+  "source_urls": [
+    "https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/index.html"
+  ],
+  "installation": {
+    "package": "datacenter-gpu-manager",
+    "notes": "Installed via NVIDIA CUDA repository or standalone DCGM package. Requires nv-hostengine service to be running for most operations. Available for Linux systems with NVIDIA data center GPUs."
+  },
+  "global_options": [
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help information for dcgmi or a specific subsystem"
+    },
+    {
+      "short": "-v",
+      "long": "--version",
+      "description": "Display DCGM version information"
+    },
+    {
+      "long": "--host",
+      "description": "Connect to a remote DCGM host engine",
+      "arguments": "HOSTNAME",
+      "argument_type": "string",
+      "example": "dcgmi discovery -l --host 192.168.1.100"
+    },
+    {
+      "long": "--port",
+      "description": "Port number for the DCGM host engine connection",
+      "arguments": "PORT",
+      "argument_type": "integer",
+      "default": "5555"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "discovery",
+      "description": "Discover GPUs and their attributes on the system. Lists available GPUs, compute instances, and detailed GPU information.",
+      "synopsis": "dcgmi discovery [options]",
+      "options": [
+        {
+          "short": "-l",
+          "long": "--list",
+          "description": "List all GPUs visible to DCGM with basic information including GPU ID, PCI bus ID, and device name"
+        },
+        {
+          "short": "-c",
+          "long": "--compute-instances",
+          "description": "List MIG compute instances on the system"
+        },
+        {
+          "short": "-i",
+          "long": "--gpuinfo",
+          "description": "Display detailed GPU information including UUID, serial number, topology, and capabilities",
+          "arguments": "GPU_ID",
+          "argument_type": "integer",
+          "example": "dcgmi discovery -i 0"
+        }
+      ]
+    },
+    {
+      "name": "group",
+      "description": "Manage GPU groups for collective operations. Groups allow targeting multiple GPUs with a single command for health checks, diagnostics, and configuration.",
+      "synopsis": "dcgmi group [options]",
+      "options": [
+        {
+          "short": "-l",
+          "long": "--list",
+          "description": "List all GPU groups and their members"
+        },
+        {
+          "short": "-c",
+          "long": "--create",
+          "description": "Create a new GPU group with the specified name",
+          "arguments": "GROUP_NAME",
+          "argument_type": "string",
+          "example": "dcgmi group -c \"mygroup\""
+        },
+        {
+          "short": "-d",
+          "long": "--delete",
+          "description": "Delete a GPU group by ID",
+          "arguments": "GROUP_ID",
+          "argument_type": "integer",
+          "example": "dcgmi group -d 1"
+        },
+        {
+          "short": "-a",
+          "long": "--add",
+          "description": "Add GPU(s) to a group. Specify GPU IDs as comma-separated list.",
+          "arguments": "GPU_IDS",
+          "argument_type": "string",
+          "example": "dcgmi group -g 1 -a 0,1,2,3"
+        },
+        {
+          "short": "-r",
+          "long": "--remove",
+          "description": "Remove GPU(s) from a group",
+          "arguments": "GPU_IDS",
+          "argument_type": "string",
+          "example": "dcgmi group -g 1 -r 2"
+        },
+        {
+          "short": "-g",
+          "long": "--groupid",
+          "description": "Specify the target group ID for add/remove operations",
+          "arguments": "GROUP_ID",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-i",
+          "long": "--info",
+          "description": "Display detailed information about a group",
+          "arguments": "GROUP_ID",
+          "argument_type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "config",
+      "description": "Get, set, and enforce GPU configuration parameters including power limits, compute mode, ECC mode, and sync boost settings.",
+      "synopsis": "dcgmi config [options]",
+      "options": [
+        {
+          "long": "--get",
+          "description": "Get the current configuration for a GPU or group",
+          "example": "dcgmi config --get -g 0"
+        },
+        {
+          "long": "--set",
+          "description": "Set configuration parameters. Use with specific parameter flags.",
+          "example": "dcgmi config --set -g 0 --power-limit 300"
+        },
+        {
+          "long": "--enforce",
+          "description": "Enforce the current configuration, resetting any runtime changes"
+        },
+        {
+          "short": "-g",
+          "long": "--group",
+          "description": "Target group ID for configuration operations",
+          "arguments": "GROUP_ID",
+          "argument_type": "integer"
+        },
+        {
+          "long": "--power-limit",
+          "description": "Set power limit in watts",
+          "arguments": "WATTS",
+          "argument_type": "integer"
+        },
+        {
+          "long": "--compute-mode",
+          "description": "Set compute mode (0=Default, 1=Exclusive_Thread, 2=Prohibited, 3=Exclusive_Process)",
+          "arguments": "MODE",
+          "argument_type": "integer"
+        },
+        {
+          "long": "--sync-boost",
+          "description": "Enable or disable sync boost (0=Disabled, 1=Enabled)",
+          "arguments": "MODE",
+          "argument_type": "integer"
+        },
+        {
+          "long": "--ecc-mode",
+          "description": "Set ECC memory mode (0=Disabled, 1=Enabled)",
+          "arguments": "MODE",
+          "argument_type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "health",
+      "description": "Monitor GPU health status and set up health watches for continuous monitoring. Checks PCIe, memory, inforom, thermal, power, and NVLink health.",
+      "synopsis": "dcgmi health [options]",
+      "options": [
+        {
+          "short": "-c",
+          "long": "--check",
+          "description": "Perform a health check on the target group or all GPUs",
+          "example": "dcgmi health -c -g 0"
+        },
+        {
+          "short": "-s",
+          "long": "--set",
+          "description": "Set health watches with specified systems. Systems: a=All, p=PCIe, m=Memory, i=Inforom, t=Thermal, w=Power, n=NVLink",
+          "arguments": "SYSTEMS",
+          "argument_type": "string",
+          "example": "dcgmi health -s pmtin -g 0"
+        },
+        {
+          "short": "-g",
+          "long": "--group",
+          "description": "Target group ID for health operations",
+          "arguments": "GROUP_ID",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-j",
+          "long": "--json",
+          "description": "Output health check results in JSON format"
+        },
+        {
+          "long": "--clear",
+          "description": "Clear all health watches for the target group"
+        }
+      ]
+    },
+    {
+      "name": "diag",
+      "description": "Run GPU diagnostics at various levels of thoroughness. Includes memory tests, compute tests, PCIe bandwidth tests, and stress tests.",
+      "synopsis": "dcgmi diag [options]",
+      "options": [
+        {
+          "short": "-r",
+          "long": "--run",
+          "description": "Run diagnostics at the specified level (1-4). Level 1: Quick (seconds), Level 2: Medium (minutes), Level 3: Long (10+ minutes), Level 4: Extended (hours, stress testing)",
+          "arguments": "LEVEL",
+          "argument_type": "integer",
+          "required": true,
+          "example": "dcgmi diag -r 3 -g 0"
+        },
+        {
+          "short": "-j",
+          "long": "--json",
+          "description": "Output diagnostic results in JSON format"
+        },
+        {
+          "short": "-g",
+          "long": "--group",
+          "description": "Target group ID for diagnostics. Use group 0 for all GPUs.",
+          "arguments": "GROUP_ID",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-i",
+          "long": "--gpu",
+          "description": "Run diagnostics on specific GPU(s) by index",
+          "arguments": "GPU_IDS",
+          "argument_type": "string",
+          "example": "dcgmi diag -r 2 -i 0,1"
+        },
+        {
+          "short": "-p",
+          "long": "--parameters",
+          "description": "Specify test parameters as key=value pairs",
+          "arguments": "PARAMS",
+          "argument_type": "string"
+        },
+        {
+          "short": "-c",
+          "long": "--config",
+          "description": "Path to diagnostic configuration file",
+          "arguments": "FILE",
+          "argument_type": "path"
+        },
+        {
+          "long": "--train",
+          "description": "Run diagnostic training to establish baseline performance"
+        },
+        {
+          "long": "--check-interval",
+          "description": "Interval in seconds between diagnostic checks",
+          "arguments": "SECONDS",
+          "argument_type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "stats",
+      "description": "Enable, disable, and view job statistics collection for GPU usage tracking. Integrates with workload managers for per-job GPU metrics.",
+      "synopsis": "dcgmi stats [options]",
+      "options": [
+        {
+          "short": "-e",
+          "long": "--enable",
+          "description": "Enable statistics collection for the target group",
+          "example": "dcgmi stats -e -g 0"
+        },
+        {
+          "short": "-d",
+          "long": "--disable",
+          "description": "Disable statistics collection for the target group"
+        },
+        {
+          "short": "-s",
+          "long": "--show",
+          "description": "Show current statistics and collection status"
+        },
+        {
+          "short": "-j",
+          "long": "--job",
+          "description": "Display statistics for a specific job ID",
+          "arguments": "JOB_ID",
+          "argument_type": "string",
+          "example": "dcgmi stats -j 12345"
+        },
+        {
+          "short": "-g",
+          "long": "--group",
+          "description": "Target group ID for statistics operations",
+          "arguments": "GROUP_ID",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-x",
+          "long": "--start",
+          "description": "Start recording statistics for a job",
+          "arguments": "JOB_ID",
+          "argument_type": "string"
+        },
+        {
+          "short": "-a",
+          "long": "--stop",
+          "description": "Stop recording statistics for a job",
+          "arguments": "JOB_ID",
+          "argument_type": "string"
+        },
+        {
+          "short": "-r",
+          "long": "--remove",
+          "description": "Remove recorded statistics for a job",
+          "arguments": "JOB_ID",
+          "argument_type": "string"
+        },
+        {
+          "short": "-v",
+          "long": "--verbose",
+          "description": "Display verbose statistics output"
+        },
+        {
+          "long": "--pid",
+          "description": "Process ID for statistics tracking",
+          "arguments": "PID",
+          "argument_type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "topo",
+      "description": "Display GPU topology information including NVLink connections, CPU affinity, and NUMA node relationships.",
+      "synopsis": "dcgmi topo [options]",
+      "options": [
+        {
+          "short": "-g",
+          "long": "--group",
+          "description": "Show topology for a specific group",
+          "arguments": "GROUP_ID",
+          "argument_type": "integer",
+          "example": "dcgmi topo -g 0"
+        },
+        {
+          "short": "-j",
+          "long": "--json",
+          "description": "Output topology information in JSON format"
+        },
+        {
+          "long": "--gpuid",
+          "description": "Display topology for specific GPU",
+          "arguments": "GPU_ID",
+          "argument_type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "introspect",
+      "description": "Display internal DCGM state information including field collection statistics, memory usage, and host engine status.",
+      "synopsis": "dcgmi introspect [options]",
+      "options": [
+        {
+          "long": "--show",
+          "description": "Show field collection information and statistics"
+        },
+        {
+          "long": "--memory",
+          "description": "Display DCGM memory usage information"
+        },
+        {
+          "long": "--hostengine",
+          "description": "Display host engine internal statistics"
+        },
+        {
+          "long": "--enable",
+          "description": "Enable introspection data collection"
+        },
+        {
+          "long": "--disable",
+          "description": "Disable introspection data collection"
+        },
+        {
+          "short": "-j",
+          "long": "--json",
+          "description": "Output in JSON format"
+        }
+      ]
+    },
+    {
+      "name": "nvlink",
+      "description": "Display NVLink status, errors, and throughput information for GPU interconnects.",
+      "synopsis": "dcgmi nvlink [options]",
+      "options": [
+        {
+          "short": "-s",
+          "long": "--status",
+          "description": "Display NVLink status for all GPUs",
+          "example": "dcgmi nvlink -s"
+        },
+        {
+          "short": "-e",
+          "long": "--errors",
+          "description": "Display NVLink error counters"
+        },
+        {
+          "short": "-g",
+          "long": "--gpuid",
+          "description": "Target specific GPU for NVLink information",
+          "arguments": "GPU_ID",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-l",
+          "long": "--link",
+          "description": "Target specific NVLink by link ID",
+          "arguments": "LINK_ID",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-j",
+          "long": "--json",
+          "description": "Output in JSON format"
+        }
+      ]
+    },
+    {
+      "name": "dmon",
+      "description": "Device monitoring mode for real-time GPU metrics display. Shows continuous updates of utilization, temperature, power, and other metrics.",
+      "synopsis": "dcgmi dmon [options]",
+      "options": [
+        {
+          "short": "-e",
+          "long": "--entity-id",
+          "description": "Specify GPU(s) to monitor by entity ID (comma-separated)",
+          "arguments": "GPU_IDS",
+          "argument_type": "string",
+          "example": "dcgmi dmon -e 0,1,2,3"
+        },
+        {
+          "short": "-d",
+          "long": "--delay",
+          "description": "Update interval in milliseconds",
+          "arguments": "MS",
+          "argument_type": "integer",
+          "default": "1000",
+          "example": "dcgmi dmon -e 0 -d 500"
+        },
+        {
+          "short": "-c",
+          "long": "--count",
+          "description": "Number of samples to collect before exiting",
+          "arguments": "COUNT",
+          "argument_type": "integer",
+          "example": "dcgmi dmon -e 0 -c 10"
+        },
+        {
+          "short": "-g",
+          "long": "--group",
+          "description": "Monitor all GPUs in the specified group",
+          "arguments": "GROUP_ID",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-f",
+          "long": "--fields",
+          "description": "Specify DCGM field IDs to display (comma-separated)",
+          "arguments": "FIELD_IDS",
+          "argument_type": "string"
+        },
+        {
+          "short": "-i",
+          "long": "--interval",
+          "description": "Field collection interval in microseconds",
+          "arguments": "USEC",
+          "argument_type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "policy",
+      "description": "Manage GPU policies for automated responses to events like ECC errors, thermal throttling, and power violations.",
+      "synopsis": "dcgmi policy [options]",
+      "options": [
+        {
+          "long": "--get",
+          "description": "Get current policy settings for a group",
+          "example": "dcgmi policy --get -g 0"
+        },
+        {
+          "long": "--set",
+          "description": "Set policy parameters",
+          "example": "dcgmi policy --set -g 0 --ecc-dbe-action notify"
+        },
+        {
+          "long": "--clear",
+          "description": "Clear all policies for a group"
+        },
+        {
+          "long": "--reg",
+          "description": "Register a policy with callback action",
+          "example": "dcgmi policy --reg -g 0 --pci-action notify"
+        },
+        {
+          "short": "-g",
+          "long": "--group",
+          "description": "Target group ID for policy operations",
+          "arguments": "GROUP_ID",
+          "argument_type": "integer"
+        },
+        {
+          "long": "--ecc-dbe-action",
+          "description": "Action on double-bit ECC errors (none, notify, gpureset)",
+          "arguments": "ACTION",
+          "argument_type": "string"
+        },
+        {
+          "long": "--pci-action",
+          "description": "Action on PCIe errors (none, notify, gpureset)",
+          "arguments": "ACTION",
+          "argument_type": "string"
+        },
+        {
+          "long": "--thermal-action",
+          "description": "Action on thermal violations (none, notify, gpureset)",
+          "arguments": "ACTION",
+          "argument_type": "string"
+        },
+        {
+          "long": "--power-action",
+          "description": "Action on power violations (none, notify, gpureset)",
+          "arguments": "ACTION",
+          "argument_type": "string"
+        },
+        {
+          "long": "--nvlink-action",
+          "description": "Action on NVLink errors (none, notify, gpureset)",
+          "arguments": "ACTION",
+          "argument_type": "string"
+        },
+        {
+          "long": "--xid-action",
+          "description": "Action on Xid errors (none, notify, gpureset)",
+          "arguments": "ACTION",
+          "argument_type": "string"
+        },
+        {
+          "short": "-j",
+          "long": "--json",
+          "description": "Output in JSON format"
+        }
+      ]
+    },
+    {
+      "name": "profile",
+      "description": "Manage GPU profiling for detailed performance analysis. Control profiling metrics collection and analyze GPU performance characteristics.",
+      "synopsis": "dcgmi profile [options]",
+      "options": [
+        {
+          "long": "--list",
+          "description": "List available profiling metrics and their field IDs"
+        },
+        {
+          "long": "--pause",
+          "description": "Pause profiling data collection",
+          "example": "dcgmi profile --pause -g 0"
+        },
+        {
+          "long": "--resume",
+          "description": "Resume profiling data collection",
+          "example": "dcgmi profile --resume -g 0"
+        },
+        {
+          "short": "-g",
+          "long": "--group",
+          "description": "Target group ID for profiling operations",
+          "arguments": "GROUP_ID",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-j",
+          "long": "--json",
+          "description": "Output in JSON format"
+        }
+      ]
+    },
+    {
+      "name": "modules",
+      "description": "Manage DCGM modules including core functionality, health, policy, config, diagnostics, introspect, nvswitch, profiling, and sysmon.",
+      "synopsis": "dcgmi modules [options]",
+      "options": [
+        {
+          "long": "--list",
+          "description": "List all DCGM modules and their status"
+        },
+        {
+          "long": "--denylist",
+          "description": "Add module(s) to denylist (prevents loading)",
+          "arguments": "MODULES",
+          "argument_type": "string",
+          "example": "dcgmi modules --denylist profiling"
+        },
+        {
+          "long": "--allowlist",
+          "description": "Remove module(s) from denylist",
+          "arguments": "MODULES",
+          "argument_type": "string"
+        },
+        {
+          "short": "-j",
+          "long": "--json",
+          "description": "Output in JSON format"
+        }
+      ]
+    },
+    {
+      "name": "settings",
+      "description": "View and modify DCGM settings including logging, field update intervals, and host engine configuration.",
+      "synopsis": "dcgmi settings [options]",
+      "options": [
+        {
+          "long": "--get",
+          "description": "Get current DCGM settings"
+        },
+        {
+          "long": "--set",
+          "description": "Set DCGM settings"
+        },
+        {
+          "long": "--logging-severity",
+          "description": "Set logging severity level (NONE, FATAL, ERROR, WARNING, INFO, DEBUG, VERB)",
+          "arguments": "LEVEL",
+          "argument_type": "string"
+        },
+        {
+          "long": "--target-entity",
+          "description": "Specify logging target",
+          "arguments": "TARGET",
+          "argument_type": "string"
+        },
+        {
+          "short": "-j",
+          "long": "--json",
+          "description": "Output in JSON format"
+        }
+      ]
+    },
+    {
+      "name": "fieldgroup",
+      "description": "Manage field groups for custom metric collection sets.",
+      "synopsis": "dcgmi fieldgroup [options]",
+      "options": [
+        {
+          "short": "-l",
+          "long": "--list",
+          "description": "List all field groups"
+        },
+        {
+          "short": "-c",
+          "long": "--create",
+          "description": "Create a new field group",
+          "arguments": "GROUP_NAME",
+          "argument_type": "string"
+        },
+        {
+          "short": "-d",
+          "long": "--delete",
+          "description": "Delete a field group",
+          "arguments": "GROUP_ID",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-i",
+          "long": "--info",
+          "description": "Display information about a field group",
+          "arguments": "GROUP_ID",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-f",
+          "long": "--fields",
+          "description": "Specify field IDs for group creation",
+          "arguments": "FIELD_IDS",
+          "argument_type": "string"
+        }
+      ]
+    }
+  ],
+  "output_formats": {
+    "default": "Human-readable text format with tabular data and status indicators",
+    "json": "JSON format for machine parsing. Enabled with -j or --json flag on most subcommands."
+  },
+  "environment_variables": [
+    {
+      "name": "DCGM_HOSTNAME",
+      "description": "Default hostname for DCGM host engine connection",
+      "example": "DCGM_HOSTNAME=192.168.1.100",
+      "affects_command": "Sets the default host for dcgmi connections instead of localhost"
+    },
+    {
+      "name": "DCGM_PORT",
+      "description": "Default port for DCGM host engine connection",
+      "example": "DCGM_PORT=5556",
+      "affects_command": "Sets the default port for dcgmi connections instead of 5555"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - operation completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "General error or operation failed"
+    },
+    {
+      "code": 2,
+      "meaning": "Invalid argument or parameter"
+    },
+    {
+      "code": 3,
+      "meaning": "DCGM initialization failed"
+    },
+    {
+      "code": 4,
+      "meaning": "Connection to host engine failed"
+    },
+    {
+      "code": 5,
+      "meaning": "GPU not found or not accessible"
+    },
+    {
+      "code": 6,
+      "meaning": "Insufficient permissions"
+    },
+    {
+      "code": 7,
+      "meaning": "Feature not supported"
+    },
+    {
+      "code": 8,
+      "meaning": "Diagnostic test failed"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "List all GPUs visible to DCGM",
+      "command": "dcgmi discovery -l",
+      "output_example": "+---+-------+----------+---------------------------+\n| # | GPU   | PCI Bus  | Device Name               |\n+---+-------+----------+---------------------------+\n| 0 | GPU 0 | 07:00.0  | NVIDIA A100-SXM4-80GB     |\n| 1 | GPU 1 | 0B:00.0  | NVIDIA A100-SXM4-80GB     |\n| 2 | GPU 2 | 47:00.0  | NVIDIA A100-SXM4-80GB     |\n| 3 | GPU 3 | 4B:00.0  | NVIDIA A100-SXM4-80GB     |\n+---+-------+----------+---------------------------+",
+      "requires_root": false
+    },
+    {
+      "description": "Perform health check on all GPUs",
+      "command": "dcgmi health -c -g 0",
+      "output_example": "Health Monitor Report\n+------------+----------+\n| System     | Status   |\n+------------+----------+\n| PCIe       | Healthy  |\n| Memory     | Healthy  |\n| Inforom    | Healthy  |\n| Thermal    | Healthy  |\n| Power      | Healthy  |\n| NVLink     | Healthy  |\n+------------+----------+\nOverall Health: Healthy",
+      "requires_root": false
+    },
+    {
+      "description": "Run level 3 diagnostics on a GPU group",
+      "command": "dcgmi diag -r 3 -g 0",
+      "output_example": "Successfully ran diagnostic for group 0.\n+---------------------------+------------------------+\n| Diagnostic                | Result                 |\n+===========================+========================+\n| Deployment                | Pass                   |\n| GPU Memory                | Pass                   |\n| Diagnostic                | Pass                   |\n| PCIe Bandwidth            | Pass                   |\n| Targeted Stress           | Pass                   |\n| Targeted Power            | Pass                   |\n| Memory Bandwidth          | Pass                   |\n+---------------------------+------------------------+",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor GPUs in real-time with 1 second updates",
+      "command": "dcgmi dmon -e 0,1,2,3 -d 1000",
+      "output_example": "#Entity  GPUTEMP  PWRUSAGE  SMUTIL  MEMUTIL  ENCUTIL  DECUTIL\n    GPU 0     35     52       0       0        0        0\n    GPU 1     37     54       0       0        0        0\n    GPU 2     36     51       0       0        0        0\n    GPU 3     38     53       0       0        0        0",
+      "requires_root": false
+    },
+    {
+      "description": "Create a new GPU group",
+      "command": "dcgmi group -c \"mygroup\"",
+      "output_example": "Successfully created group \"mygroup\" with a group ID of 1",
+      "requires_root": false
+    },
+    {
+      "description": "Check NVLink status",
+      "command": "dcgmi nvlink -s",
+      "output_example": "+--------+------+------+-----------+---------+\n| GPU    | Link | State| Bandwidth | Peer    |\n+--------+------+------+-----------+---------+\n| GPU 0  |   0  | Up   | 25 GB/s   | GPU 1   |\n| GPU 0  |   1  | Up   | 25 GB/s   | GPU 2   |\n| GPU 0  |   2  | Up   | 25 GB/s   | GPU 3   |\n+--------+------+------+-----------+---------+",
+      "requires_root": false
+    },
+    {
+      "description": "Get detailed GPU information",
+      "command": "dcgmi discovery -i 0",
+      "output_example": "GPU ID: 0\nName: NVIDIA A100-SXM4-80GB\nPCI Bus ID: 00000000:07:00.0\nUUID: GPU-12345678-1234-1234-1234-123456789abc\nSerial Number: 1234567890123\nVBIOS Version: 92.00.45.00.01\nInforom Image Version: G500.0200.00.04",
+      "requires_root": false
+    },
+    {
+      "description": "Set GPU power limit via config",
+      "command": "dcgmi config --set -g 0 --power-limit 300",
+      "output_example": "Successfully set configuration.",
+      "requires_root": true
+    },
+    {
+      "description": "Enable job statistics collection",
+      "command": "dcgmi stats -e -g 0",
+      "output_example": "Successfully enabled statistics collection for group 0.",
+      "requires_root": false
+    },
+    {
+      "description": "Run quick diagnostics (level 1)",
+      "command": "dcgmi diag -r 1",
+      "output_example": "Successfully ran diagnostic.\n+---------------------------+------------------------+\n| Diagnostic                | Result                 |\n+===========================+========================+\n| Deployment                | Pass                   |\n+---------------------------+------------------------+",
+      "requires_root": false
+    },
+    {
+      "description": "Display GPU topology",
+      "command": "dcgmi topo -g 0",
+      "output_example": "+-------+--------+--------+--------+--------+\n|       | GPU 0  | GPU 1  | GPU 2  | GPU 3  |\n+-------+--------+--------+--------+--------+\n| GPU 0 |  X     | NVL12  | NVL12  | NVL12  |\n| GPU 1 | NVL12  |  X     | NVL12  | NVL12  |\n| GPU 2 | NVL12  | NVL12  |  X     | NVL12  |\n| GPU 3 | NVL12  | NVL12  | NVL12  |  X     |\n+-------+--------+--------+--------+--------+",
+      "requires_root": false
+    },
+    {
+      "description": "Set health watches for continuous monitoring",
+      "command": "dcgmi health -s pmtin -g 0",
+      "output_example": "Health watches set successfully.",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Error: Unable to connect to host engine. Is nv-hostengine running?",
+      "meaning": "The DCGM host engine service is not running or not accessible",
+      "resolution": "Start the nv-hostengine service with 'systemctl start nvidia-dcgm' or 'nv-hostengine' manually. Verify it is running with 'systemctl status nvidia-dcgm'."
+    },
+    {
+      "message": "Error: The hostengine does not have permission to access GPU",
+      "meaning": "The DCGM service lacks permissions to access GPU devices",
+      "resolution": "Ensure the nv-hostengine is running with appropriate permissions. May require root privileges or proper device file permissions on /dev/nvidia*."
+    },
+    {
+      "message": "Error: Group not found",
+      "meaning": "The specified group ID does not exist",
+      "resolution": "Use 'dcgmi group -l' to list available groups and their IDs. Create a new group with 'dcgmi group -c <name>'."
+    },
+    {
+      "message": "Error: GPU not found",
+      "meaning": "The specified GPU ID is not available or visible to DCGM",
+      "resolution": "Use 'dcgmi discovery -l' to list available GPUs. Verify GPU is detected by the system and NVIDIA driver is loaded."
+    },
+    {
+      "message": "Error: Diagnostic test failed",
+      "meaning": "One or more diagnostic tests did not pass",
+      "resolution": "Review the detailed diagnostic output to identify which tests failed. Check for hardware issues, thermal problems, or driver issues. Run health check for additional information."
+    },
+    {
+      "message": "Error: Feature not supported on this GPU",
+      "meaning": "The requested operation is not available on the target GPU model",
+      "resolution": "Some features like NVLink monitoring are only available on specific GPU models. Check GPU specifications and DCGM documentation for supported features."
+    },
+    {
+      "message": "Error: DCGM library initialization failed",
+      "meaning": "DCGM could not initialize its internal libraries",
+      "resolution": "Verify DCGM is properly installed. Check that the NVIDIA driver is loaded and functioning. Reinstall DCGM if necessary."
+    },
+    {
+      "message": "Error: Invalid group ID",
+      "meaning": "The group ID specified is not valid",
+      "resolution": "Group IDs must be positive integers. Use 'dcgmi group -l' to see valid group IDs. Group 0 typically refers to all GPUs."
+    },
+    {
+      "message": "Error: Cannot set configuration - insufficient permissions",
+      "meaning": "The user lacks privileges to modify GPU configuration",
+      "resolution": "Run dcgmi with elevated privileges (sudo) when modifying GPU settings like power limits or compute mode."
+    },
+    {
+      "message": "Error: No GPUs found",
+      "meaning": "DCGM cannot detect any NVIDIA GPUs in the system",
+      "resolution": "Verify GPUs are physically installed. Check NVIDIA driver is loaded with 'nvidia-smi'. Ensure GPUs are data center models supported by DCGM."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "nvidia-smi",
+      "nv-hostengine",
+      "dcgm-exporter",
+      "nvtop",
+      "nvitop",
+      "nvidia-persistenced"
+    ],
+    "uses_library": [
+      "DCGM (Data Center GPU Manager library)",
+      "NVML (NVIDIA Management Library)"
+    ],
+    "notes": "DCGM requires the nv-hostengine daemon to be running. DCGM provides enterprise features beyond nvidia-smi including health monitoring, diagnostic levels, job statistics, and policy management. The dcgm-exporter tool can export DCGM metrics to Prometheus for cluster monitoring. DCGM integrates with Slurm through DCGM prolog/epilog scripts for automatic job statistics collection."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required for most query operations (discovery, health check, monitoring, topology). The nv-hostengine service must be running.",
+    "write_operations": "Root or equivalent privileges required for: configuration changes (power limits, compute mode, ECC mode), policy management, and some diagnostic operations.",
+    "notes": "The nv-hostengine daemon typically runs as root and handles GPU access. Client connections to the host engine may have varying permission levels depending on configuration."
+  },
+  "limitations": [
+    "Requires nv-hostengine service to be running",
+    "Only supports NVIDIA data center GPUs (Tesla, Quadro, A-series, H-series)",
+    "Consumer GPUs (GeForce) are not fully supported",
+    "Some diagnostic tests require GPUs to be idle with no running processes",
+    "Extended diagnostics (level 4) can take hours and stress test hardware",
+    "NVLink monitoring requires GPUs with NVLink support",
+    "MIG features require Ampere architecture or later",
+    "Statistics collection requires proper Slurm integration for job tracking",
+    "Remote host engine connections require network configuration"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "gpu_id",
+          "uuid",
+          "name",
+          "pci_bus_id",
+          "serial_number",
+          "temperature",
+          "power_draw",
+          "power_limit",
+          "utilization_gpu",
+          "utilization_memory",
+          "memory_total",
+          "memory_used",
+          "memory_free",
+          "ecc_mode",
+          "ecc_errors_correctable",
+          "ecc_errors_uncorrectable",
+          "persistence_mode",
+          "compute_mode",
+          "driver_version",
+          "vbios_version",
+          "inforom_version",
+          "throttle_reason",
+          "clock_sm",
+          "clock_memory",
+          "pcie_link_gen",
+          "pcie_link_width",
+          "retired_pages"
+        ],
+        "description": "dcgmi reads comprehensive GPU hardware and driver state for discovery, health monitoring, diagnostics, and profiling"
+      },
+      {
+        "state_domain": "gpu_process_state",
+        "fields": [
+          "pid",
+          "gpu_id",
+          "process_name",
+          "used_memory",
+          "compute_utilization"
+        ],
+        "description": "dcgmi stats reads process information for job-level GPU usage tracking"
+      },
+      {
+        "state_domain": "fabric_state",
+        "fields": [
+          "nvlink_version",
+          "nvlink_link_count",
+          "nvlink_bandwidth",
+          "nvlink_status",
+          "nvlink_errors",
+          "nvlink_throughput"
+        ],
+        "description": "dcgmi nvlink and topo subcommands read NVLink topology, status, and error counters"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "gpu_state",
+        "fields": ["power_limit"],
+        "description": "Sets the software power limit for GPUs",
+        "requires_flags": ["config --set --power-limit"],
+        "requires_privilege": "root"
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["compute_mode"],
+        "description": "Sets the compute access mode for GPUs",
+        "requires_flags": ["config --set --compute-mode"],
+        "requires_privilege": "root"
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["ecc_mode"],
+        "description": "Enables or disables ECC memory mode",
+        "requires_flags": ["config --set --ecc-mode"],
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "GPU health status changes (thermal, power, memory errors)",
+        "effect": "Health check reports warnings or failures; policies may trigger actions"
+      },
+      {
+        "state_change": "NVLink errors or state changes",
+        "effect": "NVLink status and error counters are updated in monitoring output"
+      },
+      {
+        "state_change": "ECC errors occur",
+        "effect": "Health monitoring detects and reports; policies may trigger GPU reset or notification"
+      },
+      {
+        "state_change": "GPU utilization changes",
+        "effect": "Monitoring commands (dmon) reflect real-time utilization"
+      },
+      {
+        "state_change": "Job starts or ends (with Slurm integration)",
+        "effect": "Statistics collection tracks per-job GPU metrics"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU enumeration, UUID, name, PCI bus ID, temperature, power, utilization, memory usage, ECC status"
+      },
+      {
+        "command": "nvidia-smi -L",
+        "shared_state": "GPU listing and UUIDs must match dcgmi discovery -l output"
+      },
+      {
+        "command": "nvidia-smi topo -m",
+        "shared_state": "GPU topology and NVLink connections must be consistent with dcgmi topo"
+      },
+      {
+        "command": "nvidia-smi nvlink -s",
+        "shared_state": "NVLink status and link information must match dcgmi nvlink -s"
+      },
+      {
+        "command": "nvidia-smi -q",
+        "shared_state": "Detailed GPU information including driver version, serial number, VBIOS"
+      }
+    ]
+  }
+}

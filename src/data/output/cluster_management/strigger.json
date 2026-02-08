@@ -1,0 +1,185 @@
+{
+  "command": "strigger",
+  "category": "cluster_management",
+  "description": "Set or view event triggers in Slurm. Defines actions to execute when cluster events occur (node failure, job completion, etc.). Enables automated responses to cluster conditions.",
+  "synopsis": "strigger [options]",
+  "version_documented": "Slurm 21.08+",
+  "source_urls": ["https://slurm.schedmd.com/strigger.html"],
+  "installation": {
+    "package": "slurm-client",
+    "notes": "Part of Slurm workload manager. Requires slurmctld running."
+  },
+  "global_options": [
+    {
+      "long": "--set",
+      "description": "Create a new trigger"
+    },
+    {
+      "long": "--get",
+      "description": "Show defined triggers"
+    },
+    {
+      "long": "--clear",
+      "description": "Clear/remove triggers"
+    },
+    {
+      "short": "-j",
+      "long": "--job",
+      "description": "Job ID for job triggers",
+      "arguments": "<jobid>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-n",
+      "long": "--node",
+      "description": "Node name for node triggers",
+      "arguments": "<node>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--down",
+      "description": "Trigger on node down"
+    },
+    {
+      "long": "--up",
+      "description": "Trigger on node up"
+    },
+    {
+      "long": "--fail",
+      "description": "Trigger on node failure"
+    },
+    {
+      "long": "--fini",
+      "description": "Trigger on job finish"
+    },
+    {
+      "long": "--time",
+      "description": "Trigger on time remaining"
+    },
+    {
+      "short": "-p",
+      "long": "--program",
+      "description": "Program to execute",
+      "arguments": "<path>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "List all triggers",
+      "command": "strigger --get",
+      "output_example": "TRIGGER_ID  TYPE  TRIG_TIME  RES_TYPE  RES_ID  PROGRAM\n123         down  --         node      *       /opt/scripts/alert.sh\n124         fini  --         job       45678   /home/user/cleanup.sh",
+      "requires_root": false
+    },
+    {
+      "description": "Set node down trigger",
+      "command": "strigger --set --down --node=* --program=/opt/scripts/node_down.sh",
+      "requires_root": false
+    },
+    {
+      "description": "Set job completion trigger",
+      "command": "strigger --set --fini --job=12345 --program=/home/user/notify.sh",
+      "requires_root": false
+    },
+    {
+      "description": "Set node up trigger",
+      "command": "strigger --set --up --node=gpu[001-010] --program=/opt/scripts/node_up.sh",
+      "requires_root": false
+    },
+    {
+      "description": "Clear specific trigger",
+      "command": "strigger --clear --id=123",
+      "requires_root": false
+    },
+    {
+      "description": "Clear all user triggers",
+      "command": "strigger --clear --user=$USER",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Invalid trigger type",
+      "meaning": "Trigger type not supported",
+      "resolution": "Check available trigger types"
+    },
+    {
+      "message": "Permission denied",
+      "meaning": "Cannot set trigger for resource",
+      "resolution": "Check permissions or use SlurmUser account"
+    },
+    {
+      "message": "Program not found",
+      "meaning": "Trigger program path invalid",
+      "resolution": "Verify program exists and is executable"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["scontrol", "squeue", "sinfo", "sacct"],
+    "notes": "Triggers execute as the user who created them. Programs receive trigger info via arguments and environment variables. Useful for automated monitoring and alerting."
+  },
+  "permissions": {
+    "read_operations": "Users can view their own triggers",
+    "write_operations": "Users can set triggers for their jobs, admins for nodes",
+    "notes": "Node triggers typically require admin privileges"
+  },
+  "limitations": [
+    "Trigger programs must be executable",
+    "Limited trigger types available",
+    "Triggers cleared on slurmctld restart unless persistent",
+    "Program execution is asynchronous"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "node_state",
+        "fields": ["node_state"],
+        "description": "Monitors node state changes"
+      },
+      {
+        "state_domain": "job_state",
+        "fields": ["job_state", "job_id"],
+        "description": "Monitors job state changes"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "job_state",
+        "fields": ["triggers"],
+        "description": "Creates trigger definitions",
+        "requires_privilege": "user or admin"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Node state change",
+        "effect": "Node triggers may fire"
+      },
+      {
+        "state_change": "Job completion",
+        "effect": "Job triggers may fire"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "scontrol",
+        "shared_state": "Node and job states that triggers monitor"
+      }
+    ]
+  }
+}

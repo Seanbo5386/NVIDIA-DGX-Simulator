@@ -1,82 +1,140 @@
-import React, { useState } from 'react';
-import { useSimulationStore } from '@/store/simulationStore';
-import { MetricsSimulator } from '@/utils/metricsSimulator';
-import { AlertTriangle, Zap, Thermometer, Link2, Cpu, RotateCcw, Ban, Radio, Flame, AlertOctagon } from 'lucide-react';
+import React, { useState, useMemo } from "react";
+import { useSimulationStore } from "@/store/simulationStore";
+import { scenarioContextManager } from "@/store/scenarioContext";
+import type { StateMutator } from "@/simulators/BaseSimulator";
+import { MetricsSimulator } from "@/utils/metricsSimulator";
+import {
+  AlertTriangle,
+  Zap,
+  Thermometer,
+  Link2,
+  Cpu,
+  RotateCcw,
+  Ban,
+  Radio,
+  Flame,
+  AlertOctagon,
+} from "lucide-react";
 
 const metricsSimulator = new MetricsSimulator();
 
+/**
+ * Get a mutator that routes to ScenarioContext when active, otherwise to global store.
+ */
+function getMutator(): StateMutator {
+  const activeContext = scenarioContextManager.getActiveContext();
+  if (activeContext) {
+    return {
+      updateGPU: (nodeId, gpuId, updates) =>
+        activeContext.updateGPU(nodeId, gpuId, updates),
+      addXIDError: (nodeId, gpuId, error) =>
+        activeContext.addXIDError(nodeId, gpuId, error),
+      updateNodeHealth: (nodeId, health) =>
+        activeContext.updateNodeHealth(nodeId, health),
+      setMIGMode: (nodeId, gpuId, enabled) =>
+        activeContext.setMIGMode(nodeId, gpuId, enabled),
+      setSlurmState: (nodeId, state, reason) =>
+        activeContext.setSlurmState(nodeId, state, reason),
+    };
+  }
+  const store = useSimulationStore.getState();
+  return {
+    updateGPU: (nodeId, gpuId, updates) =>
+      store.updateGPU(nodeId, gpuId, updates),
+    addXIDError: (nodeId, gpuId, error) =>
+      store.addXIDError(nodeId, gpuId, error),
+    updateNodeHealth: (nodeId, health) =>
+      store.updateNodeHealth(nodeId, health),
+    setMIGMode: (nodeId, gpuId, enabled) =>
+      store.setMIGMode(nodeId, gpuId, enabled),
+    setSlurmState: (nodeId, state, reason) =>
+      store.setSlurmState(nodeId, state, reason),
+  };
+}
+
 export const FaultInjection: React.FC = () => {
   const { cluster } = useSimulationStore();
-  const [selectedNode, setSelectedNode] = useState(cluster.nodes[0]?.id || '');
-  const [selectedGPU, setSelectedGPU] = useState(0);
-  const [workloadPattern, setWorkloadPattern] = useState<'idle' | 'training' | 'inference' | 'stress'>('idle');
 
-  const handleInjectFault = (faultType: 'xid' | 'ecc' | 'thermal' | 'nvlink' | 'power' | 'pcie') => {
-    const node = cluster.nodes.find(n => n.id === selectedNode);
+  // Read from active context's cluster when available, otherwise global
+  const effectiveCluster = useMemo(() => {
+    const activeContext = scenarioContextManager.getActiveContext();
+    return activeContext ? activeContext.getCluster() : cluster;
+  }, [cluster]);
+
+  const [selectedNode, setSelectedNode] = useState(
+    effectiveCluster.nodes[0]?.id || "",
+  );
+  const [selectedGPU, setSelectedGPU] = useState(0);
+  const [workloadPattern, setWorkloadPattern] = useState<
+    "idle" | "training" | "inference" | "stress"
+  >("idle");
+
+  const handleInjectFault = (
+    faultType: "xid" | "ecc" | "thermal" | "nvlink" | "power" | "pcie",
+  ) => {
+    const node = effectiveCluster.nodes.find((n) => n.id === selectedNode);
     if (!node) return;
 
     const gpu = node.gpus[selectedGPU];
     if (!gpu) return;
 
     const faultedGPU = metricsSimulator.injectFault(gpu, faultType);
-    useSimulationStore.getState().updateGPU(selectedNode, selectedGPU, faultedGPU);
+    getMutator().updateGPU(selectedNode, selectedGPU, faultedGPU);
   };
 
-  const handleInjectScenario = (scenarioType: 'gpu-hang' | 'bus-reset' | 'thermal-alert' | 'severe-ecc') => {
-    const node = cluster.nodes.find(n => n.id === selectedNode);
+  const handleInjectScenario = (
+    scenarioType: "gpu-hang" | "bus-reset" | "thermal-alert" | "severe-ecc",
+  ) => {
+    const node = effectiveCluster.nodes.find((n) => n.id === selectedNode);
     if (!node) return;
 
-    const store = useSimulationStore.getState();
+    const mutator = getMutator();
 
     switch (scenarioType) {
-      case 'gpu-hang': {
-        // XID 43: GPU stopped responding
+      case "gpu-hang": {
         const gpu = node.gpus[selectedGPU];
         if (gpu) {
-          store.addXIDError(selectedNode, selectedGPU, {
+          mutator.addXIDError(selectedNode, selectedGPU, {
             code: 43,
             timestamp: new Date(),
-            description: 'GPU has fallen off the bus',
-            severity: 'Critical',
+            description: "GPU has fallen off the bus",
+            severity: "Critical",
           });
-          store.updateGPU(selectedNode, selectedGPU, {
+          mutator.updateGPU(selectedNode, selectedGPU, {
             utilization: 0,
-            healthStatus: 'Critical',
+            healthStatus: "Critical",
           });
         }
         break;
       }
-      case 'bus-reset': {
-        // XID 79: GPU has fallen off the bus
+      case "bus-reset": {
         const gpu = node.gpus[selectedGPU];
         if (gpu) {
-          store.addXIDError(selectedNode, selectedGPU, {
+          mutator.addXIDError(selectedNode, selectedGPU, {
             code: 79,
             timestamp: new Date(),
-            description: 'GPU has fallen off the bus',
-            severity: 'Critical',
+            description: "GPU has fallen off the bus",
+            severity: "Critical",
           });
-          store.updateGPU(selectedNode, selectedGPU, {
-            healthStatus: 'Critical',
+          mutator.updateGPU(selectedNode, selectedGPU, {
+            healthStatus: "Critical",
           });
         }
         break;
       }
-      case 'thermal-alert': {
-        // Multiple GPUs running hot
-        node.gpus.forEach(gpu => {
-          store.updateGPU(selectedNode, gpu.id, {
-            temperature: 90 + Math.random() * 10, // 90-100°C
-            healthStatus: 'Warning',
+      case "thermal-alert": {
+        node.gpus.forEach((gpu) => {
+          mutator.updateGPU(selectedNode, gpu.id, {
+            temperature: 90 + Math.random() * 10,
+            healthStatus: "Warning",
           });
         });
         break;
       }
-      case 'severe-ecc': {
-        // Uncorrectable ECC errors requiring GPU replacement
+      case "severe-ecc": {
         const gpu = node.gpus[selectedGPU];
         if (gpu) {
-          store.updateGPU(selectedNode, selectedGPU, {
+          mutator.updateGPU(selectedNode, selectedGPU, {
             eccErrors: {
               singleBit: 1500,
               doubleBit: 50,
@@ -85,13 +143,14 @@ export const FaultInjection: React.FC = () => {
                 doubleBit: 50,
               },
             },
-            healthStatus: 'Critical',
+            healthStatus: "Critical",
           });
-          store.addXIDError(selectedNode, selectedGPU, {
+          mutator.addXIDError(selectedNode, selectedGPU, {
             code: 63,
             timestamp: new Date(),
-            description: 'Uncorrectable ECC error detected - GPU replacement required',
-            severity: 'Critical',
+            description:
+              "Uncorrectable ECC error detected - GPU replacement required",
+            severity: "Critical",
           });
         }
         break;
@@ -100,25 +159,39 @@ export const FaultInjection: React.FC = () => {
   };
 
   const handleSimulateWorkload = () => {
-    const node = cluster.nodes.find(n => n.id === selectedNode);
+    const node = effectiveCluster.nodes.find((n) => n.id === selectedNode);
     if (!node) return;
 
-    const updatedGPUs = metricsSimulator.simulateWorkload(node.gpus, workloadPattern);
-    updatedGPUs.forEach(gpu => {
-      useSimulationStore.getState().updateGPU(selectedNode, gpu.id, gpu);
+    const updatedGPUs = metricsSimulator.simulateWorkload(
+      node.gpus,
+      workloadPattern,
+    );
+    const mutator = getMutator();
+    updatedGPUs.forEach((gpu) => {
+      mutator.updateGPU(selectedNode, gpu.id, gpu);
     });
   };
 
   const handleClearFaults = () => {
-    const node = cluster.nodes.find(n => n.id === selectedNode);
+    const node = effectiveCluster.nodes.find((n) => n.id === selectedNode);
     if (!node) return;
 
-    node.gpus.forEach(gpu => {
-      useSimulationStore.getState().updateGPU(selectedNode, gpu.id, {
+    const mutator = getMutator();
+    node.gpus.forEach((gpu) => {
+      mutator.updateGPU(selectedNode, gpu.id, {
         xidErrors: [],
-        healthStatus: 'OK',
-        eccErrors: { singleBit: 0, doubleBit: 0, aggregated: { singleBit: 0, doubleBit: 0 } },
-        nvlinks: gpu.nvlinks.map(link => ({ ...link, status: 'Active', txErrors: 0, rxErrors: 0 })),
+        healthStatus: "OK",
+        eccErrors: {
+          singleBit: 0,
+          doubleBit: 0,
+          aggregated: { singleBit: 0, doubleBit: 0 },
+        },
+        nvlinks: gpu.nvlinks.map((link) => ({
+          ...link,
+          status: "Active",
+          txErrors: 0,
+          rxErrors: 0,
+        })),
         temperature: 65,
         powerDraw: gpu.powerLimit * 0.3,
         utilization: 5,
@@ -133,8 +206,9 @@ export const FaultInjection: React.FC = () => {
           Fault Injection Training System
         </h2>
         <p className="text-gray-300 mb-6">
-          Inject faults and simulate workloads to practice troubleshooting scenarios.
-          This is a safe training environment - all faults are simulated.
+          Inject faults and simulate workloads to practice troubleshooting
+          scenarios. This is a safe training environment - all faults are
+          simulated.
         </p>
 
         {/* Node and GPU Selection */}
@@ -151,7 +225,7 @@ export const FaultInjection: React.FC = () => {
               }}
               className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 focus:outline-none focus:border-nvidia-green"
             >
-              {cluster.nodes.map(node => (
+              {effectiveCluster.nodes.map((node) => (
                 <option key={node.id} value={node.id}>
                   {node.hostname} ({node.id})
                 </option>
@@ -168,22 +242,26 @@ export const FaultInjection: React.FC = () => {
               onChange={(e) => setSelectedGPU(Number(e.target.value))}
               className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 focus:outline-none focus:border-nvidia-green"
             >
-              {cluster.nodes.find(n => n.id === selectedNode)?.gpus.map(gpu => (
-                <option key={gpu.id} value={gpu.id}>
-                  GPU {gpu.id}: {gpu.name}
-                </option>
-              ))}
+              {effectiveCluster.nodes
+                .find((n) => n.id === selectedNode)
+                ?.gpus.map((gpu) => (
+                  <option key={gpu.id} value={gpu.id}>
+                    GPU {gpu.id}: {gpu.name}
+                  </option>
+                ))}
             </select>
           </div>
         </div>
 
         {/* Fault Injection Buttons */}
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-200">Basic Fault Injection</h3>
+          <h3 className="text-lg font-semibold text-gray-200">
+            Basic Fault Injection
+          </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <button
-              onClick={() => handleInjectFault('xid')}
+              onClick={() => handleInjectFault("xid")}
               className="flex items-center gap-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-lg px-4 py-3 text-left transition-colors"
             >
               <AlertTriangle className="w-5 h-5 text-red-400" />
@@ -194,7 +272,7 @@ export const FaultInjection: React.FC = () => {
             </button>
 
             <button
-              onClick={() => handleInjectFault('ecc')}
+              onClick={() => handleInjectFault("ecc")}
               className="flex items-center gap-3 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 rounded-lg px-4 py-3 text-left transition-colors"
             >
               <Cpu className="w-5 h-5 text-orange-400" />
@@ -205,7 +283,7 @@ export const FaultInjection: React.FC = () => {
             </button>
 
             <button
-              onClick={() => handleInjectFault('thermal')}
+              onClick={() => handleInjectFault("thermal")}
               className="flex items-center gap-3 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 rounded-lg px-4 py-3 text-left transition-colors"
             >
               <Thermometer className="w-5 h-5 text-yellow-400" />
@@ -216,7 +294,7 @@ export const FaultInjection: React.FC = () => {
             </button>
 
             <button
-              onClick={() => handleInjectFault('nvlink')}
+              onClick={() => handleInjectFault("nvlink")}
               className="flex items-center gap-3 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-lg px-4 py-3 text-left transition-colors"
             >
               <Link2 className="w-5 h-5 text-purple-400" />
@@ -227,24 +305,28 @@ export const FaultInjection: React.FC = () => {
             </button>
 
             <button
-              onClick={() => handleInjectFault('power')}
+              onClick={() => handleInjectFault("power")}
               className="flex items-center gap-3 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 rounded-lg px-4 py-3 text-left transition-colors"
             >
               <Zap className="w-5 h-5 text-blue-400" />
               <div>
                 <div className="font-medium text-blue-400">Power Issue</div>
-                <div className="text-xs text-gray-400">Power limit exceeded</div>
+                <div className="text-xs text-gray-400">
+                  Power limit exceeded
+                </div>
               </div>
             </button>
 
             <button
-              onClick={() => handleInjectFault('pcie')}
+              onClick={() => handleInjectFault("pcie")}
               className="flex items-center gap-3 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 rounded-lg px-4 py-3 text-left transition-colors"
             >
               <Radio className="w-5 h-5 text-cyan-400" />
               <div>
                 <div className="font-medium text-cyan-400">PCIe Error</div>
-                <div className="text-xs text-gray-400">Bus communication fault</div>
+                <div className="text-xs text-gray-400">
+                  Bus communication fault
+                </div>
               </div>
             </button>
 
@@ -263,51 +345,64 @@ export const FaultInjection: React.FC = () => {
 
         {/* Complex Training Scenarios */}
         <div className="mt-6 pt-6 border-t border-gray-700 space-y-4">
-          <h3 className="text-lg font-semibold text-gray-200">Complex Training Scenarios</h3>
-          <p className="text-sm text-gray-400">Realistic multi-symptom failure scenarios for advanced troubleshooting practice.</p>
+          <h3 className="text-lg font-semibold text-gray-200">
+            Complex Training Scenarios
+          </h3>
+          <p className="text-sm text-gray-400">
+            Realistic multi-symptom failure scenarios for advanced
+            troubleshooting practice.
+          </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <button
-              onClick={() => handleInjectScenario('gpu-hang')}
+              onClick={() => handleInjectScenario("gpu-hang")}
               className="flex items-center gap-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-lg px-4 py-3 text-left transition-colors"
             >
               <Ban className="w-5 h-5 text-red-400" />
               <div>
                 <div className="font-medium text-red-400">GPU Hang</div>
-                <div className="text-xs text-gray-400">XID 43 - GPU stopped responding</div>
+                <div className="text-xs text-gray-400">
+                  XID 43 - GPU stopped responding
+                </div>
               </div>
             </button>
 
             <button
-              onClick={() => handleInjectScenario('bus-reset')}
+              onClick={() => handleInjectScenario("bus-reset")}
               className="flex items-center gap-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-lg px-4 py-3 text-left transition-colors"
             >
               <Radio className="w-5 h-5 text-red-400" />
               <div>
                 <div className="font-medium text-red-400">Bus Reset</div>
-                <div className="text-xs text-gray-400">XID 79 - GPU fallen off bus</div>
+                <div className="text-xs text-gray-400">
+                  XID 79 - GPU fallen off bus
+                </div>
               </div>
             </button>
 
             <button
-              onClick={() => handleInjectScenario('thermal-alert')}
+              onClick={() => handleInjectScenario("thermal-alert")}
               className="flex items-center gap-3 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 rounded-lg px-4 py-3 text-left transition-colors"
             >
               <Flame className="w-5 h-5 text-orange-400" />
               <div>
                 <div className="font-medium text-orange-400">Thermal Alert</div>
-                <div className="text-xs text-gray-400">All GPUs running hot (90-100°C)</div>
+                <div className="text-xs text-gray-400">
+                  All GPUs running hot (90-100°C)
+                </div>
               </div>
             </button>
 
             <button
-              onClick={() => handleInjectScenario('severe-ecc')}
+              onClick={() => handleInjectScenario("severe-ecc")}
               className="flex items-center gap-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-lg px-4 py-3 text-left transition-colors"
             >
               <AlertOctagon className="w-5 h-5 text-red-400" />
               <div>
                 <div className="font-medium text-red-400">Severe ECC Error</div>
-                <div className="text-xs text-gray-400">Uncorrectable - GPU replacement needed</div>
+                <div className="text-xs text-gray-400">
+                  Uncorrectable - GPU replacement needed
+                </div>
               </div>
             </button>
           </div>
@@ -315,12 +410,22 @@ export const FaultInjection: React.FC = () => {
 
         {/* Workload Simulation */}
         <div className="mt-6 pt-6 border-t border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-200 mb-4">Simulate Workloads</h3>
+          <h3 className="text-lg font-semibold text-gray-200 mb-4">
+            Simulate Workloads
+          </h3>
 
           <div className="flex flex-col sm:flex-row gap-3">
             <select
               value={workloadPattern}
-              onChange={(e) => setWorkloadPattern(e.target.value as 'idle' | 'inference' | 'training' | 'stress')}
+              onChange={(e) =>
+                setWorkloadPattern(
+                  e.target.value as
+                    | "idle"
+                    | "inference"
+                    | "training"
+                    | "stress",
+                )
+              }
               className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 focus:outline-none focus:border-nvidia-green"
             >
               <option value="idle">Idle (5% utilization)</option>
@@ -339,13 +444,27 @@ export const FaultInjection: React.FC = () => {
 
           <div className="mt-4 p-4 bg-gray-900 rounded-lg">
             <div className="text-sm text-gray-300">
-              <strong className="text-nvidia-green">Tip:</strong> After injecting faults, use the Terminal to practice troubleshooting with commands like:
+              <strong className="text-nvidia-green">Tip:</strong> After
+              injecting faults, use the Terminal to practice troubleshooting
+              with commands like:
             </div>
             <div className="mt-2 font-mono text-xs space-y-1 text-gray-400">
-              <div>• <span className="text-nvidia-green">nvidia-smi</span> - Check GPU status</div>
-              <div>• <span className="text-nvidia-green">nvidia-smi -q</span> - Detailed GPU info</div>
-              <div>• <span className="text-nvidia-green">nvsm show health</span> - System health summary</div>
-              <div>• <span className="text-nvidia-green">dcgmi diag -r 1</span> - Run diagnostics</div>
+              <div>
+                • <span className="text-nvidia-green">nvidia-smi</span> - Check
+                GPU status
+              </div>
+              <div>
+                • <span className="text-nvidia-green">nvidia-smi -q</span> -
+                Detailed GPU info
+              </div>
+              <div>
+                • <span className="text-nvidia-green">nvsm show health</span> -
+                System health summary
+              </div>
+              <div>
+                • <span className="text-nvidia-green">dcgmi diag -r 1</span> -
+                Run diagnostics
+              </div>
             </div>
           </div>
         </div>

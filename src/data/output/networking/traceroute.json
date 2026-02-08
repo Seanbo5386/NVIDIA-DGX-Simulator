@@ -1,0 +1,141 @@
+{
+  "command": "traceroute",
+  "category": "networking",
+  "description": "Print route packets take to network host. Shows network path and hop latencies. Useful for diagnosing routing issues in HPC clusters.",
+  "synopsis": "traceroute [options] <host> [packet_len]",
+  "version_documented": "traceroute 2.1+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/traceroute.1.html"],
+  "installation": {
+    "package": "traceroute",
+    "notes": "May need to install separately."
+  },
+  "global_options": [
+    {
+      "short": "-n",
+      "description": "Don't resolve addresses"
+    },
+    {
+      "short": "-m",
+      "description": "Max TTL (hops)",
+      "arguments": "<max_ttl>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-q",
+      "description": "Number of probes per hop",
+      "arguments": "<nqueries>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-w",
+      "description": "Timeout per probe",
+      "arguments": "<seconds>",
+      "argument_type": "float"
+    },
+    {
+      "short": "-I",
+      "description": "Use ICMP ECHO"
+    },
+    {
+      "short": "-T",
+      "description": "Use TCP SYN"
+    },
+    {
+      "short": "-p",
+      "description": "Port number",
+      "arguments": "<port>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-i",
+      "description": "Interface to use",
+      "arguments": "<interface>",
+      "argument_type": "string"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Basic traceroute",
+      "command": "traceroute node01",
+      "requires_root": false
+    },
+    {
+      "description": "Numeric only (faster)",
+      "command": "traceroute -n storage-server",
+      "requires_root": false
+    },
+    {
+      "description": "ICMP mode",
+      "command": "traceroute -I gateway",
+      "requires_root": true
+    },
+    {
+      "description": "Limit hops",
+      "command": "traceroute -m 5 local-switch",
+      "requires_root": false
+    },
+    {
+      "description": "Single probe per hop",
+      "command": "traceroute -q 1 remote-host",
+      "requires_root": false
+    },
+    {
+      "description": "Via specific interface",
+      "command": "traceroute -i eth0 10.0.0.1",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "* * *",
+      "meaning": "No response from hop",
+      "resolution": "Hop may be filtering probes"
+    },
+    {
+      "message": "Network is unreachable",
+      "meaning": "No route to destination",
+      "resolution": "Check routing configuration"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["ping", "mtr", "tracepath"],
+    "notes": "* * * means hop doesn't respond (may still forward). mtr combines ping and traceroute. tracepath needs no privileges."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "N/A",
+    "notes": "ICMP mode needs root"
+  },
+  "limitations": [
+    "UDP probes may be blocked",
+    "ICMP mode requires root",
+    "Path may vary between runs"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_eth_state",
+        "fields": ["routes"],
+        "description": "Traces network path"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ping",
+        "shared_state": "Both probe network path"
+      }
+    ]
+  }
+}

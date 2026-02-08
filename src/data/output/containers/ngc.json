@@ -1,0 +1,204 @@
+{
+  "command": "ngc",
+  "category": "containers",
+  "description": "NVIDIA GPU Cloud (NGC) command-line interface. Manages NGC container registry, models, and resources. Used to pull optimized GPU containers, download pre-trained models, and manage NGC organization resources.",
+  "synopsis": "ngc [global_options] <command> [command_options]",
+  "version_documented": "NGC CLI 3.0+",
+  "source_urls": [
+    "https://docs.nvidia.com/ngc/ngc-overview/index.html",
+    "https://ngc.nvidia.com/"
+  ],
+  "installation": {
+    "package": "ngc-cli",
+    "notes": "Download from https://ngc.nvidia.com/setup/installers/cli. Requires NGC API key for authentication."
+  },
+  "global_options": [
+    {
+      "long": "--config",
+      "description": "Path to config file",
+      "arguments": "<path>",
+      "argument_type": "path"
+    },
+    {
+      "long": "--debug",
+      "description": "Enable debug output"
+    },
+    {
+      "long": "--format_type",
+      "description": "Output format",
+      "arguments": "<json|csv|ascii>",
+      "argument_type": "string",
+      "default": "ascii"
+    },
+    {
+      "long": "--org",
+      "description": "Specify organization",
+      "arguments": "<org>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--team",
+      "description": "Specify team",
+      "arguments": "<team>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    },
+    {
+      "short": "-v",
+      "long": "--version",
+      "description": "Display version"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "config",
+      "description": "Configure NGC CLI settings",
+      "synopsis": "ngc config set"
+    },
+    {
+      "name": "registry",
+      "description": "Manage container registry",
+      "synopsis": "ngc registry image list"
+    },
+    {
+      "name": "model",
+      "description": "Manage AI models",
+      "synopsis": "ngc registry model list"
+    },
+    {
+      "name": "resource",
+      "description": "Manage NGC resources",
+      "synopsis": "ngc registry resource list"
+    },
+    {
+      "name": "user",
+      "description": "User management",
+      "synopsis": "ngc user info"
+    },
+    {
+      "name": "batch",
+      "description": "Batch job management (NGC Base Command)",
+      "synopsis": "ngc batch run"
+    }
+  ],
+  "environment_variables": [
+    {
+      "name": "NGC_API_KEY",
+      "description": "NGC API key for authentication",
+      "example": "NGC_API_KEY=abc123...",
+      "affects_command": "Authentication for all NGC operations"
+    },
+    {
+      "name": "NGC_ORG",
+      "description": "Default organization",
+      "example": "NGC_ORG=nvidia",
+      "affects_command": "Sets default org for commands"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Configure NGC CLI with API key",
+      "command": "ngc config set",
+      "requires_root": false
+    },
+    {
+      "description": "List available PyTorch containers",
+      "command": "ngc registry image list nvidia/pytorch",
+      "output_example": "| Name                    | Latest Tag    | Size     |\n|-------------------------|---------------|----------|\n| nvidia/pytorch          | 23.10-py3     | 8.5 GB   |\n| nvidia/pytorch          | 23.09-py3     | 8.3 GB   |",
+      "requires_root": false
+    },
+    {
+      "description": "Pull container image info",
+      "command": "ngc registry image info nvidia/pytorch:23.10-py3",
+      "requires_root": false
+    },
+    {
+      "description": "List available models",
+      "command": "ngc registry model list",
+      "requires_root": false
+    },
+    {
+      "description": "Download a model",
+      "command": "ngc registry model download-version nvidia/nemo/megatron_gpt_345m:1.0",
+      "requires_root": false
+    },
+    {
+      "description": "Get Docker pull command",
+      "command": "docker pull nvcr.io/nvidia/pytorch:23.10-py3",
+      "requires_root": false
+    },
+    {
+      "description": "List resources in JSON format",
+      "command": "ngc registry resource list --format_type json",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "API key not configured",
+      "meaning": "NGC API key not set",
+      "resolution": "Run 'ngc config set' and enter your API key from ngc.nvidia.com"
+    },
+    {
+      "message": "Access denied",
+      "meaning": "No permission for requested resource",
+      "resolution": "Check API key permissions and organization access"
+    },
+    {
+      "message": "Resource not found",
+      "meaning": "Container/model does not exist",
+      "resolution": "Verify resource name and organization"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "docker pull",
+      "enroot import",
+      "singularity pull",
+      "podman pull"
+    ],
+    "notes": "NGC provides optimized containers for NVIDIA GPUs. Containers are pulled using Docker from nvcr.io registry. API key obtained from ngc.nvidia.com is required."
+  },
+  "permissions": {
+    "read_operations": "NGC API key required",
+    "write_operations": "API key with appropriate permissions",
+    "notes": "Different operations may require different permission levels"
+  },
+  "limitations": [
+    "Requires NGC account and API key",
+    "Some containers require enterprise license",
+    "Large container downloads may take significant time",
+    "Rate limits may apply"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "container_state",
+        "fields": ["image"],
+        "description": "Queries NGC registry for container information"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "docker images",
+        "shared_state": "Downloaded containers appear in docker images"
+      }
+    ]
+  }
+}

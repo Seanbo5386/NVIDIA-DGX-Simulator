@@ -1,0 +1,141 @@
+{
+  "command": "sed",
+  "category": "general",
+  "description": "Stream editor for filtering and transforming text. Performs text substitutions and transformations. Used in HPC for config modifications and log processing.",
+  "synopsis": "sed [options] 'script' [file...]",
+  "version_documented": "GNU sed 4.8+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/sed.1.html"],
+  "installation": {
+    "package": "sed",
+    "notes": "GNU sed installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-i",
+      "long": "--in-place",
+      "description": "Edit files in place",
+      "arguments": "[suffix]",
+      "argument_type": "string"
+    },
+    {
+      "short": "-e",
+      "long": "--expression",
+      "description": "Add script command",
+      "arguments": "<script>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-n",
+      "long": "--quiet",
+      "description": "Suppress automatic printing"
+    },
+    {
+      "short": "-r",
+      "long": "--regexp-extended",
+      "description": "Use extended regex"
+    },
+    {
+      "short": "-f",
+      "long": "--file",
+      "description": "Read script from file",
+      "arguments": "<file>",
+      "argument_type": "path"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    },
+    {
+      "code": 2,
+      "meaning": "Invalid option"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Substitute text",
+      "command": "sed 's/old/new/g' file.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Edit in place",
+      "command": "sed -i 's/localhost/cluster-head/g' config.yaml",
+      "requires_root": false
+    },
+    {
+      "description": "Delete lines",
+      "command": "sed '/^#/d' config.conf",
+      "requires_root": false
+    },
+    {
+      "description": "Print specific lines",
+      "command": "sed -n '10,20p' file.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Replace with backup",
+      "command": "sed -i.bak 's/debug=true/debug=false/' app.conf",
+      "requires_root": false
+    },
+    {
+      "description": "Update job script",
+      "command": "sed -i 's/#SBATCH --nodes=1/#SBATCH --nodes=4/' job.sh",
+      "requires_root": false
+    },
+    {
+      "description": "Multiple substitutions",
+      "command": "sed -e 's/foo/bar/g' -e 's/baz/qux/g' file.txt",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "unterminated s command",
+      "meaning": "Missing delimiter in substitute",
+      "resolution": "Check s/pattern/replacement/ syntax"
+    },
+    {
+      "message": "invalid reference",
+      "meaning": "Bad backreference",
+      "resolution": "Check capture group numbers"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["awk", "grep", "tr"],
+    "notes": "s/old/new/g is most common. Delimiter can be any char (s|old|new|). Use -r for +, ?, |."
+  },
+  "permissions": {
+    "read_operations": "Read input files",
+    "write_operations": "-i modifies files",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Line-oriented processing",
+    "Complex scripts hard to read",
+    "BSD vs GNU differences"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads and processes files"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Modifies files with -i",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

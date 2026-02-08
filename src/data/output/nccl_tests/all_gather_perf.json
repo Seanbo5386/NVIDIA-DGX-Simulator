@@ -1,0 +1,467 @@
+{
+  "command": "all_gather_perf",
+  "category": "nccl_tests",
+  "description": "NCCL AllGather collective communication performance test - measures bandwidth and latency for AllGather operations across GPUs. This benchmark evaluates both performance and correctness of the NCCL AllGather collective, which gathers data from all processes and distributes the complete collection to all processes. Each rank contributes a segment and receives the concatenation of all segments. It is commonly used to assess GPU interconnect performance (NVLink, NVSwitch, PCIe, InfiniBand) for distributed deep learning workloads, particularly for tensor parallelism and model sharding scenarios.",
+  "synopsis": "all_gather_perf [options]",
+  "version_documented": "2.13.x",
+  "source_urls": ["https://github.com/NVIDIA/nccl-tests"],
+  "installation": {
+    "package": "nccl-tests",
+    "notes": "Build from source: clone https://github.com/NVIDIA/nccl-tests and run 'make'. Use 'make MPI=1' for multi-node support. Requires CUDA toolkit and NCCL library. Set CUDA_HOME, NCCL_HOME, and MPI_HOME environment variables if not in default locations."
+  },
+  "global_options": [
+    {
+      "short": "-b",
+      "long": "--minbytes",
+      "description": "Minimum message size to test (per rank contribution)",
+      "arguments": "SIZE",
+      "argument_type": "string",
+      "default": "32M",
+      "example": "-b 8"
+    },
+    {
+      "short": "-e",
+      "long": "--maxbytes",
+      "description": "Maximum message size to test (per rank contribution)",
+      "arguments": "SIZE",
+      "argument_type": "string",
+      "default": "32M",
+      "example": "-e 128M"
+    },
+    {
+      "short": "-i",
+      "long": "--stepbytes",
+      "description": "Fixed increment between message sizes (mutually exclusive with -f)",
+      "arguments": "SIZE",
+      "argument_type": "string",
+      "example": "-i 1M"
+    },
+    {
+      "short": "-f",
+      "long": "--stepfactor",
+      "description": "Multiplication factor between message sizes (mutually exclusive with -i)",
+      "arguments": "FACTOR",
+      "argument_type": "integer",
+      "example": "-f 2"
+    },
+    {
+      "short": "-t",
+      "long": "--nthreads",
+      "description": "Number of threads per process",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "-t 4"
+    },
+    {
+      "short": "-g",
+      "long": "--ngpus",
+      "description": "Number of GPUs per thread",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "-g 8"
+    },
+    {
+      "short": "-n",
+      "long": "--iters",
+      "description": "Number of iterations to run for each message size",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "default": "20",
+      "example": "-n 100"
+    },
+    {
+      "short": "-w",
+      "long": "--warmup_iters",
+      "description": "Number of warmup iterations before timing begins",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "default": "5",
+      "example": "-w 10"
+    },
+    {
+      "short": "-m",
+      "long": "--agg_iters",
+      "description": "Number of operations to aggregate per iteration",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "-m 4"
+    },
+    {
+      "short": "-N",
+      "long": "--run_cycles",
+      "description": "Number of cycles to run (0 for infinite)",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "-N 5"
+    },
+    {
+      "short": "-p",
+      "long": "--parallel_init",
+      "description": "Enable parallel NCCL initialization across threads",
+      "arguments": "0|1",
+      "argument_type": "integer",
+      "default": "0",
+      "example": "-p 1"
+    },
+    {
+      "short": "-c",
+      "long": "--check",
+      "description": "Check correctness of results (number of iterations to check)",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "-c 10"
+    },
+    {
+      "short": "-d",
+      "long": "--datatype",
+      "description": "Data type for the operation",
+      "arguments": "int8|uint8|int32|uint32|int64|uint64|half|float|double|bfloat16",
+      "argument_type": "string",
+      "default": "float",
+      "example": "-d half"
+    },
+    {
+      "short": "-a",
+      "long": "--average",
+      "description": "Result averaging method across ranks (0=Rank0 only, 1=Average, 2=Min, 3=Max)",
+      "arguments": "0|1|2|3",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "-a 1"
+    },
+    {
+      "short": "-z",
+      "long": "--blocking",
+      "description": "Use blocking (synchronous) collective operations instead of non-blocking",
+      "arguments": "0|1",
+      "argument_type": "integer",
+      "default": "0",
+      "example": "-z 1"
+    },
+    {
+      "short": "-G",
+      "long": "--cudagraph",
+      "description": "Number of CUDA graph replays (enables CUDA graph capture and replay)",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "default": "0",
+      "example": "-G 10"
+    },
+    {
+      "short": "-C",
+      "long": "--report_cputime",
+      "description": "Report CPU time in addition to GPU time",
+      "arguments": "0|1",
+      "argument_type": "integer",
+      "default": "0",
+      "example": "-C 1"
+    },
+    {
+      "short": "-R",
+      "long": "--local_register",
+      "description": "Buffer registration mode (0=disabled, 1=enabled, 2=auto)",
+      "arguments": "0|1|2",
+      "argument_type": "integer",
+      "default": "0",
+      "example": "-R 1"
+    },
+    {
+      "short": "-T",
+      "long": "--timeout",
+      "description": "Maximum time in seconds for the entire test run",
+      "arguments": "SECONDS",
+      "argument_type": "integer",
+      "example": "-T 300"
+    },
+    {
+      "short": "-S",
+      "long": "--report_timestamps",
+      "description": "Report timestamps for each operation",
+      "arguments": "0|1",
+      "argument_type": "integer",
+      "default": "0",
+      "example": "-S 1"
+    },
+    {
+      "short": "-J",
+      "long": "--output_file",
+      "description": "Output results to JSON file",
+      "arguments": "FILENAME",
+      "argument_type": "path",
+      "example": "-J results.json"
+    },
+    {
+      "short": "-M",
+      "long": "--memory_report",
+      "description": "Report memory usage",
+      "arguments": "0|1",
+      "argument_type": "integer",
+      "default": "0",
+      "example": "-M 1"
+    }
+  ],
+  "environment_variables": [
+    {
+      "name": "CUDA_VISIBLE_DEVICES",
+      "description": "Controls which GPUs are visible to the test. Can be a comma-separated list of GPU indices.",
+      "example": "CUDA_VISIBLE_DEVICES=0,1,2,3",
+      "affects_command": "Limits the GPUs available for the benchmark to use"
+    },
+    {
+      "name": "NCCL_DEBUG",
+      "description": "Sets NCCL debug verbosity level",
+      "example": "NCCL_DEBUG=INFO",
+      "affects_command": "Enables detailed NCCL logging (WARN, INFO, TRACE, VERSION)"
+    },
+    {
+      "name": "NCCL_DEBUG_SUBSYS",
+      "description": "Filters NCCL debug output by subsystem",
+      "example": "NCCL_DEBUG_SUBSYS=INIT,GRAPH",
+      "affects_command": "Limits debug output to specific NCCL subsystems"
+    },
+    {
+      "name": "NCCL_TESTS_SPLIT",
+      "description": "Partitions GPUs for testing using operations (AND/OR/MOD/DIV) with values",
+      "example": "NCCL_TESTS_SPLIT=\"MOD 8\"",
+      "affects_command": "Creates multiple parallel communicators for testing specific topologies"
+    },
+    {
+      "name": "NCCL_TESTS_SPLIT_MASK",
+      "description": "Shorthand for NCCL_TESTS_SPLIT with AND operation",
+      "example": "NCCL_TESTS_SPLIT_MASK=0xFF",
+      "affects_command": "Masks GPU ranks for communicator partitioning"
+    },
+    {
+      "name": "NCCL_P2P_DISABLE",
+      "description": "Disable peer-to-peer GPU communication",
+      "example": "NCCL_P2P_DISABLE=1",
+      "affects_command": "Forces communication through host memory instead of direct GPU-to-GPU transfers"
+    },
+    {
+      "name": "NCCL_SHM_DISABLE",
+      "description": "Disable shared memory for intra-node communication",
+      "example": "NCCL_SHM_DISABLE=1",
+      "affects_command": "Disables shared memory transport"
+    },
+    {
+      "name": "NCCL_NET_GDR_LEVEL",
+      "description": "Controls GPU Direct RDMA usage level",
+      "example": "NCCL_NET_GDR_LEVEL=5",
+      "affects_command": "Configures when to use GPU Direct RDMA for network communication"
+    },
+    {
+      "name": "NCCL_ALGO",
+      "description": "Force specific algorithm for collective operations",
+      "example": "NCCL_ALGO=Ring",
+      "affects_command": "Overrides automatic algorithm selection (Tree, Ring, CollNetDirect, CollNetChain)"
+    },
+    {
+      "name": "NCCL_PROTO",
+      "description": "Force specific protocol for communication",
+      "example": "NCCL_PROTO=Simple",
+      "affects_command": "Overrides automatic protocol selection (Simple, LL, LL128)"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - all tests completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - test failed due to NCCL error, CUDA error, or correctness check failure"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Basic bandwidth test with varying message sizes from 8 bytes to 128MB, doubling each step",
+      "command": "all_gather_perf -b 8 -e 128M -f 2",
+      "output_example": "#                                                              out-of-place                       in-place\n#       size         count      type   redop    root     time   algbw   busbw #wrong     time   algbw   busbw #wrong\n#        (B)    (elements)                               (us)  (GB/s)  (GB/s)            (us)  (GB/s)  (GB/s)\n           8             2     float    N/A      -1    23.45    0.00    0.00      0    22.31    0.00    0.00      0\n        1024           256     float    N/A      -1    25.12    0.04    0.08      0    24.89    0.04    0.08      0\n     1048576        262144     float    N/A      -1   145.23    7.22   13.54      0   144.56    7.25   13.59      0\n   134217728      33554432     float    N/A      -1  8234.12   16.30   30.56      0  8198.45   16.37   30.69      0"
+    },
+    {
+      "description": "Multi-GPU test on a single node using all 8 GPUs",
+      "command": "all_gather_perf -g 8 -b 1M -e 1G -f 2",
+      "output_example": "# Using devices\n#  Rank  0 Group  0 Pid  12345 on node1 device  0 [0x07] NVIDIA A100-SXM4-80GB\n#  Rank  1 Group  0 Pid  12345 on node1 device  1 [0x0f] NVIDIA A100-SXM4-80GB\n...\n#  Rank  7 Group  0 Pid  12345 on node1 device  7 [0x87] NVIDIA A100-SXM4-80GB"
+    },
+    {
+      "description": "Multi-node test using MPI with 2 nodes, 4 GPUs per node",
+      "command": "mpirun -np 2 --hostfile hosts all_gather_perf -g 4 -b 1M -e 8G -f 2",
+      "output_example": "# Using MPI with 2 nodes, 4 GPUs per node\n# NCCL version 2.18.1+cuda12.1"
+    },
+    {
+      "description": "Test with correctness checking enabled and more iterations",
+      "command": "all_gather_perf -c 1 -n 100 -b 1M -e 1G -f 2",
+      "output_example": "# Correctness check enabled, checking 1 iteration\n#       size         count      type   redop    root     time   algbw   busbw #wrong"
+    },
+    {
+      "description": "Test with half-precision (FP16) data type for AI/ML workloads",
+      "command": "all_gather_perf -d half -b 1M -e 1G -f 2 -g 8",
+      "output_example": "#       size         count      type   redop    root     time   algbw   busbw #wrong\n     1048576        524288      half    N/A      -1   142.56    7.35   13.78      0"
+    },
+    {
+      "description": "Test with bfloat16 data type commonly used in training",
+      "command": "all_gather_perf -d bfloat16 -b 1M -e 1G -f 2 -g 8",
+      "output_example": "#       size         count      type   redop    root     time   algbw   busbw #wrong\n     1048576        524288  bfloat16    N/A      -1   143.12    7.32   13.73      0"
+    },
+    {
+      "description": "Test with CUDA graphs for reduced launch overhead",
+      "command": "all_gather_perf -G 10 -b 1M -e 128M -f 2 -g 8",
+      "output_example": "# Using CUDA graphs with 10 replays"
+    },
+    {
+      "description": "Extended run with timeout for stress testing",
+      "command": "all_gather_perf -N 0 -T 3600 -b 1G -e 1G -g 8",
+      "output_example": "# Running infinite cycles with 3600 second timeout"
+    },
+    {
+      "description": "Full DGX A100 8-GPU benchmark with comprehensive size sweep",
+      "command": "all_gather_perf -b 8 -e 8G -f 2 -g 8 -n 50 -w 10",
+      "output_example": "# nThread 1 nGpus 8 minBytes 8 maxBytes 8589934592 step: 2(factor) warmup iters: 10 iters: 50"
+    },
+    {
+      "description": "Tensor parallelism simulation test for large model training",
+      "command": "all_gather_perf -b 64M -e 512M -f 2 -g 8 -n 100",
+      "output_example": "# AllGather benchmark for tensor parallelism workloads\n#       size         count      type   redop    root     time   algbw   busbw #wrong"
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "NCCL WARN Failed to open libibverbs.so",
+      "meaning": "InfiniBand verbs library is not installed or not in library path",
+      "resolution": "Install libibverbs-dev package or set LD_LIBRARY_PATH to include the library location"
+    },
+    {
+      "message": "NCCL WARN Call to cudaGetDeviceCount failed: no CUDA-capable device is detected",
+      "meaning": "No NVIDIA GPUs are available or CUDA driver is not loaded",
+      "resolution": "Verify NVIDIA driver is loaded with nvidia-smi and CUDA is properly installed"
+    },
+    {
+      "message": "Test FAILED",
+      "meaning": "Correctness check detected incorrect results in the collective operation",
+      "resolution": "May indicate hardware issues (ECC errors, NVLink errors) or NCCL bugs. Check GPU health with nvidia-smi and run GPU diagnostics"
+    },
+    {
+      "message": "NCCL WARN Cuda failure: out of memory",
+      "meaning": "Insufficient GPU memory to allocate test buffers",
+      "resolution": "Reduce message size with -e option, reduce number of GPUs with -g, or free GPU memory from other applications. Note: AllGather requires N times the input buffer size for output where N is the number of ranks"
+    },
+    {
+      "message": "NCCL WARN NET/IB : No device found",
+      "meaning": "No InfiniBand devices available for inter-node communication",
+      "resolution": "Check IB interface with ibstat, verify MLNX_OFED is installed, or use NCCL_IB_DISABLE=1 for TCP fallback"
+    },
+    {
+      "message": "NCCL WARN Topology detection failed",
+      "meaning": "NCCL could not detect the GPU/network topology",
+      "resolution": "Ensure NVIDIA fabric manager is running for NVSwitch systems, check PCIe topology with nvidia-smi topo -m"
+    },
+    {
+      "message": "NCCL WARN P2P not supported between X and Y",
+      "meaning": "Direct GPU-to-GPU communication is not possible between specified GPUs",
+      "resolution": "Check GPU topology, may need to route through host memory. Set NCCL_P2P_DISABLE=1 to force host memory path"
+    },
+    {
+      "message": "Timeout after X seconds",
+      "meaning": "Test exceeded the specified timeout duration",
+      "resolution": "Increase timeout with -T option, reduce test scope, or investigate communication hangs"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "all_reduce_perf",
+      "reduce_scatter_perf",
+      "broadcast_perf",
+      "reduce_perf",
+      "alltoall_perf",
+      "scatter_perf",
+      "gather_perf",
+      "sendrecv_perf",
+      "hypercube_perf",
+      "nvidia-smi",
+      "nvidia-smi topo",
+      "dcgmi",
+      "ibstat",
+      "mpirun"
+    ],
+    "uses_library": [
+      "NCCL (NVIDIA Collective Communications Library)",
+      "CUDA Runtime",
+      "MPI (optional, for multi-node)"
+    ],
+    "notes": "Part of the nccl-tests suite that includes performance tests for all NCCL collective operations. AllGather is the inverse of ReduceScatter and is commonly used in tensor parallelism for model training. Results should be correlated with nvidia-smi topo output to understand the underlying topology. For multi-node tests, ensure consistent NCCL versions across all nodes."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required for basic operation. User must have access to GPU devices.",
+    "write_operations": "No write operations to system state. Creates output files if -J option is used.",
+    "notes": "May require membership in 'video' or 'render' groups for GPU access on some systems. Multi-node tests require SSH access between nodes for MPI."
+  },
+  "limitations": [
+    "Requires NVIDIA GPUs with CUDA support",
+    "Multi-node tests require MPI build (make MPI=1) and proper MPI environment",
+    "Memory usage scales with message size and number of GPUs (output buffer is N times input size where N is number of ranks)",
+    "CUDA graphs mode (-G) may not work with all NCCL configurations",
+    "NVLink/NVSwitch performance depends on proper fabric manager configuration",
+    "Results may vary based on system load and thermal conditions",
+    "Correctness checking adds overhead and may not reflect production performance",
+    "AllGather does not support reduction operations (-o flag is not applicable)"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "gpu_id",
+          "uuid",
+          "name",
+          "memory_total",
+          "memory_free",
+          "pci_bus_id"
+        ],
+        "description": "Reads GPU availability, memory capacity, and device identification to configure test"
+      },
+      {
+        "state_domain": "fabric_state",
+        "fields": ["nvlink_version", "links", "nvswitch_status"],
+        "description": "NCCL detects NVLink/NVSwitch topology to optimize collective algorithms"
+      },
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["port_state", "link_layer", "rate"],
+        "description": "For multi-node tests, reads InfiniBand port status and capabilities"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi topo -m",
+        "shared_state": "GPU topology and NVLink connections - all_gather_perf bandwidth reflects the interconnect topology shown by nvidia-smi topo"
+      },
+      {
+        "command": "all_reduce_perf",
+        "shared_state": "NCCL communicator state and GPU topology - both tests use the same underlying NCCL infrastructure"
+      },
+      {
+        "command": "reduce_scatter_perf",
+        "shared_state": "NCCL communicator state and GPU topology - AllGather is the inverse operation of ReduceScatter"
+      },
+      {
+        "command": "broadcast_perf",
+        "shared_state": "NCCL communicator state and GPU topology - both tests use the same underlying NCCL infrastructure"
+      },
+      {
+        "command": "ibstat",
+        "shared_state": "InfiniBand port state - for multi-node tests, IB link state affects performance"
+      },
+      {
+        "command": "dcgmi diag",
+        "shared_state": "GPU health status - all_gather_perf performance depends on healthy GPUs reported by DCGM diagnostics"
+      }
+    ]
+  }
+}

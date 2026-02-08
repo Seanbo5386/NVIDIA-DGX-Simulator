@@ -1,0 +1,160 @@
+{
+  "command": "rsync",
+  "category": "general",
+  "description": "Fast, versatile file copying tool. Synchronizes files locally or over network with delta transfer. Essential for HPC data movement and backup.",
+  "synopsis": "rsync [options] <source> <destination>",
+  "version_documented": "rsync 3.2+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/rsync.1.html"],
+  "installation": {
+    "package": "rsync",
+    "notes": "Install via: apt install rsync or yum install rsync"
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--archive",
+      "description": "Archive mode (preserves permissions, times, etc.)"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Verbose output"
+    },
+    {
+      "short": "-z",
+      "long": "--compress",
+      "description": "Compress during transfer"
+    },
+    {
+      "short": "-P",
+      "description": "Show progress and keep partial"
+    },
+    {
+      "long": "--progress",
+      "description": "Show transfer progress"
+    },
+    {
+      "short": "-r",
+      "long": "--recursive",
+      "description": "Recursive into directories"
+    },
+    {
+      "long": "--delete",
+      "description": "Delete extraneous files from dest"
+    },
+    {
+      "short": "-n",
+      "long": "--dry-run",
+      "description": "Show what would be done"
+    },
+    {
+      "long": "--exclude",
+      "description": "Exclude pattern",
+      "arguments": "<pattern>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-e",
+      "description": "Remote shell",
+      "arguments": "<command>",
+      "argument_type": "string",
+      "example": "-e ssh"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Syntax error"
+    },
+    {
+      "code": 23,
+      "meaning": "Partial transfer"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Sync directories with progress",
+      "command": "rsync -avP /source/ /dest/",
+      "requires_root": false
+    },
+    {
+      "description": "Remote sync over SSH",
+      "command": "rsync -avzP /local/data/ user@remote:/scratch/",
+      "requires_root": false
+    },
+    {
+      "description": "Mirror with delete",
+      "command": "rsync -av --delete /source/ /backup/",
+      "requires_root": false
+    },
+    {
+      "description": "Dry run first",
+      "command": "rsync -avn --delete /source/ /dest/",
+      "requires_root": false
+    },
+    {
+      "description": "Exclude patterns",
+      "command": "rsync -av --exclude='*.log' --exclude='.git' /project/ /backup/",
+      "requires_root": false
+    },
+    {
+      "description": "Resume interrupted transfer",
+      "command": "rsync -avP --partial /source/ /dest/",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "rsync: connection unexpectedly closed",
+      "meaning": "Network or SSH issue",
+      "resolution": "Check network and SSH access"
+    },
+    {
+      "message": "rsync: mkstemp failed: No space left",
+      "meaning": "Destination full",
+      "resolution": "Free space on destination"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["scp", "cp", "tar", "rclone"],
+    "notes": "Trailing slash on source matters: /dir/ copies contents, /dir copies directory. Delta transfer only sends differences - efficient for large files. Use -z for slow networks."
+  },
+  "permissions": {
+    "read_operations": "Read access to source",
+    "write_operations": "Write access to destination",
+    "notes": "SSH key or password for remote"
+  },
+  "limitations": [
+    "Not optimized for many small files",
+    "Lustre: consider lfs find + tar",
+    "Memory usage scales with file count"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads source files"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Writes to destination",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "du",
+        "shared_state": "Source and dest sizes match after sync"
+      }
+    ]
+  }
+}

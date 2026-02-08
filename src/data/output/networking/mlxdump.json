@@ -1,0 +1,152 @@
+{
+  "command": "mlxdump",
+  "category": "networking",
+  "description": "Dump NVIDIA/Mellanox device internal state for debugging. Collects firmware logs, hardware state, and diagnostic information. Essential for NVIDIA support cases.",
+  "synopsis": "mlxdump [options] -d <device>",
+  "version_documented": "MFT 4.20+",
+  "source_urls": [
+    "https://docs.nvidia.com/networking/display/MFTv4200/mlxdump"
+  ],
+  "installation": {
+    "package": "mft",
+    "notes": "Part of NVIDIA Firmware Tools (MFT). Install from NVIDIA MLNX_OFED package."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--device",
+      "description": "Specify device to dump",
+      "arguments": "<device>",
+      "argument_type": "string",
+      "example": "-d /dev/mst/mt4123_pciconf0"
+    },
+    {
+      "long": "--cause_dump",
+      "description": "Trigger firmware dump"
+    },
+    {
+      "long": "--save",
+      "description": "Save dump to file",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "long": "--reset_dump",
+      "description": "Clear existing dump"
+    },
+    {
+      "long": "--query_dump",
+      "description": "Check if dump exists"
+    },
+    {
+      "long": "--dump_file",
+      "description": "Output file for dump",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Query for existing dump",
+      "command": "mlxdump -d /dev/mst/mt4123_pciconf0 --query_dump",
+      "output_example": "Dump available: yes\nDump size: 4194304 bytes",
+      "requires_root": true
+    },
+    {
+      "description": "Save firmware dump",
+      "command": "mlxdump -d /dev/mst/mt4123_pciconf0 --save /tmp/fw_dump.bin",
+      "requires_root": true
+    },
+    {
+      "description": "Trigger new dump",
+      "command": "mlxdump -d /dev/mst/mt4123_pciconf0 --cause_dump",
+      "requires_root": true
+    },
+    {
+      "description": "Clear existing dump",
+      "command": "mlxdump -d /dev/mst/mt4123_pciconf0 --reset_dump",
+      "requires_root": true
+    },
+    {
+      "description": "Full diagnostic collection",
+      "command": "mlxdump -d /dev/mst/mt4123_pciconf0 --save /tmp/diag_$(date +%Y%m%d).bin",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No dump available",
+      "meaning": "No firmware dump exists on device",
+      "resolution": "Use --cause_dump to trigger a dump first"
+    },
+    {
+      "message": "Device not found",
+      "meaning": "MST device not available",
+      "resolution": "Run 'mst start' first"
+    },
+    {
+      "message": "Dump save failed",
+      "meaning": "Cannot write dump file",
+      "resolution": "Check disk space and permissions"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["mlxreg", "mst", "mlxconfig", "sysinfo-snapshot"],
+    "notes": "Firmware dumps contain internal device state useful for debugging hardware issues. Send dump files to NVIDIA support for analysis. Dumps are stored in device flash until reset."
+  },
+  "permissions": {
+    "read_operations": "Root required",
+    "write_operations": "Root required",
+    "notes": "Accessing internal device state requires elevated privileges"
+  },
+  "limitations": [
+    "Requires MST service running",
+    "Dump size can be several MB",
+    "Only one dump stored at a time",
+    "Triggering dump may affect performance"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "firmware_state",
+        "fields": ["device_path", "firmware_version"],
+        "description": "Reads firmware internal state"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "firmware_state",
+        "fields": ["dump_state"],
+        "description": "Can trigger and reset firmware dumps",
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Firmware crash or error",
+        "effect": "Automatic dump may be generated"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "mst",
+        "shared_state": "Device paths must match MST device list"
+      }
+    ]
+  }
+}

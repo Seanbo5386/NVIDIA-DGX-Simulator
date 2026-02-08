@@ -1,5 +1,12 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { useSimulationStore } from "@/store/simulationStore";
+import { scenarioContextManager } from "@/store/scenarioContext";
 import {
   Activity,
   HardDrive,
@@ -23,6 +30,35 @@ import {
   getVisualizationContext,
   VisualizationContext,
 } from "@/utils/scenarioVisualizationMap";
+
+/**
+ * Hook that returns the effective cluster for Dashboard components.
+ * When a ScenarioContext is active, returns its isolated cluster;
+ * otherwise falls back to the global store cluster.
+ * Polls at 200ms for mutation reactivity.
+ */
+function useEffectiveCluster() {
+  const globalCluster = useSimulationStore((state) => state.cluster);
+  const [scenarioVersion, setScenarioVersion] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const ctx = scenarioContextManager.getActiveContext();
+      if (ctx) {
+        setScenarioVersion(ctx.getMutationCount());
+      }
+    }, 200);
+    return () => clearInterval(interval);
+  }, []);
+
+  const effectiveCluster = useMemo(() => {
+    const activeContext = scenarioContextManager.getActiveContext();
+    return activeContext ? activeContext.getCluster() : globalCluster;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [globalCluster, scenarioVersion]);
+
+  return effectiveCluster;
+}
 
 const HealthIndicator: React.FC<{ status: HealthStatus }> = ({ status }) => {
   const config = {
@@ -195,7 +231,7 @@ const GPUCard: React.FC<{ gpu: GPU; nodeId: string }> = ({ gpu }) => {
 };
 
 const NodeSelector: React.FC = () => {
-  const cluster = useSimulationStore((state) => state.cluster);
+  const effectiveCluster = useEffectiveCluster();
   const selectedNode = useSimulationStore((state) => state.selectedNode);
   const selectNode = useSimulationStore((state) => state.selectNode);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -203,7 +239,7 @@ const NodeSelector: React.FC = () => {
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
-      const nodeCount = cluster.nodes.length;
+      const nodeCount = effectiveCluster.nodes.length;
       let newIndex: number | null = null;
 
       switch (event.key) {
@@ -230,12 +266,12 @@ const NodeSelector: React.FC = () => {
       }
 
       if (newIndex !== null) {
-        const newNode = cluster.nodes[newIndex];
+        const newNode = effectiveCluster.nodes[newIndex];
         selectNode(newNode.id);
         buttonRefs.current[newIndex]?.focus();
       }
     },
-    [cluster.nodes, selectNode],
+    [effectiveCluster.nodes, selectNode],
   );
 
   return (
@@ -245,7 +281,7 @@ const NodeSelector: React.FC = () => {
       aria-label="Node selection"
       className="flex gap-2 overflow-x-auto pb-2"
     >
-      {cluster.nodes.map((node, index) => {
+      {effectiveCluster.nodes.map((node, index) => {
         const isSelected = selectedNode === node.id;
         return (
           <button
@@ -273,28 +309,28 @@ const NodeSelector: React.FC = () => {
 };
 
 const ClusterHealthSummary: React.FC = () => {
-  const cluster = useSimulationStore((state) => state.cluster);
+  const effectiveCluster = useEffectiveCluster();
   const selectNode = useSimulationStore((state) => state.selectNode);
   const [alertExpanded, setAlertExpanded] = useState(false);
 
-  const totalNodes = cluster.nodes.length;
-  const totalGPUs = cluster.nodes.reduce(
+  const totalNodes = effectiveCluster.nodes.length;
+  const totalGPUs = effectiveCluster.nodes.reduce(
     (sum, node) => sum + node.gpus.length,
     0,
   );
-  const healthyGPUs = cluster.nodes.reduce(
+  const healthyGPUs = effectiveCluster.nodes.reduce(
     (sum, node) =>
       sum + node.gpus.filter((gpu) => gpu.healthStatus === "OK").length,
     0,
   );
-  const criticalGPUs = cluster.nodes.reduce(
+  const criticalGPUs = effectiveCluster.nodes.reduce(
     (sum, node) =>
       sum + node.gpus.filter((gpu) => gpu.healthStatus === "Critical").length,
     0,
   );
 
   // Gather critical GPU details for expandable view
-  const criticalGPUDetails = cluster.nodes.flatMap((node) =>
+  const criticalGPUDetails = effectiveCluster.nodes.flatMap((node) =>
     node.gpus
       .filter((gpu) => gpu.healthStatus === "Critical")
       .map((gpu) => ({
@@ -349,11 +385,11 @@ const ClusterHealthSummary: React.FC = () => {
         <div
           className="bg-gray-800/50 rounded-lg p-4"
           role="status"
-          aria-label={`BCM HA state: ${cluster.bcmHA.state}`}
+          aria-label={`BCM HA state: ${effectiveCluster.bcmHA.state}`}
         >
           <div className="text-2xl font-bold text-green-500">
             <span aria-hidden="true">✓ </span>
-            {cluster.bcmHA.state}
+            {effectiveCluster.bcmHA.state}
           </div>
           <div className="text-sm text-gray-400">BCM HA</div>
         </div>
@@ -410,7 +446,7 @@ const ClusterHealthSummary: React.FC = () => {
 type DashboardView = "overview" | "metrics" | "topology" | "network";
 
 export const Dashboard: React.FC = () => {
-  const cluster = useSimulationStore((state) => state.cluster);
+  const effectiveCluster = useEffectiveCluster();
   const selectedNode = useSimulationStore((state) => state.selectedNode);
   const isRunning = useSimulationStore((state) => state.isRunning);
   const requestedVisualizationView = useSimulationStore(
@@ -448,7 +484,8 @@ export const Dashboard: React.FC = () => {
   ]);
 
   const currentNode =
-    cluster.nodes.find((n) => n.id === selectedNode) || cluster.nodes[0];
+    effectiveCluster.nodes.find((n) => n.id === selectedNode) ||
+    effectiveCluster.nodes[0];
 
   // Start automatic metrics collection only when simulation is running
   useEffect(() => {
@@ -703,10 +740,10 @@ export const Dashboard: React.FC = () => {
       {activeView === "network" && (
         <div className="space-y-4">
           {/* Fabric Health Summary - spans full width */}
-          <FabricHealthSummary cluster={cluster} />
+          <FabricHealthSummary cluster={effectiveCluster} />
 
           <InfiniBandMap
-            cluster={cluster}
+            cluster={effectiveCluster}
             highlightedNodes={activeScenario?.highlightedNodes}
             highlightedSwitches={activeScenario?.highlightedSwitches}
           />

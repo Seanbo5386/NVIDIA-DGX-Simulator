@@ -1,0 +1,347 @@
+{
+  "command": "compute-sanitizer",
+  "category": "cuda_tools",
+  "description": "NVIDIA Compute Sanitizer is a functional correctness checking suite for CUDA applications. It detects memory access errors, race conditions, synchronization issues, and uninitialized memory access in GPU code. The tool supports multiple checking modes including memcheck for memory errors, racecheck for data races, initcheck for uninitialized memory, and synccheck for synchronization problems. It is the successor to cuda-memcheck and provides enhanced detection capabilities for modern CUDA applications.",
+  "synopsis": "compute-sanitizer [options] <application> [application-arguments]",
+  "version_documented": "CUDA 12.0+",
+  "source_urls": [
+    "https://docs.nvidia.com/compute-sanitizer/ComputeSanitizer/index.html",
+    "https://developer.nvidia.com/compute-sanitizer"
+  ],
+  "installation": {
+    "package": "cuda-toolkit",
+    "notes": "Installed as part of the CUDA Toolkit. Requires CUDA 11.0 or later. The application under test should be compiled with debug information (-G flag for nvcc) for best results."
+  },
+  "global_options": [
+    {
+      "long": "--tool",
+      "description": "Select the checking tool to use. memcheck detects memory errors, racecheck detects data races, initcheck detects uninitialized device memory access, synccheck detects synchronization errors.",
+      "arguments": "TOOL",
+      "argument_type": "string",
+      "default": "memcheck",
+      "example": "compute-sanitizer --tool racecheck ./my_cuda_app"
+    },
+    {
+      "long": "--leak-check",
+      "description": "Enable leak checking for device memory allocations. Reports memory allocated but not freed when the application exits.",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "default": "no",
+      "example": "compute-sanitizer --leak-check=full ./my_cuda_app"
+    },
+    {
+      "long": "--save",
+      "description": "Save the sanitizer output to a file for later analysis or processing.",
+      "arguments": "FILE",
+      "argument_type": "path",
+      "example": "compute-sanitizer --save=report.txt ./my_cuda_app"
+    },
+    {
+      "long": "--print-level",
+      "description": "Set the verbosity level for error reporting. Higher levels provide more detailed information.",
+      "arguments": "LEVEL",
+      "argument_type": "string",
+      "default": "warn",
+      "example": "compute-sanitizer --print-level=info ./my_cuda_app"
+    },
+    {
+      "long": "--error-exitcode",
+      "description": "Set the exit code to return when errors are detected. Useful for CI/CD integration.",
+      "arguments": "CODE",
+      "argument_type": "integer",
+      "default": "0",
+      "example": "compute-sanitizer --error-exitcode=1 ./my_cuda_app"
+    },
+    {
+      "long": "--log-file",
+      "description": "Write sanitizer output to the specified log file instead of stderr.",
+      "arguments": "FILE",
+      "argument_type": "path",
+      "example": "compute-sanitizer --log-file=sanitizer.log ./my_cuda_app"
+    },
+    {
+      "long": "--check-api-memory-access",
+      "description": "Enable checking of memory accesses made by CUDA API calls.",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "default": "yes",
+      "example": "compute-sanitizer --check-api-memory-access=yes ./my_cuda_app"
+    },
+    {
+      "long": "--check-device-heap",
+      "description": "Enable checking of device-side malloc/free operations.",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "default": "yes",
+      "example": "compute-sanitizer --check-device-heap=yes ./my_cuda_app"
+    },
+    {
+      "long": "--destroy-on-device-error",
+      "description": "Control behavior when a device error is detected. Can continue execution or terminate.",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "default": "context",
+      "example": "compute-sanitizer --destroy-on-device-error=kernel ./my_cuda_app"
+    },
+    {
+      "long": "--show-backtrace",
+      "description": "Show host and device backtraces when errors are detected. Requires debug symbols.",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "default": "yes",
+      "example": "compute-sanitizer --show-backtrace=yes ./my_cuda_app"
+    },
+    {
+      "long": "--report-api-errors",
+      "description": "Report CUDA API errors that are detected during execution.",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "default": "all",
+      "example": "compute-sanitizer --report-api-errors=explicit ./my_cuda_app"
+    },
+    {
+      "long": "--racecheck-report",
+      "description": "Specify the level of detail for race detection reports. Used with racecheck tool.",
+      "arguments": "LEVEL",
+      "argument_type": "string",
+      "default": "hazard",
+      "example": "compute-sanitizer --tool racecheck --racecheck-report=all ./my_cuda_app"
+    },
+    {
+      "long": "--initcheck-report",
+      "description": "Specify the level of detail for uninitialized memory reports. Used with initcheck tool.",
+      "arguments": "LEVEL",
+      "argument_type": "string",
+      "default": "summary",
+      "example": "compute-sanitizer --tool initcheck --initcheck-report=all ./my_cuda_app"
+    },
+    {
+      "long": "--synccheck-detect",
+      "description": "Specify which synchronization issues to detect. Used with synccheck tool.",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "default": "all",
+      "example": "compute-sanitizer --tool synccheck --synccheck-detect=syncwarp ./my_cuda_app"
+    },
+    {
+      "long": "--target-processes",
+      "description": "Specify which processes to monitor in multi-process applications.",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "default": "application-only",
+      "example": "compute-sanitizer --target-processes=all ./my_cuda_app"
+    },
+    {
+      "long": "--force-blocking-launches",
+      "description": "Force all kernel launches to be blocking for more precise error location.",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "default": "no",
+      "example": "compute-sanitizer --force-blocking-launches=yes ./my_cuda_app"
+    },
+    {
+      "long": "--help",
+      "short": "-h",
+      "description": "Display help information and list of available options."
+    },
+    {
+      "long": "--version",
+      "description": "Display version information for compute-sanitizer."
+    }
+  ],
+  "output_formats": {
+    "text": "Default human-readable text output showing errors, warnings, and summary statistics.",
+    "xml": "Machine-readable XML format for automated processing and CI/CD integration.",
+    "csv": "Comma-separated values format for import into spreadsheet applications."
+  },
+  "environment_variables": [
+    {
+      "name": "COMPUTE_SANITIZER_OPTIONS",
+      "description": "Default options to apply to all compute-sanitizer invocations.",
+      "example": "COMPUTE_SANITIZER_OPTIONS=\"--tool memcheck --leak-check=full\"",
+      "affects_command": "Options are prepended to command-line arguments."
+    },
+    {
+      "name": "CUDA_VISIBLE_DEVICES",
+      "description": "Restrict which GPUs are visible to the application and sanitizer.",
+      "example": "CUDA_VISIBLE_DEVICES=0,1",
+      "affects_command": "Limits error detection to the specified GPU devices."
+    },
+    {
+      "name": "PATH",
+      "description": "System path for locating the compute-sanitizer executable.",
+      "example": "PATH=/usr/local/cuda/bin:$PATH",
+      "affects_command": "compute-sanitizer must be in PATH or invoked with full path."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - no errors detected (or --error-exitcode not set)"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - errors were detected and --error-exitcode was set"
+    },
+    {
+      "code": 2,
+      "meaning": "Error - compute-sanitizer itself encountered a fatal error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Basic memory error checking",
+      "command": "compute-sanitizer ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Memory error checking with leak detection",
+      "command": "compute-sanitizer --leak-check=full ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Race condition detection with detailed report",
+      "command": "compute-sanitizer --tool racecheck --racecheck-report=all ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Uninitialized memory access detection",
+      "command": "compute-sanitizer --tool initcheck ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Synchronization error detection",
+      "command": "compute-sanitizer --tool synccheck ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Save output to file for analysis",
+      "command": "compute-sanitizer --log-file=sanitizer_report.log --tool memcheck ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "CI/CD integration with error exit code",
+      "command": "compute-sanitizer --error-exitcode=1 --leak-check=full ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Detailed output with backtraces",
+      "command": "compute-sanitizer --print-level=info --show-backtrace=yes ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Check multi-process CUDA application",
+      "command": "compute-sanitizer --target-processes=all mpirun -np 4 ./my_cuda_mpi_app",
+      "requires_root": false
+    },
+    {
+      "description": "Force blocking launches for precise error location",
+      "command": "compute-sanitizer --force-blocking-launches=yes ./my_cuda_app",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Invalid __global__ read of size N",
+      "meaning": "A CUDA kernel attempted to read from an invalid global memory address",
+      "resolution": "Check array bounds and pointer arithmetic. Ensure memory is properly allocated before access."
+    },
+    {
+      "message": "Invalid __global__ write of size N",
+      "meaning": "A CUDA kernel attempted to write to an invalid global memory address",
+      "resolution": "Verify buffer sizes and allocation. Check for off-by-one errors in indexing."
+    },
+    {
+      "message": "Invalid __shared__ read/write of size N",
+      "meaning": "A CUDA kernel accessed shared memory outside allocated bounds",
+      "resolution": "Review shared memory allocation size and indexing logic within thread blocks."
+    },
+    {
+      "message": "Memory leak detected",
+      "meaning": "Device memory was allocated but not freed before application exit",
+      "resolution": "Ensure all cudaMalloc calls have corresponding cudaFree calls. Check error paths."
+    },
+    {
+      "message": "Race reported between Write and Read",
+      "meaning": "Multiple threads accessed the same memory location without proper synchronization",
+      "resolution": "Add synchronization primitives (__syncthreads, atomics, or cooperative groups)."
+    },
+    {
+      "message": "Uninitialized __global__ memory read of size N",
+      "meaning": "A kernel read from device memory that was never written to",
+      "resolution": "Initialize device memory with cudaMemset or write values before reading."
+    },
+    {
+      "message": "Barrier error detected",
+      "meaning": "Not all threads in a warp or block reached a synchronization barrier",
+      "resolution": "Ensure __syncthreads is called by all threads or use warp-level primitives correctly."
+    },
+    {
+      "message": "CUDA API error detected: cudaErrorInvalidValue",
+      "meaning": "A CUDA API call received invalid parameters",
+      "resolution": "Check parameters passed to CUDA runtime functions. Verify buffer sizes and offsets."
+    },
+    {
+      "message": "Misaligned address",
+      "meaning": "Memory access is not properly aligned for the data type",
+      "resolution": "Ensure pointer addresses are aligned to the size of the data type being accessed."
+    },
+    {
+      "message": "Device-side assert triggered",
+      "meaning": "An assert statement in device code evaluated to false",
+      "resolution": "Debug the kernel logic that led to the assertion failure."
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["cuda-gdb", "nvcc", "nsys", "ncu", "cuda-memcheck"],
+    "uses_library": ["CUDA Runtime API", "CUDA Driver API"],
+    "notes": "compute-sanitizer works best with applications compiled using nvcc with the -G (device debug) or -lineinfo flags for source code correlation. It can be used alongside cuda-gdb for interactive debugging. The tool instruments CUDA API calls and kernel launches to detect errors. For comprehensive analysis, combine with nsys for timeline profiling and ncu for performance metrics."
+  },
+  "permissions": {
+    "read_operations": "Standard user permissions sufficient for running sanitizer checks.",
+    "write_operations": "Write access needed for log files and saved reports.",
+    "notes": "May require elevated permissions for certain system-level checks or when attaching to running processes. GPU device access permissions are required."
+  },
+  "limitations": [
+    "Significant performance overhead - applications run 10-100x slower under sanitizer",
+    "Best results require debug compilation (-G flag), which disables optimizations",
+    "Cannot detect all race conditions - some may be missed due to execution ordering",
+    "Large memory overhead for tracking allocations and accesses",
+    "Does not support all CUDA features (some newer cooperative groups features may have limited support)",
+    "Multi-GPU applications may have reduced checking accuracy across GPU boundaries",
+    "CUDA graphs have limited support in some checking modes",
+    "Cannot detect errors in host code - only GPU memory and kernel issues"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": ["device_memory", "compute_capability", "driver_version"],
+        "description": "Reads GPU state to instrument memory operations and validate device capabilities for error checking"
+      },
+      {
+        "state_domain": "gpu_process_state",
+        "fields": [
+          "kernel_launches",
+          "memory_allocations",
+          "synchronization_calls"
+        ],
+        "description": "Monitors all GPU process activity including kernel launches, memory operations, and synchronization to detect errors"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "cuda-gdb",
+        "shared_state": "Debug symbols and device code information for error location"
+      },
+      {
+        "command": "nvcc",
+        "shared_state": "Debug information and line number correlation when compiled with -G or -lineinfo"
+      },
+      {
+        "command": "nsys",
+        "shared_state": "Application execution timeline and CUDA API call information"
+      }
+    ]
+  }
+}

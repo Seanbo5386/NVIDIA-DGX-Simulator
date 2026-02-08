@@ -1,0 +1,98 @@
+{
+  "command": "nproc",
+  "category": "general",
+  "description": "Print number of processing units. Shows available CPU count. Essential for HPC parallel job configuration.",
+  "synopsis": "nproc [options]",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/nproc.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [
+    {
+      "long": "--all",
+      "description": "Print all installed processors"
+    },
+    {
+      "long": "--ignore",
+      "description": "Ignore N processors",
+      "arguments": "<n>",
+      "argument_type": "integer"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show available CPUs",
+      "command": "nproc",
+      "requires_root": false
+    },
+    {
+      "description": "All CPUs on system",
+      "command": "nproc --all",
+      "requires_root": false
+    },
+    {
+      "description": "Parallel make",
+      "command": "make -j$(nproc)",
+      "requires_root": false
+    },
+    {
+      "description": "Leave cores for system",
+      "command": "mpirun -np $(nproc --ignore=2) ./my_app",
+      "requires_root": false
+    },
+    {
+      "description": "Set OMP threads",
+      "command": "export OMP_NUM_THREADS=$(nproc)",
+      "requires_root": false
+    },
+    {
+      "description": "In job script",
+      "command": "echo \"Running on $(nproc) cores\"",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [],
+  "interoperability": {
+    "related_commands": ["lscpu", "getconf", "taskset"],
+    "notes": "Respects cgroups and taskset restrictions. --all ignores affinity. getconf _NPROCESSORS_ONLN is alternative."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "N/A",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Counts logical processors (hyperthreads)",
+    "May not reflect cgroup limits",
+    "All vs available can differ"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "node_state",
+        "fields": ["cpus"],
+        "description": "Reads CPU count information"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "lscpu",
+        "shared_state": "Both report CPU count"
+      }
+    ]
+  }
+}

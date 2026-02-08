@@ -1,0 +1,380 @@
+{
+  "command": "lsblk",
+  "category": "storage",
+  "description": "List information about block devices. The lsblk command lists information about all available or specified block devices. It reads the sysfs filesystem and udev database to gather information. By default, the command prints all block devices (except RAM disks) in a tree-like format. This is essential for HPC environments to identify NVMe drives, local scratch storage, boot devices, and storage topology.",
+  "synopsis": "lsblk [options] [device...]",
+  "version_documented": "util-linux 2.37+",
+  "source_urls": [
+    "https://man7.org/linux/man-pages/man8/lsblk.8.html",
+    "https://github.com/util-linux/util-linux"
+  ],
+  "installation": {
+    "package": "util-linux",
+    "notes": "Part of the util-linux package which is installed by default on virtually all Linux distributions. Provides essential system utilities for Linux."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "List all devices including empty devices. By default, empty devices are skipped."
+    },
+    {
+      "short": "-b",
+      "long": "--bytes",
+      "description": "Print the SIZE column in bytes rather than in a human-readable format."
+    },
+    {
+      "short": "-d",
+      "long": "--nodeps",
+      "description": "Do not print holder devices or slaves. For example, do not print partitions for a disk."
+    },
+    {
+      "short": "-D",
+      "long": "--discard",
+      "description": "Print information about the discarding capabilities (TRIM, UNMAP) for each device."
+    },
+    {
+      "short": "-e",
+      "long": "--exclude",
+      "description": "Exclude devices by major device number. Multiple numbers can be specified as a comma-separated list.",
+      "arguments": "list",
+      "argument_type": "string",
+      "example": "lsblk -e 7,11"
+    },
+    {
+      "short": "-f",
+      "long": "--fs",
+      "description": "Output information about filesystems. Adds NAME, FSTYPE, FSVER, LABEL, UUID, FSAVAIL, FSUSE%, and MOUNTPOINTS columns."
+    },
+    {
+      "short": "-i",
+      "long": "--ascii",
+      "description": "Use ASCII characters for tree formatting instead of Unicode box-drawing characters."
+    },
+    {
+      "short": "-I",
+      "long": "--include",
+      "description": "Include devices with specified major device numbers only. Multiple numbers can be specified as a comma-separated list.",
+      "arguments": "list",
+      "argument_type": "string",
+      "example": "lsblk -I 8,259"
+    },
+    {
+      "short": "-J",
+      "long": "--json",
+      "description": "Use JSON output format. Useful for programmatic parsing and integration with monitoring systems."
+    },
+    {
+      "short": "-l",
+      "long": "--list",
+      "description": "Produce output in the form of a list instead of a tree. Useful for scripting and parsing."
+    },
+    {
+      "short": "-m",
+      "long": "--perms",
+      "description": "Output information about device owner, group, and mode (permissions). Adds NAME, SIZE, OWNER, GROUP, and MODE columns."
+    },
+    {
+      "short": "-n",
+      "long": "--noheadings",
+      "description": "Do not print a header line. Useful for scripting."
+    },
+    {
+      "short": "-o",
+      "long": "--output",
+      "description": "Specify which output columns to print. Use '+' prefix to extend default columns. Available columns can be listed with lsblk --help.",
+      "arguments": "list",
+      "argument_type": "string",
+      "example": "lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,MODEL"
+    },
+    {
+      "short": "-O",
+      "long": "--output-all",
+      "description": "Output all available columns. Note: this produces very wide output."
+    },
+    {
+      "short": "-p",
+      "long": "--paths",
+      "description": "Print full device paths instead of just device names."
+    },
+    {
+      "short": "-P",
+      "long": "--pairs",
+      "description": "Produce output in the form of key=\"value\" pairs. Useful for parsing in shell scripts."
+    },
+    {
+      "short": "-r",
+      "long": "--raw",
+      "description": "Produce output in raw format. All potentially unsafe characters are hex-escaped."
+    },
+    {
+      "short": "-S",
+      "long": "--scsi",
+      "description": "Output information about SCSI devices only. All partitions, slaves, and holder devices are ignored."
+    },
+    {
+      "short": "-s",
+      "long": "--inverse",
+      "description": "Print dependencies in inverse order. Instead of showing devices that a device depends on, show devices that depend on it."
+    },
+    {
+      "short": "-t",
+      "long": "--topology",
+      "description": "Output information about block device topology. Adds NAME, ALIGNMENT, MIN-IO, OPT-IO, PHY-SEC, and LOG-SEC columns."
+    },
+    {
+      "short": "-T",
+      "long": "--tree",
+      "description": "Force tree-like output format. This is the default when no output format option is specified.",
+      "arguments": "column",
+      "argument_type": "string"
+    },
+    {
+      "short": "-x",
+      "long": "--sort",
+      "description": "Sort output lines by specified column. This option enables --list output format by default.",
+      "arguments": "column",
+      "argument_type": "string",
+      "example": "lsblk -x SIZE"
+    },
+    {
+      "short": "-z",
+      "long": "--zoned",
+      "description": "Print zone model for each device."
+    },
+    {
+      "long": "--sysroot",
+      "description": "Gather data for a Linux instance other than the instance from which the lsblk command is issued.",
+      "arguments": "directory",
+      "argument_type": "path"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help text and exit."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Print version and exit."
+    }
+  ],
+  "output_formats": {
+    "tree": "Default hierarchical tree format showing device relationships using box-drawing characters.",
+    "list": "Flat list format with one device per line, suitable for scripting.",
+    "json": "JSON format with nested structure representing device hierarchy.",
+    "pairs": "Key=value pairs format, suitable for shell script parsing.",
+    "raw": "Raw format with hex-escaped unsafe characters."
+  },
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Failure - an error occurred"
+    },
+    {
+      "code": 32,
+      "meaning": "None of the specified devices found"
+    },
+    {
+      "code": 64,
+      "meaning": "Some specified devices found, some not found"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "List all block devices in tree format",
+      "command": "lsblk",
+      "output_example": "NAME        MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS\nsda           8:0    0   1.8T  0 disk\n|-sda1        8:1    0   512M  0 part /boot/efi\n|-sda2        8:2    0     1G  0 part /boot\n`-sda3        8:3    0   1.8T  0 part /\nnvme0n1     259:0    0   1.5T  0 disk\n`-nvme0n1p1 259:1    0   1.5T  0 part /scratch",
+      "requires_root": false
+    },
+    {
+      "description": "Show filesystem information for all devices",
+      "command": "lsblk -f",
+      "output_example": "NAME        FSTYPE FSVER LABEL UUID                                 FSAVAIL FSUSE% MOUNTPOINTS\nsda\n|-sda1      vfat   FAT32       ABCD-1234                             450.2M    12% /boot/efi\n|-sda2      xfs                abc12345-6789-0def-ghij-klmnopqrstuv  800.5M    20% /boot\n`-sda3      xfs                def67890-1234-5678-90ab-cdefghijklmn  1.2T      30% /\nnvme0n1\n`-nvme0n1p1 ext4   1.0         fed98765-4321-0987-6543-210fedcba987  1.1T      25% /scratch",
+      "requires_root": false
+    },
+    {
+      "description": "List NVMe devices only",
+      "command": "lsblk -d -o NAME,SIZE,MODEL,TRAN | grep nvme",
+      "output_example": "nvme0n1  1.5T Samsung SSD 980 PRO 2TB            nvme\nnvme1n1  1.5T Samsung SSD 980 PRO 2TB            nvme",
+      "requires_root": false
+    },
+    {
+      "description": "Output in JSON format for programmatic parsing",
+      "command": "lsblk -J",
+      "output_example": "{\n   \"blockdevices\": [\n      {\"name\":\"sda\", \"maj:min\":\"8:0\", \"rm\":false, \"size\":\"1.8T\", \"ro\":false, \"type\":\"disk\", \"mountpoints\":[null],\n         \"children\": [\n            {\"name\":\"sda1\", \"maj:min\":\"8:1\", \"rm\":false, \"size\":\"512M\", \"ro\":false, \"type\":\"part\", \"mountpoints\":[\"/boot/efi\"]}\n         ]\n      }\n   ]\n}",
+      "requires_root": false
+    },
+    {
+      "description": "List disks only without partitions",
+      "command": "lsblk -d",
+      "output_example": "NAME    MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS\nsda       8:0    0   1.8T  0 disk\nnvme0n1 259:0    0   1.5T  0 disk",
+      "requires_root": false
+    },
+    {
+      "description": "Show device topology information",
+      "command": "lsblk -t",
+      "output_example": "NAME        ALIGNMENT MIN-IO OPT-IO PHY-SEC LOG-SEC\nsda                 0    512      0     512     512\n|-sda1              0    512      0     512     512\nnvme0n1             0    512      0     512     512\n`-nvme0n1p1         0    512      0     512     512",
+      "requires_root": false
+    },
+    {
+      "description": "Show specific columns with custom output",
+      "command": "lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,MODEL,SERIAL",
+      "output_example": "NAME        SIZE TYPE MOUNTPOINT MODEL                    SERIAL\nsda         1.8T disk            SAMSUNG MZ7LH1T9HMLT     S456NY0N123456\n|-sda1      512M part /boot/efi\nnvme0n1     1.5T disk /scratch   Samsung SSD 980 PRO 2TB  S5GXNZ0T123456",
+      "requires_root": false
+    },
+    {
+      "description": "List devices in key=value pairs format for scripting",
+      "command": "lsblk -P -o NAME,SIZE,TYPE,MOUNTPOINT",
+      "output_example": "NAME=\"sda\" SIZE=\"1.8T\" TYPE=\"disk\" MOUNTPOINT=\"\"\nNAME=\"sda1\" SIZE=\"512M\" TYPE=\"part\" MOUNTPOINT=\"/boot/efi\"\nNAME=\"sda3\" SIZE=\"1.8T\" TYPE=\"part\" MOUNTPOINT=\"/\"\nNAME=\"nvme0n1\" SIZE=\"1.5T\" TYPE=\"disk\" MOUNTPOINT=\"\"\nNAME=\"nvme0n1p1\" SIZE=\"1.5T\" TYPE=\"part\" MOUNTPOINT=\"/scratch\"",
+      "requires_root": false
+    },
+    {
+      "description": "Show sizes in bytes for precise calculations",
+      "command": "lsblk -b -o NAME,SIZE,TYPE",
+      "output_example": "NAME             SIZE TYPE\nsda       1920383410176 disk\nsda1        536870912 part\nnvme0n1   1600321314816 disk\nnvme0n1p1 1600320266240 part",
+      "requires_root": false
+    },
+    {
+      "description": "Show SCSI devices only",
+      "command": "lsblk -S",
+      "output_example": "NAME HCTL       TYPE VENDOR   MODEL                    REV TRAN\nsda  0:0:0:0    disk SAMSUNG  MZ7LH1T9HMLT             404Q sata",
+      "requires_root": false
+    },
+    {
+      "description": "List all columns for complete device information",
+      "command": "lsblk -O",
+      "output_example": "NAME PATH      MAJ:MIN RM DISC-ALN DISC-GRAN DISC-MAX DISC-ZERO FSAVAIL FSROOTS FSSIZE FSTYPE FSUSED FSUSE% FSVER GROUP HCTL HOTPLUG KNAME LABEL LOG-SEC MAJ:MIN MIN-IO MODEL MODE NAME OPT-IO OWNER PARTFLAGS PARTLABEL PARTN PARTTYPE PARTTYPENAME PARTUUID PATH PHY-SEC PKNAME PTTYPE PTUUID RA RAND REV RM RO RQ-SIZE ROTA SCHED SERIAL SIZE START STATE SUBSYSTEMS MOUNTPOINTS TRAN TYPE UUID VENDOR WSAME WWN ZONED ZONE-SZ ZONE-NR ZONE-AMAX ZONE-OMAX ZONE-APP",
+      "requires_root": false
+    },
+    {
+      "description": "Sort devices by size",
+      "command": "lsblk -x SIZE -o NAME,SIZE,TYPE",
+      "output_example": "NAME        SIZE TYPE\nsda1        512M part\nsda2          1G part\nnvme0n1p1   1.5T part\nsda         1.8T disk\nsda3        1.8T part",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "lsblk: /dev/sda: not a block device",
+      "meaning": "The specified path is not a block device",
+      "resolution": "Verify the device path is correct and is actually a block device. Use ls -l to check device type."
+    },
+    {
+      "message": "lsblk: /dev/nvme0n1: No such file or directory",
+      "meaning": "The specified device does not exist",
+      "resolution": "Check if the device exists. NVMe devices may not be detected if drivers are not loaded. Run modprobe nvme."
+    },
+    {
+      "message": "lsblk: failed to access sysfs",
+      "meaning": "Unable to read from the sysfs filesystem",
+      "resolution": "Verify /sys is mounted. This may occur in minimal containers or chroot environments."
+    },
+    {
+      "message": "lsblk: unknown column:",
+      "meaning": "An invalid column name was specified with -o option",
+      "resolution": "Run lsblk --help to see available column names. Column names are case-insensitive."
+    },
+    {
+      "message": "lsblk: unsupported option",
+      "meaning": "An unrecognized command-line option was used",
+      "resolution": "Check the lsblk version and available options with lsblk --help. Older versions may lack some options."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "df",
+      "fdisk",
+      "blkid",
+      "nvme",
+      "parted",
+      "smartctl",
+      "mount",
+      "findmnt",
+      "lspci"
+    ],
+    "uses_library": [],
+    "notes": "lsblk reads from sysfs (/sys/block) and the udev database to obtain device information. It does not read partition tables directly like fdisk. For NVMe-specific information such as temperature, health, and controller details, use the nvme command. The blkid command provides more detailed filesystem UUID and label information. For disk health monitoring, combine with smartctl. In HPC environments, lsblk is commonly used to identify local scratch NVMe devices and verify storage topology before job execution."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required for basic device listing. Some detailed information may require root access.",
+    "write_operations": "lsblk is read-only and does not modify any system state.",
+    "notes": "Accessing device serial numbers and some SCSI attributes may require root privileges. Some information is only available when running as root."
+  },
+  "limitations": [
+    "Does not show RAID array details; use mdadm for software RAID information",
+    "NVMe-specific details like temperature require the nvme command",
+    "Does not show LVM logical volume details; use lvs or lvdisplay",
+    "May not show all device attributes in containers or minimal environments without full sysfs access",
+    "Serial numbers may not be visible without root privileges on some systems",
+    "Does not provide real-time I/O statistics; use iostat instead",
+    "Zone information for zoned block devices requires kernel 4.10 or later"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": [
+          "device_name",
+          "device_path",
+          "device_type",
+          "size",
+          "model",
+          "serial",
+          "vendor",
+          "mount_point",
+          "filesystem_type",
+          "partition_table_type",
+          "uuid",
+          "label"
+        ],
+        "description": "Reads block device information from sysfs (/sys/block) and udev database to display device topology and attributes."
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Device hotplug (add/remove)",
+        "effect": "New devices appear in output when connected; removed devices disappear from the listing."
+      },
+      {
+        "state_change": "Partition table modification",
+        "effect": "Partition changes made by fdisk or parted are reflected after kernel re-reads the partition table."
+      },
+      {
+        "state_change": "Filesystem creation or modification",
+        "effect": "FSTYPE, LABEL, and UUID columns update after mkfs or filesystem relabeling operations."
+      },
+      {
+        "state_change": "Mount/unmount operations",
+        "effect": "MOUNTPOINT and MOUNTPOINTS columns reflect current mount state."
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "df",
+        "shared_state": "Mount points and filesystem information are consistent between lsblk and df for mounted devices."
+      },
+      {
+        "command": "fdisk",
+        "shared_state": "Partition layout shown by lsblk corresponds to partition table read by fdisk."
+      },
+      {
+        "command": "blkid",
+        "shared_state": "UUID, LABEL, and FSTYPE information is consistent with blkid output."
+      },
+      {
+        "command": "nvme list",
+        "shared_state": "NVMe device names and sizes are consistent between lsblk and nvme list."
+      },
+      {
+        "command": "findmnt",
+        "shared_state": "Mount point information is consistent with findmnt output."
+      }
+    ]
+  }
+}

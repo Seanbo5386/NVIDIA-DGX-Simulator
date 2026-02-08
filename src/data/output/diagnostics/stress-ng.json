@@ -1,0 +1,196 @@
+{
+  "command": "stress-ng",
+  "category": "diagnostics",
+  "description": "Stress test tool for CPU, memory, I/O, and system resources. Successor to stress with many more stressors. Used in HPC for burn-in testing, thermal validation, and system stability verification.",
+  "synopsis": "stress-ng [options]",
+  "version_documented": "stress-ng 0.15+",
+  "source_urls": [
+    "https://github.com/ColinIanKing/stress-ng",
+    "https://man7.org/linux/man-pages/man1/stress-ng.1.html"
+  ],
+  "installation": {
+    "package": "stress-ng",
+    "notes": "Install via: apt install stress-ng or yum install stress-ng"
+  },
+  "global_options": [
+    {
+      "short": "-c",
+      "long": "--cpu",
+      "description": "Number of CPU stress workers",
+      "arguments": "<N>",
+      "argument_type": "integer",
+      "example": "-c 8"
+    },
+    {
+      "short": "-m",
+      "long": "--vm",
+      "description": "Number of memory stress workers",
+      "arguments": "<N>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--vm-bytes",
+      "description": "Memory per worker",
+      "arguments": "<size>",
+      "argument_type": "string",
+      "example": "--vm-bytes 4G"
+    },
+    {
+      "short": "-d",
+      "long": "--hdd",
+      "description": "Number of HDD stress workers",
+      "arguments": "<N>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-i",
+      "long": "--io",
+      "description": "Number of I/O stress workers",
+      "arguments": "<N>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-t",
+      "long": "--timeout",
+      "description": "Timeout in seconds",
+      "arguments": "<seconds>",
+      "argument_type": "string",
+      "example": "-t 60s"
+    },
+    {
+      "long": "--metrics-brief",
+      "description": "Show brief performance metrics"
+    },
+    {
+      "long": "--verify",
+      "description": "Verify results where possible"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Verbose output"
+    },
+    {
+      "long": "--cpu-method",
+      "description": "CPU stress method",
+      "arguments": "<method>",
+      "argument_type": "string",
+      "example": "--cpu-method matrixprod"
+    },
+    {
+      "long": "--all",
+      "description": "Run all stressors",
+      "arguments": "<N>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - no errors detected"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - some stressor failed"
+    },
+    {
+      "code": 2,
+      "meaning": "Metrics show concerning results"
+    },
+    {
+      "code": 3,
+      "meaning": "Early termination requested"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "CPU stress test for 60 seconds",
+      "command": "stress-ng --cpu 0 --timeout 60s --metrics-brief",
+      "output_example": "stress-ng: info:  [1234] dispatching hogs: 128 cpu\nstress-ng: info:  [1234] successful run completed in 60.00s\nstress-ng: info:  [1234] stressor       bogo ops real time  usr time  sys time   bogo ops/s\nstress-ng: info:  [1234] cpu           123456789     60.00    7680.00      0.50   2057613.15",
+      "requires_root": false
+    },
+    {
+      "description": "Memory stress test",
+      "command": "stress-ng --vm 4 --vm-bytes 8G --timeout 60s",
+      "requires_root": false
+    },
+    {
+      "description": "Combined CPU and memory stress",
+      "command": "stress-ng --cpu 8 --vm 4 --vm-bytes 4G --timeout 300s",
+      "requires_root": false
+    },
+    {
+      "description": "Full system burn-in test",
+      "command": "stress-ng --all 4 --timeout 1h --verify",
+      "requires_root": false
+    },
+    {
+      "description": "Matrix multiplication stress",
+      "command": "stress-ng --cpu 0 --cpu-method matrixprod --timeout 60s",
+      "requires_root": false
+    },
+    {
+      "description": "I/O stress test",
+      "command": "stress-ng --hdd 4 --timeout 60s",
+      "requires_root": false
+    },
+    {
+      "description": "Run specific stressor class",
+      "command": "stress-ng --class memory --all 2 --timeout 60s",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "stress-ng: cannot allocate memory",
+      "meaning": "Insufficient memory for requested stress",
+      "resolution": "Reduce --vm-bytes or number of workers"
+    },
+    {
+      "message": "stress-ng: error: stressor terminated",
+      "meaning": "A stressor failed during execution",
+      "resolution": "Check system logs for hardware errors"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["stress", "memtester", "gpu-burn", "mprime", "fio"],
+    "notes": "stress-ng is more comprehensive than original stress command. --cpu 0 uses all CPUs. Use with monitoring tools (turbostat, sensors) to watch thermals during stress tests."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for basic tests",
+    "write_operations": "May need write access for disk tests",
+    "notes": "Some stressors require root for specific features"
+  },
+  "limitations": [
+    "CPU tests don't specifically stress GPU",
+    "Memory test doesn't test ECC specifically (use memtester)",
+    "May interfere with running jobs",
+    "Thermal throttling affects results"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["cpu_count", "memory_total"],
+        "description": "Uses available CPU and memory resources"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "top",
+        "shared_state": "CPU usage reflects stress load"
+      },
+      {
+        "command": "sensors",
+        "shared_state": "Temperature increases under load"
+      }
+    ]
+  }
+}

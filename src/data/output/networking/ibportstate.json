@@ -1,0 +1,150 @@
+{
+  "command": "ibportstate",
+  "category": "networking",
+  "description": "Query and modify InfiniBand port state. Can enable/disable ports and query detailed port status. Useful for fabric maintenance and troubleshooting link issues.",
+  "synopsis": "ibportstate [options] <lid> <port> [state]",
+  "version_documented": "OFED/rdma-core 30+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/ibportstate.8.html"],
+  "installation": {
+    "package": "infiniband-diags",
+    "notes": "Install via: apt install infiniband-diags or yum install infiniband-diags"
+  },
+  "global_options": [
+    {
+      "short": "-C",
+      "long": "--Ca",
+      "description": "Use specified CA name",
+      "arguments": "<ca_name>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-P",
+      "long": "--Port",
+      "description": "Use specified CA port",
+      "arguments": "<port>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-D",
+      "long": "--Direct",
+      "description": "Use directed route addressing"
+    },
+    {
+      "short": "-G",
+      "long": "--Guid",
+      "description": "Use GUID instead of LID"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Query port state",
+      "command": "ibportstate 1 1",
+      "output_example": "PortInfo:\n   LID:....................1\n   state:..................Active\n   physical state:.........LinkUp\n   link width:.............4X\n   link speed:.............HDR",
+      "requires_root": false
+    },
+    {
+      "description": "Disable a port",
+      "command": "ibportstate 5 12 disable",
+      "requires_root": true
+    },
+    {
+      "description": "Enable a port",
+      "command": "ibportstate 5 12 enable",
+      "requires_root": true
+    },
+    {
+      "description": "Reset a port",
+      "command": "ibportstate 5 12 reset",
+      "requires_root": true
+    },
+    {
+      "description": "Query using GUID",
+      "command": "ibportstate -G 0x0002c903001f8c30 1",
+      "requires_root": false
+    },
+    {
+      "description": "Query speed and width",
+      "command": "ibportstate 1 1 query",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "ibportstate: iberror",
+      "meaning": "Cannot communicate with target port",
+      "resolution": "Verify LID and port number are correct"
+    },
+    {
+      "message": "Permission denied",
+      "meaning": "Insufficient privileges for state change",
+      "resolution": "Run with sudo for enable/disable/reset operations"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["ibstat", "smpquery", "iblinkinfo", "ibdiagnet"],
+    "notes": "Port states: Down, Initialize, Armed, Active. Physical states: Polling, Disabled, LinkUp. State changes affect fabric connectivity."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for queries",
+    "write_operations": "Root required to change port state",
+    "notes": "Disabling switch ports affects connected nodes"
+  },
+  "limitations": [
+    "State changes require root",
+    "Disabling ports can partition fabric",
+    "Some states require SM action"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": [
+          "port_state",
+          "port_physical_state",
+          "link_speed",
+          "link_width"
+        ],
+        "description": "Queries port state information"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["port_state"],
+        "description": "Can enable/disable/reset ports",
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Link state change",
+        "effect": "Query results show new state"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ibstat",
+        "shared_state": "Port state and physical state match"
+      },
+      {
+        "command": "iblinkinfo",
+        "shared_state": "Link status reflects port state"
+      }
+    ]
+  }
+}

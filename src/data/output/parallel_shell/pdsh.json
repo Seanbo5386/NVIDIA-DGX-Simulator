@@ -1,0 +1,411 @@
+{
+  "command": "pdsh",
+  "category": "parallel_shell",
+  "description": "pdsh (Parallel Distributed Shell) is a high-performance, parallel remote shell utility for executing commands simultaneously across multiple cluster nodes. It provides a scalable alternative to serial ssh loops by utilizing parallel connections and efficient fan-out mechanisms. pdsh supports various remote command execution modules (rcmd) including ssh, rsh, mrsh, and exec, making it adaptable to different cluster security configurations. In HPC environments, pdsh is commonly used for system administration tasks such as checking node health, verifying GPU status across compute nodes, managing software deployments, and gathering system information from multiple nodes simultaneously. It features host targeting via hostlists, nodegroups, and regex patterns, with output aggregated by hostname for easy parsing and analysis.",
+  "synopsis": "pdsh [options] [-w hosts] command",
+  "version_documented": "pdsh-2.34",
+  "source_urls": [
+    "https://github.com/chaos/pdsh",
+    "https://linux.die.net/man/1/pdsh",
+    "https://computing.llnl.gov/linux/pdsh.html"
+  ],
+  "installation": {
+    "package": "pdsh",
+    "notes": "Available via package managers (apt install pdsh, yum install pdsh) or compiled from source. Requires appropriate rcmd module packages (pdsh-mod-ssh, pdsh-mod-mrsh). On RHEL/CentOS, may need EPEL repository enabled."
+  },
+  "global_options": [
+    {
+      "short": "-w",
+      "description": "Specify target hosts using a hostlist expression. Supports ranges (node[01-10]), comma-separated lists, and combinations. This is the primary method for specifying which nodes to target.",
+      "arguments": "hostlist",
+      "argument_type": "string",
+      "required": false,
+      "example": "pdsh -w node[001-128] hostname"
+    },
+    {
+      "short": "-x",
+      "description": "Exclude specific hosts from the target list. Useful for removing nodes that are down or under maintenance from a larger hostlist.",
+      "arguments": "hostlist",
+      "argument_type": "string",
+      "example": "pdsh -w node[001-128] -x node042,node087 uptime"
+    },
+    {
+      "short": "-g",
+      "description": "Target hosts from a predefined nodegroup. Nodegroups are defined in genders file or via other nodegroup modules. Multiple -g options combine groups.",
+      "arguments": "groupname",
+      "argument_type": "string",
+      "example": "pdsh -g compute nvidia-smi -L"
+    },
+    {
+      "short": "-X",
+      "description": "Exclude hosts belonging to a nodegroup from the target list.",
+      "arguments": "groupname",
+      "argument_type": "string",
+      "example": "pdsh -g all -X maintenance uptime"
+    },
+    {
+      "short": "-a",
+      "description": "Target all nodes in the default nodegroup or machines file. Reads from /etc/pdsh/machines or genders database.",
+      "example": "pdsh -a hostname"
+    },
+    {
+      "short": "-A",
+      "description": "Target all nodes in the alternate machines file (WCOLL environment variable or compiled-in default).",
+      "example": "pdsh -A df -h /scratch"
+    },
+    {
+      "short": "-f",
+      "description": "Set the maximum number of simultaneous remote connections (fan-out). Higher values increase parallelism but consume more resources.",
+      "arguments": "number",
+      "argument_type": "integer",
+      "default": "32",
+      "example": "pdsh -w node[001-500] -f 256 uptime"
+    },
+    {
+      "short": "-t",
+      "description": "Set the connect timeout in seconds. Commands to unresponsive hosts will be terminated after this period.",
+      "arguments": "seconds",
+      "argument_type": "integer",
+      "default": "10",
+      "example": "pdsh -w node[001-100] -t 30 long_running_check.sh"
+    },
+    {
+      "short": "-u",
+      "description": "Set the command timeout in seconds. Commands exceeding this duration will be terminated.",
+      "arguments": "seconds",
+      "argument_type": "integer",
+      "default": "0 (no timeout)",
+      "example": "pdsh -w node[001-100] -u 60 stress_test.sh"
+    },
+    {
+      "short": "-R",
+      "description": "Specify the remote command execution module (rcmd type). Common values: ssh, rsh, mrsh, exec.",
+      "arguments": "rcmd_type",
+      "argument_type": "string",
+      "default": "ssh (or compiled default)",
+      "example": "pdsh -R ssh -w node[001-100] hostname"
+    },
+    {
+      "short": "-l",
+      "description": "Specify the remote username to use for connections.",
+      "arguments": "username",
+      "argument_type": "string",
+      "example": "pdsh -l admin -w node[001-100] sudo systemctl status sshd"
+    },
+    {
+      "short": "-N",
+      "description": "Suppress hostname prefix in output. By default, each output line is prefixed with the source hostname.",
+      "example": "pdsh -w node[001-010] -N hostname"
+    },
+    {
+      "short": "-S",
+      "description": "Return the largest exit status of remote commands. Useful for scripting to detect any failures.",
+      "example": "pdsh -S -w node[001-100] test -f /etc/config && echo configured"
+    },
+    {
+      "short": "-b",
+      "description": "Batch mode - disable hostname prefix labels. Similar to -N but with batch-oriented formatting.",
+      "example": "pdsh -b -w node[001-100] cat /etc/hostname"
+    },
+    {
+      "short": "-q",
+      "description": "Query mode - list the hosts that would be targeted and exit without executing commands.",
+      "example": "pdsh -q -w node[001-100] -x node050"
+    },
+    {
+      "short": "-V",
+      "description": "Display version information and exit.",
+      "example": "pdsh -V"
+    },
+    {
+      "short": "-d",
+      "description": "Enable debug mode for troubleshooting connection and execution issues.",
+      "example": "pdsh -d -w node001 hostname"
+    },
+    {
+      "short": "-e",
+      "description": "Specify the remote shell path to use on remote hosts.",
+      "arguments": "path",
+      "argument_type": "path",
+      "example": "pdsh -e /usr/local/bin/ssh -w node[001-100] hostname"
+    },
+    {
+      "short": "-L",
+      "description": "List available rcmd modules and exit.",
+      "example": "pdsh -L"
+    },
+    {
+      "short": "-M",
+      "description": "Select specific pdsh module by name for target host specification.",
+      "arguments": "module_name",
+      "argument_type": "string",
+      "example": "pdsh -M genders -g compute uptime"
+    }
+  ],
+  "output_formats": {
+    "default": "hostname: output_line format, one line per output line per host",
+    "no_prefix": "With -N, raw output without hostname prefixes",
+    "batch": "With -b, batch-oriented output suitable for further processing"
+  },
+  "environment_variables": [
+    {
+      "name": "PDSH_RCMD_TYPE",
+      "description": "Sets the default remote command execution module (ssh, rsh, mrsh, exec).",
+      "example": "PDSH_RCMD_TYPE=ssh",
+      "affects_command": "Overrides compiled-in default rcmd module. Equivalent to -R option."
+    },
+    {
+      "name": "PDSH_SSH_ARGS",
+      "description": "Additional arguments to pass to ssh when using the ssh rcmd module.",
+      "example": "PDSH_SSH_ARGS=\"-o StrictHostKeyChecking=no -o ConnectTimeout=5\"",
+      "affects_command": "Allows customization of ssh behavior for all pdsh connections."
+    },
+    {
+      "name": "PDSH_SSH_ARGS_APPEND",
+      "description": "Arguments to append to the default ssh arguments.",
+      "example": "PDSH_SSH_ARGS_APPEND=\"-i /path/to/key\"",
+      "affects_command": "Adds to rather than replaces default ssh arguments."
+    },
+    {
+      "name": "WCOLL",
+      "description": "Path to file containing list of target hosts, one per line. Used when -A option is specified or as default target list.",
+      "example": "WCOLL=/etc/pdsh/machines",
+      "affects_command": "Provides default host list for pdsh operations."
+    },
+    {
+      "name": "PDSH_GENDERS_FILE",
+      "description": "Path to the genders database file for nodegroup lookups.",
+      "example": "PDSH_GENDERS_FILE=/etc/genders",
+      "affects_command": "Specifies location of genders file for -g and -X options."
+    },
+    {
+      "name": "FANOUT",
+      "description": "Sets the default maximum number of simultaneous connections.",
+      "example": "FANOUT=64",
+      "affects_command": "Equivalent to -f option. Controls parallelism level."
+    },
+    {
+      "name": "PDSH_CONNECT_TIMEOUT",
+      "description": "Sets the default connect timeout in seconds.",
+      "example": "PDSH_CONNECT_TIMEOUT=20",
+      "affects_command": "Equivalent to -t option."
+    },
+    {
+      "name": "PDSH_COMMAND_TIMEOUT",
+      "description": "Sets the default command execution timeout in seconds.",
+      "example": "PDSH_COMMAND_TIMEOUT=300",
+      "affects_command": "Equivalent to -u option."
+    },
+    {
+      "name": "PDSH_MISC_MODULES",
+      "description": "Colon-separated list of directories to search for pdsh modules.",
+      "example": "PDSH_MISC_MODULES=/usr/lib/pdsh:/opt/pdsh/lib",
+      "affects_command": "Extends module search path for custom modules."
+    },
+    {
+      "name": "DSHPATH",
+      "description": "Path to prepend to PATH on remote hosts before executing command.",
+      "example": "DSHPATH=/opt/nvidia/bin:/usr/local/cuda/bin",
+      "affects_command": "Ensures commands are found on remote hosts."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - all commands completed successfully on all hosts"
+    },
+    {
+      "code": 1,
+      "meaning": "One or more remote commands failed or returned non-zero exit status (with -S option)"
+    },
+    {
+      "code": 1,
+      "meaning": "General error in pdsh operation"
+    },
+    {
+      "code": 2,
+      "meaning": "Invalid command-line options or arguments"
+    },
+    {
+      "code": 255,
+      "meaning": "Connection failure to one or more hosts"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Check uptime across all compute nodes",
+      "command": "pdsh -w node[001-128] uptime",
+      "output_example": "node001: 10:42:33 up 45 days,  3:21,  0 users,  load average: 0.52, 0.48, 0.45\nnode002: 10:42:33 up 45 days,  3:21,  0 users,  load average: 0.31, 0.28, 0.25"
+    },
+    {
+      "description": "Check GPU status across cluster nodes",
+      "command": "pdsh -w gpu[001-032] nvidia-smi --query-gpu=name,memory.used,utilization.gpu --format=csv,noheader",
+      "output_example": "gpu001: NVIDIA A100-SXM4-80GB, 1024 MiB, 45 %\ngpu002: NVIDIA A100-SXM4-80GB, 2048 MiB, 78 %"
+    },
+    {
+      "description": "Verify CUDA toolkit installation across GPU nodes",
+      "command": "pdsh -g gpu nvcc --version | dshbak -c",
+      "output_example": "----------------\ngpu[001-032]\n----------------\nnvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2023 NVIDIA Corporation\nBuilt on Tue_Aug_15_22:02:13_PDT_2023\nCuda compilation tools, release 12.2, V12.2.140"
+    },
+    {
+      "description": "Check InfiniBand port status on all nodes",
+      "command": "pdsh -w node[001-100] ibstat | grep -E '(node|State:)'",
+      "output_example": "node001: State: Active\nnode002: State: Active\nnode003: State: Down"
+    },
+    {
+      "description": "Run commands with increased fan-out for large cluster",
+      "command": "pdsh -w node[001-1000] -f 512 hostname",
+      "output_example": "node001: node001.cluster.local\nnode002: node002.cluster.local"
+    },
+    {
+      "description": "Execute command on nodegroup excluding maintenance nodes",
+      "command": "pdsh -g compute -X maintenance df -h /scratch",
+      "output_example": "node001: /dev/sda1  1.8T  500G  1.3T  28% /scratch\nnode002: /dev/sda1  1.8T  450G  1.4T  25% /scratch"
+    },
+    {
+      "description": "Check memory usage across nodes and consolidate output",
+      "command": "pdsh -w node[001-064] free -h | dshbak -c",
+      "output_example": "----------------\nnode[001-032]\n----------------\n              total        used        free      shared  buff/cache   available\nMem:          251Gi        45Gi       180Gi       1.0Gi        26Gi       203Gi"
+    },
+    {
+      "description": "Query which hosts would be targeted without executing",
+      "command": "pdsh -q -w node[001-100] -x node[050-055]",
+      "output_example": "node[001-049,056-100]"
+    },
+    {
+      "description": "Run command as different user with sudo",
+      "command": "pdsh -l admin -w node[001-010] sudo systemctl status slurmd",
+      "output_example": "node001: slurmd.service - Slurm node daemon\nnode001:    Loaded: loaded (/usr/lib/systemd/system/slurmd.service; enabled)\nnode001:    Active: active (running)"
+    },
+    {
+      "description": "Check GPU temperatures across cluster",
+      "command": "pdsh -w gpu[001-016] nvidia-smi --query-gpu=index,temperature.gpu --format=csv,noheader",
+      "output_example": "gpu001: 0, 42\ngpu001: 1, 44\ngpu001: 2, 43\ngpu001: 3, 45"
+    },
+    {
+      "description": "Verify NFS mounts are present on all nodes",
+      "command": "pdsh -w node[001-100] -S mount | grep nfs",
+      "output_example": "node001: storage.cluster:/home on /home type nfs (rw,relatime)\nnode002: storage.cluster:/home on /home type nfs (rw,relatime)"
+    },
+    {
+      "description": "Check NCCL library version across GPU nodes",
+      "command": "pdsh -g gpu 'ls -la /usr/lib/x86_64-linux-gnu/libnccl* 2>/dev/null || ls -la /usr/local/cuda/lib64/libnccl*'",
+      "output_example": "gpu001: lrwxrwxrwx 1 root root 17 Jan  5 12:00 /usr/lib/x86_64-linux-gnu/libnccl.so.2 -> libnccl.so.2.18.1"
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "pdsh@host: node001: ssh exited with exit code 255",
+      "meaning": "SSH connection failed to the specified host, typically due to network issues, DNS resolution failure, or SSH service not running",
+      "resolution": "Verify network connectivity with ping, check SSH service status on remote host, verify DNS resolution, check firewall rules."
+    },
+    {
+      "message": "pdsh@host: node001: mcmd: connect failed: Connection refused",
+      "meaning": "The remote host actively refused the connection, usually because the specified service is not running",
+      "resolution": "Verify the remote shell daemon (sshd, mrshd) is running on the target host."
+    },
+    {
+      "message": "pdsh@host: node001: mcmd: connect failed: No route to host",
+      "meaning": "Network routing to the target host is not available",
+      "resolution": "Check network configuration, verify routing tables, ensure target host network is accessible."
+    },
+    {
+      "message": "pdsh@host: node001: Permission denied",
+      "meaning": "Authentication failed, typically due to missing SSH keys or incorrect credentials",
+      "resolution": "Verify SSH key authentication is configured, check authorized_keys on remote host, verify username with -l option."
+    },
+    {
+      "message": "pdsh: no remote hosts specified",
+      "meaning": "No target hosts were provided via -w, -g, -a, or WCOLL",
+      "resolution": "Specify target hosts using -w hostlist, -g groupname, -a for all hosts, or set WCOLL environment variable."
+    },
+    {
+      "message": "pdsh@host: node001: command timeout",
+      "meaning": "The remote command exceeded the specified timeout period (-u option)",
+      "resolution": "Increase command timeout with -u option, or investigate why the command is taking too long on the remote host."
+    },
+    {
+      "message": "pdsh: genders_query failed",
+      "meaning": "The genders database query failed, possibly due to invalid group name or missing genders file",
+      "resolution": "Verify genders file exists at /etc/genders or PDSH_GENDERS_FILE path, check group name spelling."
+    },
+    {
+      "message": "pdsh: invalid hostlist: host[a-z]",
+      "meaning": "The hostlist expression contains invalid syntax",
+      "resolution": "Use proper hostlist syntax: numeric ranges node[001-100], comma-separated node01,node02, or combinations."
+    },
+    {
+      "message": "pdsh: module load failed: /usr/lib/pdsh/ssh.so",
+      "meaning": "The specified rcmd module could not be loaded",
+      "resolution": "Install the appropriate pdsh module package (pdsh-mod-ssh), verify module path, use pdsh -L to list available modules."
+    },
+    {
+      "message": "pdsh@host: node001: Host key verification failed",
+      "meaning": "SSH host key verification failed, typically first connection or changed host key",
+      "resolution": "Add host to known_hosts, use StrictHostKeyChecking=no in PDSH_SSH_ARGS for automated environments (security implications)."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "clush",
+      "dshbak",
+      "ssh",
+      "srun",
+      "mpirun",
+      "hostlist",
+      "nodeattr",
+      "genders"
+    ],
+    "uses_library": ["libgenders", "libssh", "libnodeupdown"],
+    "notes": "pdsh is often used alongside dshbak for consolidating identical output from multiple hosts. clush (ClusterShell) provides similar functionality with different syntax and features. When running within Slurm jobs, srun may be preferred for launching parallel tasks as it integrates with the job scheduler. pdsh works well with genders database for defining logical node groups. For very large clusters (1000+ nodes), consider adjusting fan-out (-f) and timeouts appropriately. pdsh output can be piped to dshbak -c to consolidate identical output lines by host groups."
+  },
+  "permissions": {
+    "read_operations": "Any user can run pdsh to execute commands on hosts where they have SSH access",
+    "write_operations": "Commands executed remotely run with the permissions of the authenticated user on the remote host",
+    "notes": "Remote command execution requires appropriate authentication (SSH keys, Kerberos, etc.). Administrative commands on remote hosts require sudo or root SSH access. For production HPC clusters, SSH keys should be managed carefully to maintain security."
+  },
+  "limitations": [
+    "Maximum fan-out limited by local system resources (file descriptors, memory)",
+    "Requires passwordless SSH or alternative authentication for non-interactive use",
+    "Output interleaving can occur with rapidly producing commands",
+    "No built-in output consolidation (use dshbak for this)",
+    "Host key checking can cause delays or failures on first connection to new hosts",
+    "Large clusters may require increased connection and command timeouts",
+    "Not suitable for interactive commands requiring TTY",
+    "Cannot transfer files directly (use pdcp companion tool or rsync)",
+    "Error output from failed connections can be verbose with many hosts"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "node_state",
+        "fields": ["hostname", "network_reachability", "ssh_service_status"],
+        "description": "pdsh depends on nodes being network-reachable and having SSH (or other rcmd) service available"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Node becomes unreachable or SSH service stops",
+        "effect": "pdsh connections to that node will fail with connection timeout or refused errors"
+      },
+      {
+        "state_change": "Genders database updated with new node groups",
+        "effect": "Nodegroup targeting (-g option) reflects updated group membership"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "clush",
+        "shared_state": "Both tools execute commands across the same cluster nodes using similar authentication"
+      },
+      {
+        "command": "ssh",
+        "shared_state": "pdsh uses SSH for remote execution when configured with ssh rcmd module"
+      },
+      {
+        "command": "srun",
+        "shared_state": "Both can execute commands on cluster nodes; srun operates within Slurm job context"
+      }
+    ]
+  }
+}

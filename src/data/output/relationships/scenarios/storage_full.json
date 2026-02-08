@@ -1,0 +1,89 @@
+{
+  "$schema": "../../schema.json",
+  "scenario_id": "storage_full",
+  "scenario_name": "Storage Filesystem Full",
+  "description": "Simulates a filesystem reaching capacity, causing job failures due to inability to write output",
+  "severity": "critical",
+  "initial_state_change": {
+    "domain": "storage_local_state",
+    "affected_entity": "/scratch filesystem",
+    "changes": {
+      "use_percent": 100,
+      "available_size": 0,
+      "status": "full"
+    }
+  },
+  "affected_commands": [
+    {
+      "command": "df -h",
+      "category": "storage",
+      "output_before": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/nvme0n1p1  3.5T  2.1T  1.4T  60% /scratch",
+      "output_after": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/nvme0n1p1  3.5T  3.5T     0 100% /scratch",
+      "key_differences": ["Use% at 100%", "Avail shows 0"]
+    },
+    {
+      "command": "df -i",
+      "category": "storage",
+      "output_before": "Filesystem      Inodes   IUsed   IFree IUse% Mounted on\n/dev/nvme0n1p1  234M     45M    189M   19% /scratch",
+      "output_after": "Filesystem      Inodes   IUsed   IFree IUse% Mounted on\n/dev/nvme0n1p1  234M    234M       0  100% /scratch",
+      "key_differences": ["Inode usage may also be at 100%"]
+    },
+    {
+      "command": "touch /scratch/testfile",
+      "category": "general",
+      "output_before": "(file created successfully)",
+      "output_after": "touch: cannot touch '/scratch/testfile': No space left on device",
+      "key_differences": ["Write operations fail with ENOSPC"]
+    },
+    {
+      "command": "squeue",
+      "category": "cluster_management",
+      "output_before": "12345  gpu  train  user  R  1:00:00  1  node01",
+      "output_after": "JOBID  PARTITION  NAME  USER  ST  TIME  NODES  NODELIST",
+      "key_differences": ["Jobs may disappear if they fail due to disk full"]
+    },
+    {
+      "command": "sacct -j 12345",
+      "category": "cluster_management",
+      "output_before": "12345  train  gpu  RUNNING  0:0",
+      "output_after": "12345  train  gpu  FAILED   1:0\n12345.0  python  gpu  FAILED  1:0",
+      "key_differences": ["State FAILED", "Non-zero exit code"]
+    },
+    {
+      "command": "dmesg | tail",
+      "category": "diagnostics",
+      "output_before": "[normal operation]",
+      "output_after": "[12345.678] EXT4-fs warning (device nvme0n1p1): ext4_dx_add_entry:2461: Directory (ino: 12345) index full, reach max htree level :2\n[12345.679] EXT4-fs error (device nvme0n1p1): ext4_create:2847: No space left on device",
+      "key_differences": ["Filesystem error messages in kernel log"]
+    }
+  ],
+  "recovery_actions": [
+    {
+      "action": "Identify large files",
+      "command": "du -sh /scratch/* | sort -hr | head -20"
+    },
+    {
+      "action": "Find old files to delete",
+      "command": "find /scratch -type f -atime +30 -size +1G"
+    },
+    {
+      "action": "Clear job temp files",
+      "command": "find /scratch -name '*.tmp' -mtime +1 -delete"
+    },
+    {
+      "action": "Check user quotas",
+      "command": "repquota -a"
+    },
+    {
+      "action": "Notify users",
+      "command": "wall 'WARNING: /scratch filesystem is full. Please clean up unused files.'"
+    }
+  ],
+  "simulator_notes": [
+    "Jobs writing to full filesystem will fail with exit code",
+    "ENOSPC (No space left on device) is the typical error",
+    "Checkpoint files may be corrupted if write fails mid-stream",
+    "Running jobs may survive if they're only reading",
+    "New job submissions should still work (scheduler doesn't check disk)"
+  ]
+}

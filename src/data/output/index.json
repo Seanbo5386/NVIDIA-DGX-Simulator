@@ -1,0 +1,1909 @@
+{
+  "$schema": "./schema.json",
+  "title": "HPC Cluster Simulator Command Documentation Index",
+  "version": "1.0.0",
+  "generated": "2026-02-04T05:21:11.339220",
+  "total_commands": 214,
+  "categories": {
+    "gpu_management": {
+      "description": "GPU monitoring and management tools",
+      "command_count": 7,
+      "commands": [
+        {
+          "name": "dcgmi",
+          "file": "gpu_management/dcgmi.json",
+          "description": "NVIDIA Data Center GPU Manager (DCGM) CLI for enterprise GPU management, monitoring, and diagnostics. DCGM provides a suite of tools for managing and monitoring NVIDIA GPUs in cluster environments, in",
+          "has_subcommands": true,
+          "state_domains_read": [
+            "gpu_state",
+            "gpu_process_state",
+            "fabric_state"
+          ],
+          "state_domains_write": ["gpu_state"]
+        },
+        {
+          "name": "gpustat",
+          "file": "gpu_management/gpustat.json",
+          "description": "A minimal and efficient command-line utility for querying and monitoring NVIDIA GPU status. gpustat provides a simpler alternative to nvidia-smi, displaying GPU information in a compact, colorful form",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state", "gpu_process_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "nvidia-cuda-mps-control",
+          "file": "gpu_management/nvidia-cuda-mps-control.json",
+          "description": "NVIDIA CUDA Multi-Process Service (MPS) control daemon interface. MPS allows multiple CUDA applications to share a single GPU context, reducing context switching overhead and enabling better GPU utili",
+          "has_subcommands": true,
+          "state_domains_read": ["gpu_state", "gpu_process_state"],
+          "state_domains_write": ["gpu_state", "gpu_process_state"]
+        },
+        {
+          "name": "nvidia-persistenced",
+          "file": "gpu_management/nvidia-persistenced.json",
+          "description": "NVIDIA persistence daemon that keeps GPU driver state loaded even when no clients are attached. Eliminates initialization latency when launching GPU applications and prevents driver unloading between ",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state"],
+          "state_domains_write": ["gpu_state"]
+        },
+        {
+          "name": "nvidia-smi",
+          "file": "gpu_management/nvidia-smi.json",
+          "description": "NVIDIA System Management Interface (nvidia-smi) is a command-line utility based on the NVIDIA Management Library (NVML) that provides monitoring and management capabilities for NVIDIA GPU devices. It ",
+          "has_subcommands": true,
+          "state_domains_read": [
+            "gpu_state",
+            "gpu_process_state",
+            "fabric_state"
+          ],
+          "state_domains_write": ["gpu_state"]
+        },
+        {
+          "name": "nvitop",
+          "file": "gpu_management/nvitop.json",
+          "description": "An interactive NVIDIA-GPU process viewer and beyond, providing an htop-like interface for GPU monitoring. nvitop offers informative and fancy output with more information than nvidia-smi, featuring co",
+          "has_subcommands": false,
+          "state_domains_read": [
+            "gpu_state",
+            "gpu_process_state",
+            "system_state"
+          ],
+          "state_domains_write": ["gpu_process_state"]
+        },
+        {
+          "name": "nvtop",
+          "file": "gpu_management/nvtop.json",
+          "description": "Interactive NVIDIA GPU and process monitor - htop-like interface for GPU monitoring. nvtop provides a real-time, ncurses-based terminal interface for monitoring GPU utilization, memory usage, temperat",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state", "gpu_process_state"],
+          "state_domains_write": []
+        }
+      ]
+    },
+    "diagnostics": {
+      "description": "System and hardware diagnostic tools",
+      "command_count": 9,
+      "commands": [
+        {
+          "name": "dmesg",
+          "file": "diagnostics/dmesg.json",
+          "description": "Print or control the kernel ring buffer - essential for viewing kernel messages, driver loading, and hardware events. The dmesg command is used to examine or control the kernel ring buffer, which cont",
+          "has_subcommands": false,
+          "state_domains_read": [
+            "system_state",
+            "gpu_state",
+            "network_ib_state"
+          ],
+          "state_domains_write": ["system_state"]
+        },
+        {
+          "name": "fio",
+          "file": "diagnostics/fio.json",
+          "description": "Flexible I/O tester for benchmarking storage performance. Simulates various I/O workloads with configurable parameters. Essential for HPC storage system evaluation.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state", "storage_lustre_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "gpu_burn",
+          "file": "diagnostics/gpu-burn.json",
+          "description": "Multi-GPU CUDA stress test tool for thermal and stability validation. Runs matrix multiplications (SGEMM/DGEMM) to stress GPUs to maximum power and temperature, validating GPU compute stability, therm",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state"],
+          "state_domains_write": ["gpu_state"]
+        },
+        {
+          "name": "xhpl",
+          "file": "diagnostics/hpl.json",
+          "description": "High-Performance Linpack (HPL) benchmark - solves dense linear systems using LU factorization with partial pivoting to measure floating-point performance (TFLOPS). HPL is the standard benchmark used f",
+          "has_subcommands": false,
+          "state_domains_read": [
+            "gpu_state",
+            "system_state",
+            "fabric_state",
+            "network_ib_state"
+          ],
+          "state_domains_write": []
+        },
+        {
+          "name": "ipmitool",
+          "file": "diagnostics/ipmitool.json",
+          "description": "Utility for managing and configuring IPMI-enabled devices (BMC) including power control, sensor monitoring, and system event logs. ipmitool provides a command-line interface to manage Baseboard Manage",
+          "has_subcommands": true,
+          "state_domains_read": ["system_state", "node_state"],
+          "state_domains_write": ["node_state", "system_state"]
+        },
+        {
+          "name": "journalctl",
+          "file": "diagnostics/journalctl.json",
+          "description": "Query the systemd journal - view logs from systemd, kernel, and services with powerful filtering. journalctl is the primary tool for querying and displaying messages from the systemd journal, which co",
+          "has_subcommands": false,
+          "state_domains_read": [
+            "system_state",
+            "gpu_state",
+            "job_state",
+            "network_ib_state",
+            "container_state"
+          ],
+          "state_domains_write": ["system_state"]
+        },
+        {
+          "name": "memtester",
+          "file": "diagnostics/memtester.json",
+          "description": "Userspace utility for testing memory subsystem reliability. Useful in HPC environments for validating system memory before running long computational jobs, diagnosing memory-related crashes, and quali",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "nvidia-bug-report.sh",
+          "file": "diagnostics/nvidia-bug-report.json",
+          "description": "NVIDIA bug report generation script for collecting comprehensive system and GPU diagnostic information. This script gathers a wide variety of system data useful for debugging GPU-related issues includ",
+          "has_subcommands": false,
+          "state_domains_read": [
+            "gpu_state",
+            "system_state",
+            "gpu_process_state",
+            "fabric_state"
+          ],
+          "state_domains_write": []
+        },
+        {
+          "name": "stress-ng",
+          "file": "diagnostics/stress-ng.json",
+          "description": "Stress test tool for CPU, memory, I/O, and system resources. Successor to stress with many more stressors. Used in HPC for burn-in testing, thermal validation, and system stability verification.",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        }
+      ]
+    },
+    "system_info": {
+      "description": "System information and status tools",
+      "command_count": 15,
+      "commands": [
+        {
+          "name": "dmidecode",
+          "file": "system_info/dmidecode.json",
+          "description": "DMI/SMBIOS table decoder - displays hardware information from BIOS. Dmidecode reads the System Management BIOS (SMBIOS) or Desktop Management Interface (DMI) data from the BIOS and presents it in huma",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "free",
+          "file": "system_info/free.json",
+          "description": "Display amount of free and used memory in the system including RAM and swap. The free command displays the total amount of free and used physical and swap memory in the system, as well as the buffers ",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "hostname",
+          "file": "system_info/hostname.json",
+          "description": "Show or set the system hostname. The hostname command displays or sets the system's network name used to identify the machine on a network. It can retrieve the fully qualified domain name (FQDN), shor",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": ["system_state"]
+        },
+        {
+          "name": "hostnamectl",
+          "file": "system_info/hostnamectl.json",
+          "description": "Query and change system hostname and related settings. Part of systemd, provides detailed information about host identity including static hostname, transient hostname, pretty hostname, machine ID, bo",
+          "has_subcommands": true,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": ["system_state"]
+        },
+        {
+          "name": "hwloc-info",
+          "file": "system_info/hwloc-info.json",
+          "description": "Query specific topology objects and their attributes. Provides detailed information about individual CPUs, caches, NUMA nodes, or devices. Useful for scripting topology queries.",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "hwloc-ls",
+          "file": "system_info/hwloc-ls.json",
+          "description": "Display hardware topology in graphical tree format. Shows hierarchical view of CPUs, caches, memory, PCI devices, and their relationships. Alias for lstopo in text mode.",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state", "gpu_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "lscpu",
+          "file": "system_info/lscpu.json",
+          "description": "Display CPU architecture information including cores, threads, sockets, NUMA nodes, caches, and CPU features. The lscpu command gathers CPU architecture information from sysfs, /proc/cpuinfo, and any ",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "lsmem",
+          "file": "system_info/lsmem.json",
+          "description": "List system memory ranges and their online/offline status. Shows memory block information useful for understanding memory topology and hotplug status in HPC nodes.",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "lsmod",
+          "file": "system_info/lsmod.json",
+          "description": "Show the status of loaded kernel modules. Displays information about currently loaded kernel modules including their size and dependencies. Essential for verifying GPU drivers, InfiniBand drivers, and",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "lspci",
+          "file": "system_info/lspci.json",
+          "description": "List all PCI devices - essential for identifying GPUs, InfiniBand HCAs, NVMe drives, and PCIe topology. The lspci command displays detailed information about all PCI buses and devices in the system in",
+          "has_subcommands": false,
+          "state_domains_read": [
+            "gpu_state",
+            "network_ib_state",
+            "system_state"
+          ],
+          "state_domains_write": []
+        },
+        {
+          "name": "lstopo",
+          "file": "system_info/lstopo.json",
+          "description": "Display hardware topology including CPUs, caches, memory, and devices. Part of hwloc (Hardware Locality), provides detailed view of system architecture essential for understanding NUMA topology and op",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state", "gpu_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "numactl",
+          "file": "system_info/numactl.json",
+          "description": "Control NUMA (Non-Uniform Memory Access) policy for processes and shared memory. numactl runs processes with a specific NUMA scheduling or memory placement policy, allowing administrators to bind proc",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": ["system_state"]
+        },
+        {
+          "name": "numastat",
+          "file": "system_info/numastat.json",
+          "description": "Display NUMA memory statistics per node. Shows memory allocation, hits/misses, and foreign allocations. Critical for identifying NUMA imbalances that can impact HPC application performance.",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "timedatectl",
+          "file": "system_info/timedatectl.json",
+          "description": "Query and change system time and date settings. Part of systemd, controls system clock, timezone, and NTP synchronization. Important in HPC clusters for ensuring consistent timestamps across nodes for",
+          "has_subcommands": true,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": ["system_state"]
+        },
+        {
+          "name": "uname",
+          "file": "system_info/uname.json",
+          "description": "Print system information including kernel name, version, machine architecture, and operating system. The uname command retrieves and displays fundamental system identification information from the ker",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        }
+      ]
+    },
+    "cluster_management": {
+      "description": "SLURM and cluster management tools",
+      "command_count": 18,
+      "commands": [
+        {
+          "name": "sacct",
+          "file": "cluster_management/sacct.json",
+          "description": "sacct displays accounting data for all jobs and job steps in the Slurm job accounting log or Slurm database. It queries historical job information from the slurmdbd (Slurm Database Daemon) and provide",
+          "has_subcommands": false,
+          "state_domains_read": ["job_state", "node_state", "partition_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "sacctmgr",
+          "file": "cluster_management/sacctmgr.json",
+          "description": "Slurm account manager. Administers accounts, users, clusters, and QOS definitions. Essential for HPC cluster administration and resource allocation.",
+          "has_subcommands": true,
+          "state_domains_read": ["job_state"],
+          "state_domains_write": ["job_state"]
+        },
+        {
+          "name": "salloc",
+          "file": "cluster_management/salloc.json",
+          "description": "salloc is used to obtain a Slurm job allocation for interactive use. It allocates compute resources (nodes, CPUs, memory, GPUs) and starts a shell or user-specified command on the submission host. Unl",
+          "has_subcommands": false,
+          "state_domains_read": ["partition_state", "node_state"],
+          "state_domains_write": ["job_state", "node_state"]
+        },
+        {
+          "name": "sbatch",
+          "file": "cluster_management/sbatch.json",
+          "description": "sbatch submits a batch script to Slurm for execution. The batch script may be given to sbatch through a file name on the command line, or if no file name is specified, sbatch reads from standard input",
+          "has_subcommands": false,
+          "state_domains_read": ["partition_state", "node_state"],
+          "state_domains_write": ["job_state"]
+        },
+        {
+          "name": "sbcast",
+          "file": "cluster_management/sbcast.json",
+          "description": "Broadcast files to compute nodes within a Slurm job allocation. Efficiently distributes executable or data files to all allocated nodes. Essential for jobs not using shared filesystem.",
+          "has_subcommands": false,
+          "state_domains_read": ["job_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "scancel",
+          "file": "cluster_management/scancel.json",
+          "description": "scancel is used to signal or cancel jobs, job arrays, or job steps that are under the control of Slurm. An arbitrary number of jobs or job steps may be signaled using job specification filters or a sp",
+          "has_subcommands": false,
+          "state_domains_read": ["job_state"],
+          "state_domains_write": ["job_state"]
+        },
+        {
+          "name": "scontrol",
+          "file": "cluster_management/scontrol.json",
+          "description": "scontrol is the administrative tool used to view and modify Slurm configuration and state. It provides comprehensive capabilities to view system configuration, job details, node status, partitions, an",
+          "has_subcommands": true,
+          "state_domains_read": ["job_state", "node_state", "partition_state"],
+          "state_domains_write": ["job_state", "node_state", "partition_state"]
+        },
+        {
+          "name": "scrontab",
+          "file": "cluster_management/scrontab.json",
+          "description": "SLURM cron-like job scheduler. Manages recurring batch jobs using cron syntax. Enables scheduled job submission on HPC clusters.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["job_state"]
+        },
+        {
+          "name": "sdiag",
+          "file": "cluster_management/sdiag.json",
+          "description": "SLURM diagnostic tool. Displays scheduling statistics and performance data. Useful for administrators to monitor SLURM scheduler health.",
+          "has_subcommands": false,
+          "state_domains_read": ["job_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "sgather",
+          "file": "cluster_management/sgather.json",
+          "description": "Gather files from compute nodes within a Slurm job allocation. Collects output files from all nodes to a central location. Complement to sbcast for file collection.",
+          "has_subcommands": false,
+          "state_domains_read": ["job_state", "storage_local_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "sinfo",
+          "file": "cluster_management/sinfo.json",
+          "description": "sinfo displays information about Slurm partitions and nodes. It reports the state of partitions and the nodes they contain, including availability, time limits, node counts, and detailed node configur",
+          "has_subcommands": false,
+          "state_domains_read": ["node_state", "partition_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "sprio",
+          "file": "cluster_management/sprio.json",
+          "description": "View priority factors for jobs in the Slurm queue. Shows how job priority is calculated from multiple factors including age, fair-share, job size, partition, and QOS. Essential for understanding why j",
+          "has_subcommands": false,
+          "state_domains_read": ["job_state", "partition_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "squeue",
+          "file": "cluster_management/squeue.json",
+          "description": "squeue displays information about jobs located in the Slurm scheduling queue. It shows job and job step information including job ID, partition, name, user, state, time, nodes, and node list. The comm",
+          "has_subcommands": false,
+          "state_domains_read": ["job_state", "node_state", "partition_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "sreport",
+          "file": "cluster_management/sreport.json",
+          "description": "Generate reports from Slurm accounting data. Provides usage summaries by cluster, user, account, and time period. Essential for tracking resource utilization and generating allocation reports in HPC c",
+          "has_subcommands": true,
+          "state_domains_read": ["job_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "srun",
+          "file": "cluster_management/srun.json",
+          "description": "srun is used to run parallel jobs or create job steps within an existing allocation. When run outside of an allocation, srun will first request resources (similar to salloc), then run the specified co",
+          "has_subcommands": false,
+          "state_domains_read": ["job_state", "partition_state", "node_state"],
+          "state_domains_write": ["job_state"]
+        },
+        {
+          "name": "sshare",
+          "file": "cluster_management/sshare.json",
+          "description": "View fair-share information for accounts and users in Slurm. Shows current usage, allocated shares, and fair-share factors that affect job scheduling priority. Essential for understanding resource all",
+          "has_subcommands": false,
+          "state_domains_read": ["job_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "sstat",
+          "file": "cluster_management/sstat.json",
+          "description": "sstat displays status information about currently running Slurm job steps. It provides real-time statistics on resource usage including CPU, memory, I/O, and energy consumption for active job steps. U",
+          "has_subcommands": false,
+          "state_domains_read": ["job_state", "node_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "strigger",
+          "file": "cluster_management/strigger.json",
+          "description": "Set or view event triggers in Slurm. Defines actions to execute when cluster events occur (node failure, job completion, etc.). Enables automated responses to cluster conditions.",
+          "has_subcommands": false,
+          "state_domains_read": ["node_state", "job_state"],
+          "state_domains_write": ["job_state"]
+        }
+      ]
+    },
+    "networking": {
+      "description": "InfiniBand, Mellanox, and network tools",
+      "command_count": 29,
+      "commands": [
+        {
+          "name": "ethtool",
+          "file": "networking/ethtool.json",
+          "description": "Query and configure network device driver and hardware settings. ethtool is the standard Linux utility for displaying and modifying Ethernet device parameters including link speed, duplex settings, au",
+          "has_subcommands": false,
+          "state_domains_read": ["network_eth_state"],
+          "state_domains_write": ["network_eth_state"]
+        },
+        {
+          "name": "ibdiagnet",
+          "file": "networking/ibdiagnet.json",
+          "description": "InfiniBand fabric diagnostic tool. Performs comprehensive fabric discovery, routing verification, and error checking. Essential for diagnosing InfiniBand network issues and validating fabric health in",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ibhosts",
+          "file": "networking/ibhosts.json",
+          "description": "Discover and list all InfiniBand Channel Adapters (CAs/HCAs) in the subnet. Queries the Subnet Manager to enumerate all host nodes connected to the InfiniBand fabric.",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "iblinkinfo",
+          "file": "networking/iblinkinfo.json",
+          "description": "Query InfiniBand link information for fabric topology discovery. iblinkinfo displays the link status of all links in an InfiniBand fabric by traversing the fabric using subnet management queries. It s",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ibnetdiscover",
+          "file": "networking/ibnetdiscover.json",
+          "description": "Discover InfiniBand fabric topology and generate topology files. ibnetdiscover performs a subnet discovery sweep of the InfiniBand fabric, querying all reachable nodes to map the complete network topo",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ibping",
+          "file": "networking/ibping.json",
+          "description": "InfiniBand ping utility. Tests connectivity and latency over InfiniBand network. Essential for verifying IB fabric connectivity in HPC clusters.",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ibportstate",
+          "file": "networking/ibportstate.json",
+          "description": "Query and modify InfiniBand port state. Can enable/disable ports and query detailed port status. Useful for fabric maintenance and troubleshooting link issues.",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": ["network_ib_state"]
+        },
+        {
+          "name": "ibstat",
+          "file": "networking/ibstat.json",
+          "description": "Query basic InfiniBand device attributes and port status. ibstat displays essential information about InfiniBand Host Channel Adapters (HCAs) including device type, firmware version, port state, physi",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ibstatus",
+          "file": "networking/ibstatus.json",
+          "description": "Query InfiniBand device port status including link state, physical state, rate, and LID (Local Identifier). ibstatus provides a quick overview of InfiniBand port conditions, displaying each port's cur",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ibswitches",
+          "file": "networking/ibswitches.json",
+          "description": "Discover and list all InfiniBand switches in the subnet. Queries the Subnet Manager to enumerate all switches in the InfiniBand fabric topology.",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ibtracert",
+          "file": "networking/ibtracert.json",
+          "description": "InfiniBand traceroute utility. Traces path through IB fabric between nodes. Essential for diagnosing IB routing in HPC clusters.",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ibv_devinfo",
+          "file": "networking/ibv_devinfo.json",
+          "description": "Query InfiniBand devices using verbs API. Shows detailed device and port information. Essential for RDMA application debugging.",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state", "firmware_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ip",
+          "file": "networking/ip.json",
+          "description": "Show and manipulate routing, network devices, interfaces, and tunnels. The ip command is the primary tool from the iproute2 package for configuring network interfaces, routing tables, tunnels, traffic",
+          "has_subcommands": true,
+          "state_domains_read": ["network_eth_state", "system_state"],
+          "state_domains_write": ["network_eth_state", "system_state"]
+        },
+        {
+          "name": "mlxcables",
+          "file": "networking/mlxcables.json",
+          "description": "Query NVIDIA/Mellanox cable information and diagnostics. Reads cable EEPROM data including type, vendor, serial number, and diagnostic measurements. Essential for cable inventory and troubleshooting.",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state", "firmware_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "mlxconfig",
+          "file": "networking/mlxconfig.json",
+          "description": "Query and configure NVIDIA/Mellanox network adapter firmware configuration parameters. Used for setting device parameters such as SRIOV, VPI port configuration, PCI settings, and other firmware-level ",
+          "has_subcommands": true,
+          "state_domains_read": ["network_ib_state", "firmware_state"],
+          "state_domains_write": ["network_ib_state", "firmware_state"]
+        },
+        {
+          "name": "mlxdump",
+          "file": "networking/mlxdump.json",
+          "description": "Dump NVIDIA/Mellanox device internal state for debugging. Collects firmware logs, hardware state, and diagnostic information. Essential for NVIDIA support cases.",
+          "has_subcommands": false,
+          "state_domains_read": ["firmware_state"],
+          "state_domains_write": ["firmware_state"]
+        },
+        {
+          "name": "mlxlink",
+          "file": "networking/mlxlink.json",
+          "description": "Query and configure link parameters for Mellanox/NVIDIA network adapters including speed, FEC, and diagnostics. mlxlink is a comprehensive diagnostic tool for debugging and managing link status across",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state", "firmware_state"],
+          "state_domains_write": ["network_ib_state"]
+        },
+        {
+          "name": "mlxreg",
+          "file": "networking/mlxreg.json",
+          "description": "Access NVIDIA/Mellanox device registers directly. Reads and writes hardware registers for advanced diagnostics and configuration. Low-level tool for hardware debugging.",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state", "firmware_state"],
+          "state_domains_write": ["network_ib_state"]
+        },
+        {
+          "name": "netstat",
+          "file": "networking/netstat.json",
+          "description": "Print network connections, routing tables, interface statistics. Legacy network diagnostic tool. Common on older HPC systems.",
+          "has_subcommands": false,
+          "state_domains_read": ["network_eth_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "perfquery",
+          "file": "networking/perfquery.json",
+          "description": "Query InfiniBand port performance counters and error statistics. perfquery retrieves performance management (PerfMgt) counters from InfiniBand ports including data transfer statistics (transmit/receiv",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": ["network_ib_state"]
+        },
+        {
+          "name": "ping",
+          "file": "networking/ping.json",
+          "description": "Send ICMP ECHO_REQUEST to network hosts. Tests network connectivity and measures latency. Essential for verifying HPC cluster network health.",
+          "has_subcommands": false,
+          "state_domains_read": ["network_eth_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "rdma",
+          "file": "networking/rdma.json",
+          "description": "RDMA device and resource management tool. Part of iproute2, provides interface to query and configure RDMA devices, links, and resources. Modern replacement for some ibstat functionality.",
+          "has_subcommands": true,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": ["network_ib_state"]
+        },
+        {
+          "name": "saquery",
+          "file": "networking/saquery.json",
+          "description": "Query InfiniBand Subnet Administrator for fabric information. Performs SA queries to retrieve node, path, and service records. Essential for fabric debugging and path analysis.",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "show_gids",
+          "file": "networking/show_gids.json",
+          "description": "Display InfiniBand GID table entries. Shows Global Identifiers for RDMA devices. Essential for RoCE/IB configuration and debugging.",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "sminfo",
+          "file": "networking/sminfo.json",
+          "description": "Query InfiniBand Subnet Manager information. Shows SM state, priority, and GUID. Essential for verifying SM availability and redundancy in HPC InfiniBand fabrics.",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "smpquery",
+          "file": "networking/smpquery.json",
+          "description": "Query InfiniBand Subnet Management packets directly from nodes. Retrieves node info, port info, and switch forwarding tables. Essential for low-level fabric debugging.",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ss",
+          "file": "networking/ss.json",
+          "description": "Socket statistics utility. Shows network socket information. Modern replacement for netstat, essential for network debugging on HPC systems.",
+          "has_subcommands": false,
+          "state_domains_read": ["network_eth_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "traceroute",
+          "file": "networking/traceroute.json",
+          "description": "Print route packets take to network host. Shows network path and hop latencies. Useful for diagnosing routing issues in HPC clusters.",
+          "has_subcommands": false,
+          "state_domains_read": ["network_eth_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ucx_info",
+          "file": "networking/ucx_info.json",
+          "description": "Display information about UCX (Unified Communication X) configuration and available transports. UCX is the high-performance communication framework used by many MPI implementations and NCCL for GPU-di",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state", "gpu_state"],
+          "state_domains_write": []
+        }
+      ]
+    },
+    "rdma_perf": {
+      "description": "RDMA performance testing tools",
+      "command_count": 6,
+      "commands": [
+        {
+          "name": "ib_read_bw",
+          "file": "rdma_perf/ib_read_bw.json",
+          "description": "RDMA read bandwidth benchmark for InfiniBand performance testing. ib_read_bw measures the bandwidth of RDMA read operations between two nodes connected via InfiniBand or RoCE networks. It operates in ",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state", "gpu_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ib_read_lat",
+          "file": "rdma_perf/ib_read_lat.json",
+          "description": "RDMA read latency benchmark for InfiniBand and RoCE networks. Measures round-trip latency for RDMA read operations between two nodes, commonly used to verify low-latency fabric performance in HPC clus",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ib_send_bw",
+          "file": "rdma_perf/ib_send_bw.json",
+          "description": "RDMA send bandwidth benchmark for InfiniBand and RoCE networks. Measures uni-directional or bi-directional bandwidth using RDMA send/receive operations. Part of the perftest suite for validating fabri",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ib_send_lat",
+          "file": "rdma_perf/ib_send_lat.json",
+          "description": "RDMA send latency benchmark for InfiniBand and RoCE networks. Measures round-trip latency for RDMA send/receive operations between two nodes. Part of the perftest suite.",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ib_write_bw",
+          "file": "rdma_perf/ib_write_bw.json",
+          "description": "RDMA write bandwidth benchmark for InfiniBand performance testing. ib_write_bw measures the bandwidth of RDMA write operations between two nodes connected via InfiniBand or RoCE networks. It operates ",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state", "gpu_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ib_write_lat",
+          "file": "rdma_perf/ib_write_lat.json",
+          "description": "RDMA write latency benchmark for InfiniBand performance testing. ib_write_lat measures the round-trip latency of RDMA write operations between two nodes connected via InfiniBand or RoCE networks. It o",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state", "gpu_state"],
+          "state_domains_write": []
+        }
+      ]
+    },
+    "containers": {
+      "description": "Container runtime and management tools",
+      "command_count": 8,
+      "commands": [
+        {
+          "name": "apptainer",
+          "file": "containers/apptainer.json",
+          "description": "Container platform designed for HPC environments (formerly Singularity). Enables running containers without root privileges, supports MPI, GPU passthrough, and tight integration with HPC schedulers. T",
+          "has_subcommands": true,
+          "state_domains_read": ["gpu_state", "container_state"],
+          "state_domains_write": ["container_state"]
+        },
+        {
+          "name": "docker",
+          "file": "containers/docker.json",
+          "description": "Platform for developing, shipping, and running applications in containers - with NVIDIA GPU support via nvidia-docker/nvidia-container-toolkit. Docker enables consistent deployment of applications acr",
+          "has_subcommands": true,
+          "state_domains_read": ["container_state", "gpu_state"],
+          "state_domains_write": ["container_state", "gpu_state"]
+        },
+        {
+          "name": "enroot",
+          "file": "containers/enroot.json",
+          "description": "Simple yet powerful tool to turn traditional container/OS images into unprivileged sandboxes. Enroot is NVIDIA's lightweight container runtime designed specifically for HPC environments. It enables ru",
+          "has_subcommands": true,
+          "state_domains_read": ["container_state", "gpu_state"],
+          "state_domains_write": ["container_state", "gpu_state"]
+        },
+        {
+          "name": "ngc",
+          "file": "containers/ngc.json",
+          "description": "NVIDIA GPU Cloud (NGC) command-line interface. Manages NGC container registry, models, and resources. Used to pull optimized GPU containers, download pre-trained models, and manage NGC organization re",
+          "has_subcommands": true,
+          "state_domains_read": ["container_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "nvidia-container-cli",
+          "file": "containers/nvidia-container-cli.json",
+          "description": "NVIDIA Container Runtime CLI for GPU container support. This low-level utility is the core component of the NVIDIA Container Toolkit that enables GPU-accelerated containers. It manages the configurati",
+          "has_subcommands": true,
+          "state_domains_read": ["gpu_state", "container_state"],
+          "state_domains_write": ["container_state"]
+        },
+        {
+          "name": "podman",
+          "file": "containers/podman.json",
+          "description": "Podman is a daemonless, rootless-capable container engine for developing, managing, and running OCI containers on Linux systems. Unlike Docker, Podman does not require a daemon process and can run con",
+          "has_subcommands": true,
+          "state_domains_read": ["container_state", "gpu_state"],
+          "state_domains_write": ["container_state", "gpu_state"]
+        },
+        {
+          "name": "pyxis",
+          "file": "containers/pyxis.json",
+          "description": "Slurm SPANK plugin for running containers. Enables seamless container execution within Slurm jobs using enroot backend. Provides container integration through srun --container-* options.",
+          "has_subcommands": false,
+          "state_domains_read": ["job_state", "container_state"],
+          "state_domains_write": ["container_state"]
+        },
+        {
+          "name": "singularity",
+          "file": "containers/singularity.json",
+          "description": "Container platform designed for high-performance computing (HPC) environments. SingularityCE (now known as Apptainer after joining the Linux Foundation) enables running containers without requiring ro",
+          "has_subcommands": true,
+          "state_domains_read": ["container_state", "gpu_state"],
+          "state_domains_write": ["container_state", "gpu_state"]
+        }
+      ]
+    },
+    "firmware": {
+      "description": "Firmware management tools",
+      "command_count": 5,
+      "commands": [
+        {
+          "name": "flint",
+          "file": "firmware/flint.json",
+          "description": "Mellanox FLash INTerface (flint) is a low-level firmware burn tool for NVIDIA/Mellanox network adapters and switches. It provides direct control over firmware operations including burning, verifying, ",
+          "has_subcommands": true,
+          "state_domains_read": ["firmware_state", "network_ib_state"],
+          "state_domains_write": ["firmware_state", "network_ib_state"]
+        },
+        {
+          "name": "fwupdmgr",
+          "file": "firmware/fwupdmgr.json",
+          "description": "Linux Vendor Firmware Service (LVFS) client for updating device firmware. Updates BIOS, storage controllers, and peripherals from LVFS repository. General-purpose firmware management.",
+          "has_subcommands": true,
+          "state_domains_read": ["firmware_state", "system_state"],
+          "state_domains_write": ["firmware_state"]
+        },
+        {
+          "name": "mlxfwmanager",
+          "file": "firmware/mlxfwmanager.json",
+          "description": "Mellanox/NVIDIA firmware management tool for InfiniBand and Ethernet network adapters. mlxfwmanager provides comprehensive firmware lifecycle management including querying current firmware versions, u",
+          "has_subcommands": false,
+          "state_domains_read": ["firmware_state", "network_ib_state"],
+          "state_domains_write": ["firmware_state", "network_ib_state"]
+        },
+        {
+          "name": "mlxfwreset",
+          "file": "firmware/mlxfwreset.json",
+          "description": "Reset or query Mellanox/NVIDIA network adapter firmware without system reboot. Used to apply firmware configuration changes (from mlxconfig) or recover from certain error conditions without full syste",
+          "has_subcommands": true,
+          "state_domains_read": ["firmware_state", "network_ib_state"],
+          "state_domains_write": ["network_ib_state", "firmware_state"]
+        },
+        {
+          "name": "mlxup",
+          "file": "firmware/mlxup.json",
+          "description": "Update firmware on NVIDIA/Mellanox network adapters. Queries current firmware, downloads updates, and performs upgrades. Essential for maintaining adapter firmware currency.",
+          "has_subcommands": false,
+          "state_domains_read": ["firmware_state"],
+          "state_domains_write": ["firmware_state"]
+        }
+      ]
+    },
+    "storage": {
+      "description": "Storage and filesystem tools",
+      "command_count": 10,
+      "commands": [
+        {
+          "name": "dd",
+          "file": "storage/dd.json",
+          "description": "Convert and copy files with low-level I/O. Performs raw disk copies, creates disk images, and benchmarks I/O. Essential for storage testing and data recovery.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "df",
+          "file": "storage/df.json",
+          "description": "Report filesystem disk space usage. The df command displays the amount of disk space available on the filesystem containing each file name argument. If no file name is given, the space available on al",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state", "storage_lustre_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "du",
+          "file": "storage/du.json",
+          "description": "Estimate file and directory space usage. Recursively calculates disk usage for directories. Essential for finding large files and managing HPC storage quotas.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state", "storage_lustre_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "findmnt",
+          "file": "storage/findmnt.json",
+          "description": "Find and display mounted filesystems. Provides tree-view of mount hierarchy with detailed information about mount options, filesystem type, and source. More informative than mount command for analysis",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state", "storage_lustre_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "lfs",
+          "file": "storage/lfs.json",
+          "description": "Lustre filesystem client-side utility for file management, striping configuration, quota management, and filesystem queries. The lfs command provides users with an interface to access extended attribu",
+          "has_subcommands": true,
+          "state_domains_read": ["storage_lustre_state"],
+          "state_domains_write": ["storage_lustre_state"]
+        },
+        {
+          "name": "lsblk",
+          "file": "storage/lsblk.json",
+          "description": "List information about block devices. The lsblk command lists information about all available or specified block devices. It reads the sysfs filesystem and udev database to gather information. By defa",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "mount",
+          "file": "storage/mount.json",
+          "description": "Mount filesystems. Attaches storage devices, network shares, and special filesystems to the directory tree. Essential for managing local NVMe storage, Lustre mounts, and NFS shares in HPC environments",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "nvme",
+          "file": "storage/nvme.json",
+          "description": "NVMe management command-line interface for managing NVMe SSDs. Essential in HPC environments for managing high-speed local scratch storage, checking drive health, and monitoring NVMe performance on co",
+          "has_subcommands": true,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "smartctl",
+          "file": "storage/smartctl.json",
+          "description": "Control and monitor SMART-enabled storage devices. Queries drive health, runs tests, and retrieves error logs. Essential for HPC storage reliability monitoring.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "umount",
+          "file": "storage/umount.json",
+          "description": "Unmount filesystems. Detaches mounted storage devices, network shares, or special filesystems from the directory tree. Essential for safe storage removal.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": ["storage_local_state"]
+        }
+      ]
+    },
+    "mpi": {
+      "description": "MPI and parallel computing tools",
+      "command_count": 6,
+      "commands": [
+        {
+          "name": "mpi_test_suite",
+          "file": "mpi/mpi_test_suite.json",
+          "description": "MPI test suite for compliance testing. Validates MPI implementation correctness. Used for verifying MPI installations on HPC systems.",
+          "has_subcommands": false,
+          "state_domains_read": ["network_ib_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "mpicc",
+          "file": "mpi/mpicc.json",
+          "description": "MPI C compiler wrapper. Compiles C programs with MPI library linking automatically handled. Wraps the underlying C compiler (gcc, icc, etc.) and adds necessary MPI include paths and libraries.",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "mpiexec",
+          "file": "mpi/mpiexec.json",
+          "description": "mpiexec is the standardized MPI process launcher defined in the MPI-2 specification for starting parallel MPI applications across multiple processes and nodes. In Open MPI and MPICH implementations, m",
+          "has_subcommands": false,
+          "state_domains_read": ["job_state", "node_state", "gpu_state"],
+          "state_domains_write": ["gpu_process_state", "system_state"]
+        },
+        {
+          "name": "mpif90",
+          "file": "mpi/mpif90.json",
+          "description": "MPI Fortran compiler wrapper. Compiles Fortran programs with MPI support. Essential for HPC scientific computing applications.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "mpirun",
+          "file": "mpi/mpirun.json",
+          "description": "mpirun (also available as orterun) is the Open MPI launcher for starting parallel MPI applications across multiple processes and nodes. It serves as the primary mechanism for launching distributed par",
+          "has_subcommands": false,
+          "state_domains_read": [
+            "job_state",
+            "node_state",
+            "gpu_state",
+            "network_ib_state"
+          ],
+          "state_domains_write": ["gpu_process_state", "system_state"]
+        },
+        {
+          "name": "ompi_info",
+          "file": "mpi/ompi_info.json",
+          "description": "Display information about the Open MPI installation. Shows version, configuration options, available components, and build parameters. Essential for debugging MPI configuration issues in HPC environme",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        }
+      ]
+    },
+    "gpu_fabric": {
+      "description": "NVLink, NVSwitch, and GPU fabric tools",
+      "command_count": 5,
+      "commands": [
+        {
+          "name": "gdrcopy_copybw",
+          "file": "gpu_fabric/gdrcopy_copybw.json",
+          "description": "Measure GPU-CPU memory copy bandwidth using GDRCopy. Tests GPUDirect RDMA memory copy performance. Essential for benchmarking GPU memory access from CPU.",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "gdrcopy_copylat",
+          "file": "gpu_fabric/gdrcopy_copylat.json",
+          "description": "Measure GPU-CPU memory copy latency using GDRCopy. Tests GPUDirect RDMA memory access latency. Essential for benchmarking low-latency GPU communication patterns.",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "nv-fabricmanager",
+          "file": "gpu_fabric/nv-fabricmanager.json",
+          "description": "NVIDIA Fabric Manager daemon for NVSwitch-based multi-GPU systems (DGX, HGX). Fabric Manager is responsible for configuring and managing NVLink fabric on systems with NVSwitch, enabling GPU-to-GPU com",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state", "fabric_state"],
+          "state_domains_write": ["fabric_state", "gpu_state"]
+        },
+        {
+          "name": "nvbandwidth",
+          "file": "gpu_fabric/nvbandwidth.json",
+          "description": "NVIDIA bandwidth measurement tool for testing GPU-to-GPU and GPU-to-Host memory bandwidth via NVLink, PCIe, and other interconnects. Provides detailed bandwidth measurements for various memory copy op",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state", "fabric_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "p2pBandwidthLatencyTest",
+          "file": "gpu_fabric/p2pBandwidthLatencyTest.json",
+          "description": "CUDA sample that measures peer-to-peer bandwidth and latency between GPUs. Tests NVLink and PCIe peer access capabilities and performance. Essential for validating multi-GPU communication in DGX and H",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state", "fabric_state"],
+          "state_domains_write": []
+        }
+      ]
+    },
+    "cuda_tools": {
+      "description": "CUDA development and profiling tools",
+      "command_count": 12,
+      "commands": [
+        {
+          "name": "bandwidthTest",
+          "file": "cuda_tools/bandwidthTest.json",
+          "description": "CUDA sample application that measures memory bandwidth between host and device, and device to device. Used for validating PCIe and NVLink bandwidth, diagnosing performance issues, and benchmarking sys",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state", "system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "compute-sanitizer",
+          "file": "cuda_tools/compute-sanitizer.json",
+          "description": "NVIDIA Compute Sanitizer is a functional correctness checking suite for CUDA applications. It detects memory access errors, race conditions, synchronization issues, and uninitialized memory access in ",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state", "gpu_process_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "cuda-gdb",
+          "file": "cuda_tools/cuda-gdb.json",
+          "description": "NVIDIA CUDA Debugger (cuda-gdb) is an extension of GDB (GNU Debugger) specifically designed for debugging CUDA applications. It enables developers to debug both host (CPU) and device (GPU) code simult",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state", "gpu_process_state"],
+          "state_domains_write": ["gpu_process_state"]
+        },
+        {
+          "name": "cuda-memcheck",
+          "file": "cuda_tools/cuda-memcheck.json",
+          "description": "Memory checking tool for CUDA applications. Detects memory errors, race conditions, and uninitialized memory. Essential for debugging GPU memory issues.",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state", "gpu_process_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "cuobjdump",
+          "file": "cuda_tools/cuobjdump.json",
+          "description": "CUDA object file analyzer. Extracts and displays information from CUDA binary files. Used for debugging and analyzing compiled CUDA code.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "deviceQuery",
+          "file": "cuda_tools/deviceQuery.json",
+          "description": "CUDA sample application that queries and displays GPU device properties. Shows detailed information about CUDA capabilities, compute version, memory, clocks, and features for each GPU. Standard tool f",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ncu",
+          "file": "cuda_tools/ncu.json",
+          "description": "NVIDIA Nsight Compute (ncu) is an interactive kernel profiler for CUDA applications. It provides detailed performance metrics and analysis for GPU kernels, enabling developers to understand compute, m",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state", "gpu_process_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "nsys",
+          "file": "cuda_tools/nsys.json",
+          "description": "NVIDIA Nsight Systems is a system-wide performance analysis tool designed to visualize application algorithms, identify performance bottlenecks, and optimize GPU and CPU usage. It provides low-overhea",
+          "has_subcommands": true,
+          "state_domains_read": ["gpu_state", "gpu_process_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "nvcc",
+          "file": "cuda_tools/nvcc.json",
+          "description": "NVIDIA CUDA Compiler Driver (nvcc) is the primary compiler for CUDA C/C++ code. It orchestrates the compilation of CUDA source files by separating device code (GPU kernels) from host code (CPU), compi",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "nvdisasm",
+          "file": "cuda_tools/nvdisasm.json",
+          "description": "CUDA disassembler. Disassembles CUDA binaries to SASS assembly. Used for low-level kernel analysis and optimization.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "nvprof",
+          "file": "cuda_tools/nvprof.json",
+          "description": "NVIDIA CUDA profiler. Legacy GPU profiling tool for CUDA applications. Replaced by nsys/ncu but still used on older systems.",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "ptxas",
+          "file": "cuda_tools/ptxas.json",
+          "description": "PTX to SASS assembler. Compiles PTX intermediate code to GPU machine code. Used for low-level CUDA optimization and kernel analysis.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": ["storage_local_state"]
+        }
+      ]
+    },
+    "nccl_tests": {
+      "description": "NCCL collective communication tests",
+      "command_count": 8,
+      "commands": [
+        {
+          "name": "all_gather_perf",
+          "file": "nccl_tests/all_gather_perf.json",
+          "description": "NCCL AllGather collective communication performance test - measures bandwidth and latency for AllGather operations across GPUs. This benchmark evaluates both performance and correctness of the NCCL Al",
+          "has_subcommands": false,
+          "state_domains_read": [
+            "gpu_state",
+            "fabric_state",
+            "network_ib_state"
+          ],
+          "state_domains_write": []
+        },
+        {
+          "name": "all_reduce_perf",
+          "file": "nccl_tests/all_reduce_perf.json",
+          "description": "NCCL AllReduce collective communication performance test - measures bandwidth and latency for AllReduce operations across GPUs. This benchmark evaluates both performance and correctness of the NCCL Al",
+          "has_subcommands": false,
+          "state_domains_read": [
+            "gpu_state",
+            "fabric_state",
+            "network_ib_state"
+          ],
+          "state_domains_write": []
+        },
+        {
+          "name": "broadcast_perf",
+          "file": "nccl_tests/broadcast_perf.json",
+          "description": "NCCL Broadcast collective communication performance test - measures bandwidth and latency for Broadcast operations across GPUs. This benchmark evaluates both performance and correctness of the NCCL Br",
+          "has_subcommands": false,
+          "state_domains_read": [
+            "gpu_state",
+            "fabric_state",
+            "network_ib_state"
+          ],
+          "state_domains_write": []
+        },
+        {
+          "name": "gather_perf",
+          "file": "nccl_tests/gather_perf.json",
+          "description": "NCCL Gather performance test. Measures all-to-one data collection to root GPU. Tests gather collective performance for aggregating distributed data.",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "reduce_perf",
+          "file": "nccl_tests/reduce_perf.json",
+          "description": "NCCL reduce collective operation benchmark. Tests performance of the MPI_Reduce-like operation where data from all GPUs is reduced (summed, max, min, etc.) to a single root GPU. Used to validate GPU i",
+          "has_subcommands": false,
+          "state_domains_read": [
+            "gpu_state",
+            "fabric_state",
+            "network_ib_state"
+          ],
+          "state_domains_write": []
+        },
+        {
+          "name": "reduce_scatter_perf",
+          "file": "nccl_tests/reduce_scatter_perf.json",
+          "description": "NCCL ReduceScatter collective communication performance test - measures bandwidth and latency for ReduceScatter operations across GPUs. The ReduceScatter operation reduces data from all ranks and scat",
+          "has_subcommands": false,
+          "state_domains_read": [
+            "gpu_state",
+            "fabric_state",
+            "network_ib_state"
+          ],
+          "state_domains_write": []
+        },
+        {
+          "name": "scatter_perf",
+          "file": "nccl_tests/scatter_perf.json",
+          "description": "NCCL Scatter performance test. Measures one-to-all data distribution with different portions to each GPU. Tests scatter collective for distributed workload distribution.",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "sendrecv_perf",
+          "file": "nccl_tests/sendrecv_perf.json",
+          "description": "NCCL Send/Recv point-to-point communication performance benchmark - measures bandwidth and latency for direct Send and Receive operations between GPU pairs. Unlike collective operations, sendrecv_perf",
+          "has_subcommands": false,
+          "state_domains_read": [
+            "gpu_state",
+            "network_ib_state",
+            "fabric_state"
+          ],
+          "state_domains_write": []
+        }
+      ]
+    },
+    "monitoring": {
+      "description": "System monitoring and observability tools",
+      "command_count": 18,
+      "commands": [
+        {
+          "name": "atop",
+          "file": "monitoring/atop.json",
+          "description": "Advanced system and process monitor. Shows CPU, memory, disk, network metrics with per-process breakdown. Records history for post-mortem analysis.",
+          "has_subcommands": false,
+          "state_domains_read": [
+            "system_state",
+            "storage_local_state",
+            "network_eth_state"
+          ],
+          "state_domains_write": []
+        },
+        {
+          "name": "dstat",
+          "file": "monitoring/dstat.json",
+          "description": "Versatile resource statistics tool combining vmstat, iostat, netstat, and ifstat. Shows real-time system metrics in customizable columns. Useful for HPC performance monitoring.",
+          "has_subcommands": false,
+          "state_domains_read": [
+            "system_state",
+            "storage_local_state",
+            "network_eth_state"
+          ],
+          "state_domains_write": []
+        },
+        {
+          "name": "glances",
+          "file": "monitoring/glances.json",
+          "description": "Cross-platform system monitoring tool with web interface. Displays comprehensive system metrics including CPU, memory, network, disk, processes, and sensors. Supports remote monitoring.",
+          "has_subcommands": false,
+          "state_domains_read": [
+            "system_state",
+            "gpu_state",
+            "storage_local_state",
+            "network_eth_state"
+          ],
+          "state_domains_write": []
+        },
+        {
+          "name": "htop",
+          "file": "monitoring/htop.json",
+          "description": "Interactive process viewer with visual CPU and memory bars. htop is an enhanced alternative to the traditional top command, providing a real-time, color-coded display of system processes with CPU, mem",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": ["system_state"]
+        },
+        {
+          "name": "iostat",
+          "file": "monitoring/iostat.json",
+          "description": "Report CPU statistics and I/O statistics for devices and partitions. The iostat command monitors system input/output device loading by observing the time devices are active in relation to their averag",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state", "storage_local_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "iotop",
+          "file": "monitoring/iotop.json",
+          "description": "Monitor I/O usage by processes. Shows disk read/write rates per process in real-time. Essential for identifying I/O bottlenecks in HPC workloads.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state", "gpu_process_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "mpstat",
+          "file": "monitoring/mpstat.json",
+          "description": "Report per-processor statistics. Part of the sysstat package, mpstat displays CPU utilization statistics for each available processor or processor set, useful for identifying CPU imbalances in HPC wor",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "nmon",
+          "file": "monitoring/nmon.json",
+          "description": "Nigel's performance Monitor for Linux. Interactive tool showing CPU, memory, network, disk, and other system metrics. Useful for real-time HPC node performance analysis.",
+          "has_subcommands": false,
+          "state_domains_read": [
+            "system_state",
+            "storage_local_state",
+            "network_eth_state"
+          ],
+          "state_domains_write": []
+        },
+        {
+          "name": "perf",
+          "file": "monitoring/perf.json",
+          "description": "Linux performance analysis tool using hardware counters. Profiles CPU cycles, cache misses, branch mispredictions, and more. Essential for HPC application performance analysis.",
+          "has_subcommands": true,
+          "state_domains_read": ["system_state", "gpu_process_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "pidstat",
+          "file": "monitoring/pidstat.json",
+          "description": "Report statistics for Linux tasks (processes). Part of sysstat, shows CPU, memory, I/O, and context switch statistics per process. Useful for identifying resource-intensive processes in HPC workloads.",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ps",
+          "file": "monitoring/ps.json",
+          "description": "Report a snapshot of current processes. The ps command displays information about active processes on the system. Unlike top, ps provides a static snapshot rather than a continuous display, making it ",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "sar",
+          "file": "monitoring/sar.json",
+          "description": "Collect, report, and save system activity information. The sar (System Activity Reporter) command is the primary tool for collecting and displaying system performance data over time. It can report on ",
+          "has_subcommands": false,
+          "state_domains_read": [
+            "system_state",
+            "storage_local_state",
+            "network_eth_state"
+          ],
+          "state_domains_write": []
+        },
+        {
+          "name": "sensors",
+          "file": "monitoring/sensors.json",
+          "description": "Display hardware sensor readings including temperatures, fan speeds, and voltages. Reads data from lm-sensors kernel drivers. Useful for monitoring CPU and motherboard temperatures in HPC nodes.",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "top",
+          "file": "monitoring/top.json",
+          "description": "Dynamic real-time view of running system processes. The top command provides a continuously updating display of process activity including CPU and memory usage, process states, and system load average",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "turbostat",
+          "file": "monitoring/turbostat.json",
+          "description": "Report processor frequency, power, and idle statistics. Shows C-states, P-states, temperature, and power consumption per CPU. Essential for monitoring CPU power efficiency and thermal behavior in HPC ",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "uptime",
+          "file": "monitoring/uptime.json",
+          "description": "Display how long the system has been running, along with current time, number of logged-in users, and system load averages. Essential for HPC node health monitoring to verify nodes have not rebooted u",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "vmstat",
+          "file": "monitoring/vmstat.json",
+          "description": "Report virtual memory statistics including processes, memory, paging, block I/O, traps, disks, and CPU activity. vmstat provides a snapshot or continuous report of system performance, making it essent",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state", "storage_local_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "watch",
+          "file": "monitoring/watch.json",
+          "description": "Execute a program periodically and display the output. Useful for monitoring changing system state, watching GPU metrics, job queues, or any command output that updates over time.",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        }
+      ]
+    },
+    "parallel_shell": {
+      "description": "Parallel shell and cluster administration tools",
+      "command_count": 4,
+      "commands": [
+        {
+          "name": "clush",
+          "file": "parallel_shell/clush.json",
+          "description": "clush (ClusterShell) is a powerful parallel command execution tool designed for HPC cluster administration and management. It enables administrators to run commands simultaneously across multiple node",
+          "has_subcommands": false,
+          "state_domains_read": ["node_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "nodeset",
+          "file": "parallel_shell/nodeset.json",
+          "description": "Compute operations on node sets in HPC clusters. Part of ClusterShell, provides powerful tools for manipulating sets of hostnames using range expressions. Essential for HPC system administration tasks",
+          "has_subcommands": false,
+          "state_domains_read": ["node_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "pdcp",
+          "file": "parallel_shell/pdcp.json",
+          "description": "Parallel distributed copy utility. Part of pdsh, copies files to multiple remote hosts simultaneously. Essential for distributing files across HPC cluster nodes efficiently.",
+          "has_subcommands": false,
+          "state_domains_read": ["node_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "pdsh",
+          "file": "parallel_shell/pdsh.json",
+          "description": "pdsh (Parallel Distributed Shell) is a high-performance, parallel remote shell utility for executing commands simultaneously across multiple cluster nodes. It provides a scalable alternative to serial",
+          "has_subcommands": false,
+          "state_domains_read": ["node_state"],
+          "state_domains_write": []
+        }
+      ]
+    },
+    "modules": {
+      "description": "Environment modules tools",
+      "command_count": 1,
+      "commands": [
+        {
+          "name": "module",
+          "file": "modules/module.json",
+          "description": "Manage software environment through modulefiles (Environment Modules/Lmod). The module command dynamically modifies the user's shell environment to enable access to different software packages, compil",
+          "has_subcommands": true,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": ["system_state"]
+        }
+      ]
+    },
+    "general": {
+      "description": "General utility commands",
+      "command_count": 53,
+      "commands": [
+        {
+          "name": "awk",
+          "file": "general/awk.json",
+          "description": "Pattern scanning and text processing language. Processes structured text data with powerful field handling. Essential for parsing HPC logs and metrics.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "cat",
+          "file": "general/cat.json",
+          "description": "Concatenate files and print to stdout. Displays file contents and combines files. Widely used in HPC scripts for viewing configs and logs.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "chmod",
+          "file": "general/chmod.json",
+          "description": "Change file mode bits. Sets read, write, execute permissions on files. Essential for managing executable scripts and data access in HPC.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "chown",
+          "file": "general/chown.json",
+          "description": "Change file owner and group. Transfers file ownership between users. Essential for setting up shared HPC project directories.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "cmake",
+          "file": "general/cmake.json",
+          "description": "Cross-platform build system generator. Generates Makefiles and project files from CMakeLists.txt. Standard for building complex HPC and CUDA applications.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "cp",
+          "file": "general/cp.json",
+          "description": "Copy files and directories. Duplicates files with various preservation options. Essential for staging data and backing up HPC job inputs/outputs.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "crontab",
+          "file": "general/crontab.json",
+          "description": "Maintain crontab files for individual users. Schedules recurring tasks. Used for automated maintenance and monitoring on HPC systems.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["system_state"]
+        },
+        {
+          "name": "curl",
+          "file": "general/curl.json",
+          "description": "Transfer data from or to server. Versatile tool for HTTP requests, API calls, and file transfers. Used in HPC for API interactions and downloads.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "diff",
+          "file": "general/diff.json",
+          "description": "Compare files line by line. Shows differences between files. Used in HPC for comparing configurations, outputs, and validating results.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "env",
+          "file": "general/env.json",
+          "description": "Display, set, or modify environment variables, or run a command in a modified environment. Essential for HPC workflows to verify CUDA paths, MPI settings, module configurations, and debugging environm",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "find",
+          "file": "general/find.json",
+          "description": "Search for files in directory hierarchy. Locates files by name, type, time, size, and more. Critical for managing HPC data and cleaning scratch space.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "git",
+          "file": "general/git.json",
+          "description": "Distributed version control system. Tracks changes in source code and enables collaboration. Essential for managing HPC scripts, configurations, and research code.",
+          "has_subcommands": true,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "grep",
+          "file": "general/grep.json",
+          "description": "Search for patterns in files. Matches regular expressions in text. Essential for log analysis and searching HPC job outputs.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "gzip",
+          "file": "general/gzip.json",
+          "description": "Compress or decompress files. GNU zip compression utility. Widely used for compressing HPC data, logs, and checkpoint files.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "head",
+          "file": "general/head.json",
+          "description": "Output the first part of files. Shows beginning of files without reading entirely. Essential for previewing large HPC data files.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "id",
+          "file": "general/id.json",
+          "description": "Print user and group IDs. Shows user identity and group memberships. Useful for verifying permissions on HPC systems.",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "kill",
+          "file": "general/kill.json",
+          "description": "Send signals to processes. Terminates or controls processes by PID. Essential for managing runaway HPC jobs and GPU processes.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["gpu_process_state"]
+        },
+        {
+          "name": "ldconfig",
+          "file": "general/ldconfig.json",
+          "description": "Configure dynamic linker run-time bindings. Updates shared library cache. Essential when installing new libraries like CUDA on HPC systems.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": ["system_state"]
+        },
+        {
+          "name": "ldd",
+          "file": "general/ldd.json",
+          "description": "Print shared library dependencies. Lists dynamic libraries required by executables. Essential for debugging missing library issues in HPC applications.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ln",
+          "file": "general/ln.json",
+          "description": "Make links between files. Creates hard or symbolic links to files. Essential for organizing HPC data and sharing files across directories.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "make",
+          "file": "general/make.json",
+          "description": "GNU make utility. Builds programs from source using Makefiles. Essential for compiling HPC applications, CUDA code, and MPI programs.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "mkdir",
+          "file": "general/mkdir.json",
+          "description": "Make directories. Creates new directories with specified permissions. Essential for organizing HPC project structures.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "mv",
+          "file": "general/mv.json",
+          "description": "Move or rename files. Relocates files and directories or changes their names. Used in HPC for organizing outputs and atomic file operations.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "nice",
+          "file": "general/nice.json",
+          "description": "Run a program with modified scheduling priority. Adjusts CPU priority for processes. Useful for running background tasks on HPC nodes without impacting primary workloads.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["system_state"]
+        },
+        {
+          "name": "nohup",
+          "file": "general/nohup.json",
+          "description": "Run a command immune to hangups. Keeps processes running after logout. Essential for long-running HPC jobs started from interactive sessions.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["gpu_process_state"]
+        },
+        {
+          "name": "nproc",
+          "file": "general/nproc.json",
+          "description": "Print number of processing units. Shows available CPU count. Essential for HPC parallel job configuration.",
+          "has_subcommands": false,
+          "state_domains_read": ["node_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "pgrep",
+          "file": "general/pgrep.json",
+          "description": "Find processes by name pattern. Returns PIDs of matching processes. Essential for scripting process checks in HPC environments.",
+          "has_subcommands": false,
+          "state_domains_read": ["gpu_process_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "pkill",
+          "file": "general/pkill.json",
+          "description": "Signal processes by name pattern. Kills processes matching a pattern without needing PIDs. Essential for terminating multiple instances of HPC applications.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["gpu_process_state"]
+        },
+        {
+          "name": "rm",
+          "file": "general/rm.json",
+          "description": "Remove files or directories. Deletes files and optionally directories. Critical for managing HPC scratch space and cleaning up job outputs.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "rsync",
+          "file": "general/rsync.json",
+          "description": "Fast, versatile file copying tool. Synchronizes files locally or over network with delta transfer. Essential for HPC data movement and backup.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "scp",
+          "file": "general/scp.json",
+          "description": "Secure copy over SSH. Transfers files between hosts using SSH encryption. Essential for moving data to/from HPC compute nodes.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "screen",
+          "file": "general/screen.json",
+          "description": "Terminal multiplexer and session manager. Allows detaching and reattaching terminal sessions. Essential for long-running HPC interactive work.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["gpu_process_state"]
+        },
+        {
+          "name": "sed",
+          "file": "general/sed.json",
+          "description": "Stream editor for filtering and transforming text. Performs text substitutions and transformations. Used in HPC for config modifications and log processing.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "sleep",
+          "file": "general/sleep.json",
+          "description": "Delay for specified time. Pauses execution for given duration. Commonly used in HPC scripts for timing and polling loops.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": []
+        },
+        {
+          "name": "sort",
+          "file": "general/sort.json",
+          "description": "Sort lines of text files. Provides various sorting options including numeric and reverse. Essential for processing HPC log and data files.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "ssh",
+          "file": "general/ssh.json",
+          "description": "OpenSSH secure shell client. Provides encrypted remote login and command execution. Essential for accessing HPC compute nodes and transferring data.",
+          "has_subcommands": false,
+          "state_domains_read": ["node_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "strace",
+          "file": "general/strace.json",
+          "description": "Trace system calls and signals. Diagnostic tool for debugging program behavior. Invaluable for troubleshooting HPC application issues.",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "sudo",
+          "file": "general/sudo.json",
+          "description": "Execute command as another user. Runs commands with elevated privileges. Required for administrative tasks on HPC systems.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["system_state"]
+        },
+        {
+          "name": "systemctl",
+          "file": "general/systemctl.json",
+          "description": "Control systemd system and service manager. Manages services, targets, and system state. Used on HPC nodes for service management.",
+          "has_subcommands": true,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": ["system_state"]
+        },
+        {
+          "name": "tail",
+          "file": "general/tail.json",
+          "description": "Output the last part of files. Shows end of files and can follow growing files. Essential for monitoring HPC job logs in real-time.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "tar",
+          "file": "general/tar.json",
+          "description": "Archive utility for creating and extracting tar archives. Handles compressed archives (gzip, bzip2, xz). Essential for data transfer and backup in HPC environments.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "taskset",
+          "file": "general/taskset.json",
+          "description": "Set or retrieve process CPU affinity. Binds processes to specific CPU cores. Critical for HPC performance optimization and NUMA-aware scheduling.",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": ["system_state"]
+        },
+        {
+          "name": "tee",
+          "file": "general/tee.json",
+          "description": "Read from stdin and write to stdout and files. Duplicates output to files while displaying. Essential for logging HPC job output.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "time",
+          "file": "general/time.json",
+          "description": "Time command execution. Measures wall-clock, user CPU, and system CPU time. Essential for benchmarking HPC applications.",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "timeout",
+          "file": "general/timeout.json",
+          "description": "Run command with time limit. Kills command after specified duration. Useful for HPC job scripts to enforce time limits.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["system_state"]
+        },
+        {
+          "name": "tmux",
+          "file": "general/tmux.json",
+          "description": "Terminal multiplexer with session management. Creates persistent sessions with multiple windows and panes. Modern alternative to screen for HPC work.",
+          "has_subcommands": true,
+          "state_domains_read": [],
+          "state_domains_write": ["gpu_process_state"]
+        },
+        {
+          "name": "touch",
+          "file": "general/touch.json",
+          "description": "Change file timestamps. Creates empty files or updates access/modification times. Commonly used in HPC for job signaling and marking progress.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "unzip",
+          "file": "general/unzip.json",
+          "description": "Extract compressed files from ZIP archives. Extracts files from .zip format. Common for extracting datasets and software packages in HPC.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "wc",
+          "file": "general/wc.json",
+          "description": "Print newline, word, and byte counts for files. Quick file statistics utility. Essential for counting lines in HPC data files and logs.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "wget",
+          "file": "general/wget.json",
+          "description": "Network downloader. Retrieves files from web servers via HTTP/HTTPS/FTP. Used in HPC for downloading datasets, models, and software.",
+          "has_subcommands": false,
+          "state_domains_read": [],
+          "state_domains_write": ["storage_local_state"]
+        },
+        {
+          "name": "which",
+          "file": "general/which.json",
+          "description": "Locate a command executable in the user's PATH. Essential in HPC environments for verifying which version of tools like nvcc, mpirun, or python is being used, especially after loading environment modu",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "whoami",
+          "file": "general/whoami.json",
+          "description": "Print effective user name. Shows current user identity. Simple utility for scripts to check running user.",
+          "has_subcommands": false,
+          "state_domains_read": ["system_state"],
+          "state_domains_write": []
+        },
+        {
+          "name": "xargs",
+          "file": "general/xargs.json",
+          "description": "Build and execute command lines from standard input. Converts input into command arguments. Essential for batch processing in HPC workflows.",
+          "has_subcommands": false,
+          "state_domains_read": ["storage_local_state"],
+          "state_domains_write": []
+        }
+      ]
+    }
+  }
+}

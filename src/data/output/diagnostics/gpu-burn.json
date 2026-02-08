@@ -1,0 +1,236 @@
+{
+  "command": "gpu_burn",
+  "category": "diagnostics",
+  "description": "Multi-GPU CUDA stress test tool for thermal and stability validation. Runs matrix multiplications (SGEMM/DGEMM) to stress GPUs to maximum power and temperature, validating GPU compute stability, thermal management, power delivery, and memory reliability by comparing computation results against reference values.",
+  "synopsis": "gpu_burn [options] [duration_seconds]",
+  "source_urls": ["https://github.com/wilicc/gpu-burn"],
+  "installation": {
+    "package": "gpu-burn",
+    "notes": "Build from source with 'make' (requires CUDA toolkit). Use 'make COMPUTE=<value>' for specific GPU compute capabilities. Docker image available: 'docker build -t gpu_burn . && docker run --rm --gpus all gpu_burn'. Pre-built packages available for some Linux distributions via package managers."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "description": "Use double precision (FP64) instead of single precision (FP32) for matrix multiplications. Tests FP64 compute units which are limited on consumer GPUs but full-speed on data center GPUs like A100/H100.",
+      "example": "gpu_burn -d 300"
+    },
+    {
+      "short": "-tc",
+      "description": "Use Tensor Cores for matrix multiplications if available. Tests Tensor Core functionality on Volta and newer architectures (V100, A100, H100, etc.).",
+      "example": "gpu_burn -tc 300"
+    },
+    {
+      "short": "-m",
+      "description": "Specify memory size to use per GPU. Can be absolute value in MB or percentage of available memory.",
+      "arguments": "<size>",
+      "argument_type": "string",
+      "example": "-m 8192 or -m 90%"
+    },
+    {
+      "short": "-i",
+      "description": "Execute stress test only on specified GPU index. Default behavior is to test all available GPUs.",
+      "arguments": "<gpu_index>",
+      "argument_type": "integer",
+      "example": "-i 0"
+    },
+    {
+      "short": "-l",
+      "description": "List all GPUs in the system and exit without running stress test.",
+      "example": "gpu_burn -l"
+    },
+    {
+      "short": "-h",
+      "description": "Display help message with usage information.",
+      "example": "gpu_burn -h"
+    },
+    {
+      "flag": "duration",
+      "description": "Positional argument specifying the duration in seconds to run the stress test. If not specified, runs until interrupted.",
+      "arguments": "<seconds>",
+      "argument_type": "integer",
+      "example": "gpu_burn 300"
+    }
+  ],
+  "output_formats": {
+    "default": "Real-time console output showing per-GPU status including temperature, GPU utilization, memory utilization, GFLOPS achieved, and error status (OK/FAULTY). Output is updated periodically during the test run."
+  },
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - all GPUs passed stress test with no computation errors detected"
+    },
+    {
+      "code": 1,
+      "meaning": "Failure - one or more GPUs reported computation errors (FAULTY status) or encountered fatal errors"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Basic 5-minute stress test on all GPUs",
+      "command": "gpu_burn 300",
+      "output_example": "GPU 0: 85C, 100%, 512MB allocated, 15234 Gflop/s - OK\nGPU 1: 83C, 100%, 512MB allocated, 15189 Gflop/s - OK\n...\nTested 2 GPUs:\n        GPU 0: OK\n        GPU 1: OK",
+      "requires_root": false
+    },
+    {
+      "description": "Stress test using Tensor Cores (Volta and newer)",
+      "command": "gpu_burn -tc 300",
+      "output_example": "GPU 0: 87C, 100%, 512MB allocated, 125000 Gflop/s (TC) - OK",
+      "requires_root": false
+    },
+    {
+      "description": "Double precision (FP64) stress test",
+      "command": "gpu_burn -d 300",
+      "output_example": "GPU 0: 84C, 100%, 512MB allocated, 7500 Gflop/s (FP64) - OK",
+      "requires_root": false
+    },
+    {
+      "description": "Stress test specific GPU only",
+      "command": "gpu_burn -i 0 300",
+      "output_example": "GPU 0: 86C, 100%, 512MB allocated, 15234 Gflop/s - OK\n...\nTested 1 GPU:\n        GPU 0: OK",
+      "requires_root": false
+    },
+    {
+      "description": "Extended 1-hour burn-in test for hardware validation",
+      "command": "gpu_burn 3600",
+      "output_example": "GPU 0: 85C, 100%, 512MB allocated, 15234 Gflop/s - OK\n...\n[after 1 hour]\nTested 8 GPUs:\n        GPU 0: OK\n        GPU 1: OK\n        ...\n        GPU 7: OK",
+      "requires_root": false
+    },
+    {
+      "description": "Stress test with specific memory allocation",
+      "command": "gpu_burn -m 8192 300",
+      "output_example": "GPU 0: 86C, 100%, 8192MB allocated, 15234 Gflop/s - OK",
+      "requires_root": false
+    },
+    {
+      "description": "Use percentage of available GPU memory",
+      "command": "gpu_burn -m 90% 300",
+      "output_example": "GPU 0: 87C, 100%, 72000MB allocated, 15500 Gflop/s - OK",
+      "requires_root": false
+    },
+    {
+      "description": "List available GPUs without running test",
+      "command": "gpu_burn -l",
+      "output_example": "GPU 0: NVIDIA A100-SXM4-80GB (Compute 8.0)\nGPU 1: NVIDIA A100-SXM4-80GB (Compute 8.0)\nGPU 2: NVIDIA A100-SXM4-80GB (Compute 8.0)\nGPU 3: NVIDIA A100-SXM4-80GB (Compute 8.0)",
+      "requires_root": false
+    },
+    {
+      "description": "Run via Docker for containerized testing",
+      "command": "docker run --rm --gpus all gpu_burn 300",
+      "output_example": "GPU 0: 85C, 100%, 512MB allocated, 15234 Gflop/s - OK",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "FAULTY",
+      "meaning": "Comparison error detected - GPU computation results did not match expected reference values. Indicates potential hardware issue such as memory errors, compute unit defects, or instability due to thermal/power issues.",
+      "resolution": "Check GPU cooling and power delivery. Run nvidia-smi to verify GPU health. Consider RMA if errors persist under normal operating conditions. May also indicate overclocking issues."
+    },
+    {
+      "message": "OK",
+      "meaning": "GPU passed stress test - all computation results matched expected values.",
+      "resolution": "No action required - GPU is functioning correctly."
+    },
+    {
+      "message": "GPU X: exceeds temperature threshold",
+      "meaning": "GPU temperature exceeded safe operating limits during stress test. Thermal throttling may be occurring.",
+      "resolution": "Improve cooling for the GPU. Check airflow, thermal paste, and heatsink mounting. Verify data center cooling capacity."
+    },
+    {
+      "message": "CUDA error: out of memory",
+      "meaning": "Unable to allocate requested GPU memory for stress test matrices.",
+      "resolution": "Use -m flag to specify smaller memory allocation, or ensure no other processes are using GPU memory."
+    },
+    {
+      "message": "CUDA error: no CUDA-capable device is detected",
+      "meaning": "No NVIDIA GPUs found or CUDA driver not loaded.",
+      "resolution": "Verify NVIDIA driver is installed and loaded. Check that GPUs are properly seated. Run nvidia-smi to verify GPU detection."
+    },
+    {
+      "message": "CUDA error: CUDA driver version is insufficient for CUDA runtime version",
+      "meaning": "CUDA toolkit version mismatch with installed driver.",
+      "resolution": "Update NVIDIA driver to match CUDA toolkit requirements, or rebuild gpu-burn with compatible CUDA version."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "nvidia-smi",
+      "dcgmi",
+      "cuda-memcheck",
+      "nvprof",
+      "ncu",
+      "stress",
+      "stress-ng",
+      "memtester"
+    ],
+    "uses_library": ["CUDA Runtime", "cuBLAS"],
+    "notes": "gpu-burn uses cuBLAS SGEMM/DGEMM operations to stress GPUs, similar to how real HPC workloads use GPU compute. Results should correlate with nvidia-smi temperature and utilization readings. For comprehensive GPU diagnostics, combine with dcgmi diag for NVIDIA validation tests. Tensor Core testing (-tc) requires Volta architecture or newer."
+  },
+  "permissions": {
+    "read_operations": "Requires access to NVIDIA GPU devices. User must have permissions to access /dev/nvidia* devices, typically via nvidia group membership or root access.",
+    "write_operations": "Allocates GPU memory and executes compute kernels. No persistent system changes made.",
+    "notes": "Running in Docker with --gpus all flag requires nvidia-container-toolkit. May require elevated privileges depending on system configuration."
+  },
+  "limitations": [
+    "Requires CUDA-capable NVIDIA GPUs - does not support AMD or Intel GPUs",
+    "Must be compiled for specific GPU compute capability or use compatible default",
+    "Tensor Core testing (-tc) only available on Volta and newer architectures",
+    "FP64 performance varies significantly between consumer and data center GPUs",
+    "Does not test all GPU subsystems - primarily stresses compute and memory bandwidth",
+    "Temperature readings depend on GPU sensor accuracy",
+    "Cannot detect all types of hardware failures - some issues only manifest under specific workloads",
+    "Memory test is compute-focused, not a comprehensive memory diagnostic like cuda-memcheck"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "temperature",
+          "utilization_gpu",
+          "utilization_memory",
+          "memory_total",
+          "memory_used",
+          "power_draw",
+          "gpu_name",
+          "compute_capability"
+        ],
+        "description": "Monitors GPU temperature, utilization, and memory during stress test. Reports real-time metrics in output."
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "utilization_gpu",
+          "utilization_memory",
+          "temperature",
+          "power_draw",
+          "memory_used"
+        ],
+        "description": "Causes temporary stress effects: drives GPU utilization to 100%, increases temperature toward thermal limits, increases power draw to TDP, and allocates significant GPU memory. All effects are temporary and cease when test completes.",
+        "requires_flags": [],
+        "requires_privilege": "GPU device access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU temperature, utilization, memory usage, and power draw visible in nvidia-smi during gpu-burn execution should match stress test expectations (near 100% utilization, elevated temperature, high power draw)"
+      },
+      {
+        "command": "dcgmi diag",
+        "shared_state": "Both tools perform GPU stress testing and validation. dcgmi provides NVIDIA-certified diagnostic tests while gpu-burn provides sustained compute stress"
+      },
+      {
+        "command": "sensors",
+        "shared_state": "System thermal sensors may show elevated readings during GPU stress test due to heat dissipation"
+      },
+      {
+        "command": "ipmitool",
+        "shared_state": "BMC sensors may show elevated inlet/exhaust temperatures and increased fan speeds during sustained GPU stress testing"
+      }
+    ]
+  }
+}

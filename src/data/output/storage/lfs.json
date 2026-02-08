@@ -1,0 +1,914 @@
+{
+  "command": "lfs",
+  "category": "storage",
+  "description": "Lustre filesystem client-side utility for file management, striping configuration, quota management, and filesystem queries. The lfs command provides users with an interface to access extended attributes and other Lustre-specific features of the parallel filesystem.",
+  "synopsis": "lfs <command> [options] [arguments]",
+  "version_documented": "Lustre 2.15+",
+  "source_urls": ["https://doc.lustre.org/", "https://wiki.lustre.org/"],
+  "installation": {
+    "package": "lustre-client",
+    "notes": "Installed as part of the Lustre client package. Requires Lustre filesystem to be mounted."
+  },
+  "global_options": [
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help information for lfs or a specific subcommand"
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display lfs version information"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "df",
+      "description": "Report Lustre filesystem disk space usage. Similar to standard df but provides Lustre-specific information including per-OST and per-MDT usage.",
+      "synopsis": "lfs df [-h] [-i] [-l] [--pool|-p <pool>] [--lazy] [path]",
+      "options": [
+        {
+          "short": "-h",
+          "long": "--human-readable",
+          "description": "Print sizes in human-readable format (e.g., 1K, 234M, 2G)"
+        },
+        {
+          "short": "-i",
+          "long": "--inodes",
+          "description": "Report inode usage instead of block usage"
+        },
+        {
+          "short": "-l",
+          "long": "--lazy",
+          "description": "Do not attempt to contact OSTs that are not currently active"
+        },
+        {
+          "short": "-p",
+          "long": "--pool",
+          "description": "Show usage only for specified OST pool",
+          "arguments": "POOL_NAME",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "check",
+      "description": "Check the status of Lustre servers (MDTs and OSTs). Displays connectivity and health information.",
+      "synopsis": "lfs check [servers|osts|mdts] [path]",
+      "options": [
+        {
+          "flag": "servers",
+          "description": "Check status of all servers (MDTs and OSTs)"
+        },
+        {
+          "flag": "osts",
+          "description": "Check status of Object Storage Targets only"
+        },
+        {
+          "flag": "mdts",
+          "description": "Check status of Metadata Targets only"
+        }
+      ]
+    },
+    {
+      "name": "osts",
+      "description": "List information about all Object Storage Targets (OSTs) in the Lustre filesystem.",
+      "synopsis": "lfs osts [path]"
+    },
+    {
+      "name": "mdts",
+      "description": "List information about all Metadata Targets (MDTs) in the Lustre filesystem.",
+      "synopsis": "lfs mdts [path]"
+    },
+    {
+      "name": "getstripe",
+      "description": "Display the striping information for a file or default striping for a directory. Shows stripe count, size, offset, and which OSTs contain file data.",
+      "synopsis": "lfs getstripe [options] <file|directory>",
+      "options": [
+        {
+          "short": "-c",
+          "long": "--stripe-count",
+          "description": "Print only the stripe count"
+        },
+        {
+          "short": "-S",
+          "long": "--stripe-size",
+          "description": "Print only the stripe size"
+        },
+        {
+          "short": "-i",
+          "long": "--stripe-index",
+          "description": "Print only the starting OST index"
+        },
+        {
+          "short": "-p",
+          "long": "--pool",
+          "description": "Print only the pool name"
+        },
+        {
+          "short": "-d",
+          "long": "--directory",
+          "description": "Show directory default striping rather than listing contents"
+        },
+        {
+          "short": "-r",
+          "long": "--recursive",
+          "description": "Recursively list striping for all files"
+        },
+        {
+          "short": "-y",
+          "long": "--yaml",
+          "description": "Output in YAML format"
+        },
+        {
+          "short": "-L",
+          "long": "--layout",
+          "description": "Print only the layout type"
+        },
+        {
+          "short": "-q",
+          "long": "--quiet",
+          "description": "Suppress header and footer information"
+        },
+        {
+          "short": "-v",
+          "long": "--verbose",
+          "description": "Print additional information"
+        }
+      ]
+    },
+    {
+      "name": "setstripe",
+      "description": "Set the striping pattern for new files in a directory or for a specific file being created. Controls how file data is distributed across OSTs.",
+      "synopsis": "lfs setstripe [options] <directory|filename>",
+      "options": [
+        {
+          "short": "-c",
+          "long": "--stripe-count",
+          "description": "Number of OSTs to stripe across. Use -1 to stripe across all OSTs.",
+          "arguments": "COUNT",
+          "argument_type": "integer",
+          "example": "lfs setstripe -c 4 /mnt/lustre/mydir"
+        },
+        {
+          "short": "-S",
+          "long": "--stripe-size",
+          "description": "Size of each stripe. Accepts units like K, M, G (e.g., 4M for 4 megabytes).",
+          "arguments": "SIZE",
+          "argument_type": "string",
+          "default": "1M",
+          "example": "lfs setstripe -S 4M /mnt/lustre/myfile"
+        },
+        {
+          "short": "-i",
+          "long": "--stripe-index",
+          "description": "Starting OST index for striping. Use -1 for automatic selection.",
+          "arguments": "INDEX",
+          "argument_type": "integer",
+          "default": "-1"
+        },
+        {
+          "short": "-p",
+          "long": "--pool",
+          "description": "Name of the OST pool to use for striping",
+          "arguments": "POOL",
+          "argument_type": "string"
+        },
+        {
+          "short": "-L",
+          "long": "--layout",
+          "description": "Layout type for the file (raid0, mdt, released)",
+          "arguments": "LAYOUT",
+          "argument_type": "string"
+        },
+        {
+          "short": "-E",
+          "long": "--component-end",
+          "description": "Specify the extent end for Progressive File Layout (PFL) components. Use -1 for EOF.",
+          "arguments": "SIZE",
+          "argument_type": "string"
+        },
+        {
+          "short": "-o",
+          "long": "--ost",
+          "description": "Specific OST indices to use for striping",
+          "arguments": "OST_INDICES",
+          "argument_type": "string"
+        },
+        {
+          "long": "--component-add",
+          "description": "Add a new component to an existing composite file layout"
+        },
+        {
+          "long": "--component-del",
+          "description": "Delete a component from an existing composite file layout"
+        }
+      ]
+    },
+    {
+      "name": "migrate",
+      "description": "Migrate a file to a new layout or set of OSTs. Copies file data to new stripes and removes old data.",
+      "synopsis": "lfs migrate [options] <file>",
+      "options": [
+        {
+          "short": "-c",
+          "long": "--stripe-count",
+          "description": "Number of OSTs to stripe across in the new layout",
+          "arguments": "COUNT",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-S",
+          "long": "--stripe-size",
+          "description": "Stripe size for the new layout",
+          "arguments": "SIZE",
+          "argument_type": "string"
+        },
+        {
+          "short": "-p",
+          "long": "--pool",
+          "description": "Migrate to specified OST pool",
+          "arguments": "POOL",
+          "argument_type": "string"
+        },
+        {
+          "short": "-b",
+          "long": "--block",
+          "description": "Block access to the file during migration"
+        },
+        {
+          "short": "-n",
+          "long": "--non-block",
+          "description": "Do not block file access during migration (default)"
+        },
+        {
+          "long": "--non-direct",
+          "description": "Do not use direct I/O for migration"
+        }
+      ]
+    },
+    {
+      "name": "quota",
+      "description": "Display quota usage and limits for users, groups, or projects on a Lustre filesystem.",
+      "synopsis": "lfs quota [-q] [-v] [-h] [-o obd_uuid] [-u user|-g group|-p project] <path>",
+      "options": [
+        {
+          "short": "-u",
+          "long": "--user",
+          "description": "Display quota for specified user",
+          "arguments": "USERNAME",
+          "argument_type": "string"
+        },
+        {
+          "short": "-g",
+          "long": "--group",
+          "description": "Display quota for specified group",
+          "arguments": "GROUPNAME",
+          "argument_type": "string"
+        },
+        {
+          "short": "-p",
+          "long": "--project",
+          "description": "Display quota for specified project ID",
+          "arguments": "PROJID",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-h",
+          "long": "--human-readable",
+          "description": "Print sizes in human-readable format"
+        },
+        {
+          "short": "-q",
+          "long": "--quiet",
+          "description": "Print only quota info, no headers"
+        },
+        {
+          "short": "-v",
+          "long": "--verbose",
+          "description": "Print detailed quota information"
+        },
+        {
+          "short": "-t",
+          "description": "Display block and inode grace times"
+        },
+        {
+          "long": "--pool",
+          "description": "Display quota for specified OST pool",
+          "arguments": "POOL",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "setquota",
+      "description": "Set quota limits for users, groups, or projects. Requires administrative privileges.",
+      "synopsis": "lfs setquota [-u user|-g group|-p project] [-b block-softlimit] [-B block-hardlimit] [-i inode-softlimit] [-I inode-hardlimit] <path>",
+      "options": [
+        {
+          "short": "-u",
+          "long": "--user",
+          "description": "Set quota for specified user",
+          "arguments": "USERNAME",
+          "argument_type": "string"
+        },
+        {
+          "short": "-g",
+          "long": "--group",
+          "description": "Set quota for specified group",
+          "arguments": "GROUPNAME",
+          "argument_type": "string"
+        },
+        {
+          "short": "-p",
+          "long": "--project",
+          "description": "Set quota for specified project ID",
+          "arguments": "PROJID",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-b",
+          "description": "Block soft limit (accepts K, M, G, T, P units)",
+          "arguments": "LIMIT",
+          "argument_type": "string"
+        },
+        {
+          "short": "-B",
+          "description": "Block hard limit (accepts K, M, G, T, P units)",
+          "arguments": "LIMIT",
+          "argument_type": "string"
+        },
+        {
+          "short": "-i",
+          "description": "Inode soft limit",
+          "arguments": "LIMIT",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-I",
+          "description": "Inode hard limit",
+          "arguments": "LIMIT",
+          "argument_type": "integer"
+        },
+        {
+          "long": "--pool",
+          "description": "Set quota for specified OST pool",
+          "arguments": "POOL",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "find",
+      "description": "Search for files in a Lustre filesystem with Lustre-specific search criteria including striping parameters, OST location, and other extended attributes.",
+      "synopsis": "lfs find [options] <path>",
+      "options": [
+        {
+          "long": "--stripe-count",
+          "description": "Find files with specific stripe count",
+          "arguments": "[+-]N",
+          "argument_type": "string"
+        },
+        {
+          "long": "--stripe-size",
+          "description": "Find files with specific stripe size",
+          "arguments": "[+-]SIZE",
+          "argument_type": "string"
+        },
+        {
+          "long": "--ost",
+          "description": "Find files on specific OST",
+          "arguments": "INDEX",
+          "argument_type": "integer"
+        },
+        {
+          "long": "--mdt",
+          "description": "Find files on specific MDT",
+          "arguments": "INDEX",
+          "argument_type": "integer"
+        },
+        {
+          "long": "--pool",
+          "description": "Find files in specific pool",
+          "arguments": "POOL",
+          "argument_type": "string"
+        },
+        {
+          "long": "--size",
+          "description": "Find files by size (accepts +/- modifiers and units)",
+          "arguments": "[+-]SIZE[kMGTPE]",
+          "argument_type": "string"
+        },
+        {
+          "long": "--type",
+          "description": "Find by type (f=file, d=directory, l=symlink, b=block, c=char, p=pipe, s=socket)",
+          "arguments": "TYPE",
+          "argument_type": "string"
+        },
+        {
+          "long": "--name",
+          "description": "Find files matching pattern (glob)",
+          "arguments": "PATTERN",
+          "argument_type": "string"
+        },
+        {
+          "long": "--atime",
+          "description": "Find by access time (days)",
+          "arguments": "[+-]N",
+          "argument_type": "string"
+        },
+        {
+          "long": "--mtime",
+          "description": "Find by modification time (days)",
+          "arguments": "[+-]N",
+          "argument_type": "string"
+        },
+        {
+          "long": "--ctime",
+          "description": "Find by change time (days)",
+          "arguments": "[+-]N",
+          "argument_type": "string"
+        },
+        {
+          "long": "--uid",
+          "description": "Find files owned by user ID",
+          "arguments": "UID",
+          "argument_type": "integer"
+        },
+        {
+          "long": "--gid",
+          "description": "Find files owned by group ID",
+          "arguments": "GID",
+          "argument_type": "integer"
+        },
+        {
+          "long": "--user",
+          "description": "Find files owned by user name",
+          "arguments": "USERNAME",
+          "argument_type": "string"
+        },
+        {
+          "long": "--group",
+          "description": "Find files owned by group name",
+          "arguments": "GROUPNAME",
+          "argument_type": "string"
+        },
+        {
+          "long": "--maxdepth",
+          "description": "Maximum directory depth to search",
+          "arguments": "DEPTH",
+          "argument_type": "integer"
+        },
+        {
+          "long": "--print",
+          "description": "Print matching file names"
+        },
+        {
+          "long": "--print0",
+          "description": "Print file names separated by NUL"
+        }
+      ]
+    },
+    {
+      "name": "path2fid",
+      "description": "Convert a file path to its Lustre File Identifier (FID). The FID is a unique identifier for files in Lustre.",
+      "synopsis": "lfs path2fid [--parents] <path>"
+    },
+    {
+      "name": "fid2path",
+      "description": "Convert a Lustre File Identifier (FID) back to one or more file paths.",
+      "synopsis": "lfs fid2path [--link linkno] <mountpoint> <fid>"
+    },
+    {
+      "name": "hsm_state",
+      "description": "Display the HSM (Hierarchical Storage Management) state of a file.",
+      "synopsis": "lfs hsm_state <file>..."
+    },
+    {
+      "name": "hsm_action",
+      "description": "Display pending HSM actions on files.",
+      "synopsis": "lfs hsm_action <file>..."
+    },
+    {
+      "name": "hsm_archive",
+      "description": "Request that a file be archived to the HSM backend.",
+      "synopsis": "lfs hsm_archive [--archive <id>] <file>..."
+    },
+    {
+      "name": "hsm_restore",
+      "description": "Request that a file be restored from the HSM backend.",
+      "synopsis": "lfs hsm_restore <file>..."
+    },
+    {
+      "name": "hsm_release",
+      "description": "Release the data of a file to reclaim space (file remains in HSM archive).",
+      "synopsis": "lfs hsm_release <file>..."
+    },
+    {
+      "name": "hsm_remove",
+      "description": "Remove a file from the HSM archive.",
+      "synopsis": "lfs hsm_remove <file>..."
+    },
+    {
+      "name": "hsm_cancel",
+      "description": "Cancel a pending HSM request for a file.",
+      "synopsis": "lfs hsm_cancel <file>..."
+    },
+    {
+      "name": "hsm_set",
+      "description": "Set HSM flags on a file.",
+      "synopsis": "lfs hsm_set [--archive] [--noarchive] [--dirty] [--exists] [--lost] [--norelease] <file>..."
+    },
+    {
+      "name": "hsm_clear",
+      "description": "Clear HSM flags on a file.",
+      "synopsis": "lfs hsm_clear [--archive] [--noarchive] [--dirty] [--exists] [--lost] [--norelease] <file>..."
+    },
+    {
+      "name": "pool_list",
+      "description": "List OST pools defined on a Lustre filesystem.",
+      "synopsis": "lfs pool_list <filesystem>[.<pool>]"
+    },
+    {
+      "name": "changelog",
+      "description": "Show the changelog from a Metadata Target (MDT). Changelogs record all metadata operations.",
+      "synopsis": "lfs changelog <mdtname> [startrec [endrec]]",
+      "options": [
+        {
+          "long": "--follow",
+          "description": "Continue outputting new entries as they appear"
+        }
+      ]
+    },
+    {
+      "name": "changelog_clear",
+      "description": "Clear changelog entries up to a specified record number.",
+      "synopsis": "lfs changelog_clear <mdtname> <id> <endrec>"
+    },
+    {
+      "name": "getdirstripe",
+      "description": "Display the striping information for a directory (DNE - Distributed Namespace).",
+      "synopsis": "lfs getdirstripe [options] <directory>"
+    },
+    {
+      "name": "setdirstripe",
+      "description": "Set the striping layout for a new directory across MDTs.",
+      "synopsis": "lfs setdirstripe [options] <directory>",
+      "options": [
+        {
+          "short": "-c",
+          "long": "--mdt-count",
+          "description": "Number of MDTs to stripe directory across",
+          "arguments": "COUNT",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-i",
+          "long": "--mdt-index",
+          "description": "Starting MDT index",
+          "arguments": "INDEX",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-H",
+          "long": "--mdt-hash",
+          "description": "Hash type for directory distribution",
+          "arguments": "HASH_TYPE",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "data_version",
+      "description": "Display the current data version of a file (used for consistency checking).",
+      "synopsis": "lfs data_version [-nrw] <file>"
+    },
+    {
+      "name": "flushctx",
+      "description": "Flush security context for a mount point.",
+      "synopsis": "lfs flushctx [-k] [mountpoint]..."
+    },
+    {
+      "name": "ladvise",
+      "description": "Give file access advice to the filesystem.",
+      "synopsis": "lfs ladvise [--advice|-a ADVICE] [--background|-b] [--start|-s START] [--end|-e END|-l LENGTH] <file>"
+    },
+    {
+      "name": "mkdir",
+      "description": "Create a directory with specific MDT striping.",
+      "synopsis": "lfs mkdir [options] <directory>"
+    },
+    {
+      "name": "rm_entry",
+      "description": "Remove a broken directory entry.",
+      "synopsis": "lfs rm_entry <directory>"
+    },
+    {
+      "name": "mirror",
+      "description": "Manage file mirrors for replication.",
+      "synopsis": "lfs mirror <subcommand> [options] <file>"
+    },
+    {
+      "name": "getsom",
+      "description": "Display Size on MDT (SOM) attributes of a file.",
+      "synopsis": "lfs getsom [-s|-b|-f] <file>"
+    },
+    {
+      "name": "pcc",
+      "description": "Manage Persistent Client Cache (PCC) for files.",
+      "synopsis": "lfs pcc <subcommand> [options]"
+    }
+  ],
+  "output_formats": {
+    "default": "Human-readable format with headers and aligned columns",
+    "yaml": "YAML-formatted output (for getstripe with -y flag)",
+    "raw": "Raw numeric output without units (useful for scripting)"
+  },
+  "environment_variables": [
+    {
+      "name": "LUSTRE_MOUNT",
+      "description": "Default Lustre mount point to use when path is not specified",
+      "example": "/mnt/lustre",
+      "affects_command": "Used as default path for commands that require a filesystem path"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - operation completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "General error or operation failed"
+    },
+    {
+      "code": 2,
+      "meaning": "Invalid argument or usage error"
+    },
+    {
+      "code": 13,
+      "meaning": "Permission denied - operation requires elevated privileges"
+    },
+    {
+      "code": 17,
+      "meaning": "File exists - for operations that require a new file"
+    },
+    {
+      "code": 28,
+      "meaning": "No space left on device"
+    },
+    {
+      "code": 122,
+      "meaning": "Quota exceeded"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Check Lustre filesystem space usage with human-readable output",
+      "command": "lfs df -h",
+      "output_example": "UUID                       bytes        Used   Available Use% Mounted on\ntestfs-MDT0000_UUID        4.4G       214.5M        3.9G   4% /mnt/lustre[MDT:0]\ntestfs-OST0000_UUID        2.0G         1.1G      830.1M  53% /mnt/lustre[OST:0]\ntestfs-OST0001_UUID        2.0G         1.1G      830.1M  53% /mnt/lustre[OST:1]\nfilesystem_summary:       11.8G         2.5G        8.8G  20% /mnt/lustre",
+      "requires_root": false
+    },
+    {
+      "description": "Get striping information for a file",
+      "command": "lfs getstripe filename",
+      "output_example": "filename\nlmm_stripe_count:  2\nlmm_stripe_size:   4194304\nlmm_pattern:       raid0\nlmm_layout_gen:    0\nlmm_stripe_offset: 0\n  obdidx   objid   objid   group\n       0    0x4     4           0\n       1    0x4     4           0",
+      "requires_root": false
+    },
+    {
+      "description": "Set striping for new files in a directory (4 stripes, 4MB stripe size)",
+      "command": "lfs setstripe -c 4 -S 4M directory/",
+      "requires_root": false
+    },
+    {
+      "description": "Create a file striped across all OSTs",
+      "command": "lfs setstripe -c -1 /mnt/lustre/largefile",
+      "requires_root": false
+    },
+    {
+      "description": "Set Progressive File Layout (PFL) for automatic striping based on file size",
+      "command": "lfs setstripe -E 256M -c 1 -E 4G -c 4 -E -1 -c -1 -S 4M /mnt/lustre/pfl_dir",
+      "requires_root": false
+    },
+    {
+      "description": "Check quota usage for a specific user",
+      "command": "lfs quota -u username /lustre",
+      "output_example": "Disk quotas for user username (uid 1000):\n     Filesystem  kbytes   quota   limit   grace   files   quota   limit   grace\n    /mnt/lustre 1048576       0       0       -     256       0       0       -",
+      "requires_root": false
+    },
+    {
+      "description": "Find large files (greater than 1GB) in the filesystem",
+      "command": "lfs find /lustre -size +1G",
+      "requires_root": false
+    },
+    {
+      "description": "Find files on a specific OST",
+      "command": "lfs find /mnt/lustre --ost 0",
+      "requires_root": false
+    },
+    {
+      "description": "Migrate a file to a new stripe configuration",
+      "command": "lfs migrate -c 4 filename",
+      "requires_root": false
+    },
+    {
+      "description": "List all OST pools in the filesystem",
+      "command": "lfs pool_list filesystem_name",
+      "requires_root": false
+    },
+    {
+      "description": "Display inode usage per MDT and OST",
+      "command": "lfs df -i",
+      "requires_root": false
+    },
+    {
+      "description": "Check status of all Lustre servers",
+      "command": "lfs check servers",
+      "requires_root": false
+    },
+    {
+      "description": "Convert a file path to its Lustre FID",
+      "command": "lfs path2fid /mnt/lustre/myfile",
+      "output_example": "[0x200000400:0x2:0x0]",
+      "requires_root": false
+    },
+    {
+      "description": "Display HSM state of a file",
+      "command": "lfs hsm_state /mnt/lustre/archived_file",
+      "output_example": "/mnt/lustre/archived_file: (0x00000009) exists archived, archive_id:1",
+      "requires_root": false
+    },
+    {
+      "description": "Set quota limits for a user (10GB block limit, 10000 inode limit)",
+      "command": "lfs setquota -u username -B 10G -I 10000 /mnt/lustre",
+      "requires_root": true
+    },
+    {
+      "description": "Get directory striping in YAML format",
+      "command": "lfs getstripe -y -d /mnt/lustre/mydir",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "error: stripe_count N > maximum allowed stripe count M",
+      "meaning": "The requested stripe count exceeds the number of available OSTs or configured limit",
+      "resolution": "Use a smaller stripe count or -1 for maximum available OSTs"
+    },
+    {
+      "message": "error: setstripe: No such file or directory",
+      "meaning": "The target path does not exist or is not accessible",
+      "resolution": "Verify the path exists and you have permissions to access it"
+    },
+    {
+      "message": "error: migrate: file is not regular",
+      "meaning": "Migration can only be performed on regular files, not directories or special files",
+      "resolution": "Use migrate only on regular files. For directories, use setstripe on new files"
+    },
+    {
+      "message": "error: quotactl: Permission denied",
+      "meaning": "setquota requires root or administrative privileges",
+      "resolution": "Run the command as root or with appropriate administrative privileges"
+    },
+    {
+      "message": "Filesystem lustre is full",
+      "meaning": "The filesystem has no more space available",
+      "resolution": "Free up space or add more OSTs to the filesystem"
+    },
+    {
+      "message": "No such device or address",
+      "meaning": "The OST or MDT specified does not exist or is not accessible",
+      "resolution": "Check OST/MDT availability with 'lfs check servers' and try again"
+    },
+    {
+      "message": "error: Operation not permitted",
+      "meaning": "The operation requires elevated privileges or is not allowed on this file",
+      "resolution": "Check permissions and ensure the file is not read-only or on a read-only mount"
+    },
+    {
+      "message": "Disk quota exceeded",
+      "meaning": "User, group, or project quota has been exceeded",
+      "resolution": "Delete files to reduce usage or request quota increase from administrator"
+    },
+    {
+      "message": "OST index N is unavailable",
+      "meaning": "The specified OST is offline, degraded, or not responding",
+      "resolution": "Check OST health with 'lfs check osts' and contact system administrator"
+    },
+    {
+      "message": "error: can't get pool list",
+      "meaning": "Unable to retrieve OST pool information from the filesystem",
+      "resolution": "Verify the filesystem is mounted and accessible, check MDT connectivity"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "lctl",
+      "lustre_rsync",
+      "df",
+      "du",
+      "find",
+      "stat",
+      "quota",
+      "mount.lustre"
+    ],
+    "uses_library": ["liblustreapi", "libcfs"],
+    "notes": "lfs is the primary user-facing utility for Lustre filesystem operations. It interfaces with the Lustre kernel modules through ioctl calls. For administrative and debugging operations, the lctl command is typically used. The lfs command output can be parsed programmatically, but using liblustreapi directly is recommended for robust applications."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required for most read operations (df, getstripe, quota for self, find, check). Users can query their own quota and file striping information.",
+    "write_operations": "setstripe on own files/directories requires only file ownership. setquota requires root privileges. HSM operations may require specific permissions depending on configuration.",
+    "notes": "Quota modification (setquota) and some administrative HSM operations require root or administrative privileges. Normal users can set striping on files/directories they own and view their own quota information."
+  },
+  "limitations": [
+    "Stripe settings are fixed at file creation time; changing stripes requires migration",
+    "Maximum stripe count is limited by the number of available OSTs",
+    "File migration requires sufficient free space to hold the entire file temporarily",
+    "HSM operations require a configured HSM backend (Robinhood, HPSS, etc.)",
+    "Progressive File Layout (PFL) requires Lustre 2.10 or later",
+    "Directory striping (DNE) requires Lustre 2.4 or later with DNE-enabled MDTs",
+    "Some operations may be slow on very large directories with millions of files",
+    "Quota information may be slightly delayed due to caching",
+    "Mirror features require Lustre 2.11 or later"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_lustre_state",
+        "fields": [
+          "ost_status",
+          "mdt_status",
+          "free_space",
+          "used_space",
+          "total_space",
+          "stripe_count",
+          "stripe_size",
+          "free_inodes",
+          "used_inodes"
+        ],
+        "description": "lfs reads filesystem and target state information for df, check, osts, and mdts commands"
+      },
+      {
+        "state_domain": "storage_lustre_state",
+        "fields": ["stripe_count", "stripe_size"],
+        "description": "lfs getstripe reads file and directory striping metadata from MDT extended attributes"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_lustre_state",
+        "fields": ["stripe_count", "stripe_size"],
+        "description": "Sets default striping for directories or new file layouts",
+        "requires_flags": ["setstripe"],
+        "requires_privilege": "file ownership"
+      },
+      {
+        "state_domain": "storage_lustre_state",
+        "fields": ["quota_used"],
+        "description": "Sets quota limits for users, groups, or projects",
+        "requires_flags": ["setquota"],
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "OST goes offline or becomes degraded",
+        "effect": "df and check commands show updated OST status; operations to affected OST may fail"
+      },
+      {
+        "state_change": "MDT changes (failover, recovery)",
+        "effect": "mdts and check commands reflect new MDT state; changelog may have gaps"
+      },
+      {
+        "state_change": "Quota limit reached",
+        "effect": "quota command shows over-quota status; file creation/write operations may fail"
+      },
+      {
+        "state_change": "OST space changes",
+        "effect": "df output updates to reflect current usage; setstripe may use different OSTs"
+      },
+      {
+        "state_change": "File HSM state changes",
+        "effect": "hsm_state output reflects new archive/release status"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "df",
+        "shared_state": "Lustre mount points show consistent space reporting between lfs df and standard df"
+      },
+      {
+        "command": "du",
+        "shared_state": "File and directory sizes are consistent with Lustre striping"
+      },
+      {
+        "command": "lctl",
+        "shared_state": "Server status and configuration visible through both commands"
+      },
+      {
+        "command": "stat",
+        "shared_state": "File metadata (size, times, ownership) consistent with Lustre attributes"
+      }
+    ]
+  }
+}

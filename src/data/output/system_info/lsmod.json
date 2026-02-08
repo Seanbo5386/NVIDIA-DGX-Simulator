@@ -1,0 +1,121 @@
+{
+  "command": "lsmod",
+  "category": "system_info",
+  "description": "Show the status of loaded kernel modules. Displays information about currently loaded kernel modules including their size and dependencies. Essential for verifying GPU drivers, InfiniBand drivers, and other HPC-critical modules are loaded.",
+  "synopsis": "lsmod",
+  "version_documented": "kmod 28+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/lsmod.8.html"],
+  "installation": {
+    "package": "kmod",
+    "notes": "Part of kmod package, installed by default on all Linux distributions."
+  },
+  "global_options": [],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "List all loaded kernel modules",
+      "command": "lsmod",
+      "output_example": "Module                  Size  Used by\nnvidia_uvm           1351680  12\nnvidia_drm             77824  0\nnvidia_modeset       1216512  1 nvidia_drm\nnvidia              56446976  1443 nvidia_uvm,nvidia_modeset\nmlx5_ib              458752  0\nmlx5_core           1986560  1 mlx5_ib\nib_core              413696  4 mlx5_ib,ib_uverbs,rdma_ucm,ib_umad",
+      "requires_root": false
+    },
+    {
+      "description": "Check if NVIDIA driver is loaded",
+      "command": "lsmod | grep nvidia",
+      "output_example": "nvidia_uvm           1351680  12\nnvidia_drm             77824  0\nnvidia_modeset       1216512  1 nvidia_drm\nnvidia              56446976  1443 nvidia_uvm,nvidia_modeset",
+      "requires_root": false
+    },
+    {
+      "description": "Check if InfiniBand modules are loaded",
+      "command": "lsmod | grep -E '(mlx5|ib_)'",
+      "output_example": "mlx5_ib              458752  0\nmlx5_core           1986560  1 mlx5_ib\nib_core              413696  4 mlx5_ib,ib_uverbs,rdma_ucm,ib_umad\nib_uverbs            163840  3 mlx5_ib,rdma_ucm,ib_umad",
+      "requires_root": false
+    },
+    {
+      "description": "Check NVMe driver",
+      "command": "lsmod | grep nvme",
+      "output_example": "nvme                   49152  5\nnvme_core             143360  6 nvme",
+      "requires_root": false
+    },
+    {
+      "description": "Count loaded modules",
+      "command": "lsmod | wc -l",
+      "requires_root": false
+    },
+    {
+      "description": "Check module across cluster nodes",
+      "command": "pdsh -w node[001-100] 'lsmod | grep nvidia' | dshbak -c",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Module not found in lsmod output",
+      "meaning": "Module is not currently loaded",
+      "resolution": "Load module with modprobe <module_name>"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "modprobe",
+      "modinfo",
+      "rmmod",
+      "insmod",
+      "cat /proc/modules"
+    ],
+    "notes": "lsmod formats output from /proc/modules. The 'Used by' column shows module dependencies - a module cannot be unloaded if other modules depend on it (non-zero count)."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "N/A - read-only command",
+    "notes": "Reads from /proc/modules"
+  },
+  "limitations": [
+    "Only shows currently loaded modules",
+    "Does not show built-in kernel features (use /proc/config.gz)",
+    "Size is approximate memory usage",
+    "Does not show module parameters (use modinfo)"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["kernel_version"],
+        "description": "Module loading depends on kernel version"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Module loaded with modprobe",
+        "effect": "New module appears in lsmod output"
+      },
+      {
+        "state_change": "Module unloaded with rmmod",
+        "effect": "Module disappears from lsmod output"
+      },
+      {
+        "state_change": "Device driver auto-loaded",
+        "effect": "Driver module appears when device is detected"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "cat /proc/modules",
+        "shared_state": "Same module information, different format"
+      },
+      {
+        "command": "nvidia-smi",
+        "shared_state": "nvidia module must be loaded for nvidia-smi to work"
+      },
+      {
+        "command": "ibstat",
+        "shared_state": "mlx5_ib/ib_core must be loaded for ibstat to work"
+      }
+    ]
+  }
+}

@@ -1,0 +1,444 @@
+{
+  "command": "nvidia-container-cli",
+  "category": "containers",
+  "description": "NVIDIA Container Runtime CLI for GPU container support. This low-level utility is the core component of the NVIDIA Container Toolkit that enables GPU-accelerated containers. It manages the configuration and setup of containers to access NVIDIA GPUs by injecting the necessary device files, driver libraries, and binaries into container namespaces. nvidia-container-cli is typically invoked automatically by container runtimes (Docker, Podman, containerd) through the nvidia-container-runtime hook, but can also be used directly for debugging, testing, and advanced container GPU configuration.",
+  "synopsis": "nvidia-container-cli [GLOBAL_OPTIONS] COMMAND [COMMAND_OPTIONS]",
+  "version_documented": "nvidia-container-toolkit 1.14.x",
+  "source_urls": [
+    "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/nvidia-container-runtime.html",
+    "https://github.com/NVIDIA/libnvidia-container"
+  ],
+  "installation": {
+    "package": "nvidia-container-toolkit",
+    "notes": "Install from NVIDIA's package repository. On Ubuntu/Debian: add nvidia-container-toolkit repository and 'apt-get install nvidia-container-toolkit'. On RHEL/CentOS: 'yum install nvidia-container-toolkit'. Requires NVIDIA driver 450.80.02+ to be installed. After installation, configure container runtime (docker, podman, containerd) to use the NVIDIA runtime."
+  },
+  "global_options": [
+    {
+      "long": "--debug",
+      "description": "Enable debug output with verbose logging information",
+      "example": "nvidia-container-cli --debug info"
+    },
+    {
+      "long": "--load-kmods",
+      "description": "Load kernel modules before performing the operation. Loads nvidia.ko and related modules if not already loaded.",
+      "default": "false"
+    },
+    {
+      "long": "--user",
+      "description": "Run as the specified user (requires root privileges to use)",
+      "arguments": "USER",
+      "argument_type": "string"
+    },
+    {
+      "long": "--root",
+      "description": "Path to the driver root directory",
+      "arguments": "PATH",
+      "argument_type": "path",
+      "default": "/"
+    },
+    {
+      "long": "--ldcache",
+      "description": "Path to the host's ld.so.cache file",
+      "arguments": "PATH",
+      "argument_type": "path",
+      "default": "/etc/ld.so.cache"
+    },
+    {
+      "long": "--ldconfig",
+      "description": "Path to the ldconfig binary or @ to bypass ldconfig entirely",
+      "arguments": "PATH",
+      "argument_type": "string",
+      "default": "@/sbin/ldconfig"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "configure",
+      "description": "Configure a container for GPU access by setting up the necessary mounts, devices, and environment. This is the primary command used by the NVIDIA container runtime hook to prepare containers for GPU workloads.",
+      "synopsis": "nvidia-container-cli configure [OPTIONS] <rootfs>",
+      "options": [
+        {
+          "short": "-d",
+          "long": "--device",
+          "description": "Device UUID(s), index(es), or 'all' to specify which GPUs to expose to the container. Can be specified multiple times.",
+          "arguments": "DEVICE",
+          "argument_type": "string",
+          "example": "nvidia-container-cli configure --device=all /container/rootfs"
+        },
+        {
+          "short": "-c",
+          "long": "--compute",
+          "description": "Enable compute capability (CUDA). Injects CUDA libraries and binaries required for GPU compute workloads."
+        },
+        {
+          "short": "-u",
+          "long": "--utility",
+          "description": "Enable utility capability. Injects nvidia-smi and related monitoring/management tools."
+        },
+        {
+          "short": "-g",
+          "long": "--graphics",
+          "description": "Enable graphics capability. Injects OpenGL, Vulkan, and EGL libraries for GPU rendering."
+        },
+        {
+          "short": "-v",
+          "long": "--video",
+          "description": "Enable video capability. Injects NVENC/NVDEC libraries for hardware video encoding/decoding."
+        },
+        {
+          "long": "--display",
+          "description": "Enable display capability. Injects libraries required for X11 display output."
+        },
+        {
+          "long": "--ngx",
+          "description": "Enable NGX capability. Injects NVIDIA NGX libraries for AI-enhanced features."
+        },
+        {
+          "long": "--no-cgroups",
+          "description": "Do not modify cgroups configuration. Useful when cgroups are managed externally."
+        },
+        {
+          "long": "--no-devbind",
+          "description": "Do not bind mount device files. Devices must be set up separately."
+        },
+        {
+          "short": "-p",
+          "long": "--pid",
+          "description": "Process ID of the container init process to configure",
+          "arguments": "PID",
+          "argument_type": "integer",
+          "required": true
+        },
+        {
+          "long": "--mig-config",
+          "description": "MIG configuration for GPU instances (e.g., 'all' or specific MIG UUIDs)",
+          "arguments": "CONFIG",
+          "argument_type": "string"
+        },
+        {
+          "long": "--mig-monitor",
+          "description": "MIG monitoring configuration",
+          "arguments": "CONFIG",
+          "argument_type": "string"
+        },
+        {
+          "long": "--require",
+          "description": "Require specific driver capabilities or versions. Format: capability>=version",
+          "arguments": "REQUIREMENT",
+          "argument_type": "string",
+          "example": "nvidia-container-cli configure --require=cuda>=12.0 --device=all /rootfs"
+        },
+        {
+          "long": "--imex-channel",
+          "description": "IMEX channel ID for GPU-to-GPU communication",
+          "arguments": "CHANNEL",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "info",
+      "description": "Display information about the NVIDIA driver, CUDA version, and available GPUs on the system. Useful for verifying nvidia-container-cli installation and GPU availability.",
+      "synopsis": "nvidia-container-cli info [OPTIONS]",
+      "options": [
+        {
+          "long": "--csv",
+          "description": "Output information in CSV format for parsing"
+        }
+      ]
+    },
+    {
+      "name": "list",
+      "description": "List NVIDIA driver components, libraries, and binaries that would be injected into a container. Useful for debugging container GPU setup issues.",
+      "synopsis": "nvidia-container-cli list [OPTIONS]",
+      "options": [
+        {
+          "long": "--compute",
+          "description": "List compute (CUDA) components"
+        },
+        {
+          "long": "--utility",
+          "description": "List utility components (nvidia-smi, etc.)"
+        },
+        {
+          "long": "--graphics",
+          "description": "List graphics components (OpenGL, Vulkan, EGL)"
+        },
+        {
+          "long": "--video",
+          "description": "List video components (NVENC, NVDEC)"
+        },
+        {
+          "long": "--display",
+          "description": "List display components"
+        },
+        {
+          "long": "--ngx",
+          "description": "List NGX components"
+        },
+        {
+          "long": "--compat32",
+          "description": "Include 32-bit compatibility libraries in the list"
+        },
+        {
+          "long": "--libraries",
+          "description": "List only library files"
+        },
+        {
+          "long": "--binaries",
+          "description": "List only binary files"
+        },
+        {
+          "long": "--ipcs",
+          "description": "List IPC socket files"
+        },
+        {
+          "long": "--firmwares",
+          "description": "List firmware files"
+        }
+      ]
+    }
+  ],
+  "output_formats": {
+    "default": "Human-readable text output with one item per line",
+    "csv": "Comma-separated values for 'info' command with --csv flag"
+  },
+  "environment_variables": [
+    {
+      "name": "NVIDIA_VISIBLE_DEVICES",
+      "description": "Controls which GPUs are visible to the container. Accepts GPU indices (0,1,2), GPU UUIDs, or 'all'. Set to 'none' or 'void' to disable GPU access.",
+      "example": "NVIDIA_VISIBLE_DEVICES=0,1",
+      "affects_command": "Determines which GPUs are exposed when configuring containers"
+    },
+    {
+      "name": "NVIDIA_DRIVER_CAPABILITIES",
+      "description": "Controls which driver features are exposed. Comma-separated list of: compute, utility, graphics, video, display, ngx, or 'all'.",
+      "example": "NVIDIA_DRIVER_CAPABILITIES=compute,utility",
+      "affects_command": "Determines which libraries and binaries are injected into the container"
+    },
+    {
+      "name": "NVIDIA_REQUIRE_CUDA",
+      "description": "Specify CUDA version requirements. Container will fail to start if requirements are not met.",
+      "example": "NVIDIA_REQUIRE_CUDA=cuda>=12.0",
+      "affects_command": "Enforces minimum CUDA version compatibility"
+    },
+    {
+      "name": "NVIDIA_REQUIRE_DRIVER",
+      "description": "Specify driver version requirements. Container will fail to start if requirements are not met.",
+      "example": "NVIDIA_REQUIRE_DRIVER=>=535.0",
+      "affects_command": "Enforces minimum driver version compatibility"
+    },
+    {
+      "name": "NVIDIA_DISABLE_REQUIRE",
+      "description": "Disable all NVIDIA_REQUIRE_* checks when set to a non-empty value.",
+      "example": "NVIDIA_DISABLE_REQUIRE=1",
+      "affects_command": "Bypasses version requirement validation"
+    },
+    {
+      "name": "NVIDIA_MIG_CONFIG_DEVICES",
+      "description": "Specify MIG devices for configuration capabilities",
+      "example": "NVIDIA_MIG_CONFIG_DEVICES=all",
+      "affects_command": "Controls MIG configuration access within containers"
+    },
+    {
+      "name": "NVIDIA_MIG_MONITOR_DEVICES",
+      "description": "Specify MIG devices for monitoring capabilities",
+      "example": "NVIDIA_MIG_MONITOR_DEVICES=all",
+      "affects_command": "Controls MIG monitoring access within containers"
+    },
+    {
+      "name": "CUDA_VERSION",
+      "description": "CUDA version of the container image. Used for driver compatibility checks.",
+      "example": "CUDA_VERSION=12.2.0",
+      "affects_command": "Used to verify CUDA compatibility with host driver"
+    },
+    {
+      "name": "NVIDIA_PRODUCT_NAME",
+      "description": "Product name for capability requirements",
+      "example": "NVIDIA_PRODUCT_NAME=DGX",
+      "affects_command": "Used for product-specific feature gating"
+    },
+    {
+      "name": "NVIDIA_IMEX_CHANNELS",
+      "description": "IMEX channels for GPU-to-GPU communication",
+      "example": "NVIDIA_IMEX_CHANNELS=0,1",
+      "affects_command": "Configures IMEX communication channels for multi-GPU workloads"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "General error - operation failed due to invalid arguments, permissions, or runtime errors"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display system GPU and driver information",
+      "command": "nvidia-container-cli info",
+      "output_example": "NVRM version:   535.104.12\nCUDA version:   12.2\n\nDevice Index:   0\nDevice Minor:   0\nModel:          NVIDIA A100-SXM4-80GB\nBrand:          Tesla\nGPU UUID:       GPU-12345678-1234-1234-1234-123456789abc\nBus Location:   00000000:07:00.0\nArchitecture:   8.0"
+    },
+    {
+      "description": "List all NVIDIA libraries that would be injected for compute workloads",
+      "command": "nvidia-container-cli list --compute --libraries",
+      "output_example": "/usr/lib/x86_64-linux-gnu/libcuda.so.535.104.12\n/usr/lib/x86_64-linux-gnu/libcudadebugger.so.535.104.12\n/usr/lib/x86_64-linux-gnu/libnvidia-ml.so.535.104.12\n/usr/lib/x86_64-linux-gnu/libnvidia-ptxjitcompiler.so.535.104.12"
+    },
+    {
+      "description": "List utility binaries (nvidia-smi and related tools)",
+      "command": "nvidia-container-cli list --utility --binaries",
+      "output_example": "/usr/bin/nvidia-smi\n/usr/bin/nvidia-debugdump\n/usr/bin/nvidia-persistenced"
+    },
+    {
+      "description": "Configure container for all GPUs with compute and utility capabilities",
+      "command": "nvidia-container-cli configure --device=all --compute --utility --pid=12345 /var/lib/containers/rootfs",
+      "requires_root": true
+    },
+    {
+      "description": "Configure container for specific GPU by index",
+      "command": "nvidia-container-cli configure --device=0 --compute --utility --pid=12345 /var/lib/containers/rootfs",
+      "requires_root": true
+    },
+    {
+      "description": "Debug container GPU setup with verbose output",
+      "command": "nvidia-container-cli --debug info",
+      "output_example": "-- nvidia-container-cli --debug info\nI0101 12:00:00.000000 12345 nvc.c:234] initializing library context\nI0101 12:00:00.000001 12345 nvc.c:456] loading kernel modules\nNVRM version:   535.104.12\n..."
+    },
+    {
+      "description": "List all driver components for full GPU access",
+      "command": "nvidia-container-cli list --compute --utility --graphics --video",
+      "output_example": "/usr/lib/x86_64-linux-gnu/libcuda.so.535.104.12\n/usr/lib/x86_64-linux-gnu/libnvidia-ml.so.535.104.12\n/usr/lib/x86_64-linux-gnu/libEGL_nvidia.so.535.104.12\n/usr/lib/x86_64-linux-gnu/libnvidia-encode.so.535.104.12\n..."
+    },
+    {
+      "description": "Display info in CSV format for scripting",
+      "command": "nvidia-container-cli info --csv",
+      "output_example": "NVRM version,535.104.12\nCUDA version,12.2\nDevice Index,0\nDevice Minor,0\nModel,NVIDIA A100-SXM4-80GB\nGPU UUID,GPU-12345678-1234-1234-1234-123456789abc"
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "nvidia-container-cli: initialization error: nvml error: driver not loaded",
+      "meaning": "NVIDIA kernel driver is not loaded. The nvidia.ko module is not present in the kernel.",
+      "resolution": "Load NVIDIA driver with 'modprobe nvidia' or reboot if driver was recently installed. Verify installation with 'nvidia-smi'."
+    },
+    {
+      "message": "nvidia-container-cli: initialization error: driver error: failed to process request",
+      "meaning": "Communication with NVIDIA driver failed. Driver may be in a bad state or incompatible.",
+      "resolution": "Check driver status with 'nvidia-smi', examine dmesg for driver errors. May require driver reinstallation or system reboot."
+    },
+    {
+      "message": "nvidia-container-cli: container error: no NVIDIA devices found",
+      "meaning": "No GPUs detected on the system or all GPUs are excluded by configuration.",
+      "resolution": "Verify GPUs are present with 'lspci | grep -i nvidia', check NVIDIA_VISIBLE_DEVICES is not set to 'none' or 'void'."
+    },
+    {
+      "message": "nvidia-container-cli: requirement error: unsatisfied condition: cuda>=12.0",
+      "meaning": "The container requires a CUDA version that the host driver does not support.",
+      "resolution": "Upgrade NVIDIA driver to a version that supports the required CUDA version, or use a container image compatible with your driver."
+    },
+    {
+      "message": "nvidia-container-cli: mount error: file already exists",
+      "meaning": "Container rootfs already has conflicting files at the mount points.",
+      "resolution": "Ensure container image does not have NVIDIA libraries pre-installed, or configure with --no-devbind flag."
+    },
+    {
+      "message": "nvidia-container-cli: permission denied",
+      "meaning": "Insufficient permissions to access GPU devices or container namespace.",
+      "resolution": "Run with root privileges or ensure proper permissions on /dev/nvidia* devices. Check container runtime is configured correctly."
+    },
+    {
+      "message": "nvidia-container-cli: cgroup error: failed to setup device access",
+      "meaning": "Unable to configure cgroup device access rules for GPU devices.",
+      "resolution": "Check cgroup configuration, ensure cgroup v1 device controller or cgroup v2 with device access is available. Use --no-cgroups if cgroups are managed externally."
+    },
+    {
+      "message": "nvidia-container-cli: ldcache error: open failed: /etc/ld.so.cache",
+      "meaning": "Cannot read the dynamic linker cache file.",
+      "resolution": "Ensure /etc/ld.so.cache exists and is readable. Run 'ldconfig' to regenerate the cache."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "docker",
+      "podman",
+      "enroot",
+      "nvidia-smi",
+      "nvidia-ctk",
+      "nvidia-container-runtime",
+      "containerd",
+      "cri-o"
+    ],
+    "uses_library": ["libnvidia-container", "NVML (NVIDIA Management Library)"],
+    "notes": "nvidia-container-cli is the low-level CLI component of the NVIDIA Container Toolkit. It is typically not invoked directly by users but is called by nvidia-container-runtime or nvidia-container-toolkit hooks during container creation. Docker uses it via the nvidia runtime, Podman through CDI (Container Device Interface), and enroot for native GPU container support. For most use cases, use higher-level tools like 'docker run --gpus' or 'nvidia-ctk' for configuration."
+  },
+  "permissions": {
+    "read_operations": "info and list commands can be run by any user with access to NVIDIA device files (/dev/nvidia*)",
+    "write_operations": "configure command requires root privileges to mount devices and modify container namespaces",
+    "notes": "Container runtimes typically run configure with elevated privileges. Direct CLI usage for configuration requires root or CAP_SYS_ADMIN capability."
+  },
+  "limitations": [
+    "Requires NVIDIA driver 450.80.02 or later",
+    "configure command requires root privileges for namespace and device setup",
+    "MIG support requires driver 450.80.02+ and supported hardware (A100, A30, H100)",
+    "32-bit compatibility libraries may not be available on all systems",
+    "Container must have glibc compatible with host driver libraries",
+    "Cannot configure GPUs that are already exclusively owned by another process",
+    "NVML queries may show stale data if GPU state changes during execution"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "gpu_id",
+          "uuid",
+          "name",
+          "bus_location",
+          "architecture",
+          "mig_mode",
+          "mig_devices"
+        ],
+        "description": "Reads GPU hardware information and MIG configuration from NVML for device enumeration and capability detection"
+      },
+      {
+        "state_domain": "container_state",
+        "fields": ["pid", "rootfs", "namespaces"],
+        "description": "Reads container process information when configuring GPU access for a container namespace"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "container_state",
+        "fields": [
+          "device_mounts",
+          "library_mounts",
+          "environment",
+          "cgroup_devices"
+        ],
+        "description": "Configures container namespace with GPU device mounts, driver libraries, and cgroup access rules",
+        "requires_flags": ["configure"],
+        "requires_privilege": "root"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU device list and UUIDs match between nvidia-container-cli info and nvidia-smi"
+      },
+      {
+        "command": "docker",
+        "shared_state": "Container GPU configuration set by nvidia-container-cli is visible via docker inspect"
+      },
+      {
+        "command": "podman",
+        "shared_state": "Container GPU configuration is consistent with podman CDI device specifications"
+      },
+      {
+        "command": "enroot",
+        "shared_state": "GPU device exposure in enroot containers matches nvidia-container-cli configuration"
+      }
+    ]
+  }
+}

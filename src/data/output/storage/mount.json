@@ -1,0 +1,215 @@
+{
+  "command": "mount",
+  "category": "storage",
+  "description": "Mount filesystems. Attaches storage devices, network shares, and special filesystems to the directory tree. Essential for managing local NVMe storage, Lustre mounts, and NFS shares in HPC environments.",
+  "synopsis": "mount [options] <device> <mountpoint>",
+  "version_documented": "util-linux 2.37+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/mount.8.html"],
+  "installation": {
+    "package": "util-linux",
+    "notes": "Part of util-linux, installed by default on all Linux distributions."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Mount all filesystems in fstab"
+    },
+    {
+      "short": "-t",
+      "long": "--types",
+      "description": "Filesystem type",
+      "arguments": "<type>",
+      "argument_type": "string",
+      "example": "-t nfs"
+    },
+    {
+      "short": "-o",
+      "long": "--options",
+      "description": "Mount options",
+      "arguments": "<options>",
+      "argument_type": "string",
+      "example": "-o ro,noexec"
+    },
+    {
+      "short": "-r",
+      "long": "--read-only",
+      "description": "Mount read-only"
+    },
+    {
+      "short": "-w",
+      "long": "--rw",
+      "description": "Mount read-write"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Verbose mode"
+    },
+    {
+      "short": "-n",
+      "long": "--no-mtab",
+      "description": "Don't update /etc/mtab"
+    },
+    {
+      "long": "--bind",
+      "description": "Bind mount a directory"
+    },
+    {
+      "short": "-l",
+      "long": "--show-labels",
+      "description": "Show filesystem labels"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Incorrect invocation or permissions"
+    },
+    {
+      "code": 2,
+      "meaning": "System error"
+    },
+    {
+      "code": 4,
+      "meaning": "Internal mount bug"
+    },
+    {
+      "code": 8,
+      "meaning": "User interrupt"
+    },
+    {
+      "code": 16,
+      "meaning": "Problems writing or locking /etc/mtab"
+    },
+    {
+      "code": 32,
+      "meaning": "Mount failure"
+    },
+    {
+      "code": 64,
+      "meaning": "Some mount succeeded"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show all mounted filesystems",
+      "command": "mount",
+      "output_example": "/dev/nvme0n1p1 on / type ext4 (rw,relatime)\n192.168.1.100:/scratch on /scratch type nfs (rw,vers=4.2)\n/dev/nvme1n1 on /local type xfs (rw,noatime)",
+      "requires_root": false
+    },
+    {
+      "description": "Mount NFS share",
+      "command": "mount -t nfs 192.168.1.100:/data /mnt/data",
+      "requires_root": true
+    },
+    {
+      "description": "Mount Lustre filesystem",
+      "command": "mount -t lustre mds01@tcp:/scratch /lustre",
+      "requires_root": true
+    },
+    {
+      "description": "Mount local NVMe for scratch",
+      "command": "mount /dev/nvme0n1 /scratch -o noatime,discard",
+      "requires_root": true
+    },
+    {
+      "description": "Mount all fstab entries",
+      "command": "mount -a",
+      "requires_root": true
+    },
+    {
+      "description": "Bind mount a directory",
+      "command": "mount --bind /data/shared /home/user/shared",
+      "requires_root": true
+    },
+    {
+      "description": "Remount filesystem read-write",
+      "command": "mount -o remount,rw /",
+      "requires_root": true
+    },
+    {
+      "description": "Show only specific filesystem type",
+      "command": "mount -t lustre",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "mount: only root can do that",
+      "meaning": "Insufficient privileges",
+      "resolution": "Run with sudo or as root"
+    },
+    {
+      "message": "mount: mount point does not exist",
+      "meaning": "Target directory missing",
+      "resolution": "Create mount point directory first"
+    },
+    {
+      "message": "mount: wrong fs type, bad option",
+      "meaning": "Filesystem type mismatch or invalid options",
+      "resolution": "Check -t option and mount options for filesystem type"
+    },
+    {
+      "message": "mount: /dev/nvme0n1 already mounted",
+      "meaning": "Device already in use",
+      "resolution": "Unmount first or check existing mount"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["umount", "df", "lsblk", "findmnt", "fstab"],
+    "notes": "Persistent mounts should be configured in /etc/fstab. In HPC, Lustre and parallel filesystems are typically auto-mounted. Use 'noatime' option for better performance on scratch storage."
+  },
+  "permissions": {
+    "read_operations": "No special permissions to list mounts",
+    "write_operations": "Root required to mount (except user mounts in fstab)",
+    "notes": "Users can mount if fstab entry has 'user' option"
+  },
+  "limitations": [
+    "Most operations require root",
+    "Network mounts depend on network availability",
+    "Filesystem type must be supported by kernel"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["device", "mount_point", "fs_type", "mount_options"],
+        "description": "Reads current mount state from /proc/mounts"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["mount_point", "fs_type", "mount_options"],
+        "description": "Mounts filesystems, modifying mount table",
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "System boot",
+        "effect": "fstab entries mounted"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "df",
+        "shared_state": "Mounted filesystems appear in df"
+      },
+      {
+        "command": "findmnt",
+        "shared_state": "Mount tree shown in findmnt"
+      }
+    ]
+  }
+}

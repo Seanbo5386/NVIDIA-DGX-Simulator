@@ -1,0 +1,132 @@
+{
+  "command": "nvdisasm",
+  "category": "cuda_tools",
+  "description": "CUDA disassembler. Disassembles CUDA binaries to SASS assembly. Used for low-level kernel analysis and optimization.",
+  "synopsis": "nvdisasm [options] <file>",
+  "version_documented": "CUDA 12.0+",
+  "source_urls": ["https://docs.nvidia.com/cuda/cuda-binary-utilities/"],
+  "installation": {
+    "package": "cuda-toolkit",
+    "notes": "Part of CUDA toolkit."
+  },
+  "global_options": [
+    {
+      "short": "-g",
+      "long": "--print-line-info",
+      "description": "Print source line info"
+    },
+    {
+      "short": "-c",
+      "long": "--print-code",
+      "description": "Print binary code"
+    },
+    {
+      "short": "-raw",
+      "description": "Print raw encoding"
+    },
+    {
+      "short": "-hex",
+      "description": "Print hex encoding"
+    },
+    {
+      "short": "-plr",
+      "description": "Print live range"
+    },
+    {
+      "short": "-poff",
+      "description": "Print instruction offset"
+    },
+    {
+      "short": "-cfg",
+      "description": "Output control flow graph"
+    },
+    {
+      "short": "-bbnum",
+      "description": "Print basic block numbers"
+    },
+    {
+      "short": "-sf",
+      "description": "Suppress function symbols"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Disassemble cubin",
+      "command": "nvdisasm kernel.cubin",
+      "requires_root": false
+    },
+    {
+      "description": "With source line info",
+      "command": "nvdisasm -g kernel.cubin",
+      "requires_root": false
+    },
+    {
+      "description": "Show offsets",
+      "command": "nvdisasm -poff kernel.cubin",
+      "requires_root": false
+    },
+    {
+      "description": "Control flow graph",
+      "command": "nvdisasm -cfg kernel.cubin > kernel.dot",
+      "requires_root": false
+    },
+    {
+      "description": "With live ranges",
+      "command": "nvdisasm -plr kernel.cubin",
+      "requires_root": false
+    },
+    {
+      "description": "Raw binary output",
+      "command": "nvdisasm -raw -hex kernel.cubin",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Unknown ELF class",
+      "meaning": "Invalid CUDA binary",
+      "resolution": "Check if file is valid cubin/fatbin"
+    },
+    {
+      "message": "Invalid fatbin",
+      "meaning": "Corrupted or invalid file",
+      "resolution": "Recompile the CUDA code"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["cuobjdump", "ptxas", "ncu"],
+    "notes": "SASS is GPU-specific assembly. Useful for understanding compiler optimizations. -cfg generates Graphviz DOT format."
+  },
+  "permissions": {
+    "read_operations": "Read CUDA binary files",
+    "write_operations": "N/A",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "SASS varies by GPU architecture",
+    "No source mapping without debug info",
+    "Large output for complex code"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads CUDA binary files"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

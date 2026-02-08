@@ -1,0 +1,102 @@
+{
+  "command": "mpi_test_suite",
+  "category": "mpi",
+  "description": "MPI test suite for compliance testing. Validates MPI implementation correctness. Used for verifying MPI installations on HPC systems.",
+  "synopsis": "mpirun [options] mpi_test_suite [test_options]",
+  "version_documented": "Various",
+  "source_urls": [
+    "https://www.mpi-forum.org/",
+    "https://github.com/intel/mpi-benchmarks"
+  ],
+  "installation": {
+    "package": "mpi-test-suite",
+    "notes": "Various test suites available (Intel MPI Benchmarks, OSU, etc.)."
+  },
+  "global_options": [
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Show help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "All tests passed"
+    },
+    {
+      "code": 1,
+      "meaning": "Test failure"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run Intel MPI Benchmarks",
+      "command": "mpirun -np 2 IMB-MPI1 pingpong",
+      "requires_root": false
+    },
+    {
+      "description": "Run OSU benchmarks",
+      "command": "mpirun -np 2 osu_latency",
+      "requires_root": false
+    },
+    {
+      "description": "All-to-all bandwidth",
+      "command": "mpirun -np 8 osu_alltoall",
+      "requires_root": false
+    },
+    {
+      "description": "Collective operations",
+      "command": "mpirun -np 4 IMB-MPI1 allreduce",
+      "requires_root": false
+    },
+    {
+      "description": "Multi-threaded test",
+      "command": "mpirun -np 4 IMB-MT",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "MPI_Init failed",
+      "meaning": "Cannot initialize MPI",
+      "resolution": "Check MPI installation and environment"
+    },
+    {
+      "message": "ORTE was unable to reliably start",
+      "meaning": "MPI launcher issue",
+      "resolution": "Check network and hostfile"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["mpirun", "mpicc", "ompi_info"],
+    "notes": "Intel MPI Benchmarks (IMB) and OSU Micro-Benchmarks are most common. Test point-to-point and collective performance."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "N/A",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Tests specific to MPI implementation",
+    "May need compilation for system",
+    "Large-scale tests need allocation"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["connectivity"],
+        "description": "Tests MPI network performance"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "mpirun",
+        "shared_state": "Uses mpirun to launch tests"
+      }
+    ]
+  }
+}

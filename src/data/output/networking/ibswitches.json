@@ -1,0 +1,143 @@
+{
+  "command": "ibswitches",
+  "category": "networking",
+  "description": "Discover and list all InfiniBand switches in the subnet. Queries the Subnet Manager to enumerate all switches in the InfiniBand fabric topology.",
+  "synopsis": "ibswitches [options]",
+  "version_documented": "OFED/rdma-core 30+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/ibswitches.8.html"],
+  "installation": {
+    "package": "infiniband-diags",
+    "notes": "Part of infiniband-diags package. Install via: apt install infiniband-diags or yum install infiniband-diags"
+  },
+  "global_options": [
+    {
+      "short": "-C",
+      "long": "--Ca",
+      "description": "Use specified CA name for queries",
+      "arguments": "<ca_name>",
+      "argument_type": "string",
+      "example": "-C mlx5_0"
+    },
+    {
+      "short": "-P",
+      "long": "--Port",
+      "description": "Use specified CA port for queries",
+      "arguments": "<port_num>",
+      "argument_type": "integer",
+      "example": "-P 1"
+    },
+    {
+      "short": "-t",
+      "long": "--timeout",
+      "description": "Timeout for SA queries in milliseconds",
+      "arguments": "<ms>",
+      "argument_type": "integer",
+      "default": "1000"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help message"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error occurred"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "List all switches in InfiniBand fabric",
+      "command": "ibswitches",
+      "output_example": "Switch  : 0x0002c90300abc000 ports 36 \"MF0;leaf-switch-01:SX6036/U1\" lid 10 lmc 0\nSwitch  : 0x0002c90300abc001 ports 36 \"MF0;leaf-switch-02:SX6036/U1\" lid 11 lmc 0\nSwitch  : 0x0002c90300def000 ports 36 \"MF0;spine-switch-01:QM8790/U1\" lid 20 lmc 0",
+      "requires_root": false
+    },
+    {
+      "description": "Count total number of switches",
+      "command": "ibswitches | wc -l",
+      "requires_root": false
+    },
+    {
+      "description": "Find spine switches",
+      "command": "ibswitches | grep spine",
+      "requires_root": false
+    },
+    {
+      "description": "List switches with specific port count",
+      "command": "ibswitches | grep 'ports 40'",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "ibwarn: [0] umad_init: can't read /sys/class/infiniband",
+      "meaning": "InfiniBand driver not loaded",
+      "resolution": "Load IB kernel modules or verify IB devices are present"
+    },
+    {
+      "message": "SA query failed",
+      "meaning": "Cannot communicate with Subnet Manager",
+      "resolution": "Verify SM is running and accessible"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "ibhosts",
+      "iblinkinfo",
+      "ibnetdiscover",
+      "sminfo",
+      "perfquery"
+    ],
+    "notes": "Queries SA database. Output shows switch GUID, port count, description, LID, and LMC."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "N/A - read-only command",
+    "notes": "Requires access to InfiniBand device files"
+  },
+  "limitations": [
+    "Requires active Subnet Manager",
+    "Only shows switches visible to SA",
+    "Switch descriptions depend on SM configuration",
+    "Does not show switch port states (use iblinkinfo)"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["guid", "lid"],
+        "description": "Reads switch information from Subnet Administrator"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Switch added to fabric",
+        "effect": "New switch appears after SM rediscovery"
+      },
+      {
+        "state_change": "Switch removed or powered off",
+        "effect": "Switch disappears from listing"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ibhosts",
+        "shared_state": "GUIDs unique across all fabric devices"
+      },
+      {
+        "command": "ibnetdiscover",
+        "shared_state": "Switch topology information matches"
+      },
+      {
+        "command": "iblinkinfo",
+        "shared_state": "Switch LIDs consistent"
+      }
+    ]
+  }
+}

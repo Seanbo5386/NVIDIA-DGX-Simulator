@@ -1,0 +1,368 @@
+{
+  "command": "lspci",
+  "category": "system_info",
+  "description": "List all PCI devices - essential for identifying GPUs, InfiniBand HCAs, NVMe drives, and PCIe topology. The lspci command displays detailed information about all PCI buses and devices in the system including vendor/device IDs, kernel drivers, IRQs, memory regions, and PCIe link status. This is critical for HPC environments to verify GPU installation, check PCIe topology, identify Mellanox/NVIDIA InfiniBand adapters, verify NVMe storage devices, and diagnose PCIe bandwidth issues.",
+  "synopsis": "lspci [options]",
+  "version_documented": "pciutils 3.7+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/lspci.8.html"],
+  "installation": {
+    "package": "pciutils",
+    "notes": "Part of the pciutils package which is installed by default on most Linux distributions. Uses libpci to access PCI configuration space. May require root privileges for full configuration space access (-xxx, -xxxx options)."
+  },
+  "global_options": [
+    {
+      "short": "-v",
+      "description": "Be verbose and display detailed information about all devices. Shows IRQ numbers, memory regions, I/O ports, and capabilities."
+    },
+    {
+      "short": "-vv",
+      "description": "Be very verbose and display more details including unknown capabilities."
+    },
+    {
+      "short": "-vvv",
+      "description": "Be extremely verbose. Parse and display all available data including configuration space details and capability structures. Essential for PCIe link analysis."
+    },
+    {
+      "short": "-k",
+      "description": "Show kernel drivers handling each device and also kernel modules capable of handling it. Useful for verifying NVIDIA/Mellanox drivers are loaded.",
+      "example": "lspci -k | grep -A3 NVIDIA"
+    },
+    {
+      "short": "-n",
+      "description": "Show PCI vendor and device codes as numbers instead of looking them up in the PCI ID list."
+    },
+    {
+      "short": "-nn",
+      "description": "Show PCI vendor and device codes as both numbers and names. Useful for identifying specific device revisions.",
+      "example": "lspci -nn | grep NVIDIA"
+    },
+    {
+      "short": "-t",
+      "description": "Show a tree-like diagram containing all buses, bridges, devices and connections between them. Essential for understanding PCIe topology in multi-GPU systems.",
+      "example": "lspci -t"
+    },
+    {
+      "short": "-s",
+      "description": "Show only devices in the specified domain, bus, slot and function. Each component can be omitted or set to '*' for wildcard matching.",
+      "arguments": "[[[[domain]:]bus]:][device][.func]",
+      "argument_type": "string",
+      "example": "lspci -s 00:1e.0"
+    },
+    {
+      "short": "-d",
+      "description": "Show only devices with specified vendor and device ID. Both IDs are given in hexadecimal and may be omitted or set to '*' for wildcard.",
+      "arguments": "[vendor]:[device][:class[:prog-if]]",
+      "argument_type": "string",
+      "example": "lspci -d 10de:"
+    },
+    {
+      "short": "-D",
+      "description": "Always show PCI domain numbers. Useful on systems with multiple PCI domains, common in large multi-GPU servers."
+    },
+    {
+      "short": "-PP",
+      "description": "Identify PCI devices by path through each bridge, showing the bus number as well as the device number. Shows full hierarchical path."
+    },
+    {
+      "short": "-m",
+      "description": "Dump PCI device data in a machine-readable form (single line per device) for easy parsing by scripts."
+    },
+    {
+      "short": "-mm",
+      "description": "Dump PCI device data in a machine-readable form with all available fields in tag:value format."
+    },
+    {
+      "short": "-x",
+      "description": "Show hexadecimal dump of the standard part of the configuration space (first 64 bytes or 128 bytes for CardBus bridges)."
+    },
+    {
+      "short": "-xxx",
+      "description": "Show hexadecimal dump of the whole PCI configuration space. Available only to root as it may crash some devices."
+    },
+    {
+      "short": "-xxxx",
+      "description": "Show hexadecimal dump of the extended (4096-byte) PCI configuration space available on PCI-X 2.0 and PCIe devices."
+    },
+    {
+      "short": "-b",
+      "description": "Bus-centric view. Show IRQ numbers and addresses as seen by the cards on the PCI bus instead of as seen by the kernel."
+    },
+    {
+      "short": "-i",
+      "description": "Use specified file as the PCI ID list instead of the default /usr/share/hwdata/pci.ids.",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-p",
+      "description": "Use specified file as the map of PCI IDs to kernel modules.",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-M",
+      "description": "Invoke bus mapping mode which performs a thorough scan of all PCI devices. Only root can use this option."
+    },
+    {
+      "long": "--version",
+      "description": "Shows lspci version. Useful for determining PCI ID database currency."
+    },
+    {
+      "short": "-q",
+      "description": "Use DNS query to the central PCI ID database if a device is not found in the local pci.ids file."
+    },
+    {
+      "short": "-qq",
+      "description": "Same as -q, but use DNS query for all devices, refreshing from central database."
+    },
+    {
+      "short": "-Q",
+      "description": "Query the central database for all devices, but still prefer local pci.ids for known IDs."
+    }
+  ],
+  "output_formats": {
+    "default": "One line per device showing bus address, device class, and device name.",
+    "verbose": "Multiple lines per device with detailed information including memory regions, IRQs, and capabilities (-v, -vv, -vvv).",
+    "tree": "Hierarchical tree showing bus topology and device connections (-t).",
+    "machine": "Machine-readable format suitable for scripting (-m, -mm).",
+    "numeric": "Vendor and device IDs shown as hexadecimal numbers (-n, -nn)."
+  },
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - general failure such as device access error"
+    },
+    {
+      "code": 2,
+      "meaning": "Syntax error - invalid command line options"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "List all PCI devices",
+      "command": "lspci",
+      "output_example": "00:00.0 Host bridge: Intel Corporation Device 09a2 (rev 01)\n00:01.0 PCI bridge: Intel Corporation Device 09a3 (rev 01)\n3b:00.0 Infiniband controller: Mellanox Technologies MT28908 Family [ConnectX-6]\n86:00.0 3D controller: NVIDIA Corporation GA100 [A100 PCIe 80GB] (rev a1)\naf:00.0 3D controller: NVIDIA Corporation GA100 [A100 PCIe 80GB] (rev a1)",
+      "requires_root": false
+    },
+    {
+      "description": "List all NVIDIA GPUs",
+      "command": "lspci | grep -i nvidia",
+      "output_example": "86:00.0 3D controller: NVIDIA Corporation GA100 [A100 PCIe 80GB] (rev a1)\naf:00.0 3D controller: NVIDIA Corporation GA100 [A100 PCIe 80GB] (rev a1)\nd8:00.0 3D controller: NVIDIA Corporation GA100 [A100 PCIe 80GB] (rev a1)",
+      "requires_root": false
+    },
+    {
+      "description": "List NVIDIA GPUs with numeric IDs",
+      "command": "lspci -nn | grep -i nvidia",
+      "output_example": "86:00.0 3D controller [0302]: NVIDIA Corporation GA100 [A100 PCIe 80GB] [10de:20b2] (rev a1)",
+      "requires_root": false
+    },
+    {
+      "description": "List all NVIDIA devices by vendor ID",
+      "command": "lspci -d 10de:",
+      "output_example": "86:00.0 3D controller: NVIDIA Corporation GA100 [A100 PCIe 80GB] (rev a1)\naf:00.0 3D controller: NVIDIA Corporation GA100 [A100 PCIe 80GB] (rev a1)",
+      "requires_root": false
+    },
+    {
+      "description": "List all Mellanox/NVIDIA InfiniBand HCAs",
+      "command": "lspci | grep -i mellanox",
+      "output_example": "3b:00.0 Infiniband controller: Mellanox Technologies MT28908 Family [ConnectX-6]\n3b:00.1 Infiniband controller: Mellanox Technologies MT28908 Family [ConnectX-6]",
+      "requires_root": false
+    },
+    {
+      "description": "List Mellanox devices by vendor ID",
+      "command": "lspci -d 15b3:",
+      "output_example": "3b:00.0 Infiniband controller: Mellanox Technologies MT28908 Family [ConnectX-6]\n3b:00.1 Infiniband controller: Mellanox Technologies MT28908 Family [ConnectX-6]",
+      "requires_root": false
+    },
+    {
+      "description": "Show detailed GPU information for specific device",
+      "command": "lspci -vvv -s 86:00.0",
+      "output_example": "86:00.0 3D controller: NVIDIA Corporation GA100 [A100 PCIe 80GB] (rev a1)\n        Subsystem: NVIDIA Corporation Device 1533\n        Control: I/O- Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx+\n        Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-\n        Latency: 0\n        Interrupt: pin A routed to IRQ 187\n        NUMA node: 1\n        Region 0: Memory at e8000000 (32-bit, non-prefetchable) [size=16M]\n        Region 1: Memory at 27ffc0000000 (64-bit, prefetchable) [size=64G]\n        Region 3: Memory at 27fe00000000 (64-bit, prefetchable) [size=32M]\n        Capabilities: [60] Power Management version 3\n        Capabilities: [68] MSI: Enable- Count=1/1 Maskable- 64bit+\n        Capabilities: [78] Express Endpoint, MSI 00\n                DevCap: MaxPayload 256 bytes, PhantFunc 0, Latency L0s unlimited, L1 <64us\n                DevCtl: CorrErr+ NonFatalErr+ FatalErr+ UnsupReq-\n                LnkCap: Port #0, Speed 16GT/s, Width x16, ASPM not supported\n                LnkSta: Speed 16GT/s, Width x16\n        Kernel driver in use: nvidia\n        Kernel modules: nvidia",
+      "requires_root": false
+    },
+    {
+      "description": "Show kernel drivers for NVIDIA devices",
+      "command": "lspci -k | grep -A3 NVIDIA",
+      "output_example": "86:00.0 3D controller: NVIDIA Corporation GA100 [A100 PCIe 80GB] (rev a1)\n        Subsystem: NVIDIA Corporation Device 1533\n        Kernel driver in use: nvidia\n        Kernel modules: nvidia",
+      "requires_root": false
+    },
+    {
+      "description": "Show PCI/PCIe topology tree",
+      "command": "lspci -t",
+      "output_example": "-[0000:00]-+-00.0\n           +-01.0-[01-16]----00.0\n           +-03.0-[17-32]----00.0\n           +-06.0-[33-46]--+-00.0\n           |               \\-00.1\n           +-17.0\n           +-1d.0-[86-87]----00.0\n           +-1d.4-[af-b0]----00.0\n           +-1d.6-[d8-d9]----00.0",
+      "requires_root": false
+    },
+    {
+      "description": "Show PCI topology tree with device names",
+      "command": "lspci -tv",
+      "output_example": "-[0000:00]-+-00.0  Intel Corporation Device 09a2\n           +-01.0-[01-16]----00.0  Intel Corporation Device 09a3\n           +-1d.0-[86-87]----00.0  NVIDIA Corporation GA100 [A100 PCIe 80GB]",
+      "requires_root": false
+    },
+    {
+      "description": "Check PCIe link status for all devices",
+      "command": "lspci -vvv | grep -i 'lnksta\\|lnkcap'",
+      "output_example": "LnkCap: Port #0, Speed 16GT/s, Width x16, ASPM not supported\nLnkSta: Speed 16GT/s, Width x16\nLnkCap: Port #4, Speed 8GT/s, Width x4, ASPM L1\nLnkSta: Speed 8GT/s, Width x4",
+      "requires_root": false
+    },
+    {
+      "description": "Check PCIe link width and speed for GPUs",
+      "command": "lspci -vvv -d 10de: | grep -E 'NVIDIA|LnkCap|LnkSta'",
+      "output_example": "86:00.0 3D controller: NVIDIA Corporation GA100 [A100 PCIe 80GB] (rev a1)\n                LnkCap: Port #0, Speed 16GT/s, Width x16, ASPM not supported\n                LnkSta: Speed 16GT/s, Width x16",
+      "requires_root": false
+    },
+    {
+      "description": "List NVMe controllers",
+      "command": "lspci | grep -i 'Non-Volatile\\|NVMe'",
+      "output_example": "5e:00.0 Non-Volatile memory controller: Intel Corporation NVMe Datacenter SSD [3DNAND, Beta Rock Controller]\n5f:00.0 Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller PM9A3/PM9A3A/PM9A3B",
+      "requires_root": false
+    },
+    {
+      "description": "Machine-readable output for all devices",
+      "command": "lspci -mm",
+      "output_example": "Slot:\t86:00.0\nClass:\t3D controller\nVendor:\tNVIDIA Corporation\nDevice:\tGA100 [A100 PCIe 80GB]\nSVendor:\tNVIDIA Corporation\nSDevice:\tDevice 1533\nRev:\ta1",
+      "requires_root": false
+    },
+    {
+      "description": "Show GPU NUMA node affinity",
+      "command": "lspci -vvv -d 10de: | grep -E 'NVIDIA|NUMA'",
+      "output_example": "86:00.0 3D controller: NVIDIA Corporation GA100 [A100 PCIe 80GB] (rev a1)\n        NUMA node: 1\naf:00.0 3D controller: NVIDIA Corporation GA100 [A100 PCIe 80GB] (rev a1)\n        NUMA node: 0",
+      "requires_root": false
+    },
+    {
+      "description": "Show full PCI domain numbers",
+      "command": "lspci -D",
+      "output_example": "0000:00:00.0 Host bridge: Intel Corporation Device 09a2 (rev 01)\n0000:86:00.0 3D controller: NVIDIA Corporation GA100 [A100 PCIe 80GB] (rev a1)",
+      "requires_root": false
+    },
+    {
+      "description": "Show device path through bridges",
+      "command": "lspci -PP -d 10de:",
+      "output_example": "0000:00/1d.0/86:00.0 3D controller: NVIDIA Corporation GA100 [A100 PCIe 80GB]\n0000:00/1d.4/af:00.0 3D controller: NVIDIA Corporation GA100 [A100 PCIe 80GB]",
+      "requires_root": false
+    },
+    {
+      "description": "Hex dump of GPU configuration space",
+      "command": "lspci -xxx -s 86:00.0",
+      "requires_root": true
+    },
+    {
+      "description": "Check for PCIe errors (AER)",
+      "command": "lspci -vvv | grep -i 'AER\\|error\\|corrected'",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "lspci: Unable to load libpci",
+      "meaning": "The PCI library (libpci) is not installed or not accessible",
+      "resolution": "Install pciutils package: apt install pciutils or yum install pciutils"
+    },
+    {
+      "message": "pcilib: Cannot open /proc/bus/pci",
+      "meaning": "The /proc filesystem is not mounted or PCI subsystem not available",
+      "resolution": "Ensure /proc is mounted (mount -t proc proc /proc). Verify kernel has PCI support enabled."
+    },
+    {
+      "message": "lspci: Cannot find any working access method",
+      "meaning": "No method available to access PCI configuration space",
+      "resolution": "Run as root for hardware access, or verify /sys/bus/pci is available."
+    },
+    {
+      "message": "pcilib: Cannot open /sys/bus/pci/devices",
+      "meaning": "The sysfs filesystem is not mounted",
+      "resolution": "Ensure /sys is mounted (mount -t sysfs sysfs /sys)."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "nvidia-smi",
+      "ibstat",
+      "ibv_devinfo",
+      "nvme list",
+      "hwloc-ls",
+      "lstopo",
+      "dmidecode",
+      "lshw",
+      "setpci"
+    ],
+    "uses_library": ["libpci"],
+    "notes": "lspci reads PCI configuration space through /sys/bus/pci or /proc/bus/pci. The PCI bus IDs shown by lspci correspond directly to GPU PCI bus IDs in nvidia-smi (GPU Bus Id field) and InfiniBand device addresses in ibstat. Use this correlation to verify device topology and driver binding. For modifying PCI configuration, use the companion tool setpci."
+  },
+  "permissions": {
+    "read_operations": "Basic device listing requires no special permissions. Some detailed information (extended config space) requires root.",
+    "write_operations": "lspci is read-only. Use setpci for configuration space modifications.",
+    "notes": "Options -xxx, -xxxx, and -M require root privileges. Running as non-root may show less detailed capability information."
+  },
+  "limitations": [
+    "Cannot modify PCI configuration - use setpci for that",
+    "Extended configuration space access (-xxx, -xxxx) requires root and may hang on some devices",
+    "Device names depend on pci.ids database currency - update with update-pciids command",
+    "Tree view (-t) may not show all topology details on complex multi-switch systems",
+    "Virtual machines may show emulated devices that don't reflect physical hardware",
+    "Some capability parsing may be incomplete for very new or proprietary extensions"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": ["pci_bus_id", "pci_device_id", "pci_subsystem_id"],
+        "description": "PCI bus addresses correspond directly to GPU identifiers in nvidia-smi. Use to correlate GPU indices with physical PCIe slots."
+      },
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["device", "pci_address"],
+        "description": "InfiniBand HCA device addresses map to PCI bus IDs. Mellanox devices show as vendor 15b3."
+      },
+      {
+        "state_domain": "system_state",
+        "fields": ["pcie_topology", "numa_node_mapping", "kernel_drivers"],
+        "description": "Reads PCIe bus hierarchy, NUMA node affinity for devices, and loaded kernel modules."
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Device hotplug (add/remove)",
+        "effect": "New or removed PCI devices will appear in subsequent lspci output. PCIe hot-add of GPUs or NICs is reflected here."
+      },
+      {
+        "state_change": "Driver bind/unbind",
+        "effect": "The 'Kernel driver in use' field changes when drivers are loaded or unloaded (e.g., nvidia vs vfio-pci)."
+      },
+      {
+        "state_change": "PCIe link training",
+        "effect": "LnkSta (link status) may change after reset or if link degrades due to errors."
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU PCI Bus IDs (e.g., 86:00.0) match between lspci output and nvidia-smi 'Bus Id' field"
+      },
+      {
+        "command": "nvidia-smi -q",
+        "shared_state": "PCIe link width and speed reported in nvidia-smi should match lspci LnkSta values"
+      },
+      {
+        "command": "ibstat",
+        "shared_state": "InfiniBand HCA physical port information correlates with Mellanox device entries"
+      },
+      {
+        "command": "ibv_devinfo",
+        "shared_state": "RDMA device names map to Mellanox PCI devices shown by lspci"
+      },
+      {
+        "command": "hwloc-ls",
+        "shared_state": "PCIe device topology and NUMA node placement are consistent"
+      },
+      {
+        "command": "nvidia-smi topo -m",
+        "shared_state": "GPU interconnect topology derived from PCIe hierarchy matches lspci -t tree"
+      }
+    ]
+  }
+}

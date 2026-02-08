@@ -1,0 +1,114 @@
+{
+  "command": "sdiag",
+  "category": "cluster_management",
+  "description": "SLURM diagnostic tool. Displays scheduling statistics and performance data. Useful for administrators to monitor SLURM scheduler health.",
+  "synopsis": "sdiag [options]",
+  "version_documented": "SLURM 21.08+",
+  "source_urls": ["https://slurm.schedmd.com/sdiag.html"],
+  "installation": {
+    "package": "slurm-client",
+    "notes": "Part of SLURM workload manager."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Show all statistics"
+    },
+    {
+      "short": "-r",
+      "long": "--reset",
+      "description": "Reset statistics"
+    },
+    {
+      "short": "-i",
+      "long": "--sort-by-id",
+      "description": "Sort by RPC message ID"
+    },
+    {
+      "short": "-t",
+      "long": "--sort-by-time",
+      "description": "Sort by total time"
+    },
+    {
+      "short": "-T",
+      "long": "--sort-by-time2",
+      "description": "Sort by average time"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show scheduler stats",
+      "command": "sdiag",
+      "requires_root": false
+    },
+    {
+      "description": "All statistics",
+      "command": "sdiag -a",
+      "requires_root": false
+    },
+    {
+      "description": "Sort by time",
+      "command": "sdiag -t",
+      "requires_root": false
+    },
+    {
+      "description": "Reset stats (admin)",
+      "command": "sdiag -r",
+      "requires_root": true
+    },
+    {
+      "description": "Monitor scheduler health",
+      "command": "watch -n 30 sdiag",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Unable to contact slurm controller",
+      "meaning": "slurmctld not running",
+      "resolution": "Check SLURM controller status"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["scontrol", "sinfo", "squeue"],
+    "notes": "Shows backfill statistics, scheduler cycles, RPC stats. Useful for tuning scheduler configuration."
+  },
+  "permissions": {
+    "read_operations": "Read scheduler statistics",
+    "write_operations": "Reset requires admin",
+    "notes": "View stats as regular user"
+  },
+  "limitations": [
+    "Statistics since last reset or startup",
+    "Admin-only reset",
+    "Requires running slurmctld"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "job_state",
+        "fields": ["scheduler_stats"],
+        "description": "Reads scheduler performance data"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "scontrol",
+        "shared_state": "Both query slurmctld"
+      }
+    ]
+  }
+}

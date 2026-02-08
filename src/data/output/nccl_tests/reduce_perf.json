@@ -1,0 +1,247 @@
+{
+  "command": "reduce_perf",
+  "category": "nccl_tests",
+  "description": "NCCL reduce collective operation benchmark. Tests performance of the MPI_Reduce-like operation where data from all GPUs is reduced (summed, max, min, etc.) to a single root GPU. Used to validate GPU interconnect performance for reduction operations.",
+  "synopsis": "reduce_perf [options]",
+  "version_documented": "nccl-tests 2.13+",
+  "source_urls": ["https://github.com/NVIDIA/nccl-tests"],
+  "installation": {
+    "package": "nccl-tests",
+    "notes": "Build from source: git clone https://github.com/NVIDIA/nccl-tests && cd nccl-tests && make MPI=1 CUDA_HOME=/usr/local/cuda NCCL_HOME=/usr/lib/x86_64-linux-gnu"
+  },
+  "global_options": [
+    {
+      "short": "-b",
+      "long": "--minbytes",
+      "description": "Minimum message size in bytes",
+      "arguments": "<size>",
+      "argument_type": "string",
+      "default": "8",
+      "example": "-b 1M"
+    },
+    {
+      "short": "-e",
+      "long": "--maxbytes",
+      "description": "Maximum message size in bytes",
+      "arguments": "<size>",
+      "argument_type": "string",
+      "default": "128M",
+      "example": "-e 1G"
+    },
+    {
+      "short": "-f",
+      "long": "--stepfactor",
+      "description": "Multiplication factor between message sizes",
+      "arguments": "<factor>",
+      "argument_type": "integer",
+      "default": "2"
+    },
+    {
+      "short": "-g",
+      "long": "--ngpus",
+      "description": "Number of GPUs per process",
+      "arguments": "<ngpus>",
+      "argument_type": "integer",
+      "default": "1"
+    },
+    {
+      "short": "-n",
+      "long": "--iters",
+      "description": "Number of iterations",
+      "arguments": "<iters>",
+      "argument_type": "integer",
+      "default": "20"
+    },
+    {
+      "short": "-w",
+      "long": "--warmup_iters",
+      "description": "Number of warmup iterations",
+      "arguments": "<iters>",
+      "argument_type": "integer",
+      "default": "5"
+    },
+    {
+      "short": "-o",
+      "long": "--op",
+      "description": "Reduction operation",
+      "arguments": "<sum|prod|min|max|avg>",
+      "argument_type": "string",
+      "default": "sum"
+    },
+    {
+      "short": "-d",
+      "long": "--datatype",
+      "description": "Data type",
+      "arguments": "<type>",
+      "argument_type": "string",
+      "default": "float",
+      "example": "-d half"
+    },
+    {
+      "short": "-r",
+      "long": "--root",
+      "description": "Root rank for reduction",
+      "arguments": "<rank>",
+      "argument_type": "integer",
+      "default": "0"
+    },
+    {
+      "short": "-c",
+      "long": "--check",
+      "description": "Check results for correctness",
+      "arguments": "<check_iters>",
+      "argument_type": "integer",
+      "default": "0"
+    },
+    {
+      "short": "-z",
+      "long": "--blocking",
+      "description": "Use blocking (synchronous) operations",
+      "arguments": "<0|1>",
+      "argument_type": "integer",
+      "default": "0"
+    }
+  ],
+  "environment_variables": [
+    {
+      "name": "NCCL_DEBUG",
+      "description": "NCCL debug level",
+      "example": "NCCL_DEBUG=INFO",
+      "affects_command": "Modifies NCCL behavior"
+    },
+    {
+      "name": "NCCL_IB_DISABLE",
+      "description": "Disable InfiniBand transport",
+      "example": "NCCL_IB_DISABLE=1",
+      "affects_command": "Modifies NCCL behavior"
+    },
+    {
+      "name": "CUDA_VISIBLE_DEVICES",
+      "description": "Select which GPUs to use",
+      "example": "CUDA_VISIBLE_DEVICES=0,1,2,3",
+      "affects_command": "Modifies NCCL behavior"
+    },
+    {
+      "name": "NCCL_P2P_LEVEL",
+      "description": "Control P2P usage level",
+      "example": "NCCL_P2P_LEVEL=NVL",
+      "affects_command": "Modifies NCCL behavior"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error (CUDA, NCCL, or MPI failure)"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run reduce test on single node with 8 GPUs",
+      "command": "reduce_perf -b 8 -e 128M -g 8",
+      "output_example": "#                                                     out-of-place                       in-place\n#       size         count    type   redop     time   algbw   busbw  error     time   algbw   busbw  error\n#        (B)    (elements)                     (us)  (GB/s)  (GB/s)            (us)  (GB/s)  (GB/s)\n           8             2   float     sum     8.52    0.00    0.00    N/A     8.14    0.00    0.00    N/A\n      131072         32768   float     sum    18.82    6.97   12.20    N/A    18.65    7.03   12.30    N/A\n   134217728      33554432   float     sum   1456.2   92.18  161.3    N/A   1448.9   92.64  162.1    N/A",
+      "requires_root": false
+    },
+    {
+      "description": "Run across multiple nodes with MPI",
+      "command": "mpirun -np 16 -hostfile hosts reduce_perf -b 1M -e 1G",
+      "requires_root": false
+    },
+    {
+      "description": "Test with different reduction operation",
+      "command": "reduce_perf -b 1M -e 128M -g 8 -o max",
+      "requires_root": false
+    },
+    {
+      "description": "Run with data validation",
+      "command": "reduce_perf -b 8 -e 128M -g 8 -c 1",
+      "requires_root": false
+    },
+    {
+      "description": "Test half precision performance",
+      "command": "reduce_perf -b 8 -e 128M -g 8 -d half",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "NCCL WARN Failed to open libibverbs.so",
+      "meaning": "InfiniBand libraries not available",
+      "resolution": "Install RDMA libraries or set NCCL_IB_DISABLE=1 for NVLink-only"
+    },
+    {
+      "message": "CUDA failure 'out of memory'",
+      "meaning": "Insufficient GPU memory for test buffer",
+      "resolution": "Reduce max message size with -e flag"
+    },
+    {
+      "message": "NCCL WARN Cuda failure 'invalid device ordinal'",
+      "meaning": "Requested GPU does not exist",
+      "resolution": "Check CUDA_VISIBLE_DEVICES and -g flag"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "all_reduce_perf",
+      "all_gather_perf",
+      "broadcast_perf",
+      "reduce_scatter_perf",
+      "sendrecv_perf"
+    ],
+    "notes": "Unlike all_reduce_perf, reduce_perf only sends final result to root rank. Bus bandwidth calculation accounts for the 1-to-N nature of the operation. Use for operations where only one rank needs the result."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for basic operation",
+    "write_operations": "N/A - benchmark tool",
+    "notes": "May require IPC permissions for NVLink peer access"
+  },
+  "limitations": [
+    "Synthetic benchmark may not reflect real application patterns",
+    "Single operation type (reduce) may have different performance than mixed workloads",
+    "Root rank selection affects measured bandwidth",
+    "Network topology affects multi-node results significantly"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": ["gpu_id", "memory_free"],
+        "description": "Uses available GPUs and GPU memory"
+      },
+      {
+        "state_domain": "fabric_state",
+        "fields": ["nvlink_version", "links"],
+        "description": "Uses NVLink for intra-node communication"
+      },
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["device", "state", "rate"],
+        "description": "Uses InfiniBand for inter-node communication"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "GPU memory pressure",
+        "effect": "Test may fail if insufficient memory"
+      },
+      {
+        "state_change": "NVLink error",
+        "effect": "Performance degrades or test fails"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "all_reduce_perf",
+        "shared_state": "Should show similar algorithm bandwidth for same message sizes"
+      },
+      {
+        "command": "nvidia-smi topo -m",
+        "shared_state": "GPU topology affects communication paths"
+      }
+    ]
+  }
+}

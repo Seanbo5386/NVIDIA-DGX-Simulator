@@ -1,0 +1,637 @@
+{
+  "command": "nsys",
+  "category": "cuda_tools",
+  "description": "NVIDIA Nsight Systems is a system-wide performance analysis tool designed to visualize application algorithms, identify performance bottlenecks, and optimize GPU and CPU usage. It provides low-overhead tracing of CUDA, OpenCL, Vulkan, OpenGL, OpenACC, and GPU kernel activities along with CPU sampling, thread scheduling analysis, and OS runtime libraries tracing. Nsight Systems supports profiling distributed applications including MPI workloads across multiple nodes and GPUs.",
+  "synopsis": "nsys [command] [options] [application] [application-arguments]",
+  "version_documented": "2024.x (CUDA 12.x)",
+  "source_urls": [
+    "https://docs.nvidia.com/nsight-systems/UserGuide/index.html",
+    "https://developer.nvidia.com/nsight-systems"
+  ],
+  "installation": {
+    "package": "nsight-systems",
+    "notes": "Available as part of the CUDA Toolkit or as a standalone download from NVIDIA Developer. Also available in NVIDIA HPC SDK and NGC containers."
+  },
+  "global_options": [
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help information for nsys or a specific subcommand"
+    },
+    {
+      "long": "--version",
+      "description": "Display nsys version information"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Enable verbose output for debugging"
+    },
+    {
+      "short": "-q",
+      "long": "--quiet",
+      "description": "Suppress non-essential output messages"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "profile",
+      "description": "Profile an application and collect performance data. This is the primary subcommand for collecting traces including CUDA API, GPU kernels, CPU sampling, memory transfers, and OS runtime events.",
+      "synopsis": "nsys profile [options] <application> [application-arguments]",
+      "options": [
+        {
+          "short": "-o",
+          "long": "--output",
+          "description": "Output file name (without extension). Supports %q{ENV_VAR}, %h (hostname), %p (PID), %% (literal %) placeholders.",
+          "arguments": "FILE",
+          "argument_type": "string",
+          "example": "nsys profile -o myapp_%h_%p ./myapp"
+        },
+        {
+          "short": "-t",
+          "long": "--trace",
+          "description": "Select APIs and events to trace. Comma-separated list of: cuda, nvtx, osrt, cublas, cudnn, opengl, openacc, openmp, mpi, ucx, dx11, dx12, vulkan, wddm, oshmem, none.",
+          "arguments": "TRACE_LIST",
+          "argument_type": "string",
+          "default": "cuda,nvtx,osrt,cublas,cudnn",
+          "example": "nsys profile -t cuda,nvtx,mpi ./myapp"
+        },
+        {
+          "short": "-s",
+          "long": "--sample",
+          "description": "Select CPU sampling mode: cpu (sample all CPUs), process-tree (sample target process tree), none (disable sampling).",
+          "arguments": "MODE",
+          "argument_type": "string",
+          "default": "process-tree",
+          "example": "nsys profile -s cpu ./myapp"
+        },
+        {
+          "long": "--sampling-frequency",
+          "description": "CPU sampling frequency in Hz. Higher values provide more detail but more overhead.",
+          "arguments": "FREQ",
+          "argument_type": "integer",
+          "default": "1000"
+        },
+        {
+          "long": "--backtrace",
+          "description": "Select backtrace collection mode: dwarf, lbr (Last Branch Record), fp (frame pointer), none.",
+          "arguments": "MODE",
+          "argument_type": "string",
+          "default": "dwarf"
+        },
+        {
+          "long": "--gpuctxsw",
+          "description": "Collect GPU context switch data.",
+          "arguments": "true|false",
+          "argument_type": "string",
+          "default": "false"
+        },
+        {
+          "long": "--cuda-memory-usage",
+          "description": "Track CUDA memory allocations and usage over time.",
+          "arguments": "true|false",
+          "argument_type": "string",
+          "default": "false"
+        },
+        {
+          "long": "--gpu-metrics-device",
+          "description": "Collect GPU metrics for specified devices (comma-separated GPU IDs or 'all').",
+          "arguments": "GPU_IDS",
+          "argument_type": "string",
+          "example": "nsys profile --gpu-metrics-device=0,1 ./myapp"
+        },
+        {
+          "long": "--gpu-metrics-frequency",
+          "description": "GPU metrics sampling frequency in Hz.",
+          "arguments": "FREQ",
+          "argument_type": "integer",
+          "default": "10000"
+        },
+        {
+          "short": "-d",
+          "long": "--duration",
+          "description": "Collection duration in seconds. Collection stops after this time regardless of application state.",
+          "arguments": "SECONDS",
+          "argument_type": "integer",
+          "example": "nsys profile -d 60 ./myapp"
+        },
+        {
+          "short": "-y",
+          "long": "--delay",
+          "description": "Delay collection start by specified seconds after application launch.",
+          "arguments": "SECONDS",
+          "argument_type": "integer",
+          "example": "nsys profile -y 10 ./myapp"
+        },
+        {
+          "long": "--capture-range",
+          "description": "Define when to start/stop collection: none (collect entire run), cudaProfilerApi (use cudaProfilerStart/Stop), nvtx (use NVTX range).",
+          "arguments": "MODE",
+          "argument_type": "string",
+          "default": "none"
+        },
+        {
+          "long": "--capture-range-end",
+          "description": "Define end condition for capture range: none, stop-on-range-end, repeat[:N], repeat-shutdown.",
+          "arguments": "MODE",
+          "argument_type": "string"
+        },
+        {
+          "long": "--nvtx-capture",
+          "description": "Specify NVTX range name to trigger capture when using --capture-range=nvtx.",
+          "arguments": "RANGE_NAME",
+          "argument_type": "string"
+        },
+        {
+          "short": "-w",
+          "long": "--show-output",
+          "description": "Control output from profiled application: true (forward), false (suppress).",
+          "arguments": "true|false",
+          "argument_type": "string",
+          "default": "true"
+        },
+        {
+          "long": "--stats",
+          "description": "Generate summary statistics report after collection.",
+          "arguments": "true|false",
+          "argument_type": "string",
+          "default": "false"
+        },
+        {
+          "long": "--force-overwrite",
+          "description": "Overwrite existing output files without prompting.",
+          "arguments": "true|false",
+          "argument_type": "string",
+          "default": "false"
+        },
+        {
+          "short": "-e",
+          "long": "--env-var",
+          "description": "Set environment variables for the profiled application. Can be specified multiple times.",
+          "arguments": "NAME=VALUE",
+          "argument_type": "string",
+          "example": "nsys profile -e CUDA_VISIBLE_DEVICES=0 ./myapp"
+        },
+        {
+          "long": "--mpi-impl",
+          "description": "Specify MPI implementation for MPI tracing: openmpi, mpich, custom.",
+          "arguments": "IMPL",
+          "argument_type": "string"
+        },
+        {
+          "long": "--wait",
+          "description": "Wait mode: all (wait for all processes), primary (wait for primary process only).",
+          "arguments": "MODE",
+          "argument_type": "string",
+          "default": "all"
+        },
+        {
+          "long": "--nic-metrics",
+          "description": "Collect network interface card metrics.",
+          "arguments": "true|false",
+          "argument_type": "string",
+          "default": "false"
+        },
+        {
+          "long": "--export",
+          "description": "Export report to additional formats after collection: sqlite, hdf, json, text, none.",
+          "arguments": "FORMAT",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "stats",
+      "description": "Generate summary statistics from a previously collected report file (.nsys-rep or .qdrep). Provides analysis of GPU kernels, API calls, memory operations, and other traced events.",
+      "synopsis": "nsys stats [options] <report-file>",
+      "options": [
+        {
+          "short": "-r",
+          "long": "--report",
+          "description": "Specify which reports to generate. Comma-separated list of report names.",
+          "arguments": "REPORTS",
+          "argument_type": "string",
+          "example": "nsys stats -r cuda_gpu_kern_sum,cuda_api_sum report.nsys-rep"
+        },
+        {
+          "short": "-o",
+          "long": "--output",
+          "description": "Output file base name for generated reports.",
+          "arguments": "FILE",
+          "argument_type": "string"
+        },
+        {
+          "long": "--format",
+          "description": "Output format: table, csv, column, json.",
+          "arguments": "FORMAT",
+          "argument_type": "string",
+          "default": "table"
+        },
+        {
+          "long": "--force-overwrite",
+          "description": "Overwrite existing output files without prompting.",
+          "arguments": "true|false",
+          "argument_type": "string"
+        },
+        {
+          "long": "--force-export",
+          "description": "Re-export SQLite database even if it exists.",
+          "arguments": "true|false",
+          "argument_type": "string"
+        },
+        {
+          "long": "--timeunit",
+          "description": "Time unit for output: nsec, usec, msec, sec.",
+          "arguments": "UNIT",
+          "argument_type": "string",
+          "default": "nsec"
+        }
+      ]
+    },
+    {
+      "name": "analyze",
+      "description": "Run expert system analysis rules on a collected report to identify performance issues and optimization opportunities. Provides automated recommendations based on trace data.",
+      "synopsis": "nsys analyze [options] <report-file>",
+      "options": [
+        {
+          "short": "-o",
+          "long": "--output",
+          "description": "Output file for analysis results.",
+          "arguments": "FILE",
+          "argument_type": "string"
+        },
+        {
+          "long": "--format",
+          "description": "Output format: table, csv, column, json.",
+          "arguments": "FORMAT",
+          "argument_type": "string",
+          "default": "table"
+        },
+        {
+          "long": "--force-overwrite",
+          "description": "Overwrite existing output files without prompting.",
+          "arguments": "true|false",
+          "argument_type": "string"
+        },
+        {
+          "long": "--rules",
+          "description": "Specify which analysis rules to run.",
+          "arguments": "RULES",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "export",
+      "description": "Export a collected report file to different formats for external analysis or archival. Supports SQLite, HDF5, JSON, and text formats.",
+      "synopsis": "nsys export [options] <report-file>",
+      "options": [
+        {
+          "short": "-o",
+          "long": "--output",
+          "description": "Output file name for exported data.",
+          "arguments": "FILE",
+          "argument_type": "string"
+        },
+        {
+          "short": "-t",
+          "long": "--type",
+          "description": "Export format type: sqlite, hdf, json, text.",
+          "arguments": "FORMAT",
+          "argument_type": "string",
+          "example": "nsys export -t sqlite report.nsys-rep"
+        },
+        {
+          "long": "--force-overwrite",
+          "description": "Overwrite existing output files without prompting.",
+          "arguments": "true|false",
+          "argument_type": "string"
+        },
+        {
+          "long": "--separate-strings",
+          "description": "Export string table as separate file.",
+          "arguments": "true|false",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "launch",
+      "description": "Launch an application with profiling environment configured but do not start collection immediately. Used with interactive or delayed profiling workflows.",
+      "synopsis": "nsys launch [options] <application> [application-arguments]",
+      "options": [
+        {
+          "short": "-t",
+          "long": "--trace",
+          "description": "Select APIs and events to trace when collection starts.",
+          "arguments": "TRACE_LIST",
+          "argument_type": "string"
+        },
+        {
+          "short": "-w",
+          "long": "--show-output",
+          "description": "Control output from launched application.",
+          "arguments": "true|false",
+          "argument_type": "string",
+          "default": "true"
+        },
+        {
+          "short": "-e",
+          "long": "--env-var",
+          "description": "Set environment variables for the launched application.",
+          "arguments": "NAME=VALUE",
+          "argument_type": "string"
+        },
+        {
+          "long": "--wait",
+          "description": "Wait mode: primary, all.",
+          "arguments": "MODE",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "status",
+      "description": "Display status of nsys profiling sessions. Shows active and completed sessions, collection state, and session information.",
+      "synopsis": "nsys status [options]",
+      "options": [
+        {
+          "short": "-t",
+          "long": "--target-pid",
+          "description": "Show status for a specific process ID.",
+          "arguments": "PID",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-e",
+          "long": "--environment",
+          "description": "Display environment status information."
+        }
+      ]
+    }
+  ],
+  "output_formats": {
+    "nsys-rep": "Native Nsight Systems report format (.nsys-rep). This is the default output format containing all collected trace data. Can be opened in Nsight Systems GUI for interactive analysis.",
+    "sqlite": "SQLite database format containing trace data in relational tables. Useful for custom queries and integration with analysis scripts.",
+    "hdf": "HDF5 format for numerical/scientific data interchange.",
+    "json": "JSON format for programmatic access and web-based tools.",
+    "text": "Human-readable text format for quick command-line review."
+  },
+  "environment_variables": [
+    {
+      "name": "NSYS_NVTX_PROFILER_REGISTER_ONLY",
+      "description": "When set to 1, NVTX domains are registered but events are not recorded unless collection is active.",
+      "example": "NSYS_NVTX_PROFILER_REGISTER_ONLY=1",
+      "affects_command": "Reduces overhead when NVTX instrumentation is present but profiling is not active."
+    },
+    {
+      "name": "NSYS_SESSION",
+      "description": "Specifies the session name for multi-process coordination.",
+      "example": "NSYS_SESSION=mysession",
+      "affects_command": "Allows grouping of related processes under a single profiling session."
+    },
+    {
+      "name": "NSYS_PROCESS_SCOPE",
+      "description": "Defines the process scope for profiling: process-tree or system.",
+      "example": "NSYS_PROCESS_SCOPE=system",
+      "affects_command": "Controls which processes are included in the profiling session."
+    },
+    {
+      "name": "NSYS_HOST_PORT",
+      "description": "Host and port for remote profiling connections.",
+      "example": "NSYS_HOST_PORT=localhost:12345",
+      "affects_command": "Configures the communication endpoint for remote profiling sessions."
+    },
+    {
+      "name": "NSYS_CUDA_INJECTION64_PATH",
+      "description": "Path to the CUDA injection library for custom profiling hooks.",
+      "example": "NSYS_CUDA_INJECTION64_PATH=/path/to/injection.so",
+      "affects_command": "Overrides the default CUDA injection library path."
+    },
+    {
+      "name": "NSYS_TRACE_CUDA",
+      "description": "Enable or disable CUDA tracing independently of command-line options.",
+      "example": "NSYS_TRACE_CUDA=1",
+      "affects_command": "Provides runtime control over CUDA API and kernel tracing."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - profiling completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "General error - profiling failed due to various reasons"
+    },
+    {
+      "code": 2,
+      "meaning": "Invalid argument or option provided"
+    },
+    {
+      "code": 3,
+      "meaning": "Required resource not available (GPU, driver, etc.)"
+    },
+    {
+      "code": 4,
+      "meaning": "Permission denied - insufficient privileges"
+    },
+    {
+      "code": 5,
+      "meaning": "Target application exited with error"
+    },
+    {
+      "code": 6,
+      "meaning": "Collection aborted or interrupted"
+    },
+    {
+      "code": 7,
+      "meaning": "Output file error (cannot create, write, or overwrite)"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Basic CUDA application profiling with default settings",
+      "command": "nsys profile ./cuda_app",
+      "output_example": "Generating '/tmp/nsys-report-xxxx.nsys-rep'\n[1/1] Launching process ...\nProcessing events...\nSaving temporary '/tmp/nsys-report-xxxx.nsys-rep' file to disk...\nCapturing information from /tmp/nsys-report-xxxx.nsys-rep...\n\nGenerated:\n    /tmp/nsys-report-xxxx.nsys-rep"
+    },
+    {
+      "description": "Profile with custom output file name and CUDA/NVTX tracing",
+      "command": "nsys profile -o myprofile -t cuda,nvtx ./cuda_app",
+      "output_example": "Generating 'myprofile.nsys-rep'"
+    },
+    {
+      "description": "Profile MPI application across multiple ranks",
+      "command": "mpirun -np 4 nsys profile -o mpi_rank%q{OMPI_COMM_WORLD_RANK} --trace=cuda,nvtx,mpi ./mpi_cuda_app",
+      "output_example": "Generating 'mpi_rank0.nsys-rep'\nGenerating 'mpi_rank1.nsys-rep'\nGenerating 'mpi_rank2.nsys-rep'\nGenerating 'mpi_rank3.nsys-rep'"
+    },
+    {
+      "description": "Profile with GPU metrics collection",
+      "command": "nsys profile --gpu-metrics-device=all --gpu-metrics-frequency=10000 -o gpu_metrics_profile ./cuda_app",
+      "output_example": "Collecting GPU metrics at 10000 Hz...\nGenerating 'gpu_metrics_profile.nsys-rep'"
+    },
+    {
+      "description": "Profile with CPU sampling and CUDA memory tracking",
+      "command": "nsys profile -s cpu --cuda-memory-usage=true -o detailed_profile ./cuda_app",
+      "output_example": "CPU sampling enabled at 1000 Hz\nCUDA memory usage tracking enabled\nGenerating 'detailed_profile.nsys-rep'"
+    },
+    {
+      "description": "Profile with delayed start and limited duration",
+      "command": "nsys profile -y 5 -d 30 -o timed_profile ./long_running_app",
+      "output_example": "Delaying collection start by 5 seconds...\nCollection will run for 30 seconds...\nGenerating 'timed_profile.nsys-rep'"
+    },
+    {
+      "description": "Profile using NVTX range for capture control",
+      "command": "nsys profile --capture-range=nvtx --nvtx-capture=ProfileRegion -o nvtx_capture ./cuda_app",
+      "output_example": "Waiting for NVTX range 'ProfileRegion'...\nCapture started...\nCapture ended...\nGenerating 'nvtx_capture.nsys-rep'"
+    },
+    {
+      "description": "Generate statistics report from collected data",
+      "command": "nsys stats --report cuda_gpu_kern_sum,cuda_api_sum myprofile.nsys-rep",
+      "output_example": "CUDA GPU Kernel Summary:\nTime(%)  Total Time (ns)  Instances  Avg (ns)   Med (ns)   Min (ns)   Max (ns)   Name\n 45.2      1234567890       1000    1234567    1234000     100000    5000000   kernel_1\n 32.1       876543210        500    1753086    1700000     500000    3000000   kernel_2\n\nCUDA API Summary:\nTime(%)  Total Time (ns)  Num Calls  Avg (ns)   Name\n 60.5      2345678901       2000    1172839    cudaLaunchKernel\n 25.3       987654321       1500     658436    cudaMemcpy"
+    },
+    {
+      "description": "Export report to SQLite for custom analysis",
+      "command": "nsys export -t sqlite -o myprofile.sqlite myprofile.nsys-rep",
+      "output_example": "Exporting to SQLite database 'myprofile.sqlite'...\nExport complete."
+    },
+    {
+      "description": "Profile with NIC metrics for network analysis",
+      "command": "nsys profile --nic-metrics=true -t cuda,nvtx,ucx -o network_profile ./distributed_app",
+      "output_example": "NIC metrics collection enabled\nUCX tracing enabled\nGenerating 'network_profile.nsys-rep'"
+    },
+    {
+      "description": "Run expert system analysis on collected report",
+      "command": "nsys analyze myprofile.nsys-rep",
+      "output_example": "Running expert system analysis...\n\nAnalysis Results:\n[WARNING] GPU Idle Time: 35% of total time GPU was idle\n[INFO] Memory Transfer Bottleneck: Large host-to-device transfers detected\n[SUGGESTION] Consider using pinned memory for large transfers"
+    },
+    {
+      "description": "Check nsys status and environment",
+      "command": "nsys status -e",
+      "output_example": "Nsight Systems version: 2024.1.0\nDriver version: 535.129.03\nCUDA version: 12.2\nActive sessions: 0\nEnvironment: OK"
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "ERR_NVGPUCTRPERM - The user does not have permission to access NVIDIA GPU Performance Counters",
+      "meaning": "GPU performance counter access requires elevated permissions or specific configuration",
+      "resolution": "Run with sudo, or set kernel parameter 'echo 1 > /proc/sys/kernel/perf_event_paranoid', or use nvidia-modprobe to configure access permissions."
+    },
+    {
+      "message": "Failed to create output file",
+      "meaning": "Cannot write the output report file to the specified location",
+      "resolution": "Check write permissions on the output directory, ensure sufficient disk space, or use --force-overwrite if file already exists."
+    },
+    {
+      "message": "CUDA driver version is insufficient for CUDA runtime version",
+      "meaning": "The installed NVIDIA driver does not support the CUDA version used by nsys or the target application",
+      "resolution": "Update the NVIDIA driver to a version compatible with the CUDA toolkit version, or use a matching nsys version."
+    },
+    {
+      "message": "No CUDA GPU detected on the system",
+      "meaning": "nsys cannot find any NVIDIA GPU to profile",
+      "resolution": "Verify GPU is installed and recognized by nvidia-smi. Check CUDA_VISIBLE_DEVICES environment variable. Ensure NVIDIA driver is loaded."
+    },
+    {
+      "message": "Application exited before collection started",
+      "meaning": "The target application terminated before nsys could begin collecting data",
+      "resolution": "Reduce the delay value (-y option), ensure the application runs long enough, or check for application errors."
+    },
+    {
+      "message": "MPI initialization failed",
+      "meaning": "MPI tracing could not initialize, usually due to library detection issues",
+      "resolution": "Specify the MPI implementation explicitly with --mpi-impl option. Ensure MPI libraries are in LD_LIBRARY_PATH."
+    },
+    {
+      "message": "Cannot attach to process - permission denied",
+      "meaning": "nsys lacks permission to attach to the target process for profiling",
+      "resolution": "Run nsys as root, or adjust ptrace_scope: 'echo 0 > /proc/sys/kernel/yama/ptrace_scope' (security implications)."
+    },
+    {
+      "message": "Out of memory during collection",
+      "meaning": "The profiling session ran out of memory due to high trace volume",
+      "resolution": "Reduce tracing scope with -t option, lower sampling frequency, or limit collection duration with -d option."
+    },
+    {
+      "message": "Report file is corrupted or incompatible version",
+      "meaning": "The .nsys-rep file cannot be read by the current nsys version",
+      "resolution": "Use the same nsys version that created the report, or re-collect the profile with the current version."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "ncu",
+      "nvprof",
+      "nvidia-smi",
+      "dcgmi",
+      "cuda-gdb",
+      "nvcc",
+      "nvvp"
+    ],
+    "uses_library": [
+      "CUDA Driver API",
+      "CUPTI (CUDA Profiling Tools Interface)",
+      "NVML (NVIDIA Management Library)",
+      "NVTX (NVIDIA Tools Extension)"
+    ],
+    "notes": "nsys provides system-level profiling while ncu (Nsight Compute) provides detailed GPU kernel analysis. nvprof is deprecated in favor of nsys for timeline profiling. Reports can be viewed in the Nsight Systems GUI or exported for analysis with external tools. nsys integrates with SLURM and other job schedulers for HPC profiling workflows."
+  },
+  "permissions": {
+    "read_operations": "Standard user permissions sufficient for basic CUDA API and kernel tracing. GPU metrics collection may require additional permissions.",
+    "write_operations": "Write permission needed for output directory. Root access may be required for: GPU hardware performance counters, system-wide sampling, low-level driver events.",
+    "notes": "Some features require CAP_SYS_ADMIN capability or root access. GPU performance counters access can be enabled system-wide via /proc/sys/kernel/perf_event_paranoid or nvidia-modprobe configuration."
+  },
+  "limitations": [
+    "GPU performance counters require elevated permissions on most systems",
+    "MPI tracing requires explicit specification of MPI implementation in some cases",
+    "Large traces can consume significant disk space and memory",
+    "Some older GPU architectures have limited profiling support",
+    "Remote profiling requires network connectivity and proper firewall configuration",
+    "Report format may not be backward compatible between major versions",
+    "CPU sampling resolution is limited by OS scheduler granularity",
+    "Multi-node MPI profiling requires nsys on all nodes"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "gpu_id",
+          "uuid",
+          "name",
+          "utilization_gpu",
+          "utilization_memory",
+          "memory_used",
+          "temperature",
+          "power_draw"
+        ],
+        "description": "nsys reads GPU state information to correlate profiling data with hardware metrics"
+      },
+      {
+        "state_domain": "gpu_process_state",
+        "fields": [
+          "pid",
+          "gpu_id",
+          "process_name",
+          "used_memory",
+          "compute_utilization"
+        ],
+        "description": "nsys tracks GPU processes and their resource usage during profiling"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU identification, memory usage, and utilization metrics"
+      },
+      {
+        "command": "ncu",
+        "shared_state": "GPU kernel execution data and CUDA context information"
+      },
+      {
+        "command": "dcgmi",
+        "shared_state": "GPU health and performance metrics for data center GPUs"
+      }
+    ]
+  }
+}

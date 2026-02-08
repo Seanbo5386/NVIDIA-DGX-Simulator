@@ -1,0 +1,140 @@
+{
+  "command": "numastat",
+  "category": "system_info",
+  "description": "Display NUMA memory statistics per node. Shows memory allocation, hits/misses, and foreign allocations. Critical for identifying NUMA imbalances that can impact HPC application performance.",
+  "synopsis": "numastat [options] [pid|pattern]",
+  "version_documented": "numactl 2.0+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/numastat.8.html"],
+  "installation": {
+    "package": "numactl",
+    "notes": "Install via: apt install numactl or yum install numactl"
+  },
+  "global_options": [
+    {
+      "short": "-c",
+      "description": "Display condensed table format"
+    },
+    {
+      "short": "-m",
+      "description": "Show per-node memory info (like /proc/meminfo per node)"
+    },
+    {
+      "short": "-n",
+      "description": "Show original numastat statistics"
+    },
+    {
+      "short": "-p",
+      "description": "Show per-node memory for specified PID or pattern",
+      "arguments": "<pid|pattern>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-s",
+      "description": "Sort table by total column"
+    },
+    {
+      "short": "-v",
+      "description": "Verbose output"
+    },
+    {
+      "short": "-z",
+      "description": "Skip zero-valued rows and columns"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show NUMA hit/miss statistics",
+      "command": "numastat",
+      "output_example": "                           node0           node1\nnuma_hit               123456789       234567890\nnuma_miss                   1234            5678\nnuma_foreign                5678            1234\ninterleave_hit              1000            1000\nlocal_node             123456789       234567890\nother_node                  1234            5678",
+      "requires_root": false
+    },
+    {
+      "description": "Show per-node memory information",
+      "command": "numastat -m",
+      "output_example": "                          Node 0          Node 1           Total\n                 --------------- --------------- ---------------\nMemTotal               251891.50       252047.44       503938.94\nMemFree                 10234.56        15678.90        25913.46\nMemUsed                241656.94       236368.54       478025.48",
+      "requires_root": false
+    },
+    {
+      "description": "Show memory usage for specific process",
+      "command": "numastat -p python",
+      "requires_root": false
+    },
+    {
+      "description": "Show memory usage for PID",
+      "command": "numastat -p 12345",
+      "requires_root": false
+    },
+    {
+      "description": "Condensed view sorted by total",
+      "command": "numastat -c -s",
+      "requires_root": false
+    },
+    {
+      "description": "Check NUMA balance across cluster",
+      "command": "pdsh -w node[001-010] numastat -c | dshbak -c",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "numastat: command not found",
+      "meaning": "numactl package not installed",
+      "resolution": "Install numactl package"
+    },
+    {
+      "message": "Cannot read /proc/PID/numa_maps",
+      "meaning": "Process not found or no permission",
+      "resolution": "Verify PID exists and you have permission"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["numactl", "lstopo", "free", "cat /proc/meminfo"],
+    "notes": "High numa_miss or other_node values indicate suboptimal memory placement. Applications should ideally have most allocations as numa_hit and local_node."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for system stats",
+    "write_operations": "N/A - read-only command",
+    "notes": "Reading other users' process stats may require root"
+  },
+  "limitations": [
+    "Only available on NUMA systems",
+    "Per-process stats require process to exist",
+    "Statistics are cumulative since boot"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["memory_total", "memory_used", "memory_free"],
+        "description": "Reads per-NUMA-node memory statistics"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Memory allocation",
+        "effect": "Statistics update in real-time"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "numactl -H",
+        "shared_state": "NUMA node count matches"
+      },
+      {
+        "command": "free",
+        "shared_state": "Total memory across nodes matches system total"
+      }
+    ]
+  }
+}

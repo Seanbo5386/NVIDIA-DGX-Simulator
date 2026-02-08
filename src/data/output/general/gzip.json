@@ -1,0 +1,165 @@
+{
+  "command": "gzip",
+  "category": "general",
+  "description": "Compress or decompress files. GNU zip compression utility. Widely used for compressing HPC data, logs, and checkpoint files.",
+  "synopsis": "gzip [options] [file]...",
+  "version_documented": "gzip 1.10+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/gzip.1.html"],
+  "installation": {
+    "package": "gzip",
+    "notes": "Installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--decompress",
+      "description": "Decompress"
+    },
+    {
+      "short": "-c",
+      "long": "--stdout",
+      "description": "Write to stdout"
+    },
+    {
+      "short": "-k",
+      "long": "--keep",
+      "description": "Keep original file"
+    },
+    {
+      "short": "-f",
+      "long": "--force",
+      "description": "Force compression"
+    },
+    {
+      "short": "-r",
+      "long": "--recursive",
+      "description": "Recurse directories"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Verbose output"
+    },
+    {
+      "short": "-1",
+      "long": "--fast",
+      "description": "Fastest compression"
+    },
+    {
+      "short": "-9",
+      "long": "--best",
+      "description": "Best compression"
+    },
+    {
+      "short": "-l",
+      "long": "--list",
+      "description": "List compression info"
+    },
+    {
+      "short": "-t",
+      "long": "--test",
+      "description": "Test integrity"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    },
+    {
+      "code": 2,
+      "meaning": "Warning"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Compress file",
+      "command": "gzip large_data.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Decompress file",
+      "command": "gzip -d file.gz",
+      "requires_root": false
+    },
+    {
+      "description": "Keep original",
+      "command": "gzip -k checkpoint.pt",
+      "requires_root": false
+    },
+    {
+      "description": "Best compression",
+      "command": "gzip -9 archive.tar",
+      "requires_root": false
+    },
+    {
+      "description": "Compress to stdout",
+      "command": "gzip -c data.csv > data.csv.gz",
+      "requires_root": false
+    },
+    {
+      "description": "Test integrity",
+      "command": "gzip -t downloaded.tar.gz",
+      "requires_root": false
+    },
+    {
+      "description": "List compression ratio",
+      "command": "gzip -l *.gz",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "unexpected end of file",
+      "meaning": "File is truncated or corrupt",
+      "resolution": "Re-download or recover from backup"
+    },
+    {
+      "message": "already has .gz suffix",
+      "meaning": "File appears compressed",
+      "resolution": "Use -f to force or check file"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["gunzip", "zcat", "pigz", "bzip2", "xz"],
+    "notes": "gunzip = gzip -d, zcat = gzip -cd. pigz is parallel gzip for faster compression on HPC."
+  },
+  "permissions": {
+    "read_operations": "Read source file",
+    "write_operations": "Write compressed file",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Single-threaded (use pigz for parallel)",
+    "Replaces original by default",
+    "Moderate compression ratio vs xz"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads files to compress"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Creates compressed files",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "gunzip",
+        "shared_state": "Decompresses what gzip compresses"
+      }
+    ]
+  }
+}

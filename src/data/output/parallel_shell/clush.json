@@ -1,0 +1,451 @@
+{
+  "command": "clush",
+  "category": "parallel_shell",
+  "description": "clush (ClusterShell) is a powerful parallel command execution tool designed for HPC cluster administration and management. It enables administrators to run commands simultaneously across multiple nodes with intelligent output gathering, consolidation, and diff capabilities. Built on Python's ClusterShell library, clush provides advanced features including node group support via YAML configuration, output deduplication (gather mode), line-by-line output mode, and unique diff mode to compare command output across nodes. It supports flexible node specification through nodeset expressions, group definitions, and exclusion patterns. In HPC environments, clush is commonly used for cluster health checks, software deployment verification, configuration auditing, and real-time system monitoring. Its integration with the broader ClusterShell ecosystem provides access to the nodeset utility for node list manipulation and the cluset command for cluster-wide operations.",
+  "synopsis": "clush [options] [-w nodes] [-g group] [-x exclude] command",
+  "version_documented": "1.9.2",
+  "source_urls": [
+    "https://github.com/cea-hpc/clustershell",
+    "https://clustershell.readthedocs.io/",
+    "https://linux.die.net/man/1/clush"
+  ],
+  "installation": {
+    "package": "clustershell",
+    "notes": "Available via pip (pip install ClusterShell), package managers (apt install clustershell, yum install clustershell), or from source. Python 3.6+ required. Group configuration stored in /etc/clustershell/groups.d/. EPEL repository may be needed on RHEL/CentOS systems."
+  },
+  "global_options": [
+    {
+      "short": "-w",
+      "long": "--nodes",
+      "description": "Specify target nodes using nodeset expression syntax. Supports ranges (node[01-10]), comma-separated lists, and complex expressions with unions and intersections.",
+      "arguments": "nodeset",
+      "argument_type": "string",
+      "required": false,
+      "example": "clush -w node[001-128] hostname"
+    },
+    {
+      "short": "-g",
+      "long": "--group",
+      "description": "Target all nodes in the specified group as defined in ClusterShell groups configuration. Multiple -g options can be used to combine groups.",
+      "arguments": "groupname",
+      "argument_type": "string",
+      "example": "clush -g compute uptime"
+    },
+    {
+      "short": "-x",
+      "long": "--exclude",
+      "description": "Exclude specific nodes from the target list. Supports nodeset expressions for excluding ranges or patterns.",
+      "arguments": "nodeset",
+      "argument_type": "string",
+      "example": "clush -w node[001-100] -x node[050-055] hostname"
+    },
+    {
+      "short": "-X",
+      "long": "--exclude-group",
+      "description": "Exclude all nodes belonging to the specified group from the target list.",
+      "arguments": "groupname",
+      "argument_type": "string",
+      "example": "clush -g compute -X maintenance df -h /scratch"
+    },
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Target all nodes defined in the default group configuration.",
+      "example": "clush -a hostname"
+    },
+    {
+      "short": "-b",
+      "long": "--dshbak",
+      "description": "Gather and consolidate identical output from multiple nodes, displaying results grouped by output content. This is one of clush's most powerful features for identifying configuration drift.",
+      "example": "clush -b -w node[001-100] cat /etc/redhat-release"
+    },
+    {
+      "short": "-B",
+      "description": "Like -b but wait for all commands to complete before displaying gathered output. Useful when consistent ordering is required.",
+      "example": "clush -B -w node[001-100] nvidia-smi -L"
+    },
+    {
+      "short": "-L",
+      "long": "--line-mode",
+      "description": "Display output line by line as it arrives, prefixed with the source hostname. Default behavior when -b is not specified.",
+      "example": "clush -L -w node[001-100] uptime"
+    },
+    {
+      "short": "-N",
+      "long": "--nostdin",
+      "description": "Do not read from standard input. Useful when running clush in background or from scripts.",
+      "example": "clush -N -w node[001-100] hostname"
+    },
+    {
+      "short": "-f",
+      "long": "--fanout",
+      "description": "Set the maximum number of parallel connections. Higher values increase parallelism but consume more system resources.",
+      "arguments": "number",
+      "argument_type": "integer",
+      "default": "64",
+      "example": "clush -f 256 -w node[001-500] hostname"
+    },
+    {
+      "long": "--diff",
+      "description": "Show differences between command outputs across nodes. Extremely useful for detecting configuration inconsistencies across cluster nodes.",
+      "example": "clush --diff -w node[001-010] cat /etc/hosts"
+    },
+    {
+      "short": "-t",
+      "long": "--connect-timeout",
+      "description": "Set the SSH connection timeout in seconds.",
+      "arguments": "seconds",
+      "argument_type": "integer",
+      "default": "10",
+      "example": "clush -t 30 -w node[001-100] hostname"
+    },
+    {
+      "short": "-u",
+      "long": "--command-timeout",
+      "description": "Set the command execution timeout in seconds. Commands exceeding this limit will be terminated.",
+      "arguments": "seconds",
+      "argument_type": "integer",
+      "default": "0 (no timeout)",
+      "example": "clush -u 60 -w node[001-100] long_running_script.sh"
+    },
+    {
+      "short": "-l",
+      "long": "--user",
+      "description": "Specify the remote username for SSH connections.",
+      "arguments": "username",
+      "argument_type": "string",
+      "example": "clush -l admin -w node[001-100] sudo systemctl status slurmd"
+    },
+    {
+      "short": "-o",
+      "long": "--options",
+      "description": "Pass additional options to the underlying SSH command.",
+      "arguments": "ssh_options",
+      "argument_type": "string",
+      "example": "clush -o '-o StrictHostKeyChecking=no' -w node[001-100] hostname"
+    },
+    {
+      "short": "-c",
+      "long": "--copy",
+      "description": "Copy local files to remote nodes instead of executing a command. Requires destination path as command argument.",
+      "example": "clush -c /etc/config.conf -w node[001-100] --dest /etc/"
+    },
+    {
+      "long": "--dest",
+      "description": "Specify destination path when copying files with -c or --copy.",
+      "arguments": "path",
+      "argument_type": "path",
+      "example": "clush -c /local/file -w node[001-100] --dest /remote/path/"
+    },
+    {
+      "short": "-p",
+      "long": "--preserve",
+      "description": "Preserve file attributes (mode, ownership, timestamps) when copying files.",
+      "example": "clush -c -p script.sh -w node[001-100] --dest /opt/scripts/"
+    },
+    {
+      "long": "--rcopy",
+      "description": "Reverse copy - gather files from remote nodes to local system.",
+      "example": "clush --rcopy /var/log/syslog -w node[001-010] --dest /tmp/logs/"
+    },
+    {
+      "short": "-q",
+      "long": "--quiet",
+      "description": "Quiet mode - suppress informational messages, only show command output and errors.",
+      "example": "clush -q -w node[001-100] hostname"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Verbose mode - display additional information about connections and execution.",
+      "example": "clush -v -w node001 hostname"
+    },
+    {
+      "short": "-d",
+      "long": "--debug",
+      "description": "Enable debug mode for troubleshooting. Shows detailed SSH and execution information.",
+      "example": "clush -d -w node001 hostname"
+    },
+    {
+      "short": "-S",
+      "long": "--maxrc",
+      "description": "Return the maximum return code from all remote commands. Useful for detecting any failures in scripted operations.",
+      "example": "clush -S -w node[001-100] test -f /etc/config && echo ok"
+    },
+    {
+      "long": "--color",
+      "description": "Control color output: auto, never, or always.",
+      "arguments": "mode",
+      "argument_type": "string",
+      "default": "auto",
+      "example": "clush --color=always -w node[001-100] hostname"
+    },
+    {
+      "short": "-R",
+      "long": "--worker",
+      "description": "Select the remote worker module to use (ssh, rsh, exec, etc.).",
+      "arguments": "worker",
+      "argument_type": "string",
+      "default": "ssh",
+      "example": "clush -R exec -w node[001-100] hostname"
+    },
+    {
+      "long": "--hostfile",
+      "description": "Read target nodes from a file, one node per line.",
+      "arguments": "filename",
+      "argument_type": "path",
+      "example": "clush --hostfile /etc/nodes.txt hostname"
+    },
+    {
+      "long": "--pick",
+      "description": "Pick N random nodes from the target nodeset. Useful for sampling cluster state.",
+      "arguments": "number",
+      "argument_type": "integer",
+      "example": "clush --pick 5 -g compute nvidia-smi -L"
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version information and exit.",
+      "example": "clush -V"
+    }
+  ],
+  "output_formats": {
+    "line_mode": "Default output format with 'hostname: output' prefix for each line",
+    "gather_mode": "With -b, identical output is consolidated with nodeset header showing which nodes produced it",
+    "diff_mode": "With --diff, shows unified diff output comparing results across nodes",
+    "quiet": "With -q, suppresses informational messages"
+  },
+  "environment_variables": [
+    {
+      "name": "CLUSTERSHELL_CONFDIR",
+      "description": "Directory containing ClusterShell configuration files.",
+      "example": "CLUSTERSHELL_CONFDIR=/opt/clustershell/etc",
+      "affects_command": "Overrides default configuration directory (/etc/clustershell)."
+    },
+    {
+      "name": "CLUSTERSHELL_GRP_CONFDIR",
+      "description": "Directory containing group definition files.",
+      "example": "CLUSTERSHELL_GRP_CONFDIR=/etc/clustershell/groups.d",
+      "affects_command": "Specifies location of YAML group configuration files."
+    },
+    {
+      "name": "CLUSTERSHELL_FANOUT",
+      "description": "Default maximum number of parallel connections.",
+      "example": "CLUSTERSHELL_FANOUT=128",
+      "affects_command": "Equivalent to -f option. Controls parallelism level."
+    },
+    {
+      "name": "CLUSTERSHELL_CONNECT_TIMEOUT",
+      "description": "Default SSH connection timeout in seconds.",
+      "example": "CLUSTERSHELL_CONNECT_TIMEOUT=30",
+      "affects_command": "Equivalent to -t option."
+    },
+    {
+      "name": "CLUSTERSHELL_COMMAND_TIMEOUT",
+      "description": "Default command execution timeout in seconds.",
+      "example": "CLUSTERSHELL_COMMAND_TIMEOUT=300",
+      "affects_command": "Equivalent to -u option."
+    },
+    {
+      "name": "SSH_AUTH_SOCK",
+      "description": "Path to SSH agent socket for key authentication.",
+      "example": "SSH_AUTH_SOCK=/tmp/ssh-agent.sock",
+      "affects_command": "Enables SSH agent forwarding for authentication."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - all commands completed successfully on all nodes"
+    },
+    {
+      "code": 1,
+      "meaning": "One or more remote commands failed or returned non-zero status (with -S/--maxrc)"
+    },
+    {
+      "code": 2,
+      "meaning": "clush error - invalid options, configuration error, or no nodes specified"
+    },
+    {
+      "code": 255,
+      "meaning": "SSH connection failures to one or more nodes"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Check uptime across all compute nodes with gathered output",
+      "command": "clush -b -w node[001-100] uptime",
+      "output_example": "---------------\nnode[001-050]\n---------------\n 10:42:33 up 45 days,  3:21,  0 users,  load average: 0.52, 0.48, 0.45\n---------------\nnode[051-100]\n---------------\n 10:42:33 up 30 days,  2:15,  0 users,  load average: 0.31, 0.28, 0.25"
+    },
+    {
+      "description": "Check GPU status across cluster with diff mode to identify inconsistencies",
+      "command": "clush --diff -w gpu[001-016] nvidia-smi -L",
+      "output_example": "--- gpu[001-015]\n+++ gpu016\n@@ -1,4 +1,4 @@\n GPU 0: NVIDIA A100-SXM4-80GB\n GPU 1: NVIDIA A100-SXM4-80GB\n-GPU 2: NVIDIA A100-SXM4-80GB\n+GPU 2: NVIDIA A100-SXM4-80GB (GPU Memory Error Detected)"
+    },
+    {
+      "description": "Run command on a node group",
+      "command": "clush -g compute hostname",
+      "output_example": "node001: node001.cluster.local\nnode002: node002.cluster.local\nnode003: node003.cluster.local"
+    },
+    {
+      "description": "Gather identical output to identify configuration drift",
+      "command": "clush -b -g compute cat /etc/redhat-release",
+      "output_example": "---------------\nnode[001-090]\n---------------\nRed Hat Enterprise Linux release 8.8 (Ootpa)\n---------------\nnode[091-100]\n---------------\nRed Hat Enterprise Linux release 8.7 (Ootpa)"
+    },
+    {
+      "description": "Execute command with exclusions",
+      "command": "clush -g compute -X maintenance df -h /scratch",
+      "output_example": "node001: Filesystem      Size  Used Avail Use% Mounted on\nnode001: /dev/nvme0n1p1  1.8T  500G  1.3T  28% /scratch"
+    },
+    {
+      "description": "Copy configuration file to all nodes",
+      "command": "clush -c /etc/slurm/slurm.conf -w node[001-100] --dest /etc/slurm/",
+      "output_example": "node[001-100]: /etc/slurm/slurm.conf"
+    },
+    {
+      "description": "Gather logs from remote nodes",
+      "command": "clush --rcopy /var/log/slurmd.log -w node[001-010] --dest /tmp/logs/",
+      "output_example": "/tmp/logs/slurmd.log.node001\n/tmp/logs/slurmd.log.node002\n..."
+    },
+    {
+      "description": "Run with increased parallelism for large cluster",
+      "command": "clush -f 512 -w node[001-1000] hostname",
+      "output_example": "node001: node001\nnode002: node002\n..."
+    },
+    {
+      "description": "Check InfiniBand status with gathered output",
+      "command": "clush -b -w node[001-064] ibstat mlx5_0 | grep State",
+      "output_example": "---------------\nnode[001-060]\n---------------\n\t\t State: Active\n---------------\nnode[061-064]\n---------------\n\t\t State: Down"
+    },
+    {
+      "description": "Sample random nodes to check cluster health",
+      "command": "clush --pick 5 -g compute nvidia-smi --query-gpu=name,temperature.gpu --format=csv,noheader",
+      "output_example": "node042: NVIDIA A100-SXM4-80GB, 45\nnode087: NVIDIA A100-SXM4-80GB, 48\nnode023: NVIDIA A100-SXM4-80GB, 44"
+    },
+    {
+      "description": "Detect configuration differences across nodes",
+      "command": "clush --diff -w node[001-010] cat /etc/hosts",
+      "output_example": "--- node[001-009]\n+++ node010\n@@ -5,3 +5,4 @@\n 10.0.0.1 storage\n 10.0.0.2 login\n+10.0.0.99 extra-host"
+    },
+    {
+      "description": "Execute with return code aggregation for scripting",
+      "command": "clush -S -b -w node[001-100] systemctl is-active slurmd",
+      "output_example": "---------------\nnode[001-098]\n---------------\nactive\n---------------\nnode[099-100]\n---------------\ninactive"
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "clush: error: No node to run command on",
+      "meaning": "No target nodes were specified via -w, -g, -a, or hostfile options",
+      "resolution": "Specify target nodes using -w nodeset, -g groupname, -a for all, or --hostfile."
+    },
+    {
+      "message": "clush: node001: Connection refused",
+      "meaning": "SSH daemon is not running or refusing connections on the target node",
+      "resolution": "Verify SSH service is running on the remote node, check firewall settings."
+    },
+    {
+      "message": "clush: node001: Connection timed out",
+      "meaning": "SSH connection attempt exceeded the timeout period",
+      "resolution": "Check network connectivity, increase timeout with -t option, verify node is reachable."
+    },
+    {
+      "message": "clush: node001: Permission denied (publickey)",
+      "meaning": "SSH key authentication failed for the target node",
+      "resolution": "Verify SSH keys are properly configured, check authorized_keys on remote node, use -l to specify correct username."
+    },
+    {
+      "message": "clush: error: option -g: invalid choice: 'unknown'",
+      "meaning": "The specified group does not exist in the ClusterShell groups configuration",
+      "resolution": "Check group definitions in /etc/clustershell/groups.d/, verify group name spelling."
+    },
+    {
+      "message": "clush: node001: Host key verification failed",
+      "meaning": "SSH host key verification failed, possibly due to changed host key or new host",
+      "resolution": "Update known_hosts file or use -o '-o StrictHostKeyChecking=no' for automated environments."
+    },
+    {
+      "message": "clush: error: invalid nodeset",
+      "meaning": "The nodeset expression syntax is invalid",
+      "resolution": "Use proper nodeset syntax: ranges node[001-100], lists node1,node2, or combinations."
+    },
+    {
+      "message": "clush: node001: command timeout",
+      "meaning": "Remote command exceeded the execution timeout (-u option)",
+      "resolution": "Increase command timeout with -u option, or investigate slow command execution."
+    },
+    {
+      "message": "clush: error: -c and --rcopy are mutually exclusive",
+      "meaning": "Cannot use copy-to and copy-from options simultaneously",
+      "resolution": "Use either -c for copying to nodes or --rcopy for copying from nodes, not both."
+    },
+    {
+      "message": "clush: error: --dest required with -c",
+      "meaning": "Destination path must be specified when copying files",
+      "resolution": "Add --dest /path/to/destination when using -c to copy files."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "pdsh",
+      "nodeset",
+      "clubak",
+      "cluset",
+      "ssh",
+      "srun",
+      "mpirun"
+    ],
+    "uses_library": ["ClusterShell Python library", "paramiko", "PyYAML"],
+    "notes": "clush is the command-line interface to the ClusterShell Python library. It provides similar functionality to pdsh but with additional features like native output gathering (-b), diff mode (--diff), and YAML-based group configuration. The nodeset companion utility provides standalone nodeset manipulation. clush can be extended with custom worker modules for different remote execution backends. Integration with Slurm can use srun for task launching within jobs, while clush is preferred for administrative tasks across the cluster. clush configuration files are located in /etc/clustershell/ with group definitions in /etc/clustershell/groups.d/. The clubak utility can post-process clush output for additional consolidation."
+  },
+  "permissions": {
+    "read_operations": "Any user can run clush to execute commands on nodes where they have SSH access",
+    "write_operations": "Remote commands execute with the permissions of the authenticated user on the target node",
+    "notes": "Requires SSH key-based authentication for non-interactive use. File copy operations (-c, --rcopy) respect remote filesystem permissions. Administrative commands require sudo access or root SSH authentication on target nodes. Group configuration files in /etc/clustershell/groups.d/ are typically readable by all users."
+  },
+  "limitations": [
+    "Requires Python 3.6 or later",
+    "SSH key-based authentication required for non-interactive use",
+    "Maximum parallelism limited by local system resources (file descriptors, memory)",
+    "Large output volumes can consume significant memory with gather mode (-b)",
+    "Diff mode (--diff) requires all nodes to complete before displaying results",
+    "File copy operations do not support recursive directory copying directly",
+    "Not suitable for interactive commands requiring TTY allocation",
+    "Group configuration requires YAML syntax knowledge for complex setups",
+    "Output encoding assumes UTF-8 compatible systems"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "node_state",
+        "fields": ["hostname", "network_reachability", "ssh_service_status"],
+        "description": "clush depends on nodes being network-reachable and having SSH service available for remote command execution"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Node becomes unreachable or SSH service stops",
+        "effect": "clush connections to that node will fail with connection timeout or refused errors"
+      },
+      {
+        "state_change": "ClusterShell group configuration updated",
+        "effect": "Group targeting (-g option) reflects updated group membership immediately"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "pdsh",
+        "shared_state": "Both tools execute commands across the same cluster nodes using SSH authentication"
+      },
+      {
+        "command": "nodeset",
+        "shared_state": "Uses the same nodeset expression syntax and group configuration"
+      },
+      {
+        "command": "srun",
+        "shared_state": "Both can execute commands on cluster nodes; srun operates within Slurm job context"
+      }
+    ]
+  }
+}

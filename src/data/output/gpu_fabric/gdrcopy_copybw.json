@@ -1,0 +1,154 @@
+{
+  "command": "gdrcopy_copybw",
+  "category": "gpu_fabric",
+  "description": "Measure GPU-CPU memory copy bandwidth using GDRCopy. Tests GPUDirect RDMA memory copy performance. Essential for benchmarking GPU memory access from CPU.",
+  "synopsis": "gdrcopy_copybw [options]",
+  "version_documented": "gdrcopy 2.3+",
+  "source_urls": ["https://github.com/NVIDIA/gdrcopy"],
+  "installation": {
+    "package": "gdrcopy",
+    "notes": "Install via: apt install gdrcopy or build from source. Requires gdrdrv kernel module."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--device",
+      "description": "GPU device ID",
+      "arguments": "<id>",
+      "argument_type": "integer",
+      "example": "-d 0"
+    },
+    {
+      "short": "-s",
+      "long": "--size",
+      "description": "Buffer size in bytes",
+      "arguments": "<bytes>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-n",
+      "long": "--iterations",
+      "description": "Number of iterations",
+      "arguments": "<count>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--write",
+      "description": "Test write bandwidth (CPU to GPU)"
+    },
+    {
+      "long": "--read",
+      "description": "Test read bandwidth (GPU to CPU)"
+    },
+    {
+      "long": "--bidirectional",
+      "description": "Test bidirectional bandwidth"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Basic bandwidth test",
+      "command": "gdrcopy_copybw",
+      "output_example": "GPU 0 (NVIDIA A100-SXM4-80GB):\n  Write BW: 12.5 GB/s\n  Read BW:  11.8 GB/s",
+      "requires_root": false
+    },
+    {
+      "description": "Test specific GPU",
+      "command": "gdrcopy_copybw -d 1",
+      "requires_root": false
+    },
+    {
+      "description": "Test with specific size",
+      "command": "gdrcopy_copybw -s 1048576",
+      "requires_root": false
+    },
+    {
+      "description": "Write-only test",
+      "command": "gdrcopy_copybw --write",
+      "requires_root": false
+    },
+    {
+      "description": "Test all GPUs",
+      "command": "for i in $(seq 0 7); do gdrcopy_copybw -d $i; done",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "gdrdrv module not loaded",
+      "meaning": "GDRCopy kernel module missing",
+      "resolution": "Load module: sudo modprobe gdrdrv"
+    },
+    {
+      "message": "Failed to map GPU memory",
+      "meaning": "Cannot access GPU memory",
+      "resolution": "Check CUDA driver and GPU access"
+    },
+    {
+      "message": "Invalid device",
+      "meaning": "GPU ID not valid",
+      "resolution": "Check available GPUs with nvidia-smi"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "gdrcopy_copylat",
+      "gdrcopy_sanity",
+      "nvidia-smi",
+      "bandwidthTest"
+    ],
+    "notes": "GDRCopy provides low-latency GPU memory access from CPU. Requires NVIDIA driver with peer memory support. Performance depends on PCIe topology."
+  },
+  "permissions": {
+    "read_operations": "User with GPU access",
+    "write_operations": "N/A - benchmark tool",
+    "notes": "Needs access to /dev/gdrdrv and GPU device"
+  },
+  "limitations": [
+    "Requires gdrdrv kernel module",
+    "NVIDIA GPUs only",
+    "Performance varies by PCIe topology",
+    "May need IOMMU disabled for best performance"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": ["gpu_id", "pci_bus_id"],
+        "description": "Accesses GPU memory for benchmarking"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "GPU memory allocation",
+        "effect": "Can measure bandwidth to allocated memory"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "bandwidthTest",
+        "shared_state": "Bandwidth results correlate with CUDA bandwidth"
+      },
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU device info matches"
+      }
+    ]
+  }
+}

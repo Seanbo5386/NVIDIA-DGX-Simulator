@@ -1,0 +1,142 @@
+{
+  "command": "sudo",
+  "category": "general",
+  "description": "Execute command as another user. Runs commands with elevated privileges. Required for administrative tasks on HPC systems.",
+  "synopsis": "sudo [options] <command>",
+  "version_documented": "sudo 1.9+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/sudo.8.html"],
+  "installation": {
+    "package": "sudo",
+    "notes": "Installed by default on most systems."
+  },
+  "global_options": [
+    {
+      "short": "-u",
+      "long": "--user",
+      "description": "Run as user",
+      "arguments": "<user>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-i",
+      "long": "--login",
+      "description": "Login shell"
+    },
+    {
+      "short": "-s",
+      "long": "--shell",
+      "description": "Run shell"
+    },
+    {
+      "short": "-E",
+      "long": "--preserve-env",
+      "description": "Preserve environment"
+    },
+    {
+      "short": "-n",
+      "long": "--non-interactive",
+      "description": "Non-interactive, no prompt"
+    },
+    {
+      "short": "-l",
+      "long": "--list",
+      "description": "List allowed commands"
+    },
+    {
+      "short": "-k",
+      "long": "--reset-timestamp",
+      "description": "Invalidate timestamp"
+    },
+    {
+      "short": "-v",
+      "long": "--validate",
+      "description": "Update timestamp"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Command succeeded"
+    },
+    {
+      "code": 1,
+      "meaning": "sudo error or command failed"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run as root",
+      "command": "sudo nvidia-smi -pm 1",
+      "requires_root": false
+    },
+    {
+      "description": "Root shell",
+      "command": "sudo -i",
+      "requires_root": false
+    },
+    {
+      "description": "Run as another user",
+      "command": "sudo -u slurm scontrol show config",
+      "requires_root": false
+    },
+    {
+      "description": "Preserve environment",
+      "command": "sudo -E ./script_needing_env.sh",
+      "requires_root": false
+    },
+    {
+      "description": "List allowed commands",
+      "command": "sudo -l",
+      "requires_root": false
+    },
+    {
+      "description": "Edit file as root",
+      "command": "sudo vim /etc/slurm/slurm.conf",
+      "requires_root": false
+    },
+    {
+      "description": "Non-interactive (for scripts)",
+      "command": "sudo -n ldconfig",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "user is not in the sudoers file",
+      "meaning": "User not authorized",
+      "resolution": "Contact admin to add sudo access"
+    },
+    {
+      "message": "sorry, a password is required",
+      "meaning": "Password needed but not provided",
+      "resolution": "Enter password or check NOPASSWD config"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["su", "visudo", "sudoedit"],
+    "notes": "sudoers file defines permissions. NOPASSWD allows passwordless. -E needed to preserve LD_LIBRARY_PATH etc."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "N/A",
+    "notes": "Configured via /etc/sudoers"
+  },
+  "limitations": [
+    "Configuration can be complex",
+    "Environment sanitized by default",
+    "Password timeout varies"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "system_state",
+        "fields": ["processes"],
+        "description": "Executes processes as other users",
+        "requires_privilege": "sudoers membership"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

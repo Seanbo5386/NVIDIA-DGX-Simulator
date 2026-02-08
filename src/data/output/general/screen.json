@@ -1,0 +1,135 @@
+{
+  "command": "screen",
+  "category": "general",
+  "description": "Terminal multiplexer and session manager. Allows detaching and reattaching terminal sessions. Essential for long-running HPC interactive work.",
+  "synopsis": "screen [options] [command]",
+  "version_documented": "screen 4.8+",
+  "source_urls": ["https://www.gnu.org/software/screen/"],
+  "installation": {
+    "package": "screen",
+    "notes": "Install via: apt install screen or yum install screen"
+  },
+  "global_options": [
+    {
+      "short": "-S",
+      "description": "Session name",
+      "arguments": "<name>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-r",
+      "description": "Reattach to session",
+      "arguments": "[name]",
+      "argument_type": "string"
+    },
+    {
+      "short": "-d",
+      "description": "Detach running session"
+    },
+    {
+      "short": "-ls",
+      "description": "List sessions"
+    },
+    {
+      "short": "-x",
+      "description": "Multi-display mode (share session)"
+    },
+    {
+      "short": "-dmS",
+      "description": "Start detached with name"
+    },
+    {
+      "short": "-X",
+      "description": "Send command to session",
+      "arguments": "<command>",
+      "argument_type": "string"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Start named session",
+      "command": "screen -S training",
+      "requires_root": false
+    },
+    {
+      "description": "List sessions",
+      "command": "screen -ls",
+      "output_example": "There are screens on:\n        12345.training  (Detached)\n        12346.debug     (Attached)",
+      "requires_root": false
+    },
+    {
+      "description": "Reattach session",
+      "command": "screen -r training",
+      "requires_root": false
+    },
+    {
+      "description": "Start detached with command",
+      "command": "screen -dmS job python train.py",
+      "requires_root": false
+    },
+    {
+      "description": "Force detach and reattach",
+      "command": "screen -dr training",
+      "requires_root": false
+    },
+    {
+      "description": "Send command to session",
+      "command": "screen -S training -X stuff 'echo hello\\n'",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No screen session found",
+      "meaning": "Session doesn't exist",
+      "resolution": "Check session name with screen -ls"
+    },
+    {
+      "message": "Already attached",
+      "meaning": "Session attached elsewhere",
+      "resolution": "Use -d to detach first or -x to share"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["tmux", "nohup", "byobu", "disown"],
+    "notes": "Key commands inside screen: Ctrl-a d (detach), Ctrl-a c (new window), Ctrl-a n/p (next/prev window), Ctrl-a ? (help). tmux is a modern alternative."
+  },
+  "permissions": {
+    "read_operations": "User can access own sessions",
+    "write_operations": "User can create sessions",
+    "notes": "Sessions persist across SSH disconnects"
+  },
+  "limitations": [
+    "Not shared by default",
+    "Less features than tmux",
+    "Configuration file format dated"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "gpu_process_state",
+        "fields": ["pid"],
+        "description": "Sessions can contain GPU processes",
+        "requires_privilege": "user"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ps",
+        "shared_state": "Screen processes visible in ps"
+      }
+    ]
+  }
+}

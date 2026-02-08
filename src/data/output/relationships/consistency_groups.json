@@ -1,0 +1,391 @@
+{
+  "$schema": "../schema.json",
+  "title": "HPC Command Consistency Groups",
+  "description": "Groups of commands that must show consistent data because they read the same state",
+  "version": "1.0.0",
+  "consistency_groups": [
+    {
+      "id": "gpu_inventory",
+      "name": "GPU Inventory",
+      "description": "Commands that list GPUs must show the same devices with matching UUIDs and names",
+      "commands": [
+        "nvidia-smi -L",
+        "nvidia-smi --query-gpu=gpu_uuid,gpu_name --format=csv",
+        "dcgmi discovery -l",
+        "lspci | grep -i nvidia",
+        "nvitop"
+      ],
+      "shared_state": {
+        "domain": "gpu_state",
+        "fields": ["gpu_id", "uuid", "name", "pci_bus_id"]
+      },
+      "consistency_rules": [
+        "GPU count must match across all commands",
+        "UUID for each GPU index must be identical",
+        "PCI bus IDs must match between nvidia-smi and lspci"
+      ]
+    },
+    {
+      "id": "gpu_memory",
+      "name": "GPU Memory Usage",
+      "description": "Commands showing GPU memory must report consistent total/used/free values",
+      "commands": [
+        "nvidia-smi",
+        "nvidia-smi --query-gpu=memory.total,memory.used,memory.free --format=csv",
+        "dcgmi dmon",
+        "nvtop",
+        "gpustat",
+        "nvitop"
+      ],
+      "shared_state": {
+        "domain": "gpu_state",
+        "fields": ["memory_total", "memory_used", "memory_free"]
+      },
+      "consistency_rules": [
+        "memory_total is constant for each GPU",
+        "memory_used + memory_free should equal memory_total (approximately)",
+        "Values may differ slightly due to timing but should be within 1%"
+      ]
+    },
+    {
+      "id": "gpu_utilization",
+      "name": "GPU Utilization",
+      "description": "Commands showing GPU utilization metrics",
+      "commands": [
+        "nvidia-smi",
+        "nvidia-smi dmon",
+        "dcgmi dmon",
+        "nvtop",
+        "gpustat",
+        "nvitop"
+      ],
+      "shared_state": {
+        "domain": "gpu_state",
+        "fields": [
+          "utilization_gpu",
+          "utilization_memory",
+          "temperature",
+          "power_draw"
+        ]
+      },
+      "consistency_rules": [
+        "Utilization percentages should be consistent within sampling interval",
+        "Temperature readings should match within 1-2 degrees",
+        "Power draw should match within 5W"
+      ]
+    },
+    {
+      "id": "gpu_processes",
+      "name": "GPU Process List",
+      "description": "Commands showing processes using GPUs",
+      "commands": [
+        "nvidia-smi",
+        "nvidia-smi pmon",
+        "nvidia-smi --query-compute-apps=pid,gpu_uuid,used_memory --format=csv",
+        "dcgmi stats",
+        "nvtop",
+        "nvitop"
+      ],
+      "shared_state": {
+        "domain": "gpu_process_state",
+        "fields": ["pid", "gpu_id", "process_name", "used_memory"]
+      },
+      "consistency_rules": [
+        "Same PIDs should appear across all commands for the same GPU",
+        "Memory used per process should match",
+        "Process names should be consistent"
+      ]
+    },
+    {
+      "id": "gpu_topology",
+      "name": "GPU Topology/NVLink",
+      "description": "Commands showing GPU interconnect topology",
+      "commands": [
+        "nvidia-smi topo -m",
+        "nvidia-smi nvlink -s",
+        "dcgmi topo",
+        "dcgmi nvlink",
+        "lstopo"
+      ],
+      "shared_state": {
+        "domain": "fabric_state",
+        "fields": ["nvlink_version", "links"]
+      },
+      "consistency_rules": [
+        "NVLink connectivity matrix must match",
+        "Link status (active/inactive) must be consistent",
+        "Peer GPU IDs must match"
+      ]
+    },
+    {
+      "id": "slurm_jobs",
+      "name": "SLURM Job Queue",
+      "description": "Commands showing SLURM job information",
+      "commands": ["squeue", "scontrol show job", "sacct"],
+      "shared_state": {
+        "domain": "job_state",
+        "fields": [
+          "job_id",
+          "job_name",
+          "user",
+          "state",
+          "partition",
+          "nodes",
+          "time_used"
+        ]
+      },
+      "consistency_rules": [
+        "Job IDs and states must match exactly",
+        "Node assignments must be identical",
+        "Time values may differ by a few seconds"
+      ]
+    },
+    {
+      "id": "slurm_nodes",
+      "name": "SLURM Node Status",
+      "description": "Commands showing SLURM node state",
+      "commands": [
+        "sinfo",
+        "sinfo -N",
+        "scontrol show nodes",
+        "scontrol show node <nodename>"
+      ],
+      "shared_state": {
+        "domain": "node_state",
+        "fields": [
+          "hostname",
+          "state",
+          "state_flags",
+          "cpus_total",
+          "cpus_alloc",
+          "memory_total",
+          "memory_alloc",
+          "gpus_total",
+          "gpus_alloc"
+        ]
+      },
+      "consistency_rules": [
+        "Node state must match (idle, alloc, mix, drain, etc.)",
+        "Resource counts must be identical",
+        "Partition membership must be consistent"
+      ]
+    },
+    {
+      "id": "slurm_partitions",
+      "name": "SLURM Partition Info",
+      "description": "Commands showing SLURM partition configuration",
+      "commands": ["sinfo -p", "scontrol show partition"],
+      "shared_state": {
+        "domain": "partition_state",
+        "fields": [
+          "partition_name",
+          "state",
+          "nodes",
+          "total_nodes",
+          "total_cpus"
+        ]
+      },
+      "consistency_rules": [
+        "Partition names and states must match",
+        "Node lists must be identical",
+        "Resource counts must be consistent"
+      ]
+    },
+    {
+      "id": "infiniband_status",
+      "name": "InfiniBand Port Status",
+      "description": "Commands showing IB port state",
+      "commands": ["ibstat", "ibstatus", "ibv_devinfo", "mlxlink"],
+      "shared_state": {
+        "domain": "network_ib_state",
+        "fields": [
+          "device",
+          "port",
+          "state",
+          "physical_state",
+          "link_speed",
+          "link_width",
+          "lid",
+          "guid"
+        ]
+      },
+      "consistency_rules": [
+        "Port state (Active/Down) must match",
+        "Link speed and width must be identical",
+        "LID and GUID must match exactly"
+      ]
+    },
+    {
+      "id": "infiniband_fabric",
+      "name": "InfiniBand Fabric Topology",
+      "description": "Commands showing IB fabric discovery",
+      "commands": ["ibnetdiscover", "iblinkinfo", "ibhosts", "ibswitches"],
+      "shared_state": {
+        "domain": "network_ib_state",
+        "fields": ["device", "guid", "node_guid"]
+      },
+      "consistency_rules": [
+        "All discovered nodes must appear consistently",
+        "GUIDs must match across commands",
+        "Link connections must be bidirectionally consistent"
+      ]
+    },
+    {
+      "id": "infiniband_errors",
+      "name": "InfiniBand Error Counters",
+      "description": "Commands showing IB error statistics",
+      "commands": ["perfquery", "ibdiagnet", "mlxlink --show_counters"],
+      "shared_state": {
+        "domain": "network_ib_state",
+        "fields": ["error_counters"]
+      },
+      "consistency_rules": [
+        "Error counter names must be consistent",
+        "Counter values should match (counters are cumulative)",
+        "After clear, all commands should show zero"
+      ]
+    },
+    {
+      "id": "ethernet_status",
+      "name": "Ethernet Interface Status",
+      "description": "Commands showing Ethernet interface state",
+      "commands": ["ip link", "ip addr", "ethtool"],
+      "shared_state": {
+        "domain": "network_eth_state",
+        "fields": [
+          "interface",
+          "state",
+          "mac_address",
+          "ipv4_address",
+          "speed",
+          "mtu"
+        ]
+      },
+      "consistency_rules": [
+        "Interface state (UP/DOWN) must match",
+        "MAC and IP addresses must be identical",
+        "Speed and MTU must match"
+      ]
+    },
+    {
+      "id": "storage_local",
+      "name": "Local Storage Status",
+      "description": "Commands showing local disk/filesystem state",
+      "commands": ["df", "df -h", "lsblk", "mount", "findmnt"],
+      "shared_state": {
+        "domain": "storage_local_state",
+        "fields": [
+          "device",
+          "mount_point",
+          "fs_type",
+          "total_size",
+          "used_size",
+          "available_size"
+        ]
+      },
+      "consistency_rules": [
+        "Mount points must match",
+        "Filesystem types must be identical",
+        "Space values should be consistent (may vary slightly due to timing)"
+      ]
+    },
+    {
+      "id": "storage_lustre",
+      "name": "Lustre Filesystem Status",
+      "description": "Commands showing Lustre filesystem state",
+      "commands": ["lfs df", "lfs df -h", "df -t lustre"],
+      "shared_state": {
+        "domain": "storage_lustre_state",
+        "fields": [
+          "filesystem",
+          "mount_point",
+          "total_space",
+          "used_space",
+          "free_space"
+        ]
+      },
+      "consistency_rules": [
+        "Filesystem names and mount points must match",
+        "OST counts must be consistent",
+        "Space values should match within aggregation tolerance"
+      ]
+    },
+    {
+      "id": "system_cpu",
+      "name": "CPU Information",
+      "description": "Commands showing CPU details",
+      "commands": ["lscpu", "nproc", "numastat", "lstopo"],
+      "shared_state": {
+        "domain": "system_state",
+        "fields": [
+          "cpu_count",
+          "cpu_cores_per_socket",
+          "cpu_sockets",
+          "cpu_model"
+        ]
+      },
+      "consistency_rules": [
+        "CPU count must match exactly",
+        "Socket and core counts must be consistent",
+        "NUMA topology must match"
+      ]
+    },
+    {
+      "id": "system_memory",
+      "name": "System Memory",
+      "description": "Commands showing memory information",
+      "commands": ["free", "free -h", "lsmem", "numastat", "vmstat"],
+      "shared_state": {
+        "domain": "system_state",
+        "fields": [
+          "memory_total",
+          "memory_used",
+          "memory_free",
+          "memory_available",
+          "swap_total",
+          "swap_used"
+        ]
+      },
+      "consistency_rules": [
+        "Total memory must be constant",
+        "Used + free should approximately equal total",
+        "Swap values must be consistent"
+      ]
+    },
+    {
+      "id": "container_status",
+      "name": "Container Status",
+      "description": "Commands showing container state",
+      "commands": ["docker ps", "docker inspect", "enroot list", "podman ps"],
+      "shared_state": {
+        "domain": "container_state",
+        "fields": ["container_id", "name", "image", "status"]
+      },
+      "consistency_rules": [
+        "Container IDs must match",
+        "Status (running/stopped) must be consistent",
+        "Image names must match"
+      ]
+    },
+    {
+      "id": "firmware_versions",
+      "name": "Firmware Versions",
+      "description": "Commands showing device firmware",
+      "commands": [
+        "nvidia-smi -q",
+        "mlxfwmanager",
+        "flint -d <device> q",
+        "fwupdmgr get-devices"
+      ],
+      "shared_state": {
+        "domain": "firmware_state",
+        "fields": ["device_type", "device_id", "current_version"]
+      },
+      "consistency_rules": [
+        "Firmware versions must match exactly",
+        "Device IDs must be consistent",
+        "PSID (for Mellanox) must match"
+      ]
+    }
+  ]
+}

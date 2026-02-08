@@ -1,0 +1,307 @@
+{
+  "command": "free",
+  "category": "system_info",
+  "description": "Display amount of free and used memory in the system including RAM and swap. The free command displays the total amount of free and used physical and swap memory in the system, as well as the buffers and caches used by the kernel. The information is gathered from /proc/meminfo. This command is essential for monitoring memory utilization on HPC nodes and identifying memory pressure situations.",
+  "synopsis": "free [options]",
+  "version_documented": "procps-ng 3.3.17+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/free.1.html"],
+  "installation": {
+    "package": "procps-ng",
+    "notes": "Part of the procps-ng package (or procps on older systems) which is installed by default on virtually all Linux distributions. Provides process monitoring utilities."
+  },
+  "global_options": [
+    {
+      "short": "-b",
+      "long": "--bytes",
+      "description": "Display the amount of memory in bytes."
+    },
+    {
+      "short": "-k",
+      "long": "--kibi",
+      "description": "Display the amount of memory in kibibytes (1024 bytes). This is the default."
+    },
+    {
+      "short": "-m",
+      "long": "--mebi",
+      "description": "Display the amount of memory in mebibytes (1024*1024 bytes)."
+    },
+    {
+      "short": "-g",
+      "long": "--gibi",
+      "description": "Display the amount of memory in gibibytes (1024*1024*1024 bytes)."
+    },
+    {
+      "long": "--tebi",
+      "description": "Display the amount of memory in tebibytes."
+    },
+    {
+      "long": "--pebi",
+      "description": "Display the amount of memory in pebibytes."
+    },
+    {
+      "long": "--kilo",
+      "description": "Display the amount of memory in kilobytes (1000 bytes). Implies --si."
+    },
+    {
+      "long": "--mega",
+      "description": "Display the amount of memory in megabytes (1000*1000 bytes). Implies --si."
+    },
+    {
+      "long": "--giga",
+      "description": "Display the amount of memory in gigabytes (1000*1000*1000 bytes). Implies --si."
+    },
+    {
+      "long": "--tera",
+      "description": "Display the amount of memory in terabytes. Implies --si."
+    },
+    {
+      "long": "--peta",
+      "description": "Display the amount of memory in petabytes. Implies --si."
+    },
+    {
+      "short": "-h",
+      "long": "--human",
+      "description": "Show all output fields automatically scaled to shortest three digit unit and display the units of print out. Human-readable output."
+    },
+    {
+      "long": "--si",
+      "description": "Use powers of 1000 instead of 1024 for unit conversions."
+    },
+    {
+      "short": "-l",
+      "long": "--lohi",
+      "description": "Show detailed low and high memory statistics."
+    },
+    {
+      "short": "-t",
+      "long": "--total",
+      "description": "Display a line showing the column totals for RAM and swap."
+    },
+    {
+      "short": "-s",
+      "long": "--seconds",
+      "description": "Continuously display the result every specified seconds. Useful for monitoring memory usage over time.",
+      "arguments": "<delay>",
+      "argument_type": "number",
+      "example": "free -s 5"
+    },
+    {
+      "short": "-c",
+      "long": "--count",
+      "description": "Display the result count number of times. Requires the -s option.",
+      "arguments": "<count>",
+      "argument_type": "integer",
+      "example": "free -s 1 -c 10"
+    },
+    {
+      "short": "-w",
+      "long": "--wide",
+      "description": "Switch to the wide mode. The wide mode produces lines longer than 80 characters. In this mode buffers and cache are reported in two separate columns."
+    },
+    {
+      "short": "-L",
+      "long": "--line",
+      "description": "Show output on a single line, often used with the -s option for repeated output."
+    },
+    {
+      "short": "-v",
+      "long": "--committed",
+      "description": "Display the CommitLimit and Committed_AS values from /proc/meminfo."
+    },
+    {
+      "long": "--help",
+      "description": "Print help and exit."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version information and exit."
+    }
+  ],
+  "output_formats": {
+    "default": "Tabular format showing memory and swap statistics with columns: total, used, free, shared, buff/cache, available.",
+    "wide": "Extended tabular format with separate columns for buffers and cache instead of combined buff/cache column.",
+    "line": "Single-line output format, useful for logging or continuous monitoring."
+  },
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - general failure or invalid option"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display basic memory information",
+      "command": "free",
+      "output_example": "              total        used        free      shared  buff/cache   available\nMem:       528281920   123456789   234567890     1234567   170257241   401234567\nSwap:       16777212           0    16777212",
+      "requires_root": false
+    },
+    {
+      "description": "Display memory in human-readable format",
+      "command": "free -h",
+      "output_example": "              total        used        free      shared  buff/cache   available\nMem:          503Gi       117Gi       223Gi       1.2Gi       162Gi       382Gi\nSwap:          16Gi          0B        16Gi",
+      "requires_root": false
+    },
+    {
+      "description": "Display memory with total line",
+      "command": "free -ht",
+      "output_example": "              total        used        free      shared  buff/cache   available\nMem:          503Gi       117Gi       223Gi       1.2Gi       162Gi       382Gi\nSwap:          16Gi          0B        16Gi\nTotal:        519Gi       117Gi       239Gi",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor memory usage continuously every 5 seconds",
+      "command": "free -s 5",
+      "requires_root": false
+    },
+    {
+      "description": "Display memory in wide format with separate buffers and cache columns",
+      "command": "free -wh",
+      "output_example": "              total        used        free      shared     buffers       cache   available\nMem:          503Gi       117Gi       223Gi       1.2Gi        12Gi       150Gi       382Gi\nSwap:          16Gi          0B        16Gi",
+      "requires_root": false
+    },
+    {
+      "description": "Display memory in gigabytes",
+      "command": "free -g",
+      "output_example": "              total        used        free      shared  buff/cache   available\nMem:            503         117         223           1         162         382\nSwap:            16           0          16",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor memory 10 times with 1-second intervals",
+      "command": "free -s 1 -c 10",
+      "requires_root": false
+    },
+    {
+      "description": "Display memory using SI units (powers of 1000)",
+      "command": "free -h --si",
+      "requires_root": false
+    },
+    {
+      "description": "Display low and high memory statistics",
+      "command": "free -l",
+      "output_example": "              total        used        free      shared  buff/cache   available\nMem:       528281920   123456789   234567890     1234567   170257241   401234567\nLow:       528281920   294014679   234267241\nHigh:              0           0           0\nSwap:       16777212           0    16777212",
+      "requires_root": false
+    },
+    {
+      "description": "Display memory in megabytes",
+      "command": "free -m",
+      "output_example": "              total        used        free      shared  buff/cache   available\nMem:         515900      120563      229070        1205      166266      391829\nSwap:         16383           0       16383",
+      "requires_root": false
+    },
+    {
+      "description": "Extract total memory for scripting",
+      "command": "free -b | awk '/Mem:/ {print $2}'",
+      "output_example": "541216686080",
+      "requires_root": false
+    },
+    {
+      "description": "Extract available memory percentage",
+      "command": "free | awk '/Mem:/ {printf \"%.1f%%\\n\", $7/$2*100}'",
+      "output_example": "75.9%",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "free: invalid option",
+      "meaning": "An unrecognized option was specified",
+      "resolution": "Check the option syntax with 'free --help' and verify the option is supported by your version."
+    },
+    {
+      "message": "free: seconds argument 'X' is not a positive number",
+      "meaning": "Invalid value provided for -s/--seconds option",
+      "resolution": "Provide a positive number (integer or decimal) for the seconds delay."
+    },
+    {
+      "message": "free: cannot read /proc/meminfo",
+      "meaning": "The /proc filesystem is not mounted or accessible",
+      "resolution": "Ensure /proc is mounted (mount -t proc proc /proc). This is typically done automatically at boot."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "cat /proc/meminfo",
+      "vmstat",
+      "top",
+      "htop",
+      "sar",
+      "ps aux",
+      "pmap"
+    ],
+    "uses_library": [],
+    "notes": "The free command reads directly from /proc/meminfo and provides a human-friendly summary. For more detailed memory statistics, examine /proc/meminfo directly. The 'available' column was added in kernel 3.14 and provides a more accurate estimate of available memory than simply adding 'free' and 'cache'. On HPC systems, memory availability is critical for job scheduling and performance."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required. Memory information is available to all users via /proc/meminfo.",
+    "write_operations": "free is read-only and does not modify any system state.",
+    "notes": "All memory statistics are derived from /proc/meminfo which is world-readable."
+  },
+  "limitations": [
+    "The shared column value shows zero on kernels before 2.6.32",
+    "The available column requires kernel 3.14 or newer; older kernels will not show this field",
+    "Memory values are point-in-time snapshots and may change rapidly under load",
+    "Swap usage shown may not include zswap or zram compressed swap",
+    "On NUMA systems, free shows aggregate memory; use numactl --hardware for per-node details",
+    "Huge pages may not be fully accounted in all columns"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "memory_total",
+          "memory_used",
+          "memory_free",
+          "memory_available",
+          "memory_buffers",
+          "memory_cached",
+          "memory_shared",
+          "swap_total",
+          "swap_used",
+          "swap_free"
+        ],
+        "description": "Reads memory statistics from /proc/meminfo including total, used, free, available, buffers, cached, shared memory, and swap information."
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Memory allocation/deallocation",
+        "effect": "Changes in used, free, and available memory values as processes allocate and release memory."
+      },
+      {
+        "state_change": "Page cache activity",
+        "effect": "Changes in buff/cache values as files are read/written and kernel manages page cache."
+      },
+      {
+        "state_change": "Swap usage",
+        "effect": "Changes in swap values when system swaps memory pages to/from disk due to memory pressure."
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "/proc/meminfo",
+        "shared_state": "All memory values are directly derived from /proc/meminfo; free provides formatted output of the same data."
+      },
+      {
+        "command": "top",
+        "shared_state": "Memory usage summary in top header matches free output values."
+      },
+      {
+        "command": "htop",
+        "shared_state": "Memory bar and statistics in htop are consistent with free output."
+      },
+      {
+        "command": "vmstat",
+        "shared_state": "Memory columns (free, buff, cache) in vmstat output are consistent with free values."
+      },
+      {
+        "command": "sinfo",
+        "shared_state": "Slurm node memory allocation should consider available memory reported by free for job scheduling."
+      }
+    ]
+  }
+}

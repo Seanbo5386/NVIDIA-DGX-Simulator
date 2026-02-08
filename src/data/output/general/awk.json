@@ -1,0 +1,128 @@
+{
+  "command": "awk",
+  "category": "general",
+  "description": "Pattern scanning and text processing language. Processes structured text data with powerful field handling. Essential for parsing HPC logs and metrics.",
+  "synopsis": "awk [options] 'program' [file...]",
+  "version_documented": "GNU awk 5.1+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/gawk.1.html"],
+  "installation": {
+    "package": "gawk",
+    "notes": "GNU awk recommended for HPC use."
+  },
+  "global_options": [
+    {
+      "short": "-F",
+      "long": "--field-separator",
+      "description": "Set field separator",
+      "arguments": "<fs>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-v",
+      "long": "--assign",
+      "description": "Assign variable",
+      "arguments": "<var=value>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-f",
+      "long": "--file",
+      "description": "Read program from file",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "long": "--csv",
+      "description": "CSV mode (gawk 5.3+)"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    },
+    {
+      "code": 2,
+      "meaning": "Fatal error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Print column",
+      "command": "awk '{print $2}' file.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Sum column values",
+      "command": "awk '{sum+=$1} END {print sum}' numbers.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Filter by pattern",
+      "command": "awk '/ERROR/ {print $0}' job.log",
+      "requires_root": false
+    },
+    {
+      "description": "Custom delimiter",
+      "command": "awk -F',' '{print $1, $3}' data.csv",
+      "requires_root": false
+    },
+    {
+      "description": "Parse nvidia-smi",
+      "command": "nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader | awk '{sum+=$1} END {print \"Avg:\", sum/NR}'",
+      "requires_root": false
+    },
+    {
+      "description": "Calculate statistics",
+      "command": "awk '{sum+=$1; sumsq+=$1*$1} END {print \"Mean:\", sum/NR, \"StdDev:\", sqrt(sumsq/NR - (sum/NR)^2)}' metrics.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Parse SLURM output",
+      "command": "squeue -u $USER -o '%i %T %M' | awk 'NR>1 {print $1, $2}'",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "syntax error",
+      "meaning": "Invalid awk program",
+      "resolution": "Check quotes and syntax"
+    },
+    {
+      "message": "division by zero",
+      "meaning": "Attempted divide by zero",
+      "resolution": "Add NR check before division"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["sed", "cut", "grep"],
+    "notes": "NF=number of fields, NR=record number, $0=whole line. BEGIN/END blocks for init/summary."
+  },
+  "permissions": {
+    "read_operations": "Read input files",
+    "write_operations": "N/A (unless redirecting)",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Learning curve for complex programs",
+    "Memory usage with large files",
+    "Variations between implementations"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Processes file contents"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

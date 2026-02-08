@@ -1,0 +1,465 @@
+{
+  "command": "sendrecv_perf",
+  "category": "nccl_tests",
+  "description": "NCCL Send/Recv point-to-point communication performance benchmark - measures bandwidth and latency for direct Send and Receive operations between GPU pairs. Unlike collective operations, sendrecv_perf tests bidirectional point-to-point communication where each GPU simultaneously sends to and receives from another GPU. This benchmark is essential for evaluating GPU interconnect performance (NVLink, NVSwitch, PCIe, InfiniBand) in scenarios requiring fine-grained data exchange patterns common in distributed deep learning model parallelism and pipeline parallelism.",
+  "synopsis": "sendrecv_perf [options]",
+  "version_documented": "2.13.x",
+  "source_urls": ["https://github.com/NVIDIA/nccl-tests"],
+  "installation": {
+    "package": "nccl-tests",
+    "notes": "Build from source: clone https://github.com/NVIDIA/nccl-tests and run 'make'. Use 'make MPI=1' for multi-node support. Requires CUDA toolkit and NCCL library. Set CUDA_HOME, NCCL_HOME, and MPI_HOME environment variables if not in default locations."
+  },
+  "global_options": [
+    {
+      "short": "-b",
+      "long": "--minbytes",
+      "description": "Minimum message size to test",
+      "arguments": "SIZE",
+      "argument_type": "string",
+      "default": "32M",
+      "example": "-b 8"
+    },
+    {
+      "short": "-e",
+      "long": "--maxbytes",
+      "description": "Maximum message size to test",
+      "arguments": "SIZE",
+      "argument_type": "string",
+      "default": "32M",
+      "example": "-e 128M"
+    },
+    {
+      "short": "-i",
+      "long": "--stepbytes",
+      "description": "Fixed increment between message sizes (mutually exclusive with -f)",
+      "arguments": "SIZE",
+      "argument_type": "string",
+      "example": "-i 1M"
+    },
+    {
+      "short": "-f",
+      "long": "--stepfactor",
+      "description": "Multiplication factor between message sizes (mutually exclusive with -i)",
+      "arguments": "FACTOR",
+      "argument_type": "integer",
+      "example": "-f 2"
+    },
+    {
+      "short": "-t",
+      "long": "--nthreads",
+      "description": "Number of threads per process",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "-t 4"
+    },
+    {
+      "short": "-g",
+      "long": "--ngpus",
+      "description": "Number of GPUs per thread",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "-g 8"
+    },
+    {
+      "short": "-n",
+      "long": "--iters",
+      "description": "Number of iterations to run for each message size",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "default": "20",
+      "example": "-n 100"
+    },
+    {
+      "short": "-w",
+      "long": "--warmup_iters",
+      "description": "Number of warmup iterations before timing begins",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "default": "5",
+      "example": "-w 10"
+    },
+    {
+      "short": "-m",
+      "long": "--agg_iters",
+      "description": "Number of operations to aggregate per iteration",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "-m 4"
+    },
+    {
+      "short": "-N",
+      "long": "--run_cycles",
+      "description": "Number of cycles to run (0 for infinite)",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "-N 5"
+    },
+    {
+      "short": "-p",
+      "long": "--parallel_init",
+      "description": "Enable parallel NCCL initialization across threads",
+      "arguments": "0|1",
+      "argument_type": "integer",
+      "default": "0",
+      "example": "-p 1"
+    },
+    {
+      "short": "-c",
+      "long": "--check",
+      "description": "Check correctness of results (number of iterations to check)",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "-c 10"
+    },
+    {
+      "short": "-d",
+      "long": "--datatype",
+      "description": "Data type for the operation",
+      "arguments": "int8|uint8|int32|uint32|int64|uint64|half|float|double|bfloat16",
+      "argument_type": "string",
+      "default": "float",
+      "example": "-d half"
+    },
+    {
+      "short": "-a",
+      "long": "--average",
+      "description": "Result averaging method across ranks (0=Rank0 only, 1=Average, 2=Min, 3=Max)",
+      "arguments": "0|1|2|3",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "-a 1"
+    },
+    {
+      "short": "-z",
+      "long": "--blocking",
+      "description": "Use blocking (synchronous) operations instead of non-blocking",
+      "arguments": "0|1",
+      "argument_type": "integer",
+      "default": "0",
+      "example": "-z 1"
+    },
+    {
+      "short": "-G",
+      "long": "--cudagraph",
+      "description": "Number of CUDA graph replays (enables CUDA graph capture and replay)",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "default": "0",
+      "example": "-G 10"
+    },
+    {
+      "short": "-C",
+      "long": "--report_cputime",
+      "description": "Report CPU time in addition to GPU time",
+      "arguments": "0|1",
+      "argument_type": "integer",
+      "default": "0",
+      "example": "-C 1"
+    },
+    {
+      "short": "-R",
+      "long": "--local_register",
+      "description": "Buffer registration mode (0=disabled, 1=enabled, 2=auto)",
+      "arguments": "0|1|2",
+      "argument_type": "integer",
+      "default": "0",
+      "example": "-R 1"
+    },
+    {
+      "short": "-T",
+      "long": "--timeout",
+      "description": "Maximum time in seconds for the entire test run",
+      "arguments": "SECONDS",
+      "argument_type": "integer",
+      "example": "-T 300"
+    },
+    {
+      "short": "-S",
+      "long": "--report_timestamps",
+      "description": "Report timestamps for each operation",
+      "arguments": "0|1",
+      "argument_type": "integer",
+      "default": "0",
+      "example": "-S 1"
+    },
+    {
+      "short": "-J",
+      "long": "--output_file",
+      "description": "Output results to JSON file",
+      "arguments": "FILENAME",
+      "argument_type": "path",
+      "example": "-J results.json"
+    },
+    {
+      "short": "-M",
+      "long": "--memory_report",
+      "description": "Report memory usage",
+      "arguments": "0|1",
+      "argument_type": "integer",
+      "default": "0",
+      "example": "-M 1"
+    }
+  ],
+  "environment_variables": [
+    {
+      "name": "CUDA_VISIBLE_DEVICES",
+      "description": "Controls which GPUs are visible to the test. Can be a comma-separated list of GPU indices.",
+      "example": "CUDA_VISIBLE_DEVICES=0,1,2,3",
+      "affects_command": "Limits the GPUs available for the benchmark to use"
+    },
+    {
+      "name": "NCCL_DEBUG",
+      "description": "Sets NCCL debug verbosity level",
+      "example": "NCCL_DEBUG=INFO",
+      "affects_command": "Enables detailed NCCL logging (WARN, INFO, TRACE, VERSION)"
+    },
+    {
+      "name": "NCCL_DEBUG_SUBSYS",
+      "description": "Filters NCCL debug output by subsystem",
+      "example": "NCCL_DEBUG_SUBSYS=INIT,GRAPH",
+      "affects_command": "Limits debug output to specific NCCL subsystems"
+    },
+    {
+      "name": "NCCL_TESTS_SPLIT",
+      "description": "Partitions GPUs for testing using operations (AND/OR/MOD/DIV) with values",
+      "example": "NCCL_TESTS_SPLIT=\"MOD 8\"",
+      "affects_command": "Creates multiple parallel communicators for testing specific topologies"
+    },
+    {
+      "name": "NCCL_TESTS_SPLIT_MASK",
+      "description": "Shorthand for NCCL_TESTS_SPLIT with AND operation",
+      "example": "NCCL_TESTS_SPLIT_MASK=0xFF",
+      "affects_command": "Masks GPU ranks for communicator partitioning"
+    },
+    {
+      "name": "NCCL_P2P_DISABLE",
+      "description": "Disable peer-to-peer GPU communication",
+      "example": "NCCL_P2P_DISABLE=1",
+      "affects_command": "Forces communication through host memory instead of direct GPU-to-GPU transfers, significantly impacts sendrecv latency"
+    },
+    {
+      "name": "NCCL_P2P_LEVEL",
+      "description": "Controls peer-to-peer communication level",
+      "example": "NCCL_P2P_LEVEL=NVL",
+      "affects_command": "Sets P2P transport level (LOC, NVL, PIX, PXB, PHB, SYS)"
+    },
+    {
+      "name": "NCCL_SHM_DISABLE",
+      "description": "Disable shared memory for intra-node communication",
+      "example": "NCCL_SHM_DISABLE=1",
+      "affects_command": "Disables shared memory transport for point-to-point operations"
+    },
+    {
+      "name": "NCCL_NET_GDR_LEVEL",
+      "description": "Controls GPU Direct RDMA usage level",
+      "example": "NCCL_NET_GDR_LEVEL=5",
+      "affects_command": "Configures when to use GPU Direct RDMA for network communication"
+    },
+    {
+      "name": "NCCL_IB_DISABLE",
+      "description": "Disable InfiniBand transport",
+      "example": "NCCL_IB_DISABLE=1",
+      "affects_command": "Forces TCP/IP transport instead of InfiniBand for inter-node sendrecv"
+    },
+    {
+      "name": "NCCL_SOCKET_IFNAME",
+      "description": "Specify network interface for socket-based communication",
+      "example": "NCCL_SOCKET_IFNAME=eth0",
+      "affects_command": "Selects specific network interface for inter-node sendrecv when using sockets"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - all tests completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - test failed due to NCCL error, CUDA error, or correctness check failure"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Multi-GPU point-to-point benchmark with varying message sizes",
+      "command": "sendrecv_perf -b 8 -e 128M -f 2 -g 8",
+      "output_example": "#                                                              out-of-place                       in-place\n#       size         count      type   redop    root     time   algbw   busbw #wrong     time   algbw   busbw #wrong\n#        (B)    (elements)                               (us)  (GB/s)  (GB/s)            (us)  (GB/s)  (GB/s)\n           8             2     float    none      -1    15.23    0.00    0.00      0    14.89    0.00    0.00      0\n        1024           256     float    none      -1    16.45    0.06    0.06      0    16.12    0.06    0.06      0\n     1048576        262144     float    none      -1   125.34    8.36    8.36      0   124.56    8.41    8.41      0"
+    },
+    {
+      "description": "Point-to-point latency testing with small messages",
+      "command": "sendrecv_perf -b 8 -e 4K -f 2 -g 2 -n 1000",
+      "output_example": "# Testing Send/Recv point-to-point latency\n# Using 2 GPUs for bidirectional transfer\n           8             2     float    none      -1     5.12    0.00    0.00      0     5.08    0.00    0.00      0\n          16             4     float    none      -1     5.15    0.00    0.00      0     5.11    0.00    0.00      0"
+    },
+    {
+      "description": "Two-GPU pair point-to-point bandwidth test",
+      "command": "sendrecv_perf -b 1M -e 1G -f 2 -g 2",
+      "output_example": "# Using devices\n#  Rank  0 Group  0 Pid  12345 on node1 device  0 [0x07] NVIDIA A100-SXM4-80GB\n#  Rank  1 Group  0 Pid  12345 on node1 device  1 [0x0f] NVIDIA A100-SXM4-80GB\n# Bidirectional bandwidth: each GPU sends and receives simultaneously"
+    },
+    {
+      "description": "Multi-node point-to-point test using MPI",
+      "command": "mpirun -np 2 --hostfile hosts sendrecv_perf -g 1 -b 1M -e 8G -f 2",
+      "output_example": "# Using MPI with 2 ranks across nodes\n# NCCL version 2.18.1+cuda12.1\n# Testing inter-node Send/Recv performance"
+    },
+    {
+      "description": "Test with half-precision data for ML workloads",
+      "command": "sendrecv_perf -d half -b 1M -e 1G -f 2 -g 8",
+      "output_example": "#       size         count      type   redop    root     time   algbw   busbw #wrong\n     1048576        524288      half    none      -1   122.56    8.55    8.55      0"
+    },
+    {
+      "description": "Extended stress test with correctness checking",
+      "command": "sendrecv_perf -c 1 -n 100 -N 10 -b 1M -e 1G -f 2 -g 8",
+      "output_example": "# Running 10 cycles with correctness checking\n# 100 iterations per size per cycle"
+    },
+    {
+      "description": "Test with CUDA graphs for reduced launch overhead",
+      "command": "sendrecv_perf -G 10 -b 1M -e 128M -f 2 -g 8",
+      "output_example": "# Using CUDA graphs with 10 replays for send/recv operations"
+    },
+    {
+      "description": "NVLink topology point-to-point test on DGX system",
+      "command": "sendrecv_perf -b 8 -e 8G -f 2 -g 8 -n 50 -w 10",
+      "output_example": "# nThread 1 nGpus 8 minBytes 8 maxBytes 8589934592 step: 2(factor) warmup iters: 10 iters: 50\n# Testing all GPU pair combinations via NVLink/NVSwitch"
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "NCCL WARN Failed to open libibverbs.so",
+      "meaning": "InfiniBand verbs library is not installed or not in library path",
+      "resolution": "Install libibverbs-dev package or set LD_LIBRARY_PATH to include the library location"
+    },
+    {
+      "message": "NCCL WARN Call to cudaGetDeviceCount failed: no CUDA-capable device is detected",
+      "meaning": "No NVIDIA GPUs are available or CUDA driver is not loaded",
+      "resolution": "Verify NVIDIA driver is loaded with nvidia-smi and CUDA is properly installed"
+    },
+    {
+      "message": "Test FAILED",
+      "meaning": "Correctness check detected incorrect results in the send/receive operation",
+      "resolution": "May indicate hardware issues (ECC errors, NVLink errors) or data corruption. Check GPU health with nvidia-smi and run GPU diagnostics"
+    },
+    {
+      "message": "NCCL WARN Cuda failure: out of memory",
+      "meaning": "Insufficient GPU memory to allocate test buffers",
+      "resolution": "Reduce message size with -e option, reduce number of GPUs with -g, or free GPU memory from other applications"
+    },
+    {
+      "message": "NCCL WARN NET/IB : No device found",
+      "meaning": "No InfiniBand devices available for inter-node communication",
+      "resolution": "Check IB interface with ibstat, verify MLNX_OFED is installed, or use NCCL_IB_DISABLE=1 for TCP fallback"
+    },
+    {
+      "message": "NCCL WARN P2P not supported between X and Y",
+      "meaning": "Direct GPU-to-GPU peer-to-peer communication is not possible between specified GPUs",
+      "resolution": "Check GPU topology with nvidia-smi topo -m, may need to route through host memory. Set NCCL_P2P_DISABLE=1 to force host memory path"
+    },
+    {
+      "message": "NCCL WARN Topology detection failed",
+      "meaning": "NCCL could not detect the GPU/network topology",
+      "resolution": "Ensure NVIDIA fabric manager is running for NVSwitch systems, check PCIe topology with nvidia-smi topo -m"
+    },
+    {
+      "message": "Timeout after X seconds",
+      "meaning": "Test exceeded the specified timeout duration",
+      "resolution": "Increase timeout with -T option, reduce test scope, or investigate communication hangs"
+    },
+    {
+      "message": "NCCL WARN Send/Recv requires at least 2 ranks",
+      "meaning": "Point-to-point operations require at least two GPUs to form send/receive pairs",
+      "resolution": "Use -g 2 or higher to enable multiple GPUs for send/receive testing"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "all_reduce_perf",
+      "all_gather_perf",
+      "broadcast_perf",
+      "reduce_perf",
+      "reduce_scatter_perf",
+      "alltoall_perf",
+      "scatter_perf",
+      "gather_perf",
+      "hypercube_perf",
+      "nvidia-smi",
+      "nvidia-smi topo",
+      "dcgmi",
+      "ibstat",
+      "mpirun"
+    ],
+    "uses_library": [
+      "NCCL (NVIDIA Collective Communications Library)",
+      "CUDA Runtime",
+      "MPI (optional, for multi-node)"
+    ],
+    "notes": "Part of the nccl-tests suite for NCCL performance testing. Unlike collective operations (all_reduce_perf, etc.), sendrecv_perf tests point-to-point communication which is essential for model parallelism and pipeline parallelism in distributed training. Results should be correlated with nvidia-smi topo output to understand NVLink topology and expected bandwidth. For multi-node tests, ensure consistent NCCL versions and network configuration across all nodes."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required for basic operation. User must have access to GPU devices.",
+    "write_operations": "No write operations to system state. Creates output files if -J option is used.",
+    "notes": "May require membership in 'video' or 'render' groups for GPU access on some systems. Multi-node tests require SSH access between nodes for MPI."
+  },
+  "limitations": [
+    "Requires NVIDIA GPUs with CUDA support",
+    "Requires at least 2 GPUs for meaningful send/receive testing",
+    "Multi-node tests require MPI build (make MPI=1) and proper MPI environment",
+    "Memory usage scales with message size and number of GPUs (2x buffers per GPU for send and receive)",
+    "CUDA graphs mode (-G) may not work with all NCCL configurations",
+    "Point-to-point bandwidth may be lower than collective operations due to less aggressive pipelining",
+    "NVLink/NVSwitch performance depends on proper fabric manager configuration",
+    "Results may vary based on system load and thermal conditions",
+    "Correctness checking adds overhead and may not reflect production performance"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "gpu_id",
+          "uuid",
+          "name",
+          "memory_total",
+          "memory_free",
+          "pci_bus_id"
+        ],
+        "description": "Reads GPU availability, memory capacity, and device identification to configure point-to-point test"
+      },
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["port_state", "link_layer", "rate", "gid"],
+        "description": "For multi-node tests, reads InfiniBand port status and capabilities for inter-node send/recv"
+      },
+      {
+        "state_domain": "fabric_state",
+        "fields": ["nvlink_version", "links", "nvswitch_status", "peer_access"],
+        "description": "Reads NVLink/NVSwitch topology to determine optimal point-to-point communication paths"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi topo -m",
+        "shared_state": "GPU topology and NVLink connections - sendrecv_perf bandwidth reflects the interconnect topology shown by nvidia-smi topo"
+      },
+      {
+        "command": "all_reduce_perf",
+        "shared_state": "NCCL communicator state and GPU topology - both tests use the same underlying NCCL infrastructure"
+      },
+      {
+        "command": "ibstat",
+        "shared_state": "InfiniBand port state - for multi-node tests, IB link state affects send/recv performance"
+      },
+      {
+        "command": "dcgmi diag",
+        "shared_state": "GPU health status - sendrecv_perf performance depends on healthy GPUs and NVLinks reported by DCGM diagnostics"
+      },
+      {
+        "command": "mpirun",
+        "shared_state": "MPI process placement - multi-node sendrecv tests use MPI for process launching and rank assignment"
+      }
+    ]
+  }
+}

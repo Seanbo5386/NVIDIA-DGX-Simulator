@@ -1,0 +1,957 @@
+{
+  "command": "salloc",
+  "category": "cluster_management",
+  "description": "salloc is used to obtain a Slurm job allocation for interactive use. It allocates compute resources (nodes, CPUs, memory, GPUs) and starts a shell or user-specified command on the submission host. Unlike sbatch which submits non-interactive batch jobs, salloc provides an interactive allocation where the user can run multiple srun commands within the allocated resources. The allocation persists until the user exits the shell or the time limit is reached. salloc is ideal for debugging, interactive development, and running multiple job steps without waiting in the queue each time.",
+  "synopsis": "salloc [OPTIONS...] [command [args...]]",
+  "version_documented": "Slurm 23.x",
+  "source_urls": ["https://slurm.schedmd.com/salloc.html"],
+  "installation": {
+    "package": "slurm-client or slurm",
+    "notes": "Part of the Slurm workload manager. Requires access to a Slurm cluster with slurmctld running."
+  },
+  "global_options": [
+    {
+      "short": "-A",
+      "long": "--account",
+      "description": "Charge resources used by this allocation to the specified account. The account is an arbitrary string used for tracking or billing purposes.",
+      "arguments": "account",
+      "argument_type": "string",
+      "example": "salloc -A research bash"
+    },
+    {
+      "long": "--bb",
+      "description": "Burst Buffer specification. Used to request burst buffer resources for the job.",
+      "arguments": "spec",
+      "argument_type": "string"
+    },
+    {
+      "long": "--bbf",
+      "description": "Path to file containing burst buffer specification.",
+      "arguments": "file_path",
+      "argument_type": "path"
+    },
+    {
+      "long": "--begin",
+      "description": "Defer allocation until the specified time. Time formats include HH:MM:SS, YYYY-MM-DD, now+count[seconds|minutes|hours|days|weeks].",
+      "arguments": "time",
+      "argument_type": "string",
+      "example": "salloc --begin=now+1hour bash"
+    },
+    {
+      "long": "--bell",
+      "description": "Ring the terminal bell when the allocation is granted. Useful when running in foreground waiting mode."
+    },
+    {
+      "short": "-D",
+      "long": "--chdir",
+      "description": "Change to the specified directory before executing the command. The path can be absolute or relative to the current directory.",
+      "arguments": "directory",
+      "argument_type": "path",
+      "example": "salloc --chdir=/scratch/user/work bash"
+    },
+    {
+      "long": "--cluster-constraint",
+      "description": "Specifies features that a federated cluster must have to be eligible for job submission.",
+      "arguments": "features",
+      "argument_type": "string"
+    },
+    {
+      "short": "-M",
+      "long": "--clusters",
+      "description": "Specifies the clusters to issue the allocation request to in a federated cluster environment.",
+      "arguments": "cluster_names",
+      "argument_type": "string"
+    },
+    {
+      "short": "-C",
+      "long": "--constraint",
+      "description": "Nodes must have all the specified features. Multiple features can be combined with & (AND) or | (OR) operators.",
+      "arguments": "features",
+      "argument_type": "string",
+      "example": "salloc --constraint=\"gpu&a100\" bash"
+    },
+    {
+      "long": "--contiguous",
+      "description": "If set, allocated nodes must form a contiguous set. This may delay scheduling as contiguous blocks are harder to find."
+    },
+    {
+      "long": "--cores-per-socket",
+      "description": "Request nodes with at least the specified number of cores per socket.",
+      "arguments": "cores",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-c",
+      "long": "--cpus-per-task",
+      "description": "Request the specified number of CPUs per task. This is used to allocate multiple CPUs to each task, commonly needed for multi-threaded applications.",
+      "arguments": "ncpus",
+      "argument_type": "integer",
+      "example": "salloc -c 8 bash"
+    },
+    {
+      "long": "--cpus-per-gpu",
+      "description": "Request the specified number of CPUs for each GPU allocated to the job.",
+      "arguments": "ncpus",
+      "argument_type": "integer",
+      "example": "salloc --cpus-per-gpu=10 --gpus=4 bash"
+    },
+    {
+      "long": "--deadline",
+      "description": "Remove the job if no allocation is possible before the specified deadline. Time format same as --begin.",
+      "arguments": "time",
+      "argument_type": "string"
+    },
+    {
+      "long": "--delay-boot",
+      "description": "Do not reboot nodes to satisfy the allocation for this many minutes.",
+      "arguments": "minutes",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-d",
+      "long": "--dependency",
+      "description": "Defer the start of this allocation until the specified dependencies have been satisfied. Common types: after, afterok, afternotok, afterany, singleton.",
+      "arguments": "dependency_list",
+      "argument_type": "string",
+      "example": "salloc --dependency=afterok:12345 bash"
+    },
+    {
+      "short": "-m",
+      "long": "--distribution",
+      "description": "Specify alternate distribution methods for tasks across nodes when used with srun. Options include block, cyclic, arbitrary, plane.",
+      "arguments": "dist",
+      "argument_type": "string"
+    },
+    {
+      "short": "-x",
+      "long": "--exclude",
+      "description": "Explicitly exclude certain nodes from the allocation.",
+      "arguments": "hostlist",
+      "argument_type": "string",
+      "example": "salloc --exclude=node[001-010] bash"
+    },
+    {
+      "long": "--exclusive",
+      "description": "Request exclusive access to nodes. No other jobs will share the allocated nodes. Can specify 'user' to share only with jobs from the same user, or 'mcs' for MCS isolation.",
+      "arguments": "user|mcs",
+      "argument_type": "string",
+      "example": "salloc --exclusive bash"
+    },
+    {
+      "long": "--export",
+      "description": "Identify which environment variables from the current environment should be propagated to the allocated environment. Options: ALL (default), NONE, or specific variables.",
+      "arguments": "vars",
+      "argument_type": "string",
+      "example": "salloc --export=ALL,MY_VAR=value bash"
+    },
+    {
+      "short": "-B",
+      "long": "--extra-node-info",
+      "description": "Restrict allocation to nodes matching specified socket, core, and thread configuration (sockets[:cores[:threads]]).",
+      "arguments": "sockets[:cores[:threads]]",
+      "argument_type": "string"
+    },
+    {
+      "long": "--get-user-env",
+      "description": "Load login environment for the user. Optionally specify timeout in seconds."
+    },
+    {
+      "long": "--gid",
+      "description": "Submit the allocation request using the specified group ID.",
+      "arguments": "group",
+      "argument_type": "string"
+    },
+    {
+      "short": "-G",
+      "long": "--gpus",
+      "description": "Total number of GPUs required for the allocation. Can specify GPU type (e.g., --gpus=a100:4).",
+      "arguments": "[type:]num",
+      "argument_type": "string",
+      "example": "salloc --gpus=4 bash"
+    },
+    {
+      "long": "--gpus-per-node",
+      "description": "Number of GPUs required per allocated node. Can specify GPU type.",
+      "arguments": "[type:]num",
+      "argument_type": "string",
+      "example": "salloc --gpus-per-node=8 bash"
+    },
+    {
+      "long": "--gpus-per-socket",
+      "description": "Number of GPUs required per socket. Can specify GPU type.",
+      "arguments": "[type:]num",
+      "argument_type": "string"
+    },
+    {
+      "long": "--gpus-per-task",
+      "description": "Number of GPUs required per task. Can specify GPU type.",
+      "arguments": "[type:]num",
+      "argument_type": "string",
+      "example": "salloc --gpus-per-task=1 -n 8 bash"
+    },
+    {
+      "long": "--gres",
+      "description": "Specifies a comma-delimited list of generic consumable resources required per node. Common gres types include gpu, mps, and shard.",
+      "arguments": "list",
+      "argument_type": "string",
+      "example": "salloc --gres=gpu:2 bash"
+    },
+    {
+      "long": "--gres-flags",
+      "description": "Specify generic resource task binding options. Options include disable-binding, enforce-binding, one-task-per-sharing.",
+      "arguments": "flags",
+      "argument_type": "string"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help information and exit."
+    },
+    {
+      "long": "--hint",
+      "description": "Bind tasks according to application hints. Options: compute_bound, memory_bound, multithread, nomultithread.",
+      "arguments": "hint",
+      "argument_type": "string"
+    },
+    {
+      "short": "-H",
+      "long": "--hold",
+      "description": "Submit the allocation in a held state. A held allocation is ineligible for scheduling until released with scontrol."
+    },
+    {
+      "short": "-I",
+      "long": "--immediate",
+      "description": "Exit immediately if resources are not available within the specified time (in seconds). Value of 0 means exit immediately if resources unavailable.",
+      "arguments": "seconds",
+      "argument_type": "integer",
+      "example": "salloc --immediate=60 bash"
+    },
+    {
+      "short": "-J",
+      "long": "--job-name",
+      "description": "Specify a name for the allocation. The name is displayed in squeue output.",
+      "arguments": "jobname",
+      "argument_type": "string",
+      "example": "salloc --job-name=interactive bash"
+    },
+    {
+      "short": "-K",
+      "long": "--kill-command",
+      "description": "Send the specified signal to the command when the allocation ends.",
+      "arguments": "signal",
+      "argument_type": "string"
+    },
+    {
+      "short": "-L",
+      "long": "--licenses",
+      "description": "Request the specified licenses for the allocation. Licenses are configured by the system administrator.",
+      "arguments": "license_list",
+      "argument_type": "string",
+      "example": "salloc --licenses=matlab:1 bash"
+    },
+    {
+      "long": "--mail-type",
+      "description": "Notify user by email when certain event types occur. Valid types: BEGIN, END, FAIL, REQUEUE, ALL, STAGE_OUT, TIME_LIMIT, TIME_LIMIT_90, etc.",
+      "arguments": "type",
+      "argument_type": "string"
+    },
+    {
+      "long": "--mail-user",
+      "description": "Email address to receive notifications.",
+      "arguments": "email",
+      "argument_type": "string"
+    },
+    {
+      "long": "--mcs-label",
+      "description": "Request MCS (Multi-Category Security) label for the allocation.",
+      "arguments": "label",
+      "argument_type": "string"
+    },
+    {
+      "long": "--mem",
+      "description": "Specify the real memory required per node. Different units may be specified using the suffix K, M, G, or T. Default is megabytes.",
+      "arguments": "size[units]",
+      "argument_type": "string",
+      "example": "salloc --mem=64G bash"
+    },
+    {
+      "long": "--mem-bind",
+      "description": "Bind tasks to memory. Options include local, none, prefer, rank, map_mem, mask_mem.",
+      "arguments": "type",
+      "argument_type": "string"
+    },
+    {
+      "long": "--mem-per-cpu",
+      "description": "Minimum memory required per allocated CPU. Different units may be specified using the suffix K, M, G, or T.",
+      "arguments": "size[units]",
+      "argument_type": "string",
+      "example": "salloc --mem-per-cpu=4G bash"
+    },
+    {
+      "long": "--mem-per-gpu",
+      "description": "Minimum memory required per allocated GPU. Different units may be specified using the suffix K, M, G, or T.",
+      "arguments": "size[units]",
+      "argument_type": "string"
+    },
+    {
+      "long": "--mincpus",
+      "description": "Specify minimum number of logical CPUs per node.",
+      "arguments": "n",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--network",
+      "description": "Specify network options for the allocation.",
+      "arguments": "type",
+      "argument_type": "string"
+    },
+    {
+      "long": "--nice",
+      "description": "Run the allocation with an adjusted scheduling priority (nice value). A negative value raises priority (requires authorization).",
+      "arguments": "value",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--no-bell",
+      "description": "Do not ring the terminal bell when the allocation is granted."
+    },
+    {
+      "long": "--no-shell",
+      "description": "Allocate resources and print allocation information but do not spawn a shell. Useful for scripted allocation handling."
+    },
+    {
+      "short": "-N",
+      "long": "--nodes",
+      "description": "Request a specific number of nodes. Can specify a minimum and maximum (e.g., 2-4).",
+      "arguments": "minnodes[-maxnodes]",
+      "argument_type": "string",
+      "example": "salloc -N 4 bash"
+    },
+    {
+      "short": "-w",
+      "long": "--nodelist",
+      "description": "Request specific nodes by name. Can be a comma-separated list or a file containing hostnames.",
+      "arguments": "hostlist",
+      "argument_type": "string",
+      "example": "salloc --nodelist=node[001-004] bash"
+    },
+    {
+      "short": "-n",
+      "long": "--ntasks",
+      "description": "Request the specified number of tasks (typically MPI ranks). This is the total number across all nodes.",
+      "arguments": "number",
+      "argument_type": "integer",
+      "example": "salloc -n 32 bash"
+    },
+    {
+      "long": "--ntasks-per-core",
+      "description": "Request the maximum number of tasks to be invoked per core.",
+      "arguments": "ntasks",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--ntasks-per-gpu",
+      "description": "Request the number of tasks to be invoked per GPU.",
+      "arguments": "ntasks",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--ntasks-per-node",
+      "description": "Request the specified number of tasks per node.",
+      "arguments": "ntasks",
+      "argument_type": "integer",
+      "example": "salloc --ntasks-per-node=4 bash"
+    },
+    {
+      "long": "--ntasks-per-socket",
+      "description": "Request the maximum number of tasks to be invoked per socket.",
+      "arguments": "ntasks",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-s",
+      "long": "--oversubscribe",
+      "description": "Allow the allocation to share resources with other jobs. Opposite of --exclusive."
+    },
+    {
+      "short": "-p",
+      "long": "--partition",
+      "description": "Request resources from the specified partition. Multiple partitions may be specified as a comma-separated list.",
+      "arguments": "partition_names",
+      "argument_type": "string",
+      "example": "salloc -p gpu bash"
+    },
+    {
+      "long": "--power",
+      "description": "Specify power management options for the allocation.",
+      "arguments": "flags",
+      "argument_type": "string"
+    },
+    {
+      "long": "--prefer",
+      "description": "Preferred node features (soft constraint). The scheduler will attempt to satisfy these preferences but won't fail if unavailable.",
+      "arguments": "features",
+      "argument_type": "string"
+    },
+    {
+      "long": "--priority",
+      "description": "Request a specific job priority. Value of 0 indicates a held job.",
+      "arguments": "value",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--profile",
+      "description": "Enable profiling of job resource usage. Options: all, none, energy, task, lustre, network.",
+      "arguments": "type",
+      "argument_type": "string"
+    },
+    {
+      "short": "-q",
+      "long": "--qos",
+      "description": "Request a Quality of Service for the allocation. QoS affects scheduling priority and resource limits.",
+      "arguments": "qos",
+      "argument_type": "string",
+      "example": "salloc --qos=high bash"
+    },
+    {
+      "short": "-Q",
+      "long": "--quiet",
+      "description": "Suppress informational messages from salloc. Errors will still be displayed."
+    },
+    {
+      "long": "--reboot",
+      "description": "Force allocated nodes to reboot before starting the allocation. Requires appropriate permissions."
+    },
+    {
+      "long": "--reservation",
+      "description": "Request resources from the specified reservation.",
+      "arguments": "name",
+      "argument_type": "string",
+      "example": "salloc --reservation=maintenance bash"
+    },
+    {
+      "long": "--signal",
+      "description": "Signal the job when approaching time limit. Format: signal[@time]. Time specifies seconds before time limit.",
+      "arguments": "signal[@time]",
+      "argument_type": "string"
+    },
+    {
+      "long": "--sockets-per-node",
+      "description": "Request nodes with at least the specified number of sockets.",
+      "arguments": "sockets",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--spread-job",
+      "description": "Spread the allocation over as many nodes as possible."
+    },
+    {
+      "long": "--switches",
+      "description": "Specify maximum number of leaf switches and optionally the maximum wait time for the switch configuration.",
+      "arguments": "count[@time]",
+      "argument_type": "string"
+    },
+    {
+      "long": "--thread-spec",
+      "description": "Specifies a count of specialized threads per node reserved for system operations.",
+      "arguments": "num",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--threads-per-core",
+      "description": "Request nodes with at least the specified number of threads per core.",
+      "arguments": "threads",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-t",
+      "long": "--time",
+      "description": "Set a limit on the total run time of the allocation. Formats: minutes, minutes:seconds, hours:minutes:seconds, days-hours, days-hours:minutes, days-hours:minutes:seconds.",
+      "arguments": "time",
+      "argument_type": "string",
+      "example": "salloc --time=2:00:00 bash"
+    },
+    {
+      "long": "--time-min",
+      "description": "Set a minimum time limit for the allocation.",
+      "arguments": "time",
+      "argument_type": "string"
+    },
+    {
+      "long": "--tmp",
+      "description": "Specify minimum amount of temporary disk space per node (in MB by default).",
+      "arguments": "size",
+      "argument_type": "string"
+    },
+    {
+      "long": "--uid",
+      "description": "Submit the allocation request using the specified user ID.",
+      "arguments": "user",
+      "argument_type": "string"
+    },
+    {
+      "long": "--usage",
+      "description": "Display brief usage message and exit."
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Increase the verbosity of salloc's output. Multiple -v options will increase verbosity."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version information and exit."
+    },
+    {
+      "short": "-W",
+      "long": "--wait",
+      "description": "Do not wait for resources; fail immediately if not available. Same as --immediate=0.",
+      "arguments": "seconds",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--wait-all-nodes",
+      "description": "Wait for all nodes to be ready before starting the command. Value of 1 enables, 0 disables.",
+      "arguments": "0|1",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--wckey",
+      "description": "Specify a workload characterization key for the allocation.",
+      "arguments": "key",
+      "argument_type": "string"
+    }
+  ],
+  "environment_variables": [
+    {
+      "name": "SLURM_JOB_ID",
+      "description": "The ID of the job allocation. Set by Slurm when the allocation is granted.",
+      "example": "SLURM_JOB_ID=12345",
+      "affects_command": "Available to commands run within the allocation for job identification"
+    },
+    {
+      "name": "SLURM_JOBID",
+      "description": "Alias for SLURM_JOB_ID. Deprecated but still available for backward compatibility.",
+      "example": "SLURM_JOBID=12345",
+      "affects_command": "Available to commands run within the allocation"
+    },
+    {
+      "name": "SLURM_JOB_NAME",
+      "description": "The name assigned to the job allocation.",
+      "example": "SLURM_JOB_NAME=interactive",
+      "affects_command": "Available for identification within the allocation"
+    },
+    {
+      "name": "SLURM_JOB_NODELIST",
+      "description": "List of nodes allocated to the job in Slurm hostlist format.",
+      "example": "SLURM_JOB_NODELIST=node[001-004]",
+      "affects_command": "Used by srun to determine which nodes to run tasks on"
+    },
+    {
+      "name": "SLURM_NODELIST",
+      "description": "Alias for SLURM_JOB_NODELIST. List of allocated nodes.",
+      "example": "SLURM_NODELIST=node[001-004]",
+      "affects_command": "Available to commands run within the allocation"
+    },
+    {
+      "name": "SLURM_JOB_NUM_NODES",
+      "description": "The number of nodes allocated to the job.",
+      "example": "SLURM_JOB_NUM_NODES=4",
+      "affects_command": "Used by srun to determine resource availability"
+    },
+    {
+      "name": "SLURM_NNODES",
+      "description": "Alias for SLURM_JOB_NUM_NODES. Number of allocated nodes.",
+      "example": "SLURM_NNODES=4",
+      "affects_command": "Available to commands run within the allocation"
+    },
+    {
+      "name": "SLURM_JOB_CPUS_PER_NODE",
+      "description": "Number of CPUs per node available in the allocation. Format includes counts for non-uniform allocations.",
+      "example": "SLURM_JOB_CPUS_PER_NODE=32(x4)",
+      "affects_command": "Indicates available CPUs for job steps"
+    },
+    {
+      "name": "SLURM_CPUS_PER_TASK",
+      "description": "Number of CPUs per task as requested with --cpus-per-task.",
+      "example": "SLURM_CPUS_PER_TASK=8",
+      "affects_command": "Inherited by srun for job step resource allocation"
+    },
+    {
+      "name": "SLURM_NTASKS",
+      "description": "Number of tasks requested for the allocation.",
+      "example": "SLURM_NTASKS=32",
+      "affects_command": "Inherited by srun as default task count"
+    },
+    {
+      "name": "SLURM_NPROCS",
+      "description": "Alias for SLURM_NTASKS. Number of tasks/processes.",
+      "example": "SLURM_NPROCS=32",
+      "affects_command": "Available for backward compatibility"
+    },
+    {
+      "name": "SLURM_NTASKS_PER_NODE",
+      "description": "Number of tasks per node as requested.",
+      "example": "SLURM_NTASKS_PER_NODE=8",
+      "affects_command": "Inherited by srun for job step task distribution"
+    },
+    {
+      "name": "SLURM_GPUS",
+      "description": "Total number of GPUs allocated to the job.",
+      "example": "SLURM_GPUS=4",
+      "affects_command": "Indicates GPU allocation for job steps"
+    },
+    {
+      "name": "SLURM_GPUS_PER_NODE",
+      "description": "Number of GPUs per node allocated.",
+      "example": "SLURM_GPUS_PER_NODE=8",
+      "affects_command": "Indicates per-node GPU allocation"
+    },
+    {
+      "name": "SLURM_JOB_PARTITION",
+      "description": "The partition from which resources were allocated.",
+      "example": "SLURM_JOB_PARTITION=gpu",
+      "affects_command": "Available for identification within the allocation"
+    },
+    {
+      "name": "SLURM_JOB_ACCOUNT",
+      "description": "The account charged for the allocation.",
+      "example": "SLURM_JOB_ACCOUNT=research",
+      "affects_command": "Available for identification within the allocation"
+    },
+    {
+      "name": "SLURM_JOB_QOS",
+      "description": "The Quality of Service assigned to the allocation.",
+      "example": "SLURM_JOB_QOS=normal",
+      "affects_command": "Available for identification within the allocation"
+    },
+    {
+      "name": "SLURM_SUBMIT_DIR",
+      "description": "The directory from which salloc was invoked.",
+      "example": "SLURM_SUBMIT_DIR=/home/user/project",
+      "affects_command": "Available to commands run within the allocation"
+    },
+    {
+      "name": "SLURM_SUBMIT_HOST",
+      "description": "The hostname of the machine from which salloc was invoked.",
+      "example": "SLURM_SUBMIT_HOST=login01",
+      "affects_command": "Available for identification within the allocation"
+    },
+    {
+      "name": "SLURM_MEM_PER_NODE",
+      "description": "Memory per node available in the allocation (in MB).",
+      "example": "SLURM_MEM_PER_NODE=65536",
+      "affects_command": "Indicates memory available for job steps"
+    },
+    {
+      "name": "SLURM_MEM_PER_CPU",
+      "description": "Memory per CPU available in the allocation (in MB).",
+      "example": "SLURM_MEM_PER_CPU=4096",
+      "affects_command": "Indicates per-CPU memory for job steps"
+    },
+    {
+      "name": "SLURM_CLUSTER_NAME",
+      "description": "Name of the cluster where the job is running.",
+      "example": "SLURM_CLUSTER_NAME=production",
+      "affects_command": "Available for identification in federated environments"
+    },
+    {
+      "name": "SLURM_CONF",
+      "description": "Path to the Slurm configuration file. Can be set before running salloc.",
+      "example": "SLURM_CONF=/etc/slurm/slurm.conf",
+      "affects_command": "Specifies which Slurm configuration to use"
+    },
+    {
+      "name": "SALLOC_ACCOUNT",
+      "description": "Default account for salloc if --account not specified.",
+      "example": "SALLOC_ACCOUNT=research",
+      "affects_command": "Sets default account for allocations"
+    },
+    {
+      "name": "SALLOC_PARTITION",
+      "description": "Default partition for salloc if --partition not specified.",
+      "example": "SALLOC_PARTITION=compute",
+      "affects_command": "Sets default partition for allocations"
+    },
+    {
+      "name": "SALLOC_TIMELIMIT",
+      "description": "Default time limit for salloc if --time not specified.",
+      "example": "SALLOC_TIMELIMIT=2:00:00",
+      "affects_command": "Sets default time limit for allocations"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - allocation obtained and command (or shell) completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "General error - allocation request failed or command exited with error"
+    },
+    {
+      "code": 2,
+      "meaning": "Invalid command-line options or arguments"
+    },
+    {
+      "code": 126,
+      "meaning": "The specified command could not be invoked (permission denied or not an executable)"
+    },
+    {
+      "code": 127,
+      "meaning": "The specified command was not found"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Obtain an interactive allocation with a bash shell",
+      "command": "salloc bash",
+      "output_example": "salloc: Granted job allocation 12345\nsalloc: Waiting for resource configuration\nsalloc: Nodes node[001-002] are ready for job\n[user@login01 ~]$"
+    },
+    {
+      "description": "Request a single GPU node for interactive development",
+      "command": "salloc -p gpu --gpus=1 -t 2:00:00 bash",
+      "output_example": "salloc: Pending job allocation 12346\nsalloc: job 12346 queued and waiting for resources\nsalloc: job 12346 has been allocated resources\nsalloc: Granted job allocation 12346\n[user@login01 ~]$"
+    },
+    {
+      "description": "Request multiple GPU nodes for distributed training",
+      "command": "salloc -N 4 --gpus-per-node=8 -t 4:00:00 -p gpu bash",
+      "output_example": "salloc: Granted job allocation 12347\nsalloc: Waiting for resource configuration\nsalloc: Nodes gpu-node[001-004] are ready for job"
+    },
+    {
+      "description": "Request allocation with specific memory per node",
+      "command": "salloc -N 2 --mem=128G bash",
+      "output_example": "salloc: Granted job allocation 12348"
+    },
+    {
+      "description": "Request allocation with immediate timeout",
+      "command": "salloc --immediate=60 -N 4 bash",
+      "output_example": "salloc: Pending job allocation 12349\nsalloc: job 12349 queued and waiting for resources\nsalloc: Granted job allocation 12349"
+    },
+    {
+      "description": "Request allocation from specific reservation",
+      "command": "salloc --reservation=maintenance -N 8 bash",
+      "output_example": "salloc: Granted job allocation 12350"
+    },
+    {
+      "description": "Request allocation with node features constraint",
+      "command": "salloc --constraint=\"a100&nvlink\" -N 2 --gpus-per-node=8 bash",
+      "output_example": "salloc: Granted job allocation 12351"
+    },
+    {
+      "description": "Request allocation with specific account and QoS",
+      "command": "salloc -A project1 --qos=high -N 4 -t 1:00:00 bash",
+      "output_example": "salloc: Granted job allocation 12352"
+    },
+    {
+      "description": "Request allocation without spawning shell (for scripting)",
+      "command": "salloc --no-shell -N 2 -t 30:00",
+      "output_example": "salloc: Granted job allocation 12353\nsalloc: Job 12353 allocated to nodes node[001-002]\nSLURM_JOB_ID=12353\nSLURM_NODELIST=node[001-002]"
+    },
+    {
+      "description": "Run a specific command within the allocation",
+      "command": "salloc -N 4 srun hostname",
+      "output_example": "salloc: Granted job allocation 12354\nnode001\nnode002\nnode003\nnode004\nsalloc: Relinquishing job allocation 12354"
+    },
+    {
+      "description": "Request exclusive node access for benchmarking",
+      "command": "salloc --exclusive -N 1 --gpus=8 -t 1:00:00 bash",
+      "output_example": "salloc: Granted job allocation 12355"
+    },
+    {
+      "description": "Request allocation with bell notification when granted",
+      "command": "salloc --bell -N 8 -t 8:00:00 bash",
+      "output_example": "salloc: Pending job allocation 12356\nsalloc: job 12356 queued and waiting for resources\n[bell sound]\nsalloc: Granted job allocation 12356"
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "salloc: error: Unable to allocate resources: Requested node configuration is not available",
+      "meaning": "The requested resources exceed what is available in the specified partition",
+      "resolution": "Use 'sinfo' to check available resources. Reduce resource request or try a different partition."
+    },
+    {
+      "message": "salloc: error: Job submit/allocate failed: Invalid account or account/partition combination specified",
+      "meaning": "The specified account is invalid or cannot access the requested partition",
+      "resolution": "Check available accounts with 'sacctmgr show associations user=$USER'. Use a valid account-partition combination."
+    },
+    {
+      "message": "salloc: error: Job submit/allocate failed: Invalid partition name specified",
+      "meaning": "The specified partition does not exist",
+      "resolution": "Use 'sinfo' to list available partitions. Check partition name spelling."
+    },
+    {
+      "message": "salloc: error: Job submit/allocate failed: Requested time limit is invalid (missing or exceeds some limit)",
+      "meaning": "The requested time limit exceeds the partition's maximum or is invalid",
+      "resolution": "Check partition time limits with 'sinfo -l'. Reduce the --time value."
+    },
+    {
+      "message": "salloc: error: Unable to contact slurm controller (connect failure)",
+      "meaning": "Cannot connect to the Slurm controller daemon (slurmctld)",
+      "resolution": "Check if slurmctld is running. Verify network connectivity. Ensure SLURM_CONF is correct."
+    },
+    {
+      "message": "salloc: error: Job submit/allocate failed: QOSMaxNodePerJobLimit",
+      "meaning": "The number of nodes requested exceeds the QoS limit",
+      "resolution": "Reduce the number of nodes or use a different QoS with higher limits."
+    },
+    {
+      "message": "salloc: error: Job submit/allocate failed: QOSMaxGRESPerJob",
+      "meaning": "The number of GRES (e.g., GPUs) requested exceeds the QoS limit",
+      "resolution": "Reduce GPU/GRES request or use a different QoS with higher limits."
+    },
+    {
+      "message": "salloc: Pending job allocation 12345",
+      "meaning": "Resources not immediately available; job is queued",
+      "resolution": "Wait for resources or use --immediate to fail fast if resources unavailable."
+    },
+    {
+      "message": "salloc: error: Immediate execution impossible: Resources unavailable",
+      "meaning": "Resources not available and --immediate flag was used",
+      "resolution": "Remove --immediate flag to wait for resources, or reduce resource request."
+    },
+    {
+      "message": "salloc: error: Job submit/allocate failed: Access denied to partition",
+      "meaning": "User does not have permission to submit to the requested partition",
+      "resolution": "Contact system administrator for partition access or use a partition you have access to."
+    },
+    {
+      "message": "salloc: error: Job submit/allocate failed: Reservation not usable",
+      "meaning": "The specified reservation is not available or not accessible to the user",
+      "resolution": "Verify reservation name and check access with 'scontrol show reservation'."
+    },
+    {
+      "message": "salloc: error: Job submit/allocate failed: Node(s) are in an invalid state for the allocation",
+      "meaning": "Requested nodes are down, drained, or otherwise unavailable",
+      "resolution": "Check node states with 'sinfo -N'. Remove specific nodes from request or use different nodes."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "srun",
+      "sbatch",
+      "squeue",
+      "scancel",
+      "scontrol",
+      "sacct",
+      "sinfo"
+    ],
+    "notes": "salloc obtains a job allocation that persists until the user exits the shell or runs a command to completion. Within this allocation, srun is used to execute parallel job steps. Unlike sbatch which submits batch scripts for later execution, salloc provides immediate interactive access once resources are available. The allocation appears in squeue output with the user's shell (or specified command) as the job name. Multiple srun commands can be executed within a single salloc session, which is efficient for iterative development and debugging as it avoids repeated queue waits. When the salloc shell exits or command completes, the allocation is automatically released. Use scancel to terminate an salloc session from another terminal."
+  },
+  "permissions": {
+    "read_operations": "Any user can request allocations within their allowed limits and view their own allocation information",
+    "write_operations": "salloc creates new job allocations which consume cluster resources",
+    "notes": "Users are limited by account associations configured in the Slurm accounting database (sacctmgr). Partition access, maximum node counts, time limits, and QoS settings are controlled by administrator policy. The --exclusive flag may require special authorization. Using --uid or --gid to run as another user requires root privileges."
+  },
+  "limitations": [
+    "The allocation is tied to the session - if the connection is lost, the allocation may be cancelled (depending on cluster configuration)",
+    "Resource limits are constrained by account associations and partition configuration",
+    "Time limits cannot exceed partition maximums",
+    "Node, CPU, and GPU counts cannot exceed partition or QoS limits",
+    "Interactive allocations may have lower priority than batch jobs on some clusters",
+    "The --no-shell option prevents normal interactive use but is useful for scripted allocation handling",
+    "Memory requests may be constrained by node physical memory minus system reservations",
+    "Burst buffer and specialized resource requests depend on cluster configuration",
+    "Federation support requires properly configured federated clusters"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "partition_state",
+        "fields": [
+          "partition_name",
+          "state",
+          "max_time",
+          "max_nodes",
+          "available_nodes",
+          "available_cpus",
+          "available_gpus",
+          "default_time"
+        ],
+        "description": "salloc reads partition configuration to validate resource requests and determine resource availability"
+      },
+      {
+        "state_domain": "node_state",
+        "fields": [
+          "hostname",
+          "state",
+          "cpus",
+          "memory",
+          "gpus",
+          "features",
+          "partitions"
+        ],
+        "description": "salloc queries node states to find suitable nodes matching the resource request and constraints"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "job_state",
+        "fields": [
+          "job_id",
+          "name",
+          "user",
+          "state",
+          "partition",
+          "account",
+          "qos",
+          "nodes_allocated",
+          "cpus_allocated",
+          "gpus_allocated",
+          "memory_allocated",
+          "time_limit",
+          "start_time",
+          "submit_time"
+        ],
+        "description": "salloc creates a new job allocation record in the Slurm controller with RUNNING state once resources are granted"
+      },
+      {
+        "state_domain": "node_state",
+        "fields": [
+          "allocated_to",
+          "allocated_cpus",
+          "allocated_memory",
+          "allocated_gpus"
+        ],
+        "description": "salloc marks allocated resources on nodes as in-use for the duration of the allocation"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "User exits shell or command completes",
+        "effect": "Job allocation is released and resources are freed"
+      },
+      {
+        "state_change": "Time limit reached",
+        "effect": "Allocation is terminated with TIMEOUT state"
+      },
+      {
+        "state_change": "scancel issued for job ID",
+        "effect": "Allocation is cancelled and shell receives signal"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "squeue",
+        "shared_state": "Allocation appears in squeue output with RUNNING state while active"
+      },
+      {
+        "command": "srun",
+        "shared_state": "Job steps created by srun within the allocation use the allocated resources"
+      },
+      {
+        "command": "sacct",
+        "shared_state": "Completed allocations are recorded in accounting database with resource usage"
+      },
+      {
+        "command": "scontrol show job",
+        "shared_state": "Full allocation details available via scontrol during and after execution"
+      },
+      {
+        "command": "sinfo",
+        "shared_state": "Allocated nodes shown as 'allocated' or 'mixed' state in sinfo output"
+      }
+    ]
+  }
+}

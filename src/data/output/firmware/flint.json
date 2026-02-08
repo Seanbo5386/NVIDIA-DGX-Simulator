@@ -1,0 +1,569 @@
+{
+  "command": "flint",
+  "category": "firmware",
+  "description": "Mellanox FLash INTerface (flint) is a low-level firmware burn tool for NVIDIA/Mellanox network adapters and switches. It provides direct control over firmware operations including burning, verifying, erasing, and querying firmware on InfiniBand and Ethernet adapters. Unlike mlxfwmanager which provides high-level firmware management, flint offers granular control over the flash process and supports recovery operations for devices with corrupted firmware. It is the foundational tool for firmware operations in the MFT (Mellanox Firmware Tools) suite.",
+  "synopsis": "flint [options] -d <device> | -i <image> <command> [command_args]",
+  "version_documented": "MFT 4.25.0+",
+  "source_urls": [
+    "https://network.nvidia.com/products/adapter-software/firmware-tools/",
+    "https://docs.nvidia.com/networking/display/flaboraclin"
+  ],
+  "installation": {
+    "package": "mft",
+    "notes": "Included in NVIDIA Mellanox Firmware Tools (MFT) package. Download from NVIDIA website or install via MLNX_OFED: yum install mft (RHEL/CentOS) or apt install mft (Ubuntu/Debian). Requires mst (Mellanox Software Tools) service to be running for device access. Also available as mstflint in some distributions."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--device",
+      "description": "Specify the MST device to operate on. Required for operations that target a physical device. Device names follow the mst naming convention.",
+      "arguments": "<device>",
+      "argument_type": "string",
+      "required": false,
+      "example": "-d /dev/mst/mt4125_pciconf0"
+    },
+    {
+      "short": "-i",
+      "long": "--image",
+      "description": "Specify the firmware image file to use. Required for burn operations and can be used alone for image query operations.",
+      "arguments": "<image>",
+      "argument_type": "path",
+      "required": false,
+      "example": "-i fw-ConnectX7-rel-28_39_1002.bin"
+    },
+    {
+      "long": "--guid",
+      "description": "Set the GUID (Global Unique Identifier) for the device. Format: 8 hex bytes separated by colons.",
+      "arguments": "<guid>",
+      "argument_type": "string",
+      "required": false,
+      "example": "--guid 00:02:c9:03:00:00:12:34"
+    },
+    {
+      "long": "--mac",
+      "description": "Set the MAC address for Ethernet ports. Format: 6 hex bytes separated by colons.",
+      "arguments": "<mac>",
+      "argument_type": "string",
+      "required": false,
+      "example": "--mac 00:02:c9:12:34:56"
+    },
+    {
+      "long": "--guids",
+      "description": "Set multiple GUIDs (node, port1, port2, system GUID). Format: comma-separated list of GUIDs.",
+      "arguments": "<guids>",
+      "argument_type": "string",
+      "required": false,
+      "example": "--guids 0x506b4b0300ab1234,0x506b4b0300ab1235,0x506b4b0300ab1236,0x506b4b0300ab1237"
+    },
+    {
+      "long": "--macs",
+      "description": "Set multiple MAC addresses for multi-port adapters. Format: comma-separated list of MACs.",
+      "arguments": "<macs>",
+      "argument_type": "string",
+      "required": false,
+      "example": "--macs 00:02:c9:12:34:56,00:02:c9:12:34:57"
+    },
+    {
+      "long": "--blank_guids",
+      "description": "Burn the image with blank GUIDs. GUIDs will need to be set separately before the device can be used.",
+      "required": false
+    },
+    {
+      "long": "--use_image_guids",
+      "description": "Use the GUIDs embedded in the firmware image file instead of preserving the device's current GUIDs.",
+      "required": false
+    },
+    {
+      "long": "--use_image_ps",
+      "description": "Use the VPD (Vital Product Data) from the image file instead of preserving the device's current VPD.",
+      "required": false
+    },
+    {
+      "short": "-y",
+      "long": "--yes",
+      "description": "Assume yes to all prompts. Enables non-interactive mode for scripted operations.",
+      "required": false
+    },
+    {
+      "long": "--no",
+      "description": "Assume no to all prompts. Useful for dry-run verification.",
+      "required": false
+    },
+    {
+      "long": "--allow_psid_change",
+      "description": "Allow burning a firmware image with a different PSID than the device's current PSID. Use with extreme caution.",
+      "required": false
+    },
+    {
+      "long": "--allow_rom_change",
+      "description": "Allow burning an image that changes the expansion ROM configuration.",
+      "required": false
+    },
+    {
+      "short": "-v",
+      "long": "--version",
+      "description": "Display the flint version information.",
+      "required": false
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help information and available commands.",
+      "required": false
+    },
+    {
+      "long": "--log",
+      "description": "Enable logging to a specified file.",
+      "arguments": "<log_file>",
+      "argument_type": "path",
+      "required": false,
+      "example": "--log /var/log/flint.log"
+    },
+    {
+      "long": "--flash_params",
+      "description": "Override flash parameters for low-level flash operations. Advanced use only.",
+      "arguments": "<params>",
+      "argument_type": "string",
+      "required": false
+    },
+    {
+      "short": "-s",
+      "long": "--silent",
+      "description": "Suppress non-essential output. Only errors and critical information are displayed.",
+      "required": false
+    },
+    {
+      "long": "--nofs",
+      "description": "Do not use failsafe burn mechanism. Faster but riskier - power loss during burn can brick the device.",
+      "required": false
+    },
+    {
+      "long": "--ocr",
+      "description": "Enable On-Chip ROM (OCR) mode for firmware recovery operations.",
+      "required": false
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "query",
+      "description": "Query and display firmware information from a device or image file. Shows firmware version, PSID, GUIDs, MACs, and other device identification data.",
+      "synopsis": "flint -d <device> query | flint -i <image> query",
+      "options": [
+        {
+          "long": "--full",
+          "description": "Display full firmware information including all ROM versions and configuration details.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "burn",
+      "description": "Burn (flash) a firmware image to the device. This is the primary operation for updating firmware. By default, preserves the device's GUIDs and MACs unless overridden.",
+      "synopsis": "flint -d <device> -i <image> burn [options]",
+      "options": [
+        {
+          "long": "--allow_psid_change",
+          "description": "Allow burning image with different PSID.",
+          "required": false
+        },
+        {
+          "long": "--use_image_guids",
+          "description": "Use GUIDs from image instead of device.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "verify",
+      "description": "Verify the integrity of firmware on a device or in an image file. Performs CRC checks and validates firmware structure.",
+      "synopsis": "flint -d <device> verify | flint -i <image> verify",
+      "options": []
+    },
+    {
+      "name": "erase",
+      "description": "Erase the firmware flash on the device. Warning: Device will be non-functional until new firmware is burned. Used for recovery scenarios.",
+      "synopsis": "flint -d <device> erase",
+      "options": []
+    },
+    {
+      "name": "read",
+      "description": "Read the firmware from the device flash and save it to a file. Useful for backup or analysis purposes.",
+      "synopsis": "flint -d <device> read <output_file>",
+      "options": []
+    },
+    {
+      "name": "write",
+      "description": "Write raw data to the device flash. Low-level operation for advanced recovery or manufacturing use.",
+      "synopsis": "flint -d <device> write <address> <data_file>",
+      "options": []
+    },
+    {
+      "name": "sg",
+      "description": "Set GUID on the device. Modify the device's GUID without performing a full firmware burn.",
+      "synopsis": "flint -d <device> sg [--guid <guid>] [--guids <guids>]",
+      "options": [
+        {
+          "long": "--guid",
+          "description": "Base GUID to set.",
+          "arguments": "<guid>",
+          "argument_type": "string",
+          "required": false
+        },
+        {
+          "long": "--guids",
+          "description": "Set node, port1, port2, and system GUIDs.",
+          "arguments": "<guids>",
+          "argument_type": "string",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "sm",
+      "description": "Set MAC address on the device. Modify the device's MAC address for Ethernet ports without performing a full firmware burn.",
+      "synopsis": "flint -d <device> sm [--mac <mac>] [--macs <macs>]",
+      "options": [
+        {
+          "long": "--mac",
+          "description": "Base MAC address to set.",
+          "arguments": "<mac>",
+          "argument_type": "string",
+          "required": false
+        },
+        {
+          "long": "--macs",
+          "description": "Set MAC addresses for all ports.",
+          "arguments": "<macs>",
+          "argument_type": "string",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "sv",
+      "description": "Set VPD (Vital Product Data) on the device. Modify product identification data stored in flash.",
+      "synopsis": "flint -d <device> sv <vpd_file>",
+      "options": []
+    },
+    {
+      "name": "ri",
+      "description": "Read the expansion ROM image from the device and save to a file.",
+      "synopsis": "flint -d <device> ri <output_file>",
+      "options": []
+    },
+    {
+      "name": "dc",
+      "description": "Dump configuration from the device. Extract the configuration section from firmware.",
+      "synopsis": "flint -d <device> dc [output_file]",
+      "options": []
+    },
+    {
+      "name": "dh",
+      "description": "Dump hash values from the firmware. Display cryptographic signatures and verification data.",
+      "synopsis": "flint -d <device> dh",
+      "options": []
+    },
+    {
+      "name": "bb",
+      "description": "Burn block - write a data block to a specific flash address. Low-level recovery operation.",
+      "synopsis": "flint -d <device> bb <address> <data_file>",
+      "options": []
+    },
+    {
+      "name": "swreset",
+      "description": "Perform a software reset on the device. Similar to online activation, reloads firmware without full system reboot.",
+      "synopsis": "flint -d <device> swreset",
+      "options": []
+    },
+    {
+      "name": "brom",
+      "description": "Burn expansion ROM image to the device. Update PXE, UEFI, or other boot ROM components.",
+      "synopsis": "flint -d <device> brom <rom_file>",
+      "options": []
+    },
+    {
+      "name": "drom",
+      "description": "Delete (remove) the expansion ROM from the device.",
+      "synopsis": "flint -d <device> drom",
+      "options": []
+    },
+    {
+      "name": "rrom",
+      "description": "Read the expansion ROM from the device to a file.",
+      "synopsis": "flint -d <device> rrom <output_file>",
+      "options": []
+    },
+    {
+      "name": "checksum",
+      "description": "Update or verify the firmware image checksum.",
+      "synopsis": "flint -i <image> checksum",
+      "options": []
+    }
+  ],
+  "output_formats": {
+    "query": "Multi-line output showing Image type, FW Version, Device ID, PSID, GUIDs, MACs, VSD, and PSID fields.",
+    "verify": "Status message indicating whether verification passed or failed with specific error details."
+  },
+  "environment_variables": [
+    {
+      "name": "MST_DEVICE_PATH",
+      "description": "Override the default path for MST devices.",
+      "example": "MST_DEVICE_PATH=/dev/mst",
+      "affects_command": "Changes where flint looks for MST device nodes."
+    },
+    {
+      "name": "FLINT_NO_OCR",
+      "description": "Disable On-Chip ROM mode globally.",
+      "example": "FLINT_NO_OCR=1",
+      "affects_command": "Prevents flint from using OCR recovery mode."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - operation completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "General error - operation failed"
+    },
+    {
+      "code": 2,
+      "meaning": "Device not found or MST service not running"
+    },
+    {
+      "code": 3,
+      "meaning": "Image file not found or invalid"
+    },
+    {
+      "code": 4,
+      "meaning": "Flash operation failed"
+    },
+    {
+      "code": 5,
+      "meaning": "Verification failed - firmware CRC mismatch"
+    },
+    {
+      "code": 6,
+      "meaning": "PSID mismatch between device and image"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Query firmware information on a device",
+      "command": "flint -d /dev/mst/mt4125_pciconf0 query",
+      "output_example": "Image type:            FS4\nFW Version:            28.39.1002\nFW Release Date:       28.12.2023\nProduct Version:       28.39.1002\nRom Info:              type=UEFI version=14.32.12 cpu=AMD64,AARCH64\n                       type=PXE version=3.7.0201\nDescription:           UID                GuardType\nBase GUID:             506b4b0300ab1234   N/A\nBase MAC:              506b4b0ab123       N/A\nImage VSD:             N/A\nDevice VSD:            N/A\nPSID:                  MT_0000000884\nSecurity Attributes:   secure-fw",
+      "requires_root": true
+    },
+    {
+      "description": "Query firmware information from an image file",
+      "command": "flint -i fw-ConnectX7-rel-28_39_2006.bin query",
+      "requires_root": false
+    },
+    {
+      "description": "Burn firmware to a device (preserving GUIDs and MACs)",
+      "command": "flint -d /dev/mst/mt4125_pciconf0 -i fw-ConnectX7-rel-28_39_2006.bin burn -y",
+      "requires_root": true
+    },
+    {
+      "description": "Burn firmware with specific GUIDs",
+      "command": "flint -d /dev/mst/mt4125_pciconf0 -i fw-ConnectX7-rel-28_39_2006.bin --guid 00:02:c9:03:00:00:12:34 burn -y",
+      "requires_root": true
+    },
+    {
+      "description": "Verify firmware integrity on a device",
+      "command": "flint -d /dev/mst/mt4125_pciconf0 verify",
+      "output_example": "FW image verification succeeded. Image is bootable.",
+      "requires_root": true
+    },
+    {
+      "description": "Backup device firmware to a file",
+      "command": "flint -d /dev/mst/mt4125_pciconf0 read /tmp/firmware_backup.bin",
+      "requires_root": true
+    },
+    {
+      "description": "Erase device firmware (recovery scenario)",
+      "command": "flint -d /dev/mst/mt4125_pciconf0 erase -y",
+      "requires_root": true
+    },
+    {
+      "description": "Set GUID on a device",
+      "command": "flint -d /dev/mst/mt4125_pciconf0 sg --guid 00:02:c9:03:00:00:12:34",
+      "requires_root": true
+    },
+    {
+      "description": "Set MAC address on a device",
+      "command": "flint -d /dev/mst/mt4125_pciconf0 sm --mac 00:02:c9:12:34:56",
+      "requires_root": true
+    },
+    {
+      "description": "Perform software reset to activate new firmware",
+      "command": "flint -d /dev/mst/mt4125_pciconf0 swreset",
+      "requires_root": true
+    },
+    {
+      "description": "Burn expansion ROM (PXE/UEFI) to device",
+      "command": "flint -d /dev/mst/mt4125_pciconf0 brom /path/to/pxe_rom.bin",
+      "requires_root": true
+    },
+    {
+      "description": "Burn firmware allowing PSID change",
+      "command": "flint -d /dev/mst/mt4125_pciconf0 -i firmware.bin --allow_psid_change burn -y",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "-E- Can not find device /dev/mst/xxx",
+      "meaning": "The specified MST device path does not exist or MST service is not running",
+      "resolution": "Run 'mst start' to initialize the MST service. Use 'mst status' to list available device paths. Verify the device is present with 'lspci | grep -i mellanox'."
+    },
+    {
+      "message": "-E- PSID mismatch",
+      "meaning": "The firmware image PSID does not match the target device PSID",
+      "resolution": "Ensure you have the correct firmware for your device. Use 'flint -d <device> query' to get the device PSID. Use --allow_psid_change only if you are certain about compatibility."
+    },
+    {
+      "message": "-E- FW image verification failed",
+      "meaning": "The firmware file is corrupted or incompatible",
+      "resolution": "Re-download the firmware image. Verify the file integrity with checksum. Ensure the firmware version is compatible with your device."
+    },
+    {
+      "message": "-E- Flash write protected",
+      "meaning": "The device flash is hardware write-protected",
+      "resolution": "Check hardware write-protect jumper on the adapter. Some devices have physical or BIOS-level write protection that must be disabled."
+    },
+    {
+      "message": "-E- Secure boot - signature verification failed",
+      "meaning": "The firmware image signature does not match device security requirements",
+      "resolution": "Use officially signed firmware images from NVIDIA. The device has secure boot enabled and requires properly signed firmware."
+    },
+    {
+      "message": "-E- Can not access device. Are you running as root?",
+      "meaning": "Insufficient permissions to access the device",
+      "resolution": "Run flint with sudo or as root. MST device access requires elevated privileges."
+    },
+    {
+      "message": "-E- Flash semaphore locked",
+      "meaning": "Another process is currently accessing the device flash or a previous operation was interrupted",
+      "resolution": "Wait for other operations to complete. If stale, use mlxfwmanager --clear-semaphore or reboot the system."
+    },
+    {
+      "message": "-E- Unsupported device",
+      "meaning": "The device is not supported by this version of flint",
+      "resolution": "Update MFT to the latest version. Check NVIDIA documentation for device support matrix."
+    },
+    {
+      "message": "-W- ROM checksum mismatch",
+      "meaning": "The expansion ROM has an invalid checksum",
+      "resolution": "The expansion ROM may be corrupted. Use brom to re-burn a valid ROM image or drom to remove it."
+    },
+    {
+      "message": "-E- Cannot burn with GUIDs/MACs set to all 0xff",
+      "meaning": "The GUIDs or MACs in the image are invalid (all ones)",
+      "resolution": "Specify valid GUIDs/MACs with --guid or --mac options, or use --blank_guids if intentionally leaving them unset."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "mlxfwmanager",
+      "mst",
+      "mlxconfig",
+      "mlxlink",
+      "ibstat",
+      "mstflint",
+      "mstconfig",
+      "ibdev2netdev"
+    ],
+    "uses_library": ["mft_core", "mtcr", "mlx_flash"],
+    "notes": "flint provides lower-level access than mlxfwmanager and is used for recovery scenarios, manufacturing, and advanced operations. mlxfwmanager is preferred for routine firmware updates as it handles PSID matching and image selection automatically. The mst service must be running for flint to access devices. mstflint is an alias for flint in some installations. Use mlxconfig to configure device parameters after firmware updates. After firmware changes, use swreset or system reboot to activate, then verify with ibstat or mlxlink."
+  },
+  "permissions": {
+    "read_operations": "Query and verify operations require root or mst device access permissions.",
+    "write_operations": "Burn, erase, and modification operations require root privileges.",
+    "notes": "All device-targeting operations require sudo or root access. Image-only operations (query on image file, checksum) can be run as regular user. The mst service must be started before flint can detect devices."
+  },
+  "limitations": [
+    "Requires MST service to be running (mst start)",
+    "Does not automatically match firmware images to devices like mlxfwmanager",
+    "PSID mismatch requires explicit override (--allow_psid_change)",
+    "No automatic firmware download capability",
+    "Unsafe burn mode (--nofs) can brick device if interrupted",
+    "Some operations require device to be idle (not in use by VMs or active traffic)",
+    "Secure boot devices require signed firmware images",
+    "Cannot recover from flash erase without valid firmware image"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "firmware_state",
+        "fields": [
+          "current_fw_version",
+          "psid",
+          "guid",
+          "mac",
+          "vpd",
+          "rom_version",
+          "secure_boot_status"
+        ],
+        "description": "Reads current firmware version, device identification, and flash contents"
+      },
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["device", "port_state"],
+        "description": "Checks device availability before firmware operations"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "firmware_state",
+        "fields": [
+          "current_fw_version",
+          "rom_version",
+          "guid",
+          "mac",
+          "vpd",
+          "flash_contents"
+        ],
+        "description": "Writes firmware image to device flash, modifies GUIDs, MACs, or VPD",
+        "requires_flags": ["burn", "erase", "sg", "sm", "sv", "brom", "write"],
+        "requires_privilege": "root"
+      },
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["device_state", "link_state"],
+        "description": "Software reset causes device to reinitialize, affecting link state",
+        "requires_flags": ["swreset"],
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "MST service started (mst start)",
+        "effect": "Device nodes become available in /dev/mst/ for flint to access"
+      },
+      {
+        "state_change": "Firmware burned with flint burn",
+        "effect": "New firmware stored in flash but not active until reset or reboot"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "mlxfwmanager",
+        "shared_state": "Firmware version, PSID, device identification (mlxfwmanager uses flint internally for flash operations)"
+      },
+      {
+        "command": "mst",
+        "shared_state": "Device enumeration and MST device paths"
+      },
+      {
+        "command": "ibstat",
+        "shared_state": "Firmware version and device GUIDs displayed by ibstat match flint query results"
+      },
+      {
+        "command": "mlxconfig",
+        "shared_state": "Device configuration stored alongside firmware"
+      }
+    ]
+  }
+}

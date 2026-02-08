@@ -1,0 +1,80 @@
+{
+  "command": "nohup",
+  "category": "general",
+  "description": "Run a command immune to hangups. Keeps processes running after logout. Essential for long-running HPC jobs started from interactive sessions.",
+  "synopsis": "nohup <command> [args]",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/nohup.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 127,
+      "meaning": "Command not found"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run command in background",
+      "command": "nohup ./long_running_job.sh &",
+      "output_example": "nohup: ignoring input and appending output to 'nohup.out'",
+      "requires_root": false
+    },
+    {
+      "description": "Redirect output",
+      "command": "nohup python train.py > output.log 2>&1 &",
+      "requires_root": false
+    },
+    {
+      "description": "With disown",
+      "command": "nohup ./job.sh & disown",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "nohup: failed to run command",
+      "meaning": "Command not found or not executable",
+      "resolution": "Check command path and permissions"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["screen", "tmux", "disown", "bg"],
+    "notes": "Output goes to nohup.out by default. For HPC, prefer job scheduler (sbatch) over nohup. Use screen/tmux for interactive sessions that survive disconnect."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "Creates nohup.out in cwd",
+    "notes": "Standard user permissions"
+  },
+  "limitations": [
+    "No job control after logout",
+    "Prefer screen/tmux for interaction",
+    "Prefer sbatch for HPC workloads"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "gpu_process_state",
+        "fields": ["pid"],
+        "description": "Starts process that persists after logout",
+        "requires_privilege": "user"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ps",
+        "shared_state": "Process visible after logout"
+      }
+    ]
+  }
+}

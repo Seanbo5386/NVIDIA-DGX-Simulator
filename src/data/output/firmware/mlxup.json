@@ -1,0 +1,171 @@
+{
+  "command": "mlxup",
+  "category": "firmware",
+  "description": "Update firmware on NVIDIA/Mellanox network adapters. Queries current firmware, downloads updates, and performs upgrades. Essential for maintaining adapter firmware currency.",
+  "synopsis": "mlxup [options]",
+  "version_documented": "mlxup 4.20+",
+  "source_urls": [
+    "https://docs.nvidia.com/networking/display/MLNXOFEDv580/mlxup"
+  ],
+  "installation": {
+    "package": "mft",
+    "notes": "Part of MFT or downloadable standalone from NVIDIA. Can self-update."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--dev",
+      "description": "Operate on specific device",
+      "arguments": "<device>",
+      "argument_type": "string",
+      "example": "-d /dev/mst/mt4123_pciconf0"
+    },
+    {
+      "short": "-i",
+      "long": "--image-file",
+      "description": "Use local firmware image",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-u",
+      "long": "--update",
+      "description": "Perform firmware update"
+    },
+    {
+      "short": "-q",
+      "long": "--query",
+      "description": "Query devices and available updates"
+    },
+    {
+      "short": "-y",
+      "long": "--yes",
+      "description": "Non-interactive mode, answer yes"
+    },
+    {
+      "long": "--force",
+      "description": "Force update even if same version"
+    },
+    {
+      "long": "--online",
+      "description": "Check online for updates"
+    },
+    {
+      "long": "--no-reboot",
+      "description": "Skip reboot prompt after update"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error or no updates available"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Query devices and available updates",
+      "command": "mlxup -q",
+      "output_example": "Device #1:\n  Device Type:      ConnectX-6\n  Part Number:      MCX653106A-HDAT\n  PSID:             MT_0000000123\n  PCI Device:       /dev/mst/mt4123_pciconf0\n  Current FW:       20.31.1014\n  Available FW:     20.35.1012\n  Status:           Update available",
+      "requires_root": true
+    },
+    {
+      "description": "Update all devices",
+      "command": "mlxup -u -y",
+      "requires_root": true
+    },
+    {
+      "description": "Update specific device",
+      "command": "mlxup -d /dev/mst/mt4123_pciconf0 -u",
+      "requires_root": true
+    },
+    {
+      "description": "Update from local image",
+      "command": "mlxup -i fw-ConnectX6-rel-20_35_1012.bin -u",
+      "requires_root": true
+    },
+    {
+      "description": "Check online for updates",
+      "command": "mlxup --online -q",
+      "requires_root": true
+    },
+    {
+      "description": "Force update same version",
+      "command": "mlxup -u --force -y",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No devices found",
+      "meaning": "No NVIDIA/Mellanox adapters detected",
+      "resolution": "Verify adapter presence and run mst start"
+    },
+    {
+      "message": "Failed to burn firmware",
+      "meaning": "Firmware write failed",
+      "resolution": "Check PSID compatibility and retry"
+    },
+    {
+      "message": "PSID mismatch",
+      "meaning": "Firmware image not for this adapter",
+      "resolution": "Use correct firmware for adapter PSID"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["flint", "mst", "mlxconfig", "mlxfwreset"],
+    "notes": "After firmware update, mlxfwreset or system reboot required to activate new firmware. Check release notes for compatibility requirements."
+  },
+  "permissions": {
+    "read_operations": "Root required for device queries",
+    "write_operations": "Root required for updates",
+    "notes": "Firmware updates are critical operations requiring elevated privileges"
+  },
+  "limitations": [
+    "Requires reboot/reset after update",
+    "Online updates need internet access",
+    "PSID must match for updates",
+    "Cannot downgrade without force"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "firmware_state",
+        "fields": ["firmware_version", "psid", "device_path"],
+        "description": "Reads current firmware information"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "firmware_state",
+        "fields": ["firmware_version"],
+        "description": "Updates adapter firmware",
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "New firmware release",
+        "effect": "Update becomes available"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "flint",
+        "shared_state": "Firmware version matches flint query"
+      },
+      {
+        "command": "ibstat",
+        "shared_state": "Adapter info matches after update"
+      }
+    ]
+  }
+}

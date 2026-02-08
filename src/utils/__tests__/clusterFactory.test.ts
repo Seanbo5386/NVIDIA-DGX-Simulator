@@ -1,0 +1,81 @@
+import { describe, it, expect } from "vitest";
+import { createDefaultCluster, createCustomCluster } from "../clusterFactory";
+
+describe("createDefaultCluster", () => {
+  const cluster = createDefaultCluster();
+
+  it("should create a cluster with 8 nodes", () => {
+    expect(cluster.nodes).toHaveLength(8);
+  });
+
+  it("should create 8 GPUs per node", () => {
+    for (const node of cluster.nodes) {
+      expect(node.gpus).toHaveLength(8);
+    }
+  });
+
+  it("should set correct memory for A100 GPUs (81920 MiB)", () => {
+    const gpu = cluster.nodes[0].gpus[0];
+    expect(gpu.memoryTotal).toBe(81920);
+  });
+
+  it("should initialize NVLink arrays with 12 connections for A100", () => {
+    const gpu = cluster.nodes[0].gpus[0];
+    expect(gpu.nvlinks).toHaveLength(12);
+    expect(gpu.nvlinks[0].status).toBe("Active");
+  });
+
+  it("should create InfiniBand HCAs with ports", () => {
+    const node = cluster.nodes[0];
+    expect(node.hcas.length).toBeGreaterThan(0);
+    expect(node.hcas[0].ports.length).toBeGreaterThan(0);
+  });
+
+  it("should create InfiniBand ports with 0x-prefixed GUIDs", () => {
+    const port = cluster.nodes[0].hcas[0].ports[0];
+    expect(port.guid).toMatch(/^0x[0-9a-f]+$/i);
+  });
+
+  it("should assign unique node IDs", () => {
+    const ids = cluster.nodes.map((n) => n.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("should create BMC with sensors", () => {
+    const bmc = cluster.nodes[0].bmc;
+    expect(bmc.sensors.length).toBeGreaterThan(0);
+    expect(bmc.powerState).toBe("On");
+  });
+
+  it("should create BlueField DPUs", () => {
+    const node = cluster.nodes[0];
+    expect(node.dpus.length).toBeGreaterThan(0);
+    expect(node.dpus[0].firmwareVersion).toBeTruthy();
+  });
+
+  it("should set default Slurm state to idle", () => {
+    for (const node of cluster.nodes) {
+      expect(node.slurmState).toBe("idle");
+    }
+  });
+});
+
+describe("createCustomCluster", () => {
+  it("should create cluster with specified node count", () => {
+    const cluster = createCustomCluster(4, "DGX-A100");
+    expect(cluster.nodes).toHaveLength(4);
+  });
+
+  it("should create H100 cluster with correct GPU specs", () => {
+    const cluster = createCustomCluster(2, "DGX-H100");
+    const gpu = cluster.nodes[0].gpus[0];
+    expect(gpu.name).toContain("H100");
+    expect(gpu.powerLimit).toBe(700);
+  });
+
+  it("should create H100 GPUs with 18 NVLinks", () => {
+    const cluster = createCustomCluster(1, "DGX-H100");
+    const gpu = cluster.nodes[0].gpus[0];
+    expect(gpu.nvlinks).toHaveLength(18);
+  });
+});

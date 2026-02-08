@@ -1,0 +1,570 @@
+{
+  "command": "squeue",
+  "category": "cluster_management",
+  "description": "squeue displays information about jobs located in the Slurm scheduling queue. It shows job and job step information including job ID, partition, name, user, state, time, nodes, and node list. The command provides extensive filtering and formatting options to customize the output for monitoring and scripting purposes.",
+  "synopsis": "squeue [OPTIONS...]",
+  "version_documented": "Slurm 23.x",
+  "source_urls": ["https://slurm.schedmd.com/squeue.html"],
+  "installation": {
+    "package": "slurm-client or slurm",
+    "notes": "Part of the Slurm workload manager. Requires access to a Slurm cluster with slurmctld running."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Display information about jobs and job steps in all partitions, including hidden partitions and jobs from federated clusters. By default, jobs in hidden and unavailable partitions are not displayed."
+    },
+    {
+      "short": "-A",
+      "long": "--account",
+      "description": "Filter output to display only jobs charged to the specified account(s)",
+      "arguments": "account_list",
+      "argument_type": "string",
+      "example": "squeue -A research,development"
+    },
+    {
+      "long": "--array",
+      "description": "Display one job array element per line. Without this option, the array elements are combined on a single line with the array index values displayed using a condensed expression."
+    },
+    {
+      "short": "-r",
+      "long": "--array",
+      "description": "Display one job array element per line (same as --array)"
+    },
+    {
+      "long": "--federation",
+      "description": "Display jobs from the federation if a member of one"
+    },
+    {
+      "short": "-h",
+      "long": "--noheader",
+      "description": "Do not print a header on the output. This is useful for scripting when only raw data is needed."
+    },
+    {
+      "long": "--help",
+      "description": "Print a help message describing all squeue options"
+    },
+    {
+      "long": "--hide",
+      "description": "Do not display information about jobs in hidden partitions. This is the default behavior."
+    },
+    {
+      "short": "-i",
+      "long": "--iterate",
+      "description": "Repeatedly gather and report the requested information at the interval specified in seconds. For better responsiveness, the interval may be split into several smaller requests.",
+      "arguments": "seconds",
+      "argument_type": "integer",
+      "example": "squeue -i 5"
+    },
+    {
+      "short": "-j",
+      "long": "--jobs",
+      "description": "Display information about the specified job(s). Multiple job IDs can be specified as a comma-separated list. If no jobs are specified, display all jobs.",
+      "arguments": "job_id_list",
+      "argument_type": "string",
+      "example": "squeue -j 12345,12346,12347"
+    },
+    {
+      "long": "--json",
+      "description": "Produce JSON output. The optional parser argument specifies the JSON parser to use.",
+      "arguments": "parser",
+      "argument_type": "string"
+    },
+    {
+      "short": "-l",
+      "long": "--long",
+      "description": "Report more of the available information for the selected jobs or job steps, subject to any constraints specified. This includes time limit, start time, and more detailed state information."
+    },
+    {
+      "short": "-L",
+      "long": "--licenses",
+      "description": "Display jobs requesting the specified license(s). Multiple license names may be comma separated.",
+      "arguments": "license_list",
+      "argument_type": "string",
+      "example": "squeue -L matlab,gaussian"
+    },
+    {
+      "long": "--local",
+      "description": "Display only jobs from the local cluster, ignoring federated cluster jobs"
+    },
+    {
+      "short": "-M",
+      "long": "--clusters",
+      "description": "Display jobs on the specified cluster(s). Multiple clusters can be specified as a comma-separated list. The keyword 'all' can be used to query all clusters.",
+      "arguments": "cluster_list",
+      "argument_type": "string",
+      "example": "squeue -M cluster1,cluster2"
+    },
+    {
+      "long": "--me",
+      "description": "Display only jobs belonging to the current user. Equivalent to --user=$USER."
+    },
+    {
+      "short": "-n",
+      "long": "--name",
+      "description": "Display jobs with the specified name(s). Multiple names may be comma separated.",
+      "arguments": "name_list",
+      "argument_type": "string",
+      "example": "squeue -n myjob,test_run"
+    },
+    {
+      "long": "--noconvert",
+      "description": "Do not convert units from their original type (e.g., 2048M will not be converted to 2G)"
+    },
+    {
+      "long": "--notme",
+      "description": "Exclude jobs belonging to the current user from the display"
+    },
+    {
+      "short": "-o",
+      "long": "--format",
+      "description": "Specify the output format using format codes. The format specification is of the form '%[[.]size]type[suffix]'. Size specifies the minimum field width. A '.' before size means right-justify. Type is a single character format code. Suffix is an arbitrary string to append. Common format codes: %A (Job ID), %a (Account), %C (CPUs), %D (Nodes), %e (End time), %i (Job/step ID), %j (Name), %l (Time limit), %L (Time left), %M (Time used), %N (Node list), %P (Partition), %q (QoS), %r (Reason), %S (Start time), %t (State compact), %T (State extended), %u (User), %V (Submit time).",
+      "arguments": "format_string",
+      "argument_type": "string",
+      "example": "squeue -o \"%.18i %.9P %.8j %.8u %.2t %.10M %.6D %R\""
+    },
+    {
+      "short": "-O",
+      "long": "--Format",
+      "description": "Specify the output format using long field names. Multiple fields are comma-separated. Common field names: Account, AllocNodes, Cluster, Command, Dependency, EndTime, JobArrayID, JobID, Name, NodeList, NumCPUs, NumNodes, NumTasks, Partition, Priority, QOS, Reason, StartTime, State, StateCompact, SubmitTime, TimeLeft, TimeLimit, TimeUsed, UserID, UserName.",
+      "arguments": "field_list",
+      "argument_type": "string",
+      "example": "squeue -O JobID,Name,State,TimeUsed,NodeList"
+    },
+    {
+      "short": "-p",
+      "long": "--partition",
+      "description": "Display jobs in the specified partition(s). Multiple partitions may be comma separated.",
+      "arguments": "partition_list",
+      "argument_type": "string",
+      "example": "squeue -p gpu,compute"
+    },
+    {
+      "short": "-P",
+      "long": "--priority",
+      "description": "For pending jobs submitted to multiple partitions, list each partition-job combination on a separate line with the associated partition-specific priority"
+    },
+    {
+      "short": "-q",
+      "long": "--qos",
+      "description": "Display jobs using the specified Quality of Service (QoS). Multiple QoS names may be comma separated.",
+      "arguments": "qos_list",
+      "argument_type": "string",
+      "example": "squeue -q normal,high"
+    },
+    {
+      "short": "-R",
+      "long": "--reservation",
+      "description": "Display jobs using the specified reservation(s). Multiple reservation names may be comma separated.",
+      "arguments": "reservation_list",
+      "argument_type": "string",
+      "example": "squeue -R maintenance,special"
+    },
+    {
+      "long": "--running-over",
+      "description": "Display jobs that have been running for longer than the specified duration",
+      "arguments": "time",
+      "argument_type": "string",
+      "example": "squeue --running-over=1:00:00"
+    },
+    {
+      "long": "--running-under",
+      "description": "Display jobs that have been running for shorter than the specified duration",
+      "arguments": "time",
+      "argument_type": "string",
+      "example": "squeue --running-under=30:00"
+    },
+    {
+      "short": "-s",
+      "long": "--steps",
+      "description": "Display job step information. If a list of step IDs is provided, only those steps are displayed.",
+      "arguments": "step_id_list",
+      "argument_type": "string",
+      "example": "squeue -s"
+    },
+    {
+      "long": "--sibling",
+      "description": "Display sibling jobs on federated clusters"
+    },
+    {
+      "short": "-S",
+      "long": "--sort",
+      "description": "Sort output by the specified field(s). Multiple fields may be comma separated. Prefix with '-' for descending order. Default sort is by increasing job ID.",
+      "arguments": "sort_list",
+      "argument_type": "string",
+      "example": "squeue -S -t,-p"
+    },
+    {
+      "long": "--start",
+      "description": "Display the expected start time and resources to be allocated for pending jobs. This shows information about when the scheduler expects the job to start."
+    },
+    {
+      "short": "-t",
+      "long": "--states",
+      "description": "Display jobs in the specified state(s). Multiple states may be comma separated. State values: PENDING (PD), RUNNING (R), SUSPENDED (S), CANCELLED (CA), COMPLETING (CG), COMPLETED (CD), CONFIGURING (CF), FAILED (F), TIMEOUT (TO), PREEMPTED (PR), BOOT_FAIL (BF), NODE_FAIL (NF), DEADLINE (DL), OUT_OF_MEMORY (OOM), RESIZING (RS), REVOKED (RV), SPECIAL_EXIT (SE), and all.",
+      "arguments": "state_list",
+      "argument_type": "string",
+      "example": "squeue -t RUNNING,PENDING"
+    },
+    {
+      "short": "-u",
+      "long": "--user",
+      "description": "Display jobs belonging to the specified user(s). Multiple users may be comma separated. User IDs may be specified numerically.",
+      "arguments": "user_list",
+      "argument_type": "string",
+      "example": "squeue -u john,mary,12345"
+    },
+    {
+      "long": "--usage",
+      "description": "Print a brief help message describing the available options"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Report details of squeue actions. Multiple -v options will further increase verbosity."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version information for squeue and exit"
+    },
+    {
+      "short": "-w",
+      "long": "--nodelist",
+      "description": "Display jobs running on or requesting the specified node(s). A node range expression may be used.",
+      "arguments": "hostlist",
+      "argument_type": "string",
+      "example": "squeue -w node[001-010]"
+    },
+    {
+      "long": "--yaml",
+      "description": "Produce YAML output. The optional parser argument specifies the YAML parser to use.",
+      "arguments": "parser",
+      "argument_type": "string"
+    },
+    {
+      "long": "--expand-patterns",
+      "description": "Expand filename patterns in StdOut, StdErr, and StdIn fields"
+    },
+    {
+      "long": "--only-job-state",
+      "description": "Query only job state information. This reduces overhead when only state information is needed."
+    }
+  ],
+  "output_formats": {
+    "default": "Tabular format showing: JOBID, PARTITION, NAME, USER, ST (state), TIME, NODES, NODELIST(REASON). Columns are space-separated with headers.",
+    "long": "Extended format (-l) showing: JOBID, PARTITION, NAME, USER, STATE, TIME, TIME_LIMIT, NODES, NODELIST(REASON). Includes full state names instead of abbreviated codes.",
+    "custom": "User-defined format via -o or -O options. Supports extensive format codes for all job attributes.",
+    "json": "JSON structured output via --json option. Suitable for programmatic parsing.",
+    "yaml": "YAML structured output via --yaml option. Human-readable structured format.",
+    "format_codes": "Format codes for -o option: %A (Job ID), %a (Account), %B (Executing host), %c (Min CPUs/node), %C (CPUs requested/allocated), %d (Min temp disk), %D (Node count), %e (End time), %E (Dependencies), %f (Features), %F (Array job ID), %g (Group), %G (Group ID), %h (Oversubscription), %H (Sockets/node), %I (Cores/socket), %i (Job/step ID), %J (Threads/core), %j (Name), %K (Array index), %k (Comment), %l (Time limit), %L (Time remaining), %m (Min memory), %M (Time used), %n (Requested nodes), %N (Allocated nodes), %O (Contiguous), %p (Priority normalized), %P (Partition), %q (QoS), %Q (Priority raw), %r (Reason), %R (Node list/Reason), %s (SLUID), %S (Start time), %t (State compact), %T (State extended), %u (User), %U (User ID), %v (Reservation), %V (Submit time), %w (Workload char key), %W (Licenses), %x (Excluded nodes), %X (Core spec count), %y (Nice), %Y (Expected nodes), %z (S:C:T), %Z (Work directory).",
+    "job_state_codes": "Compact state codes: BF (Boot Fail), CA (Cancelled), CD (Completed), CF (Configuring), CG (Completing), DL (Deadline), F (Failed), NF (Node Fail), OOM (Out of Memory), PD (Pending), PR (Preempted), R (Running), RD (Reservation Deleted Hold), RF (Requeue Fed), RH (Requeue Hold), RQ (Requeued), RS (Resizing), RV (Revoked), S (Suspended), SE (Special Exit), SI (Signaling), SO (Stage Out), ST (Stopped), TO (Timeout)."
+  },
+  "environment_variables": [
+    {
+      "name": "SLURM_BITSTR_LEN",
+      "description": "Specifies the number of bytes used for the display of job array indices. Default is 64 bytes. Set to 0 to display the full expression.",
+      "example": "SLURM_BITSTR_LEN=128",
+      "affects_command": "Controls how job array index ranges are displayed in output"
+    },
+    {
+      "name": "SLURM_CLUSTERS",
+      "description": "Specifies the cluster(s) to use. Equivalent to --clusters option.",
+      "example": "SLURM_CLUSTERS=cluster1,cluster2",
+      "affects_command": "Sets default clusters for multi-cluster queries"
+    },
+    {
+      "name": "SLURM_CONF",
+      "description": "Path to the Slurm configuration file",
+      "example": "SLURM_CONF=/etc/slurm/slurm.conf",
+      "affects_command": "Specifies which Slurm configuration to use"
+    },
+    {
+      "name": "SLURM_TIME_FORMAT",
+      "description": "Specifies the time format for output. Can be 'standard', 'relative', or a strftime format string.",
+      "example": "SLURM_TIME_FORMAT=%Y-%m-%d_%H:%M:%S",
+      "affects_command": "Controls how timestamps are displayed in output"
+    },
+    {
+      "name": "SQUEUE_ACCOUNT",
+      "description": "Default account filter. Equivalent to -A option.",
+      "example": "SQUEUE_ACCOUNT=research",
+      "affects_command": "Filters output to specified account by default"
+    },
+    {
+      "name": "SQUEUE_ALL",
+      "description": "If set to any value, equivalent to --all option.",
+      "example": "SQUEUE_ALL=1",
+      "affects_command": "Displays all partitions including hidden ones"
+    },
+    {
+      "name": "SQUEUE_FORMAT",
+      "description": "Default output format. Equivalent to -o option.",
+      "example": "SQUEUE_FORMAT=\"%.18i %.9P %.8j %.8u %.2t %.10M %.6D %R\"",
+      "affects_command": "Sets the default output format"
+    },
+    {
+      "name": "SQUEUE_FORMAT2",
+      "description": "Alternative default output format using long field names. Equivalent to -O option.",
+      "example": "SQUEUE_FORMAT2=JobID,Name,State,TimeUsed",
+      "affects_command": "Sets default output format using long names"
+    },
+    {
+      "name": "SQUEUE_PARTITION",
+      "description": "Default partition filter. Equivalent to -p option.",
+      "example": "SQUEUE_PARTITION=gpu",
+      "affects_command": "Filters output to specified partition by default"
+    },
+    {
+      "name": "SQUEUE_SORT",
+      "description": "Default sort order. Equivalent to -S option.",
+      "example": "SQUEUE_SORT=-t,i",
+      "affects_command": "Sets default sort order for output"
+    },
+    {
+      "name": "SQUEUE_STATES",
+      "description": "Default state filter. Equivalent to -t option.",
+      "example": "SQUEUE_STATES=RUNNING,PENDING",
+      "affects_command": "Filters output to specified states by default"
+    },
+    {
+      "name": "SQUEUE_USERS",
+      "description": "Default user filter. Equivalent to -u option.",
+      "example": "SQUEUE_USERS=$USER",
+      "affects_command": "Filters output to specified users by default"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - general error occurred (e.g., invalid options, connection failure)"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display all jobs in the queue with default format",
+      "command": "squeue",
+      "output_example": "  JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n 123456       gpu   train    alice  R    2:30:15      4 node[001-004]\n 123457   compute  analyze      bob PD       0:00      1 (Resources)\n 123458       gpu     test  charlie CG       0:45      2 node[005-006]"
+    },
+    {
+      "description": "Display only the current user's jobs",
+      "command": "squeue -u $USER",
+      "output_example": "  JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n 123456       gpu   train    alice  R    2:30:15      4 node[001-004]\n 123459       gpu   eval     alice PD       0:00      2 (Priority)"
+    },
+    {
+      "description": "Display only running jobs",
+      "command": "squeue -t RUNNING",
+      "output_example": "  JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n 123456       gpu   train    alice  R    2:30:15      4 node[001-004]\n 123460   compute    batch      dan  R    5:12:33      8 node[010-017]"
+    },
+    {
+      "description": "Display jobs in a specific partition",
+      "command": "squeue -p gpu",
+      "output_example": "  JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n 123456       gpu   train    alice  R    2:30:15      4 node[001-004]\n 123458       gpu     test  charlie CG       0:45      2 node[005-006]\n 123459       gpu   eval     alice PD       0:00      2 (Priority)"
+    },
+    {
+      "description": "Display jobs with custom output format",
+      "command": "squeue -o \"%.18i %.9P %.8j %.8u %.2t %.10M %.6D %R\"",
+      "output_example": "           JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n          123456       gpu    train    alice  R    2:30:15      4 node[001-004]\n          123457   compute  analyze      bob PD       0:00      1 (Resources)"
+    },
+    {
+      "description": "Display long format with extended information",
+      "command": "squeue -l",
+      "output_example": "Wed Jan 15 10:30:00 2025\n  JOBID PARTITION     NAME     USER    STATE       TIME TIME_LIMI  NODES NODELIST(REASON)\n 123456       gpu    train    alice  RUNNING    2:30:15   8:00:00      4 node[001-004]\n 123457   compute  analyze      bob  PENDING       0:00   2:00:00      1 (Resources)"
+    },
+    {
+      "description": "Display pending jobs with expected start time",
+      "command": "squeue -t PENDING --start",
+      "output_example": "  JOBID PARTITION     NAME     USER ST          START_TIME  NODES SCHEDNODES           NODELIST(REASON)\n 123457   compute  analyze      bob PD 2025-01-15T11:00:00      1 node008              (Resources)\n 123459       gpu     eval    alice PD 2025-01-15T12:30:00      2 node[001-002]        (Priority)"
+    },
+    {
+      "description": "Continuously monitor queue updates",
+      "command": "squeue -i 10",
+      "output_example": "[Output refreshes every 10 seconds showing current queue state]"
+    },
+    {
+      "description": "Display jobs without header for scripting",
+      "command": "squeue -h -o \"%i %t\" -u $USER",
+      "output_example": "123456 R\n123459 PD"
+    },
+    {
+      "description": "Display job array elements individually",
+      "command": "squeue -r -j 123450",
+      "output_example": "  JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n123450_1       gpu  array    alice  R    0:30:15      1 node001\n123450_2       gpu  array    alice  R    0:30:10      1 node002\n123450_3       gpu  array    alice PD       0:00      1 (Resources)"
+    },
+    {
+      "description": "Sort jobs by state and priority",
+      "command": "squeue -S t,-p",
+      "output_example": "  JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n 123457   compute  analyze      bob PD       0:00      1 (Resources)\n 123459       gpu     eval    alice PD       0:00      2 (Priority)\n 123456       gpu    train    alice  R    2:30:15      4 node[001-004]"
+    },
+    {
+      "description": "Display jobs using specific QoS",
+      "command": "squeue -q high",
+      "output_example": "  JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\n 123456       gpu    train    alice  R    2:30:15      4 node[001-004]"
+    },
+    {
+      "description": "Output in JSON format for programmatic use",
+      "command": "squeue --json",
+      "output_example": "{\"meta\":{\"plugin\":{\"type\":\"openapi/slurmctld\",\"name\":\"Slurm OpenAPI slurmctld\"},\"Slurm\":{\"version\":{\"major\":23,\"micro\":0,\"minor\":11}},\"jobs\":[{\"job_id\":123456,\"name\":\"train\",\"user_name\":\"alice\",\"job_state\":[\"RUNNING\"],...}]}"
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "slurm_load_jobs error: Invalid job id specified",
+      "meaning": "The job ID provided does not exist in the system",
+      "resolution": "Verify the job ID is correct. The job may have completed and been purged from the queue. Use sacct to view historical job information."
+    },
+    {
+      "message": "slurm_load_jobs error: Unable to contact slurm controller (connect failure)",
+      "meaning": "Cannot connect to the Slurm controller daemon (slurmctld)",
+      "resolution": "Check if slurmctld is running. Verify network connectivity to the controller. Ensure SLURM_CONF points to the correct configuration file."
+    },
+    {
+      "message": "slurm_load_partitions error: Invalid partition name specified",
+      "meaning": "The specified partition does not exist",
+      "resolution": "Use 'sinfo' to list available partitions. Check partition name spelling."
+    },
+    {
+      "message": "error: Invalid user: <username>",
+      "meaning": "The specified user does not exist in the system",
+      "resolution": "Verify the username is correct. The user must exist on the cluster."
+    },
+    {
+      "message": "error: Invalid state specified: <state>",
+      "meaning": "An invalid job state was provided to the -t option",
+      "resolution": "Use valid state names: PENDING, RUNNING, SUSPENDED, COMPLETED, CANCELLED, FAILED, TIMEOUT, NODE_FAIL, PREEMPTED, BOOT_FAIL, DEADLINE, OUT_OF_MEMORY, COMPLETING, CONFIGURING, or their abbreviations."
+    },
+    {
+      "message": "squeue: error: Invalid format specification",
+      "meaning": "The format string provided to -o contains invalid format codes",
+      "resolution": "Review the format codes in the squeue man page. Ensure correct syntax: %[.]size]type"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "sinfo",
+      "sbatch",
+      "srun",
+      "scancel",
+      "scontrol",
+      "sacct",
+      "sstat",
+      "sprio",
+      "sshare"
+    ],
+    "notes": "squeue queries the slurmctld daemon for current queue state. For historical job information, use sacct. For more detailed control over individual jobs, use scontrol show job. The output of squeue is commonly piped to other commands for job management workflows."
+  },
+  "permissions": {
+    "read_operations": "Any user can view jobs in the queue. By default, all jobs from all users are visible unless the cluster has PrivateData configured to hide other users' jobs.",
+    "notes": "The PrivateData configuration option in slurm.conf can restrict what information users can see about other users' jobs. Administrators always have full visibility."
+  },
+  "limitations": [
+    "Only displays jobs currently in the queue; completed jobs are removed after a configurable time (MinJobAge)",
+    "For historical job information, sacct must be used instead",
+    "The --start option provides estimated start times which may change as the queue state changes",
+    "Job array indices may be truncated based on SLURM_BITSTR_LEN setting",
+    "Output is a point-in-time snapshot; queue state changes continuously",
+    "Federated cluster queries may have increased latency",
+    "Some format fields may not be available depending on Slurm configuration and accounting settings"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "job_state",
+        "fields": [
+          "job_id",
+          "name",
+          "user",
+          "state",
+          "time_used",
+          "time_limit",
+          "time_remaining",
+          "nodes_requested",
+          "nodes_allocated",
+          "node_list",
+          "partition",
+          "account",
+          "qos",
+          "priority",
+          "submit_time",
+          "start_time",
+          "end_time",
+          "dependencies",
+          "reason",
+          "features",
+          "cpus_requested",
+          "memory_requested",
+          "work_directory",
+          "command",
+          "array_job_id",
+          "array_task_id",
+          "reservation"
+        ],
+        "description": "squeue reads comprehensive job state information from the Slurm controller including all job attributes, resource requests, and current status"
+      },
+      {
+        "state_domain": "node_state",
+        "fields": ["hostname", "state"],
+        "description": "squeue reads node allocation information to display which nodes are assigned to running jobs and node reasons for pending jobs"
+      },
+      {
+        "state_domain": "partition_state",
+        "fields": ["partition_name", "state", "availability"],
+        "description": "squeue reads partition state to determine which partitions and jobs to display based on visibility settings"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "New job submission via sbatch/srun",
+        "effect": "New job appears in squeue output with PENDING state"
+      },
+      {
+        "state_change": "Job starts running (resources allocated)",
+        "effect": "Job state changes from PENDING to RUNNING, NODELIST populated with allocated nodes"
+      },
+      {
+        "state_change": "Job completes, fails, or times out",
+        "effect": "Job state changes to terminal state (COMPLETED, FAILED, TIMEOUT) then removed from queue"
+      },
+      {
+        "state_change": "Job cancelled via scancel",
+        "effect": "Job state changes to CANCELLED then removed from queue"
+      },
+      {
+        "state_change": "Job dependencies satisfied",
+        "effect": "Job reason changes from dependency-related to resource/priority reason"
+      },
+      {
+        "state_change": "Resources become available",
+        "effect": "Pending jobs may transition to RUNNING state"
+      },
+      {
+        "state_change": "Job held or released via scontrol",
+        "effect": "Job reason changes to reflect held status or becomes eligible for scheduling"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "sacct",
+        "shared_state": "Job attributes (job_id, name, user, state, nodes) for jobs that are still in queue or recently completed"
+      },
+      {
+        "command": "scontrol show job",
+        "shared_state": "Full job state including all attributes shown by squeue plus additional internal details"
+      },
+      {
+        "command": "sinfo",
+        "shared_state": "Partition and node state information used to explain job pending reasons"
+      },
+      {
+        "command": "sprio",
+        "shared_state": "Job priority values and components for pending jobs"
+      }
+    ]
+  }
+}

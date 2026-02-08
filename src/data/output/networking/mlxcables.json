@@ -1,0 +1,144 @@
+{
+  "command": "mlxcables",
+  "category": "networking",
+  "description": "Query NVIDIA/Mellanox cable information and diagnostics. Reads cable EEPROM data including type, vendor, serial number, and diagnostic measurements. Essential for cable inventory and troubleshooting.",
+  "synopsis": "mlxcables [options]",
+  "version_documented": "MLNX OFED 5.0+",
+  "source_urls": [
+    "https://docs.nvidia.com/networking/display/MLNXOFEDv580/mlxcables"
+  ],
+  "installation": {
+    "package": "mft",
+    "notes": "Part of NVIDIA Firmware Tools (MFT). Install from NVIDIA MLNX_OFED package."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--device",
+      "description": "Specify device to query",
+      "arguments": "<device>",
+      "argument_type": "string",
+      "example": "-d /dev/mst/mt4123_pciconf0"
+    },
+    {
+      "short": "-p",
+      "long": "--port",
+      "description": "Specify port number",
+      "arguments": "<port>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--cable_info",
+      "description": "Show cable information"
+    },
+    {
+      "long": "--ddm",
+      "description": "Show Digital Diagnostic Monitoring data"
+    },
+    {
+      "long": "--dump",
+      "description": "Dump raw EEPROM data"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show all cables",
+      "command": "mlxcables",
+      "output_example": "Cable #1:\n  Device: /dev/mst/mt4123_pciconf0\n  Port: 1\n  Type: QSFP56\n  Vendor: Mellanox\n  PN: MCP1650-H002E30\n  SN: MT2145FT00123\n  Length: 2m\n  Technology: Copper",
+      "requires_root": true
+    },
+    {
+      "description": "Query specific device",
+      "command": "mlxcables -d /dev/mst/mt4123_pciconf0",
+      "requires_root": true
+    },
+    {
+      "description": "Show DDM diagnostics",
+      "command": "mlxcables --ddm",
+      "output_example": "Cable DDM:\n  Temperature: 45C\n  Voltage: 3.3V\n  TX Power: -2.5 dBm\n  RX Power: -3.1 dBm",
+      "requires_root": true
+    },
+    {
+      "description": "Query specific port",
+      "command": "mlxcables -d /dev/mst/mt4123_pciconf0 -p 1",
+      "requires_root": true
+    },
+    {
+      "description": "Dump EEPROM",
+      "command": "mlxcables --dump",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No cables found",
+      "meaning": "No transceivers detected",
+      "resolution": "Verify cables are connected and MST devices are started"
+    },
+    {
+      "message": "Failed to read cable info",
+      "meaning": "Cannot access cable EEPROM",
+      "resolution": "Check cable connection and try mst restart"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["mlxlink", "mst", "ibstat", "ethtool"],
+    "notes": "Requires MST (Mellanox Software Tools) to be running. Use 'mst start' before querying cables. DDM data useful for signal quality analysis."
+  },
+  "permissions": {
+    "read_operations": "Root required to access MST devices",
+    "write_operations": "N/A - read-only command",
+    "notes": "Needs access to /dev/mst/* devices"
+  },
+  "limitations": [
+    "Requires MST service running",
+    "Only works with NVIDIA/Mellanox adapters",
+    "Not all cables support DDM"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["cable_type", "cable_vendor", "cable_serial"],
+        "description": "Reads cable EEPROM information"
+      },
+      {
+        "state_domain": "firmware_state",
+        "fields": ["device_path"],
+        "description": "Uses MST device paths"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Cable insertion/removal",
+        "effect": "Cable list and info updates"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "mlxlink",
+        "shared_state": "Cable type and diagnostics match mlxlink output"
+      },
+      {
+        "command": "ibstat",
+        "shared_state": "Port presence correlates with cable detection"
+      }
+    ]
+  }
+}

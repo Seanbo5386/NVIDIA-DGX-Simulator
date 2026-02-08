@@ -1,0 +1,126 @@
+{
+  "command": "taskset",
+  "category": "general",
+  "description": "Set or retrieve process CPU affinity. Binds processes to specific CPU cores. Critical for HPC performance optimization and NUMA-aware scheduling.",
+  "synopsis": "taskset [options] [mask | list] [pid | command]",
+  "version_documented": "util-linux 2.36+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/taskset.1.html"],
+  "installation": {
+    "package": "util-linux",
+    "notes": "Part of util-linux, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-p",
+      "long": "--pid",
+      "description": "Operate on existing process"
+    },
+    {
+      "short": "-c",
+      "long": "--cpu-list",
+      "description": "Use CPU list format"
+    },
+    {
+      "short": "-a",
+      "long": "--all-tasks",
+      "description": "Operate on all tasks (threads)"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run on specific CPUs",
+      "command": "taskset -c 0-7 ./my_program",
+      "requires_root": false
+    },
+    {
+      "description": "Run on single CPU",
+      "command": "taskset -c 0 ./benchmark",
+      "requires_root": false
+    },
+    {
+      "description": "Get process affinity",
+      "command": "taskset -p 12345",
+      "requires_root": false
+    },
+    {
+      "description": "Set affinity of running process",
+      "command": "taskset -p -c 0-15 12345",
+      "requires_root": false
+    },
+    {
+      "description": "Bind to NUMA node 0 CPUs",
+      "command": "taskset -c 0-31 ./application",
+      "requires_root": false
+    },
+    {
+      "description": "Using hex mask",
+      "command": "taskset 0xff ./program",
+      "requires_root": false
+    },
+    {
+      "description": "Set all threads",
+      "command": "taskset -a -p -c 0-7 $(pgrep myapp)",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "failed to set pid's affinity",
+      "meaning": "Cannot modify process affinity",
+      "resolution": "Check permissions or if CPUs exist"
+    },
+    {
+      "message": "bad CPU list",
+      "meaning": "Invalid CPU specification",
+      "resolution": "Check CPU numbers on system"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["numactl", "hwloc-bind", "nproc"],
+    "notes": "Use numactl for memory affinity too. hwloc-bind offers topology-aware binding. Check nproc for CPU count."
+  },
+  "permissions": {
+    "read_operations": "Read process affinity",
+    "write_operations": "Set affinity for own processes",
+    "notes": "Others' processes may need root"
+  },
+  "limitations": [
+    "Only CPU affinity (not memory)",
+    "Cannot bind to offline CPUs",
+    "Child processes may not inherit"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["processes"],
+        "description": "Reads process CPU affinity"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "system_state",
+        "fields": ["processes"],
+        "description": "Sets process CPU affinity",
+        "requires_privilege": "process owner"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "numactl",
+        "shared_state": "Both affect process CPU placement"
+      }
+    ]
+  }
+}

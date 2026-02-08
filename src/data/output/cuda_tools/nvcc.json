@@ -1,0 +1,564 @@
+{
+  "command": "nvcc",
+  "category": "cuda_tools",
+  "description": "NVIDIA CUDA Compiler Driver (nvcc) is the primary compiler for CUDA C/C++ code. It orchestrates the compilation of CUDA source files by separating device code (GPU kernels) from host code (CPU), compiling device code with NVIDIA's proprietary compilers, and host code with the system's C++ compiler. nvcc supports multiple GPU architectures, optimization levels, and can generate both PTX (intermediate representation) and SASS (machine code) for target GPUs.",
+  "synopsis": "nvcc [options] file(s)",
+  "version_documented": "CUDA 12.0+",
+  "source_urls": [
+    "https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html",
+    "https://developer.nvidia.com/cuda-toolkit"
+  ],
+  "installation": {
+    "package": "cuda-toolkit",
+    "notes": "Installed as part of the CUDA Toolkit. Available on Linux, Windows, and macOS (until CUDA 10.2). Requires a compatible host compiler (gcc, clang, or MSVC)."
+  },
+  "global_options": [
+    {
+      "long": "--arch",
+      "short": "-arch",
+      "description": "Specify the virtual GPU architecture for which the CUDA input files must be compiled. This specifies the compute capability for PTX generation.",
+      "arguments": "ARCH",
+      "argument_type": "string",
+      "example": "nvcc -arch=sm_80 kernel.cu -o kernel"
+    },
+    {
+      "long": "--code",
+      "short": "-code",
+      "description": "Specify the GPU architectures for which the CUDA input files must be compiled into binary (SASS) code.",
+      "arguments": "CODE",
+      "argument_type": "string",
+      "example": "nvcc -arch=sm_70 -code=sm_70,sm_80 kernel.cu -o kernel"
+    },
+    {
+      "long": "--generate-code",
+      "short": "-gencode",
+      "description": "Specify combinations of virtual and real architectures. Can be used multiple times to generate code for multiple architectures in a single binary (fat binary).",
+      "arguments": "arch=ARCH,code=CODE",
+      "argument_type": "string",
+      "example": "nvcc -gencode arch=compute_70,code=sm_70 -gencode arch=compute_80,code=sm_80 kernel.cu -o kernel"
+    },
+    {
+      "short": "-O",
+      "description": "Specify the optimization level for host and device code. Levels are 0 (no optimization), 1, 2, or 3 (maximum optimization).",
+      "arguments": "LEVEL",
+      "argument_type": "integer",
+      "default": "2",
+      "example": "nvcc -O3 kernel.cu -o kernel"
+    },
+    {
+      "short": "-g",
+      "description": "Generate debug information for host code. Enables source-level debugging of host code with standard debuggers.",
+      "example": "nvcc -g kernel.cu -o kernel"
+    },
+    {
+      "short": "-G",
+      "long": "--device-debug",
+      "description": "Generate debug information for device code. Enables source-level debugging of GPU kernels with cuda-gdb. Disables most optimizations on device code.",
+      "example": "nvcc -G kernel.cu -o kernel"
+    },
+    {
+      "long": "--generate-line-info",
+      "short": "-lineinfo",
+      "description": "Generate line number information for device code without disabling optimizations. Enables source correlation in profilers like ncu and nsys.",
+      "example": "nvcc -lineinfo kernel.cu -o kernel"
+    },
+    {
+      "long": "--std",
+      "short": "-std",
+      "description": "Select the C++ language standard for host and device code compilation.",
+      "arguments": "STANDARD",
+      "argument_type": "string",
+      "default": "c++14",
+      "example": "nvcc -std=c++17 kernel.cu -o kernel"
+    },
+    {
+      "long": "--compiler-options",
+      "short": "-Xcompiler",
+      "description": "Pass options directly to the host compiler (gcc, clang, or cl.exe). Options are comma-separated or quoted.",
+      "arguments": "OPTIONS",
+      "argument_type": "string",
+      "example": "nvcc -Xcompiler -Wall,-Wextra kernel.cu -o kernel"
+    },
+    {
+      "long": "--linker-options",
+      "short": "-Xlinker",
+      "description": "Pass options directly to the linker during the linking phase.",
+      "arguments": "OPTIONS",
+      "argument_type": "string",
+      "example": "nvcc -Xlinker -rpath,/usr/local/cuda/lib64 kernel.cu -o kernel"
+    },
+    {
+      "long": "--ptxas-options",
+      "short": "-Xptxas",
+      "description": "Pass options directly to the PTX optimizing assembler (ptxas).",
+      "arguments": "OPTIONS",
+      "argument_type": "string",
+      "example": "nvcc -Xptxas -v kernel.cu -o kernel"
+    },
+    {
+      "short": "-c",
+      "long": "--compile",
+      "description": "Compile source files to object files without linking.",
+      "example": "nvcc -c kernel.cu -o kernel.o"
+    },
+    {
+      "short": "-o",
+      "long": "--output-file",
+      "description": "Specify the output file name.",
+      "arguments": "FILE",
+      "argument_type": "path",
+      "example": "nvcc kernel.cu -o my_app"
+    },
+    {
+      "short": "-I",
+      "long": "--include-path",
+      "description": "Add a directory to the include file search path.",
+      "arguments": "PATH",
+      "argument_type": "path",
+      "example": "nvcc -I/path/to/headers kernel.cu -o kernel"
+    },
+    {
+      "short": "-L",
+      "long": "--library-path",
+      "description": "Add a directory to the library search path.",
+      "arguments": "PATH",
+      "argument_type": "path",
+      "example": "nvcc -L/path/to/libs kernel.cu -o kernel"
+    },
+    {
+      "short": "-l",
+      "long": "--library",
+      "description": "Link with a library.",
+      "arguments": "LIBRARY",
+      "argument_type": "string",
+      "example": "nvcc kernel.cu -lcublas -o kernel"
+    },
+    {
+      "short": "-D",
+      "long": "--define-macro",
+      "description": "Define a preprocessor macro.",
+      "arguments": "MACRO[=VALUE]",
+      "argument_type": "string",
+      "example": "nvcc -DDEBUG=1 kernel.cu -o kernel"
+    },
+    {
+      "long": "--shared",
+      "description": "Generate a shared library (.so on Linux, .dll on Windows).",
+      "example": "nvcc --shared kernel.cu -o libkernel.so"
+    },
+    {
+      "long": "--ptx",
+      "description": "Generate PTX intermediate code instead of binary code. Useful for inspecting generated code or JIT compilation.",
+      "example": "nvcc --ptx kernel.cu -o kernel.ptx"
+    },
+    {
+      "long": "--cubin",
+      "description": "Generate CUDA binary (cubin) file for the specified architecture.",
+      "example": "nvcc --cubin -arch=sm_80 kernel.cu -o kernel.cubin"
+    },
+    {
+      "long": "--fatbin",
+      "description": "Generate a fat binary containing code for multiple architectures.",
+      "example": "nvcc --fatbin -gencode arch=compute_70,code=sm_70 -gencode arch=compute_80,code=sm_80 kernel.cu"
+    },
+    {
+      "long": "--device-c",
+      "short": "-dc",
+      "description": "Compile device code for separate compilation (relocatable device code). Required for linking device code across multiple object files.",
+      "example": "nvcc -dc kernel.cu -o kernel.o"
+    },
+    {
+      "long": "--device-link",
+      "short": "-dlink",
+      "description": "Link relocatable device code from separate compilation.",
+      "example": "nvcc -dlink kernel1.o kernel2.o -o device_link.o"
+    },
+    {
+      "long": "--relocatable-device-code",
+      "short": "-rdc",
+      "description": "Enable or disable the generation of relocatable device code. Use =true or =false.",
+      "arguments": "BOOL",
+      "argument_type": "string",
+      "default": "false",
+      "example": "nvcc -rdc=true kernel.cu -o kernel.o"
+    },
+    {
+      "long": "--extended-lambda",
+      "short": "-extended-lambda",
+      "description": "Enable extended lambda support, allowing __device__ lambdas in host code.",
+      "example": "nvcc --extended-lambda kernel.cu -o kernel"
+    },
+    {
+      "long": "--expt-relaxed-constexpr",
+      "description": "Enable experimental relaxed constexpr support for device code.",
+      "example": "nvcc --expt-relaxed-constexpr kernel.cu -o kernel"
+    },
+    {
+      "long": "--use_fast_math",
+      "short": "-use_fast_math",
+      "description": "Enable fast math operations on device code. Trades precision for performance.",
+      "example": "nvcc --use_fast_math kernel.cu -o kernel"
+    },
+    {
+      "long": "--fmad",
+      "description": "Enable or disable fused multiply-add operations. Use =true or =false.",
+      "arguments": "BOOL",
+      "argument_type": "string",
+      "default": "true",
+      "example": "nvcc --fmad=false kernel.cu -o kernel"
+    },
+    {
+      "long": "--maxrregcount",
+      "short": "-maxrregcount",
+      "description": "Limit the number of registers per thread. Can increase occupancy at the cost of register spilling.",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "example": "nvcc --maxrregcount=32 kernel.cu -o kernel"
+    },
+    {
+      "long": "--verbose",
+      "short": "-v",
+      "description": "Enable verbose output showing the compilation steps executed.",
+      "example": "nvcc -v kernel.cu -o kernel"
+    },
+    {
+      "long": "--version",
+      "short": "-V",
+      "description": "Display version information for nvcc and the CUDA toolkit.",
+      "example": "nvcc --version"
+    },
+    {
+      "long": "--help",
+      "short": "-h",
+      "description": "Display help information and list of available options."
+    },
+    {
+      "long": "--dryrun",
+      "short": "-dryrun",
+      "description": "Print the compilation commands without executing them. Useful for understanding the compilation process.",
+      "example": "nvcc -dryrun kernel.cu -o kernel"
+    },
+    {
+      "long": "--keep",
+      "short": "-keep",
+      "description": "Keep intermediate compilation files (preprocessed, PTX, cubin, etc.).",
+      "example": "nvcc --keep kernel.cu -o kernel"
+    },
+    {
+      "long": "--keep-dir",
+      "description": "Specify directory for keeping intermediate files.",
+      "arguments": "PATH",
+      "argument_type": "path",
+      "example": "nvcc --keep --keep-dir=./intermediate kernel.cu -o kernel"
+    },
+    {
+      "long": "--ccbin",
+      "short": "-ccbin",
+      "description": "Specify the host compiler executable or directory.",
+      "arguments": "PATH",
+      "argument_type": "path",
+      "example": "nvcc -ccbin /usr/bin/g++-11 kernel.cu -o kernel"
+    },
+    {
+      "long": "--cudart",
+      "description": "Specify which CUDA runtime library to use: none, shared, or static.",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "default": "static",
+      "example": "nvcc --cudart=shared kernel.cu -o kernel"
+    },
+    {
+      "long": "--default-stream",
+      "description": "Specify the default stream behavior: legacy, per-thread, or null.",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "default": "legacy",
+      "example": "nvcc --default-stream per-thread kernel.cu -o kernel"
+    },
+    {
+      "long": "--threads",
+      "description": "Specify the number of threads to use for parallel compilation.",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "example": "nvcc --threads 8 kernel.cu -o kernel"
+    },
+    {
+      "long": "--Werror",
+      "description": "Treat all warnings as errors.",
+      "arguments": "KIND",
+      "argument_type": "string",
+      "example": "nvcc --Werror all-warnings kernel.cu -o kernel"
+    },
+    {
+      "long": "--diag-suppress",
+      "description": "Suppress specific diagnostic warnings by number.",
+      "arguments": "DIAG_NUMBER",
+      "argument_type": "string",
+      "example": "nvcc --diag-suppress 20012 kernel.cu -o kernel"
+    }
+  ],
+  "output_formats": {
+    "executable": "Linked executable file for the target platform. Default output when no specific output type is requested.",
+    "object": "Compiled object file (.o on Linux, .obj on Windows). Generated with -c flag.",
+    "ptx": "PTX intermediate representation (.ptx). Human-readable, portable across GPU architectures. Generated with --ptx flag.",
+    "cubin": "CUDA binary (.cubin). Architecture-specific machine code. Generated with --cubin flag.",
+    "fatbin": "Fat binary containing code for multiple architectures. Generated with --fatbin flag or implicitly when using multiple -gencode options.",
+    "shared_library": "Shared/dynamic library (.so on Linux, .dll on Windows). Generated with --shared flag."
+  },
+  "environment_variables": [
+    {
+      "name": "CUDA_PATH",
+      "description": "Specifies the root directory of the CUDA Toolkit installation.",
+      "example": "CUDA_PATH=/usr/local/cuda-12.0",
+      "affects_command": "nvcc uses this to locate CUDA headers, libraries, and tools when not in the default location."
+    },
+    {
+      "name": "NVCC_PREPEND_FLAGS",
+      "description": "Flags to prepend to every nvcc invocation.",
+      "example": "NVCC_PREPEND_FLAGS=-arch=sm_80",
+      "affects_command": "These flags are added before any command-line flags, allowing system-wide defaults."
+    },
+    {
+      "name": "NVCC_APPEND_FLAGS",
+      "description": "Flags to append to every nvcc invocation.",
+      "example": "NVCC_APPEND_FLAGS=-lineinfo",
+      "affects_command": "These flags are added after command-line flags, useful for enforcing options."
+    },
+    {
+      "name": "PATH",
+      "description": "System path for locating executables.",
+      "example": "PATH=/usr/local/cuda/bin:$PATH",
+      "affects_command": "nvcc must be in PATH or invoked with full path. Also used to locate the host compiler."
+    },
+    {
+      "name": "LD_LIBRARY_PATH",
+      "description": "Library search path on Linux systems.",
+      "example": "LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH",
+      "affects_command": "Required for running CUDA applications when using shared CUDA runtime."
+    },
+    {
+      "name": "CUDA_HOME",
+      "description": "Alternative to CUDA_PATH for specifying CUDA installation directory.",
+      "example": "CUDA_HOME=/usr/local/cuda",
+      "affects_command": "Used by some build systems and scripts to locate CUDA installation."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - compilation completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - compilation failed due to errors in source code or invalid options"
+    },
+    {
+      "code": 2,
+      "meaning": "Error - internal compiler error or resource exhaustion"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Compile a simple CUDA program",
+      "command": "nvcc hello.cu -o hello",
+      "requires_root": false
+    },
+    {
+      "description": "Compile for a specific GPU architecture (Ampere)",
+      "command": "nvcc -arch=sm_80 kernel.cu -o kernel",
+      "requires_root": false
+    },
+    {
+      "description": "Compile for multiple GPU architectures (fat binary)",
+      "command": "nvcc -gencode arch=compute_70,code=sm_70 -gencode arch=compute_80,code=sm_80 -gencode arch=compute_90,code=sm_90 kernel.cu -o kernel",
+      "requires_root": false
+    },
+    {
+      "description": "Compile with debugging enabled for GPU code",
+      "command": "nvcc -G -g kernel.cu -o kernel_debug",
+      "requires_root": false
+    },
+    {
+      "description": "Compile with line info for profiling (without disabling optimizations)",
+      "command": "nvcc -O3 -lineinfo kernel.cu -o kernel",
+      "requires_root": false
+    },
+    {
+      "description": "Compile with maximum optimization",
+      "command": "nvcc -O3 --use_fast_math kernel.cu -o kernel",
+      "requires_root": false
+    },
+    {
+      "description": "Compile with C++17 standard",
+      "command": "nvcc -std=c++17 kernel.cu -o kernel",
+      "requires_root": false
+    },
+    {
+      "description": "Pass flags to the host compiler",
+      "command": "nvcc -Xcompiler \"-Wall,-Wextra,-O3\" kernel.cu -o kernel",
+      "requires_root": false
+    },
+    {
+      "description": "Compile to object file only (no linking)",
+      "command": "nvcc -c kernel.cu -o kernel.o",
+      "requires_root": false
+    },
+    {
+      "description": "Separate compilation with relocatable device code",
+      "command": "nvcc -dc -arch=sm_80 kernel1.cu -o kernel1.o && nvcc -dc -arch=sm_80 kernel2.cu -o kernel2.o && nvcc -arch=sm_80 kernel1.o kernel2.o -o combined",
+      "requires_root": false
+    },
+    {
+      "description": "Generate PTX for inspection",
+      "command": "nvcc --ptx -arch=sm_80 kernel.cu -o kernel.ptx",
+      "requires_root": false
+    },
+    {
+      "description": "Compile with verbose output to see compilation steps",
+      "command": "nvcc -v kernel.cu -o kernel 2>&1",
+      "requires_root": false
+    },
+    {
+      "description": "Link with CUDA libraries (cuBLAS)",
+      "command": "nvcc kernel.cu -lcublas -o kernel",
+      "requires_root": false
+    },
+    {
+      "description": "Build a shared library",
+      "command": "nvcc --shared -Xcompiler -fPIC kernel.cu -o libkernel.so",
+      "requires_root": false
+    },
+    {
+      "description": "Specify host compiler version",
+      "command": "nvcc -ccbin /usr/bin/g++-11 kernel.cu -o kernel",
+      "requires_root": false
+    },
+    {
+      "description": "Limit register usage for higher occupancy",
+      "command": "nvcc --maxrregcount=32 -arch=sm_80 kernel.cu -o kernel",
+      "requires_root": false
+    },
+    {
+      "description": "Dry run to see compilation commands",
+      "command": "nvcc -dryrun kernel.cu -o kernel",
+      "output_example": "#$ gcc -D__CUDA_ARCH__=800 ... -c kernel.cu -o kernel.o\n#$ ptxas -arch=sm_80 ... kernel.ptx -o kernel.cubin\n#$ ...",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "nvcc fatal   : Unsupported gpu architecture 'compute_XX'",
+      "meaning": "The specified compute capability is not supported by this version of CUDA",
+      "resolution": "Check supported architectures for your CUDA version using 'nvcc --help' or upgrade CUDA Toolkit for newer GPU support."
+    },
+    {
+      "message": "nvcc fatal   : Cannot find compiler 'cl.exe' in PATH",
+      "meaning": "On Windows, nvcc cannot find the Visual Studio compiler",
+      "resolution": "Install Visual Studio with C++ development tools. Run nvcc from a Visual Studio Developer Command Prompt."
+    },
+    {
+      "message": "nvcc fatal   : Host compiler targets unsupported OS",
+      "meaning": "The host compiler is not compatible with this version of CUDA",
+      "resolution": "Use a supported host compiler version. Check CUDA release notes for compatible compiler versions."
+    },
+    {
+      "message": "ptxas fatal   : Unresolved extern function",
+      "meaning": "Device code references a function that is not defined or linked",
+      "resolution": "Ensure all device functions are defined or use separate compilation (-dc) and device linking (-dlink)."
+    },
+    {
+      "message": "error: calling a __host__ function from a __global__ function is not allowed",
+      "meaning": "GPU kernel code is calling a CPU-only function",
+      "resolution": "Mark the called function with __device__ or __host__ __device__ qualifiers."
+    },
+    {
+      "message": "error: identifier 'X' is undefined",
+      "meaning": "Variable or function is used but not declared in the current scope",
+      "resolution": "Check include paths and ensure headers are included. Verify variable declarations."
+    },
+    {
+      "message": "ptxas error   : Entry function 'X' uses too much shared memory",
+      "meaning": "Kernel requests more shared memory than available on the target architecture",
+      "resolution": "Reduce shared memory usage or use dynamic shared memory with smaller static allocation."
+    },
+    {
+      "message": "nvlink error   : Undefined reference to 'X'",
+      "meaning": "Linker cannot find the definition of a symbol used in device code",
+      "resolution": "Ensure all source files are compiled with -dc and linked properly. Check that required libraries are linked."
+    },
+    {
+      "message": "error: namespace 'std' has no member 'X' in device code",
+      "meaning": "Attempting to use host-only STL features in device code",
+      "resolution": "Use CUDA-compatible alternatives or thrust library for GPU-compatible containers and algorithms."
+    },
+    {
+      "message": "nvcc fatal   : redefinition of argument 'arch'",
+      "meaning": "The -arch or -gencode option is specified with conflicting values",
+      "resolution": "Use consistent architecture specifications. Prefer -gencode for multiple architectures."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "cuda-gdb",
+      "nsys",
+      "ncu",
+      "cuda-memcheck",
+      "compute-sanitizer",
+      "ptxas",
+      "cuobjdump",
+      "nvdisasm"
+    ],
+    "uses_library": [
+      "CUDA Runtime API",
+      "CUDA Driver API",
+      "cuBLAS",
+      "cuFFT",
+      "cuDNN",
+      "NCCL"
+    ],
+    "notes": "nvcc integrates with debuggers (cuda-gdb) when compiled with -G flag, and profilers (nsys, ncu) when compiled with -lineinfo. The generated binaries can be analyzed with cuobjdump and nvdisasm. For optimal profiling, always include -lineinfo in production builds."
+  },
+  "permissions": {
+    "read_operations": "Standard user permissions sufficient for compilation.",
+    "write_operations": "Write access to output directory required. Temporary files written to TMPDIR or system temp.",
+    "notes": "Running compiled CUDA programs may require GPU access permissions. In containerized environments, ensure CUDA device nodes are accessible."
+  },
+  "limitations": [
+    "Host compiler version must be compatible with CUDA Toolkit version",
+    "Cannot mix object files compiled with different CUDA versions",
+    "Fat binaries increase executable size linearly with number of architectures",
+    "Separate compilation requires all object files use same -arch setting",
+    "Debug builds (-G) significantly reduce GPU performance",
+    "Some C++ features may not be fully supported in device code",
+    "Template instantiation depth limits may be lower for device code",
+    "Dynamic parallelism requires compute capability 3.5 or higher",
+    "Link-time optimization (LTO) support varies by architecture"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": ["compute_capability"],
+        "description": "nvcc uses GPU compute capability to validate architecture targets and optimize code generation for the installed GPUs"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU compute capability information for architecture targeting"
+      },
+      {
+        "command": "cuda-gdb",
+        "shared_state": "Debug symbols and line information when compiled with -G or -lineinfo"
+      },
+      {
+        "command": "nsys",
+        "shared_state": "Line information for source correlation when compiled with -lineinfo"
+      },
+      {
+        "command": "ncu",
+        "shared_state": "Line information for source correlation when compiled with -lineinfo"
+      }
+    ]
+  }
+}

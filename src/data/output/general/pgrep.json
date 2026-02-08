@@ -1,0 +1,125 @@
+{
+  "command": "pgrep",
+  "category": "general",
+  "description": "Find processes by name pattern. Returns PIDs of matching processes. Essential for scripting process checks in HPC environments.",
+  "synopsis": "pgrep [options] <pattern>",
+  "version_documented": "procps 3.3+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/pgrep.1.html"],
+  "installation": {
+    "package": "procps",
+    "notes": "Part of procps, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-u",
+      "long": "--uid",
+      "description": "Match by user",
+      "arguments": "<user>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-f",
+      "long": "--full",
+      "description": "Match full command line"
+    },
+    {
+      "short": "-l",
+      "long": "--list-name",
+      "description": "List PID and name"
+    },
+    {
+      "short": "-a",
+      "long": "--list-full",
+      "description": "List PID and full command"
+    },
+    {
+      "short": "-c",
+      "long": "--count",
+      "description": "Count matches only"
+    },
+    {
+      "short": "-x",
+      "long": "--exact",
+      "description": "Exact match"
+    },
+    {
+      "short": "-n",
+      "long": "--newest",
+      "description": "Newest process only"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Found matches"
+    },
+    {
+      "code": 1,
+      "meaning": "No matches"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Find PIDs by name",
+      "command": "pgrep python",
+      "output_example": "12345\n12346\n12347",
+      "requires_root": false
+    },
+    {
+      "description": "List with names",
+      "command": "pgrep -la python",
+      "requires_root": false
+    },
+    {
+      "description": "Count processes",
+      "command": "pgrep -c slurmstepd",
+      "requires_root": false
+    },
+    {
+      "description": "Find by full command",
+      "command": "pgrep -f 'train.py'",
+      "requires_root": false
+    },
+    {
+      "description": "User's processes",
+      "command": "pgrep -u $USER",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [],
+  "interoperability": {
+    "related_commands": ["pkill", "ps", "pidof", "kill"],
+    "notes": "Use pgrep to find PIDs before pkill. Exit code 1 means no match - useful in scripts. -f flag essential for Python/Java where process name is interpreter."
+  },
+  "permissions": {
+    "read_operations": "No special permissions",
+    "write_operations": "N/A - read-only",
+    "notes": "Can see all processes"
+  },
+  "limitations": [
+    "Pattern is regex",
+    "May match more than expected",
+    "Use -x for exact matching"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_process_state",
+        "fields": ["pid", "process_name"],
+        "description": "Finds processes including GPU processes"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ps",
+        "shared_state": "Found PIDs visible in ps"
+      },
+      {
+        "command": "pkill",
+        "shared_state": "Same pattern matching"
+      }
+    ]
+  }
+}

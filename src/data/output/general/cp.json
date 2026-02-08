@@ -1,0 +1,161 @@
+{
+  "command": "cp",
+  "category": "general",
+  "description": "Copy files and directories. Duplicates files with various preservation options. Essential for staging data and backing up HPC job inputs/outputs.",
+  "synopsis": "cp [options] <source>... <dest>",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/cp.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-r",
+      "long": "--recursive",
+      "description": "Copy directories recursively"
+    },
+    {
+      "short": "-p",
+      "description": "Preserve mode, ownership, timestamps"
+    },
+    {
+      "short": "-a",
+      "long": "--archive",
+      "description": "Archive mode (-dR --preserve=all)"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Explain what is being done"
+    },
+    {
+      "short": "-i",
+      "long": "--interactive",
+      "description": "Prompt before overwrite"
+    },
+    {
+      "short": "-n",
+      "long": "--no-clobber",
+      "description": "Do not overwrite existing"
+    },
+    {
+      "short": "-u",
+      "long": "--update",
+      "description": "Copy only when source is newer"
+    },
+    {
+      "short": "-l",
+      "long": "--link",
+      "description": "Hard link instead of copy"
+    },
+    {
+      "short": "-s",
+      "long": "--symbolic-link",
+      "description": "Symbolic link instead of copy"
+    },
+    {
+      "long": "--sparse",
+      "description": "Control sparse file creation",
+      "arguments": "<when>",
+      "argument_type": "string"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Copy file",
+      "command": "cp source.txt dest.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Copy directory recursively",
+      "command": "cp -r project/ backup/",
+      "requires_root": false
+    },
+    {
+      "description": "Archive copy preserving all",
+      "command": "cp -a /data/dataset /scratch/user/",
+      "requires_root": false
+    },
+    {
+      "description": "Copy with progress (large files)",
+      "command": "cp -v large_model.pt /scratch/",
+      "requires_root": false
+    },
+    {
+      "description": "Update only newer files",
+      "command": "cp -ru source_dir/* dest_dir/",
+      "requires_root": false
+    },
+    {
+      "description": "Stage job input data",
+      "command": "cp -a /shared/datasets/imagenet /local/scratch/",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "omitting directory",
+      "meaning": "Tried to copy directory without -r",
+      "resolution": "Use -r for directories"
+    },
+    {
+      "message": "No space left on device",
+      "meaning": "Destination filesystem full",
+      "resolution": "Free space or use different location"
+    },
+    {
+      "message": "Permission denied",
+      "meaning": "Cannot read source or write destination",
+      "resolution": "Check permissions"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["rsync", "mv", "scp"],
+    "notes": "Use rsync for large transfers with resume. -a is preferred for full backups. --sparse handles sparse files efficiently."
+  },
+  "permissions": {
+    "read_operations": "Read source files",
+    "write_operations": "Write destination",
+    "notes": "Preserving ownership requires root"
+  },
+  "limitations": [
+    "No built-in progress bar (use rsync)",
+    "No resume on interrupt",
+    "Cross-filesystem preserves limited without -a"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads source files"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Creates copied files",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ls",
+        "shared_state": "Copied files visible in listing"
+      }
+    ]
+  }
+}

@@ -1,0 +1,376 @@
+{
+  "command": "iostat",
+  "category": "monitoring",
+  "description": "Report CPU statistics and I/O statistics for devices and partitions. The iostat command monitors system input/output device loading by observing the time devices are active in relation to their average transfer rates. It generates reports useful for identifying performance bottlenecks in storage subsystems. Part of the sysstat package, iostat is essential for monitoring disk I/O performance on HPC nodes, especially for workloads involving large data transfers to NVMe drives, parallel filesystems, or local scratch storage.",
+  "synopsis": "iostat [options] [interval [count]]",
+  "version_documented": "sysstat 12.5+",
+  "source_urls": [
+    "https://man7.org/linux/man-pages/man1/iostat.1.html",
+    "https://github.com/sysstat/sysstat"
+  ],
+  "installation": {
+    "package": "sysstat",
+    "notes": "Part of the sysstat package which includes system performance monitoring tools (iostat, mpstat, pidstat, sar). Install with 'apt install sysstat' on Debian/Ubuntu, 'yum install sysstat' on RHEL/CentOS, or 'dnf install sysstat' on Fedora."
+  },
+  "global_options": [
+    {
+      "short": "-c",
+      "description": "Display only the CPU utilization report. Shows user, nice, system, iowait, steal, and idle CPU percentages.",
+      "example": "iostat -c"
+    },
+    {
+      "short": "-d",
+      "description": "Display only the device utilization report. Shows statistics for block devices.",
+      "example": "iostat -d"
+    },
+    {
+      "short": "-g",
+      "description": "Display statistics for a group of devices. A group name must be specified and devices can be provided as arguments.",
+      "arguments": "<group_name> {device [...] | ALL}",
+      "argument_type": "string",
+      "example": "iostat -g nvme nvme0n1 nvme1n1"
+    },
+    {
+      "short": "-H",
+      "description": "Only report global statistics for group, not individual devices within the group. Must be used with -g option.",
+      "example": "iostat -g nvme -H nvme0n1 nvme1n1"
+    },
+    {
+      "short": "-h",
+      "description": "Human readable output. Print sizes in human readable format (e.g., 1.0k, 1.2M). Also implies --pretty.",
+      "example": "iostat -h"
+    },
+    {
+      "short": "-j",
+      "description": "Display persistent device names. Options include ID, LABEL, PATH, or UUID.",
+      "arguments": "{ID | LABEL | PATH | UUID | ...}",
+      "argument_type": "string",
+      "example": "iostat -j UUID"
+    },
+    {
+      "short": "-k",
+      "description": "Display statistics in kilobytes per second instead of blocks per second.",
+      "example": "iostat -dk"
+    },
+    {
+      "short": "-m",
+      "description": "Display statistics in megabytes per second instead of blocks or kilobytes per second.",
+      "example": "iostat -dm"
+    },
+    {
+      "short": "-N",
+      "description": "Display the registered device mapper names for any device mapper devices. Useful for LVM volumes.",
+      "example": "iostat -N"
+    },
+    {
+      "short": "-o",
+      "description": "Display statistics in JSON format. Output is structured for easy parsing by scripts and monitoring tools.",
+      "arguments": "JSON",
+      "argument_type": "string",
+      "example": "iostat -o JSON"
+    },
+    {
+      "short": "-p",
+      "description": "Display statistics for block devices and all their partitions. Can specify specific device(s) or ALL.",
+      "arguments": "[device[,...] | ALL]",
+      "argument_type": "string",
+      "example": "iostat -p sda"
+    },
+    {
+      "short": "-s",
+      "description": "Display a short (narrow) version of the report. Useful for wide terminals or many devices.",
+      "example": "iostat -s"
+    },
+    {
+      "short": "-t",
+      "description": "Print the time for each report displayed. The timestamp format matches the system locale.",
+      "example": "iostat -t"
+    },
+    {
+      "short": "-x",
+      "description": "Display extended statistics including read/write operations, merge counts, sectors, response times, and utilization percentages.",
+      "example": "iostat -x"
+    },
+    {
+      "short": "-y",
+      "description": "Omit the first report with statistics since system boot. Only display statistics since the previous report.",
+      "example": "iostat -y 1"
+    },
+    {
+      "short": "-z",
+      "description": "Omit output for devices that did not have any activity during the sample period.",
+      "example": "iostat -z"
+    },
+    {
+      "long": "--dec",
+      "description": "Specify the number of decimal places to use for displaying values.",
+      "arguments": "{0 | 1 | 2}",
+      "argument_type": "integer",
+      "default": "2",
+      "example": "iostat --dec=0"
+    },
+    {
+      "long": "--human",
+      "description": "Print sizes in human readable format (alias for -h).",
+      "example": "iostat --human"
+    },
+    {
+      "long": "--pretty",
+      "description": "Make the device utilization report easier to read by aligning columns.",
+      "example": "iostat --pretty"
+    },
+    {
+      "short": "-V",
+      "description": "Print version number and exit.",
+      "example": "iostat -V"
+    },
+    {
+      "short": "-?",
+      "description": "Display usage information and exit.",
+      "example": "iostat -?"
+    }
+  ],
+  "output_formats": {
+    "default": "Text-based tabular output showing CPU and device statistics with columns for various metrics.",
+    "extended": "Extended text output (-x) with additional columns for detailed I/O metrics including await, svctm, and %util.",
+    "json": "JSON formatted output (-o JSON) for programmatic parsing and integration with monitoring systems.",
+    "human": "Human-readable output (-h) with sizes displayed in K, M, G units."
+  },
+  "environment_variables": [
+    {
+      "name": "S_COLORS",
+      "description": "Controls colorized output. Set to 'auto', 'always', or 'never'.",
+      "example": "S_COLORS=auto",
+      "affects_command": "Determines whether output is colorized when writing to a terminal."
+    },
+    {
+      "name": "S_COLORS_SGR",
+      "description": "Specifies the SGR (Select Graphic Rendition) codes for colors.",
+      "affects_command": "Customizes the specific color codes used in colorized output."
+    },
+    {
+      "name": "S_TIME_FORMAT",
+      "description": "Specifies the time format to use with -t option.",
+      "example": "S_TIME_FORMAT=ISO",
+      "affects_command": "Changes the timestamp format in the report header."
+    },
+    {
+      "name": "POSIXLY_CORRECT",
+      "description": "When set, enables POSIX-compliant behavior.",
+      "affects_command": "May affect certain output formatting and option handling."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - invalid option, device not found, or other failure"
+    },
+    {
+      "code": 2,
+      "meaning": "Usage error - incorrect syntax or missing required arguments"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display basic CPU and device I/O statistics",
+      "command": "iostat",
+      "output_example": "Linux 5.4.0-150-generic (compute-node-01)   01/15/2024   _x86_64_  (64 CPU)\n\navg-cpu:  %user   %nice %system %iowait  %steal   %idle\n           2.31    0.00    1.05    0.42    0.00   96.22\n\nDevice             tps    kB_read/s    kB_wrtn/s    kB_dscd/s    kB_read    kB_wrtn    kB_dscd\nnvme0n1         125.34      2048.50      4096.25         0.00   89234567  178435621          0\nsda               8.21        64.32       128.64         0.00    2801234    5602345          0",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor extended I/O statistics with timestamps every 2 seconds",
+      "command": "iostat -xtz 2",
+      "output_example": "01/15/2024 10:30:45 AM\navg-cpu:  %user   %nice %system %iowait  %steal   %idle\n           5.12    0.00    2.34    1.23    0.00   91.31\n\nDevice            r/s     rkB/s   rrqm/s  %rrqm r_await rareq-sz     w/s     wkB/s   wrqm/s  %wrqm w_await wareq-sz     d/s     dkB/s   drqm/s  %drqm d_await dareq-sz  aqu-sz  %util\nnvme0n1        456.00  58368.00     0.00   0.00    0.15   128.00  234.00  29952.00     5.00   2.09    0.25   128.00    0.00      0.00     0.00   0.00    0.00     0.00    0.12  15.60",
+      "requires_root": false
+    },
+    {
+      "description": "Display device statistics in megabytes per second for specific NVMe devices",
+      "command": "iostat -dm nvme0n1 nvme1n1",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor disk I/O in JSON format for programmatic parsing",
+      "command": "iostat -xo JSON 1 1",
+      "requires_root": false
+    },
+    {
+      "description": "Detect I/O bottlenecks by monitoring utilization percentage",
+      "command": "iostat -x 1 | awk '/^nvme/ {if ($NF > 80) print \"High utilization on \" $1 \": \" $NF \"%\"}'",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor all partitions on a specific device",
+      "command": "iostat -p sda",
+      "requires_root": false
+    },
+    {
+      "description": "Display human-readable statistics with aligned columns",
+      "command": "iostat -h --pretty",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor NVMe drives with extended statistics excluding idle devices",
+      "command": "iostat -xz nvme0n1 nvme1n1 2 5",
+      "requires_root": false
+    },
+    {
+      "description": "Group multiple storage devices for aggregate statistics",
+      "command": "iostat -g storage -H sda sdb sdc 1",
+      "requires_root": false
+    },
+    {
+      "description": "Skip initial boot statistics and show only current activity",
+      "command": "iostat -xy 1",
+      "requires_root": false
+    },
+    {
+      "description": "Display device mapper names for LVM volumes",
+      "command": "iostat -Nx",
+      "requires_root": false
+    },
+    {
+      "description": "Capture extended I/O statistics to a log file for later analysis",
+      "command": "iostat -xt 5 > /var/log/iostat_$(date +%Y%m%d).log &",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "iostat: invalid option",
+      "meaning": "An unrecognized option was specified on the command line",
+      "resolution": "Check the option syntax with 'iostat -?' and verify the option is supported by your sysstat version."
+    },
+    {
+      "message": "Cannot find disk data",
+      "meaning": "The specified device does not exist or cannot be found in /proc/diskstats",
+      "resolution": "Verify the device name with 'lsblk' or 'ls /dev/'. Ensure the device is connected and recognized by the kernel."
+    },
+    {
+      "message": "Please give a group name",
+      "meaning": "The -g option requires a group name to be specified",
+      "resolution": "Provide a group name after -g, e.g., 'iostat -g mygroup sda sdb'."
+    },
+    {
+      "message": "Group name already used",
+      "meaning": "The specified group name conflicts with an existing device or group",
+      "resolution": "Choose a different group name that does not match any existing device names."
+    },
+    {
+      "message": "Not that many processors",
+      "meaning": "A CPU number was specified that exceeds the available processors",
+      "resolution": "Check available CPUs with 'nproc' or 'lscpu' and specify a valid CPU number."
+    },
+    {
+      "message": "Invalid data format",
+      "meaning": "Invalid argument provided for the -o option",
+      "resolution": "Use 'JSON' as the argument for structured output: 'iostat -o JSON'."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "sar",
+      "vmstat",
+      "lsblk",
+      "df",
+      "mpstat",
+      "pidstat",
+      "nfsiostat",
+      "cifsiostat",
+      "blktrace",
+      "iotop",
+      "dstat",
+      "atop",
+      "nvme",
+      "smartctl"
+    ],
+    "uses_library": ["sysstat"],
+    "notes": "The iostat command reads I/O statistics from /proc/diskstats and CPU statistics from /proc/stat. On HPC systems, iostat is essential for monitoring storage performance, especially for NVMe drives handling large dataset I/O. Use in conjunction with sar for historical analysis, vmstat for memory and CPU context, and lsblk/df for device topology. For GPU workloads, I/O bottlenecks detected by iostat may impact data loading performance. The %util column indicates device saturation - values consistently above 80% suggest I/O bottlenecks that may require faster storage or I/O optimization."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required. All users can view I/O statistics for all devices as the data is read from /proc/diskstats which is world-readable.",
+    "write_operations": "iostat is a read-only monitoring tool and does not modify any system state.",
+    "notes": "Some advanced features or device-specific statistics may require appropriate permissions in containerized or restricted environments."
+  },
+  "limitations": [
+    "Statistics are point-in-time snapshots; CPU and I/O percentages represent activity since last sample",
+    "The first report shows statistics since system boot; use -y to skip this initial report",
+    "Does not show per-process I/O statistics; use pidstat -d or iotop for process-level I/O",
+    "Network filesystem I/O (NFS, CIFS) requires separate tools (nfsiostat, cifsiostat)",
+    "Device mapper and LVM statistics may require -N option for readable names",
+    "Partition statistics may not sum exactly to device totals due to timing differences",
+    "On systems with many devices, output can be overwhelming; use -z to hide inactive devices",
+    "The svctm field is deprecated and will be removed in future versions; use await instead"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "cpu_usage_user",
+          "cpu_usage_system",
+          "cpu_usage_nice",
+          "cpu_usage_idle",
+          "cpu_usage_iowait",
+          "cpu_usage_steal"
+        ],
+        "description": "Reads CPU utilization statistics from /proc/stat including user, system, nice, idle, iowait, and steal time percentages."
+      },
+      {
+        "state_domain": "storage_local_state",
+        "fields": [
+          "device_name",
+          "read_ops_per_second",
+          "write_ops_per_second",
+          "read_bytes_per_second",
+          "write_bytes_per_second",
+          "read_merge_per_second",
+          "write_merge_per_second",
+          "await_ms",
+          "read_await_ms",
+          "write_await_ms",
+          "queue_length",
+          "utilization_percent",
+          "service_time_ms"
+        ],
+        "description": "Reads block device I/O statistics from /proc/diskstats including transfer rates, queue depths, latencies, and utilization for local storage devices including NVMe, SATA, and SAS drives."
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Block device I/O activity",
+        "effect": "I/O statistics (tps, read/write rates, await times) update as read/write operations occur on storage devices."
+      },
+      {
+        "state_change": "CPU scheduling and execution",
+        "effect": "CPU utilization percentages change based on workload, especially iowait which reflects I/O-bound waiting."
+      },
+      {
+        "state_change": "Device queue depth changes",
+        "effect": "Queue length (aqu-sz) and utilization (%util) metrics reflect device saturation levels."
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "sar",
+        "shared_state": "Historical I/O statistics collected by sar -d should match iostat readings at the same time intervals."
+      },
+      {
+        "command": "vmstat",
+        "shared_state": "CPU utilization (us, sy, id, wa) and block I/O (bi, bo) columns are derived from the same kernel statistics."
+      },
+      {
+        "command": "lsblk",
+        "shared_state": "Device names and topology shown by lsblk correspond to devices reported by iostat."
+      },
+      {
+        "command": "df",
+        "shared_state": "Filesystem-to-device mappings from df correspond to device names in iostat output."
+      }
+    ]
+  }
+}

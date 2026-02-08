@@ -1,0 +1,110 @@
+{
+  "$schema": "../../schema.json",
+  "scenario_id": "gpu_failure",
+  "scenario_name": "GPU Falls Off Bus",
+  "description": "Simulates a GPU becoming unavailable due to hardware failure, uncorrectable ECC error, or driver crash",
+  "severity": "critical",
+  "initial_state_change": {
+    "domain": "gpu_state",
+    "affected_entity": "GPU index 3 on node dgx-node-01",
+    "changes": {
+      "status": "fallen_off_bus",
+      "utilization_gpu": null,
+      "utilization_memory": null,
+      "temperature": null,
+      "power_draw": null,
+      "memory_used": null
+    }
+  },
+  "affected_commands": [
+    {
+      "command": "nvidia-smi",
+      "category": "gpu_management",
+      "output_before": "+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 535.86.05    Driver Version: 535.86.05    CUDA Version: 12.2     |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|===============================+======================+======================|\n|   3  NVIDIA A100-SXM4-80GB On | 00000000:87:00.0 Off |                    0 |\n| N/A   42C    P0    67W / 400W |      0MiB / 81920MiB |      0%      Default |",
+      "output_after": "+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 535.86.05    Driver Version: 535.86.05    CUDA Version: 12.2     |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|===============================+======================+======================|\n|   3  NVIDIA A100-SXM4-80GB ERR| 00000000:87:00.0 Off |                  N/A |\n| N/A   N/A    P0     N/A /  N/A|      N/A /     N/A   |     N/A      Default |\nUnable to determine the device handle for GPU 0000:87:00.0: GPU is lost.",
+      "key_differences": [
+        "GPU shows ERR state",
+        "All metrics show N/A",
+        "Error message about lost GPU"
+      ]
+    },
+    {
+      "command": "nvidia-smi -L",
+      "category": "gpu_management",
+      "output_before": "GPU 0: NVIDIA A100-SXM4-80GB (UUID: GPU-aaaaaaaa-...)\nGPU 1: NVIDIA A100-SXM4-80GB (UUID: GPU-bbbbbbbb-...)\nGPU 2: NVIDIA A100-SXM4-80GB (UUID: GPU-cccccccc-...)\nGPU 3: NVIDIA A100-SXM4-80GB (UUID: GPU-dddddddd-...)",
+      "output_after": "GPU 0: NVIDIA A100-SXM4-80GB (UUID: GPU-aaaaaaaa-...)\nGPU 1: NVIDIA A100-SXM4-80GB (UUID: GPU-bbbbbbbb-...)\nGPU 2: NVIDIA A100-SXM4-80GB (UUID: GPU-cccccccc-...)\nGPU 3: [Unknown] (UUID: GPU-dddddddd-...)",
+      "key_differences": ["GPU 3 shows [Unknown] or may be missing"]
+    },
+    {
+      "command": "dcgmi health -c",
+      "category": "gpu_management",
+      "output_before": "Health Monitor Report\n+------------+--------+--------+\n| Entity     | Health | Checks |\n+============+========+========+\n| GPU 3      | Green  | Passed |\n+------------+--------+--------+",
+      "output_after": "Health Monitor Report\n+------------+--------+--------+\n| Entity     | Health | Checks |\n+============+========+========+\n| GPU 3      | Red    | Failed |\n+------------+--------+--------+\nErrors: GPU 3 - XID error detected, GPU fallen off bus",
+      "key_differences": [
+        "Health status Red",
+        "Failed checks",
+        "XID error message"
+      ]
+    },
+    {
+      "command": "sinfo -N",
+      "category": "cluster_management",
+      "output_before": "NODELIST     PARTITION  STATE\ndgx-node-01  gpu        idle",
+      "output_after": "NODELIST     PARTITION  STATE\ndgx-node-01  gpu        drain",
+      "key_differences": ["Node state changed from idle to drain"]
+    },
+    {
+      "command": "scontrol show node dgx-node-01",
+      "category": "cluster_management",
+      "output_before": "NodeName=dgx-node-01 State=IDLE ...",
+      "output_after": "NodeName=dgx-node-01 State=DRAIN Reason=\"GPU 3 fell off bus - XID 79\" ...",
+      "key_differences": [
+        "State=DRAIN",
+        "Reason field populated with GPU error"
+      ]
+    },
+    {
+      "command": "dmesg | tail",
+      "category": "diagnostics",
+      "output_before": "[no GPU errors]",
+      "output_after": "[12345.678] NVRM: Xid (PCI:0000:87:00): 79, GPU has fallen off the bus.\n[12345.679] NVRM: GPU 0000:87:00.0: GPU has fallen off the bus.",
+      "key_differences": [
+        "XID 79 error in kernel log",
+        "GPU fallen off bus message"
+      ]
+    },
+    {
+      "command": "nvidia-bug-report.sh",
+      "category": "diagnostics",
+      "output_change": "Bug report will capture XID errors and GPU state at time of failure"
+    }
+  ],
+  "recovery_actions": [
+    {
+      "action": "Check dmesg for XID error code",
+      "command": "dmesg | grep -i 'xid\\|nvrm\\|gpu'"
+    },
+    {
+      "action": "Attempt GPU reset (if supported)",
+      "command": "nvidia-smi -r -i 3"
+    },
+    {
+      "action": "Generate bug report for NVIDIA support",
+      "command": "nvidia-bug-report.sh"
+    },
+    {
+      "action": "If reset fails, reboot node",
+      "command": "sudo reboot"
+    },
+    {
+      "action": "After recovery, undrain node",
+      "command": "scontrol update NodeName=dgx-node-01 State=RESUME"
+    }
+  ],
+  "simulator_notes": [
+    "When simulating this scenario, all nvidia-smi queries for GPU 3 should return error state",
+    "SLURM commands should reflect node drain if prolog/epilog configured for GPU health checks",
+    "Any job using GPU 3 should transition to FAILED state",
+    "dcgmi should report health failure for the affected GPU"
+  ]
+}

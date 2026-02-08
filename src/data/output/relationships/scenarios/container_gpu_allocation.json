@@ -1,0 +1,113 @@
+{
+  "$schema": "../../schema.json",
+  "scenario_id": "container_gpu_allocation",
+  "scenario_name": "Container GPU Allocation",
+  "description": "Simulates allocating GPUs to a container using nvidia-container-toolkit, showing visibility and isolation",
+  "severity": "info",
+  "initial_state_change": {
+    "domain": "container_state",
+    "affected_entity": "Container training-job-001",
+    "changes": {
+      "container_id": "abc123def456",
+      "name": "training-job-001",
+      "image": "nvcr.io/nvidia/pytorch:23.10-py3",
+      "status": "running",
+      "gpus_allocated": [0, 1]
+    }
+  },
+  "affected_commands": [
+    {
+      "command": "docker run --gpus '\"device=0,1\"'",
+      "category": "containers",
+      "output_before": "(container not started)",
+      "output_after": "abc123def456...",
+      "key_differences": [
+        "Container ID returned",
+        "Container started with GPU access"
+      ]
+    },
+    {
+      "command": "docker ps",
+      "category": "containers",
+      "output_before": "CONTAINER ID  IMAGE  COMMAND  CREATED  STATUS  PORTS  NAMES",
+      "output_after": "CONTAINER ID   IMAGE                              COMMAND    STATUS         NAMES\nabc123def456   nvcr.io/nvidia/pytorch:23.10-py3  \"bash\"     Up 2 minutes   training-job-001",
+      "key_differences": [
+        "New container appears in list",
+        "Status shows running"
+      ]
+    },
+    {
+      "command": "nvidia-smi (inside container)",
+      "category": "gpu_management",
+      "output_before": "(not applicable)",
+      "output_after": "+-----------------------------------------------------------------------------+\n| GPU  Name        ...  |\n|=============================================================================|\n|   0  NVIDIA A100-SXM4-80GB ...  |\n|   1  NVIDIA A100-SXM4-80GB ...  |",
+      "key_differences": [
+        "Only GPUs 0,1 visible inside container",
+        "GPU indices remapped to 0,1"
+      ]
+    },
+    {
+      "command": "nvidia-smi (on host)",
+      "category": "gpu_management",
+      "output_before": "| Processes: |\n| No running processes found |",
+      "output_after": "| Processes:                                                                  |\n|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |\n|=============================================================================|\n|    0   N/A  N/A     12345      C   /usr/bin/python                  8192MiB |\n|    1   N/A  N/A     12346      C   /usr/bin/python                  8192MiB |",
+      "key_differences": [
+        "Container processes visible on host",
+        "GPU memory allocated"
+      ]
+    },
+    {
+      "command": "docker inspect abc123def456 --format '{{.HostConfig.DeviceRequests}}'",
+      "category": "containers",
+      "output_before": "(container not started)",
+      "output_after": "[{Driver:nvidia Count:0 DeviceIDs:[0 1] Capabilities:[[gpu]] Options:map[]}]",
+      "key_differences": [
+        "Shows GPU device allocation",
+        "DeviceIDs lists allocated GPUs"
+      ]
+    },
+    {
+      "command": "nvidia-smi -L (inside container)",
+      "category": "gpu_management",
+      "output_before": "(not applicable)",
+      "output_after": "GPU 0: NVIDIA A100-SXM4-80GB (UUID: GPU-aaaaaaaa-...)\nGPU 1: NVIDIA A100-SXM4-80GB (UUID: GPU-bbbbbbbb-...)",
+      "key_differences": ["Only 2 GPUs visible", "UUIDs match host GPUs 0,1"]
+    },
+    {
+      "command": "enroot list",
+      "category": "containers",
+      "output_before": "NAME",
+      "output_after": "NAME\ntraining-job-001",
+      "key_differences": ["Container appears in enroot list if using enroot"]
+    }
+  ],
+  "recovery_actions": [
+    {
+      "action": "Check container GPU allocation",
+      "command": "docker inspect abc123def456 | jq '.[].HostConfig.DeviceRequests'"
+    },
+    {
+      "action": "View container logs",
+      "command": "docker logs abc123def456"
+    },
+    {
+      "action": "Enter container for debugging",
+      "command": "docker exec -it abc123def456 bash"
+    },
+    {
+      "action": "Stop container",
+      "command": "docker stop abc123def456"
+    },
+    {
+      "action": "Remove container",
+      "command": "docker rm abc123def456"
+    }
+  ],
+  "simulator_notes": [
+    "Container sees only allocated GPUs, indexed starting from 0",
+    "GPU UUIDs inside container match physical GPU UUIDs",
+    "nvidia-smi on host shows container processes with actual GPU indices",
+    "GPU memory and compute isolation enforced by nvidia-container-toolkit",
+    "CUDA_VISIBLE_DEVICES inside container reflects the allocation"
+  ]
+}

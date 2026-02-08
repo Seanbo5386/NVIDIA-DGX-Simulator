@@ -28,7 +28,32 @@
       "Bash(ls:*)",
       "Bash(xargs:*)",
       "Bash(npm run lint)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "mcp__plugin_playwright_playwright__browser_evaluate",
+      "mcp__plugin_playwright_playwright__browser_click",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_wait_for",
+      "mcp__plugin_playwright_playwright__browser_snapshot",
+      "mcp__plugin_playwright_playwright__browser_install",
+      "mcp__plugin_playwright_playwright__browser_run_code",
+      "mcp__plugin_playwright_playwright__browser_close",
+      "mcp__plugin_playwright_playwright__browser_type",
+      "Bash(npx husky init)",
+      "Bash(npx lint-staged)",
+      "Bash(dir:*)",
+      "Bash(ping:*)",
+      "Bash(git merge:*)",
+      "Bash(timeout /t:*)",
+      "Bash(npm run test:*)",
+      "Bash(taskkill:*)",
+      "Bash(timeout:*)",
+      "Bash(more:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(git stash:*)",
+      "Bash(test:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

@@ -1,0 +1,174 @@
+{
+  "command": "nvidia-persistenced",
+  "category": "gpu_management",
+  "description": "NVIDIA persistence daemon that keeps GPU driver state loaded even when no clients are attached. Eliminates initialization latency when launching GPU applications and prevents driver unloading between jobs. Essential for HPC environments where rapid GPU access is required.",
+  "synopsis": "nvidia-persistenced [options]",
+  "version_documented": "NVIDIA Driver 525+",
+  "source_urls": [
+    "https://docs.nvidia.com/deploy/driver-persistence/index.html"
+  ],
+  "installation": {
+    "package": "nvidia-driver",
+    "notes": "Included with NVIDIA driver installation. Service can be enabled with: systemctl enable nvidia-persistenced"
+  },
+  "global_options": [
+    {
+      "short": "-u",
+      "long": "--user",
+      "description": "Run as specified user (for privilege dropping)",
+      "arguments": "<username>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-g",
+      "long": "--group",
+      "description": "Run as specified group",
+      "arguments": "<groupname>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--persistence-mode",
+      "description": "Enable/disable persistence mode",
+      "arguments": "<0|1>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Increase verbosity"
+    },
+    {
+      "short": "-f",
+      "long": "--no-fork",
+      "description": "Run in foreground (don't daemonize)"
+    },
+    {
+      "long": "--nvidia-cfg-path",
+      "description": "Path to libnvidia-cfg.so",
+      "arguments": "<path>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Start persistence daemon as service",
+      "command": "systemctl start nvidia-persistenced",
+      "requires_root": true
+    },
+    {
+      "description": "Enable persistence daemon at boot",
+      "command": "systemctl enable nvidia-persistenced",
+      "requires_root": true
+    },
+    {
+      "description": "Check daemon status",
+      "command": "systemctl status nvidia-persistenced",
+      "output_example": "● nvidia-persistenced.service - NVIDIA Persistence Daemon\n     Loaded: loaded (/lib/systemd/system/nvidia-persistenced.service; enabled)\n     Active: active (running) since Mon 2024-01-15 10:00:00 UTC; 5 days ago\n   Main PID: 1234 (nvidia-persiste)\n      Tasks: 1 (limit: 4915)\n     Memory: 1.2M\n     CGroup: /system.slice/nvidia-persistenced.service\n             └─1234 /usr/bin/nvidia-persistenced --user nvidia-persistenced",
+      "requires_root": false
+    },
+    {
+      "description": "Verify persistence mode enabled",
+      "command": "nvidia-smi -q | grep 'Persistence Mode'",
+      "output_example": "    Persistence Mode               : Enabled",
+      "requires_root": false
+    },
+    {
+      "description": "Run in foreground for debugging",
+      "command": "nvidia-persistenced --no-fork --verbose",
+      "requires_root": true
+    },
+    {
+      "description": "Enable persistence via nvidia-smi (alternative)",
+      "command": "nvidia-smi -pm 1",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Failed to connect to NVIDIA driver",
+      "meaning": "NVIDIA driver not loaded",
+      "resolution": "Check driver status with nvidia-smi, load driver modules"
+    },
+    {
+      "message": "Unable to create socket",
+      "meaning": "Permission issue or socket path conflict",
+      "resolution": "Check /var/run/nvidia-persistenced permissions"
+    },
+    {
+      "message": "Another instance is already running",
+      "meaning": "Daemon already active",
+      "resolution": "Check with systemctl status nvidia-persistenced"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["nvidia-smi -pm", "nvidia-smi", "systemctl", "dcgmi"],
+    "notes": "nvidia-persistenced is recommended over 'nvidia-smi -pm 1' as it properly manages driver state. Without persistence mode, the first GPU access after idle period incurs ~1-2 second initialization delay."
+  },
+  "permissions": {
+    "read_operations": "N/A - daemon process",
+    "write_operations": "Root required to start/stop daemon",
+    "notes": "Daemon runs as root but can drop privileges with -u/-g options"
+  },
+  "limitations": [
+    "Slightly increases base GPU power consumption",
+    "Must be restarted after driver updates",
+    "Cannot be used with nvidia-smi -pm simultaneously"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": ["gpu_id"],
+        "description": "Monitors all GPUs for persistence"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "gpu_state",
+        "fields": ["persistence_mode"],
+        "description": "Sets persistence mode to Enabled for all GPUs",
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "System boot",
+        "effect": "Persistence mode enabled for all GPUs if service enabled"
+      },
+      {
+        "state_change": "Driver reload",
+        "effect": "Persistence must be re-enabled"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi -q",
+        "shared_state": "Persistence Mode shows Enabled"
+      },
+      {
+        "command": "nvidia-smi -pm 1",
+        "shared_state": "Both methods achieve same persistence state"
+      }
+    ]
+  }
+}

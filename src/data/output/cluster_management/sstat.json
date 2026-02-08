@@ -1,0 +1,305 @@
+{
+  "command": "sstat",
+  "category": "cluster_management",
+  "description": "sstat displays status information about currently running Slurm job steps. It provides real-time statistics on resource usage including CPU, memory, I/O, and energy consumption for active job steps. Unlike sacct which queries historical data from the database, sstat retrieves live information from the compute nodes where job steps are executing. This command is essential for monitoring resource consumption of running jobs, detecting memory issues before OOM kills, and optimizing job resource requests.",
+  "synopsis": "sstat [OPTIONS] -j <jobid[.stepid]>",
+  "version_documented": "Slurm 23.x",
+  "source_urls": ["https://slurm.schedmd.com/sstat.html"],
+  "installation": {
+    "package": "slurm-client or slurm",
+    "notes": "Part of the Slurm workload manager. Requires jobacct_gather plugin to be configured for collecting step-level statistics."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--allsteps",
+      "description": "Display all job steps for the specified job(s), including completed steps that are still in memory. Without this option, only currently running steps are shown."
+    },
+    {
+      "short": "-e",
+      "long": "--helpformat",
+      "description": "Print a list of available format fields and their descriptions. Use this to discover all available statistics fields."
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Print a help message describing all sstat options and exit."
+    },
+    {
+      "short": "-i",
+      "long": "--pidformat",
+      "description": "Expand process IDs (PIDs) for each job step. Shows individual process statistics within each step."
+    },
+    {
+      "short": "-j",
+      "long": "--jobs",
+      "description": "Display information about the specified job(s) or job step(s). Required option. Format: jobid or jobid.stepid. Multiple entries may be comma separated.",
+      "arguments": "job_list",
+      "argument_type": "string",
+      "required": true,
+      "example": "sstat -j 12345 or sstat -j 12345.0"
+    },
+    {
+      "short": "-n",
+      "long": "--noheader",
+      "description": "Do not print header line in output. Useful for scripting when only raw data is needed."
+    },
+    {
+      "long": "--noconvert",
+      "description": "Do not convert units from their original type (e.g., 2048M will not be converted to 2G). Preserves raw numeric values."
+    },
+    {
+      "short": "-o",
+      "long": "--format",
+      "description": "Specify the output format using a comma-separated list of field names. Use -e/--helpformat to see all available fields. Common fields: JobID, MaxRSS, MaxVMSize, AveCPU, AveRSS, MaxDiskRead, MaxDiskWrite, ConsumedEnergy.",
+      "arguments": "format_list",
+      "argument_type": "string",
+      "example": "sstat -j 12345 -o JobID,MaxRSS,MaxVMSize,AveCPU"
+    },
+    {
+      "short": "-p",
+      "long": "--parsable",
+      "description": "Output in parsable format with '|' delimiter. Includes trailing delimiter on each line. Useful for scripting and parsing."
+    },
+    {
+      "short": "-P",
+      "long": "--parsable2",
+      "description": "Output in parsable format with '|' delimiter. Does not include trailing delimiter on each line. Cleaner for parsing."
+    },
+    {
+      "long": "--usage",
+      "description": "Print a brief usage message showing command syntax and exit."
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Report processing details. Provides additional debugging information about the query."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version information for sstat and exit."
+    }
+  ],
+  "output_formats": {
+    "default": "Tabular format showing: JobID, MaxVMSize, MaxVMSizeNode, MaxVMSizeTask, AveVMSize, MaxRSS, MaxRSSNode, MaxRSSTask, AveRSS, MaxPages, MaxPagesNode, MaxPagesTask, AvePages, MinCPU, MinCPUNode, MinCPUTask, AveCPU, NTasks.",
+    "parsable": "Pipe-delimited output via -p or -P options. -P omits trailing delimiter for cleaner parsing.",
+    "format_fields_memory": "MaxVMSize (max virtual memory), MaxVMSizeNode (node with max VM), MaxVMSizeTask (task ID with max VM), AveVMSize (average virtual memory across all tasks), MaxRSS (max resident set size - actual memory used), MaxRSSNode (node with max RSS), MaxRSSTask (task ID with max RSS), AveRSS (average RSS across all tasks), MaxPages (max page faults), MaxPagesNode (node with max pages), MaxPagesTask (task with max pages), AvePages (average page faults).",
+    "format_fields_cpu": "AveCPU (average CPU time - user + system), AveCPUFreq (average weighted CPU frequency), MinCPU (minimum CPU time), MinCPUNode (node with minimum CPU time), MinCPUTask (task with minimum CPU time), NTasks (number of tasks in the step).",
+    "format_fields_disk": "MaxDiskRead (max disk read bytes), MaxDiskReadNode (node with max read), MaxDiskReadTask (task with max read), AveDiskRead (average disk read), MaxDiskWrite (max disk write bytes), MaxDiskWriteNode (node with max write), MaxDiskWriteTask (task with max write), AveDiskWrite (average disk write).",
+    "format_fields_energy": "ConsumedEnergy (total energy consumed in joules), ConsumedEnergyRaw (raw energy value).",
+    "format_fields_tres": "TRESUsageInAve, TRESUsageInMax, TRESUsageInMaxNode, TRESUsageInMaxTask, TRESUsageInMin, TRESUsageInMinNode, TRESUsageInMinTask, TRESUsageInTot, TRESUsageOutAve, TRESUsageOutMax, TRESUsageOutMaxNode, TRESUsageOutMaxTask, TRESUsageOutMin, TRESUsageOutMinNode, TRESUsageOutMinTask, TRESUsageOutTot.",
+    "format_fields_identification": "JobID (job step identifier in format jobid.stepid), Nodelist (nodes where step is running), Pids (process IDs if -i option used)."
+  },
+  "environment_variables": [
+    {
+      "name": "SSTAT_FORMAT",
+      "description": "Default output format. Equivalent to -o option.",
+      "example": "SSTAT_FORMAT=JobID,MaxRSS,MaxVMSize,AveCPU",
+      "affects_command": "Sets the default output format for all sstat invocations"
+    },
+    {
+      "name": "SLURM_CONF",
+      "description": "Path to the Slurm configuration file.",
+      "example": "SLURM_CONF=/etc/slurm/slurm.conf",
+      "affects_command": "Specifies which Slurm configuration to use"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully and statistics were retrieved"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - general error occurred (e.g., invalid options, job not found, communication failure)"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Monitor memory usage of a running job",
+      "command": "sstat -j 12345 -o JobID,MaxRSS,MaxVMSize,AveRSS",
+      "output_example": "JobID         MaxRSS  MaxVMSize     AveRSS \n------------ -------- ---------- ---------- \n12345.0        8.52G    16.32G      7.89G"
+    },
+    {
+      "description": "Monitor CPU usage of a running job step",
+      "command": "sstat -j 12345.0 -o JobID,AveCPU,MinCPU,NTasks",
+      "output_example": "JobID            AveCPU     MinCPU   NTasks \n------------ ---------- ---------- -------- \n12345.0       00:45:32   00:42:18       32"
+    },
+    {
+      "description": "Monitor disk I/O of a running job",
+      "command": "sstat -j 12345 -o JobID,MaxDiskRead,MaxDiskWrite,AveDiskRead,AveDiskWrite",
+      "output_example": "JobID        MaxDiskRead MaxDiskWrite  AveDiskRead AveDiskWrite \n------------ ----------- ------------ ----------- ------------ \n12345.0          125.5G       45.2G        98.3G        38.7G"
+    },
+    {
+      "description": "Display all available steps for a job",
+      "command": "sstat -a -j 12345",
+      "output_example": "JobID      MaxVMSize MaxVMSizeNode  ... \n---------- --------- ------------- ... \n12345.batch    2.5G      node001   ... \n12345.0       16.3G      node002   ... \n12345.1       14.8G      node003   ..."
+    },
+    {
+      "description": "Monitor energy consumption of a running job",
+      "command": "sstat -j 12345 -o JobID,ConsumedEnergy",
+      "output_example": "JobID       ConsumedEnergy \n------------ -------------- \n12345.0            1234567"
+    },
+    {
+      "description": "Display parsable output for scripting",
+      "command": "sstat -P -j 12345 -o JobID,MaxRSS,AveCPU",
+      "output_example": "JobID|MaxRSS|AveCPU\n12345.0|8.52G|00:45:32"
+    },
+    {
+      "description": "Display output without header for piping",
+      "command": "sstat -n -j 12345 -o MaxRSS",
+      "output_example": "8.52G"
+    },
+    {
+      "description": "Show which node and task has highest memory usage",
+      "command": "sstat -j 12345 -o JobID,MaxRSS,MaxRSSNode,MaxRSSTask",
+      "output_example": "JobID         MaxRSS MaxRSSNode MaxRSSTask \n------------ -------- ---------- ---------- \n12345.0        8.52G    node003          5"
+    },
+    {
+      "description": "Monitor multiple jobs simultaneously",
+      "command": "sstat -j 12345,12346,12347 -o JobID,MaxRSS,AveCPU",
+      "output_example": "JobID         MaxRSS     AveCPU \n------------ -------- ---------- \n12345.0        8.52G   00:45:32 \n12346.0        4.21G   00:23:15 \n12347.0       12.34G   01:12:45"
+    },
+    {
+      "description": "Display detailed TRES usage statistics",
+      "command": "sstat -j 12345 -o JobID,TRESUsageInMax,TRESUsageOutMax",
+      "output_example": "JobID       TRESUsageInMax                    TRESUsageOutMax \n------------ --------------------------------- ----------------- \n12345.0      cpu=1234,mem=8G,gres/gpu=2        fs/disk=45G"
+    },
+    {
+      "description": "Check memory before potential OOM kill",
+      "command": "watch -n 5 'sstat -j 12345 -o JobID,MaxRSS,AveRSS --noheader'",
+      "output_example": "12345.0   15.82G    14.95G"
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "sstat: error: Job/step specification required",
+      "meaning": "The -j option was not provided or no job ID was specified",
+      "resolution": "Always specify a job ID with -j option: sstat -j <jobid> or sstat -j <jobid.stepid>"
+    },
+    {
+      "message": "sstat: error: Invalid job id specified",
+      "meaning": "The specified job ID does not exist or is not currently running",
+      "resolution": "Verify the job is still running with 'squeue -j <jobid>'. Use sacct for completed jobs."
+    },
+    {
+      "message": "sstat: error: Invalid job step id specified",
+      "meaning": "The specified job step does not exist for this job",
+      "resolution": "Use 'sstat -a -j <jobid>' to see all available steps, or omit the step ID to see all running steps."
+    },
+    {
+      "message": "sstat: error: Problem communicating with slurmd",
+      "meaning": "Cannot communicate with the Slurm daemon on the compute node",
+      "resolution": "Check if slurmd is running on compute nodes. Verify network connectivity. The job step may have completed."
+    },
+    {
+      "message": "sstat: error: You do not have permission to view this job",
+      "meaning": "The user does not have permission to view statistics for this job",
+      "resolution": "Users can only view their own jobs unless they have administrative privileges. Check job ownership with squeue."
+    },
+    {
+      "message": "sstat: error: No steps running for job",
+      "meaning": "The job exists but has no currently running steps",
+      "resolution": "The job may be pending, the batch script may not have started any steps yet, or all steps completed. Use -a to show completed steps still in memory."
+    },
+    {
+      "message": "sstat: error: Invalid format specification",
+      "meaning": "A format field specified with -o does not exist",
+      "resolution": "Use 'sstat -e' to list all valid format fields. Check spelling and case of field names."
+    },
+    {
+      "message": "sstat: error: Unable to collect data for step",
+      "meaning": "Statistics could not be gathered from the compute nodes",
+      "resolution": "The jobacct_gather plugin may not be configured, or the step may have just started/ended. Try again or check slurm.conf for JobAcctGatherType setting."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "sacct",
+      "squeue",
+      "scontrol",
+      "srun",
+      "sbatch",
+      "scancel",
+      "sinfo"
+    ],
+    "notes": "sstat provides real-time statistics for running job steps, while sacct provides historical data for completed jobs. Use squeue to identify running jobs, then sstat to monitor their resource consumption. sstat queries the slurmd daemons on compute nodes directly rather than the database, so data is immediately available but only for active steps. After job completion, use sacct to retrieve the final statistics which are stored in the database."
+  },
+  "permissions": {
+    "read_operations": "Users can view statistics for their own running jobs. Administrators can view all users' job statistics.",
+    "notes": "Permission is based on job ownership. The PrivateData configuration in slurm.conf may affect what information is visible. Root and SlurmUser always have full access."
+  },
+  "limitations": [
+    "Only works for currently running job steps; use sacct for completed jobs",
+    "Requires jobacct_gather plugin to be configured in slurm.conf",
+    "Statistics are collected at intervals determined by JobAcctGatherFrequency, so values may lag real usage",
+    "Some fields may be empty if the corresponding data collection is not enabled",
+    "Cannot retrieve statistics if slurmd on compute nodes is unreachable",
+    "GPU statistics require GRES configuration and appropriate accounting plugins",
+    "Energy statistics require energy accounting to be configured (AcctGatherEnergyType)",
+    "Step-level statistics are only available; cannot query individual task statistics within a step (except with -i for PIDs)"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "job_state",
+        "fields": [
+          "job_id",
+          "step_id",
+          "node_list",
+          "num_tasks",
+          "max_rss",
+          "max_vmsize",
+          "ave_rss",
+          "ave_vmsize",
+          "max_pages",
+          "ave_pages",
+          "min_cpu",
+          "ave_cpu",
+          "max_disk_read",
+          "max_disk_write",
+          "ave_disk_read",
+          "ave_disk_write",
+          "consumed_energy",
+          "tres_usage_in",
+          "tres_usage_out"
+        ],
+        "description": "sstat reads real-time resource usage statistics for running job steps directly from slurmd daemons on compute nodes"
+      },
+      {
+        "state_domain": "node_state",
+        "fields": ["hostname"],
+        "description": "sstat identifies which nodes are running each job step and reports per-node statistics"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Job step starts running",
+        "effect": "New step becomes queryable via sstat, statistics begin accumulating"
+      },
+      {
+        "state_change": "Job step resource usage changes",
+        "effect": "Statistics are updated at JobAcctGatherFrequency intervals; sstat queries return latest collected values"
+      },
+      {
+        "state_change": "Job step completes",
+        "effect": "Step is no longer queryable via sstat (unless -a flag used for recently completed steps); final statistics available via sacct"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "sacct",
+        "shared_state": "Memory and I/O statistics; sstat shows real-time values while sacct shows final values after completion"
+      },
+      {
+        "command": "squeue",
+        "shared_state": "Job identification (job_id, step_id); squeue shows job queue status, sstat shows detailed step statistics"
+      },
+      {
+        "command": "scontrol show step",
+        "shared_state": "Step information including node allocation; scontrol shows configuration while sstat shows resource usage"
+      }
+    ]
+  }
+}

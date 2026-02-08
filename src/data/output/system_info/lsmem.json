@@ -1,0 +1,169 @@
+{
+  "command": "lsmem",
+  "category": "system_info",
+  "description": "List system memory ranges and their online/offline status. Shows memory block information useful for understanding memory topology and hotplug status in HPC nodes.",
+  "synopsis": "lsmem [options]",
+  "version_documented": "util-linux 2.37+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/lsmem.1.html"],
+  "installation": {
+    "package": "util-linux",
+    "notes": "Part of util-linux, installed by default on all Linux distributions."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Show all columns"
+    },
+    {
+      "short": "-b",
+      "long": "--bytes",
+      "description": "Show sizes in bytes"
+    },
+    {
+      "short": "-J",
+      "long": "--json",
+      "description": "Output in JSON format"
+    },
+    {
+      "short": "-n",
+      "long": "--noheadings",
+      "description": "Do not print header"
+    },
+    {
+      "short": "-o",
+      "long": "--output",
+      "description": "Specify output columns",
+      "arguments": "<columns>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-P",
+      "long": "--pairs",
+      "description": "Output as key=value pairs"
+    },
+    {
+      "short": "-r",
+      "long": "--raw",
+      "description": "Raw output format"
+    },
+    {
+      "short": "-s",
+      "long": "--sysroot",
+      "description": "Use specified sysroot",
+      "arguments": "<path>",
+      "argument_type": "path"
+    },
+    {
+      "long": "--summary",
+      "description": "Show summary information"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show memory ranges",
+      "command": "lsmem",
+      "output_example": "RANGE                                  SIZE  STATE REMOVABLE  BLOCK\n0x0000000000000000-0x000000007fffffff    2G online       yes   0-15\n0x0000000100000000-0x000000407fffffff  254G online       yes 32-543\n\nMemory block size:       128M\nTotal online memory:     256G\nTotal offline memory:      0B",
+      "requires_root": false
+    },
+    {
+      "description": "Show summary only",
+      "command": "lsmem --summary=only",
+      "output_example": "Memory block size:       128M\nTotal online memory:     256G\nTotal offline memory:      0B",
+      "requires_root": false
+    },
+    {
+      "description": "JSON output for scripting",
+      "command": "lsmem --json",
+      "requires_root": false
+    },
+    {
+      "description": "Show all columns",
+      "command": "lsmem -a",
+      "requires_root": false
+    },
+    {
+      "description": "Show specific columns",
+      "command": "lsmem -o RANGE,SIZE,STATE,NODE",
+      "requires_root": false
+    },
+    {
+      "description": "Show sizes in bytes",
+      "command": "lsmem -b",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "lsmem: cannot open /sys/devices/system/memory",
+      "meaning": "Memory subsystem not accessible",
+      "resolution": "Ensure sysfs is mounted properly"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "free",
+      "numactl -H",
+      "numastat",
+      "dmidecode",
+      "cat /proc/meminfo"
+    ],
+    "notes": "lsmem shows memory ranges and their hotplug status. The REMOVABLE column indicates if memory can be hot-removed. NODE column shows NUMA association."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "N/A - read-only command",
+    "notes": "Reads from /sys/devices/system/memory"
+  },
+  "limitations": [
+    "Does not show actual memory usage (use free)",
+    "Hotplug capability depends on hardware/kernel",
+    "NUMA information may require -a flag"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["memory_total"],
+        "description": "Shows memory block topology and state"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Memory hot-add/remove",
+        "effect": "Memory ranges and online status change"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "free",
+        "shared_state": "Total online memory matches MemTotal"
+      },
+      {
+        "command": "numactl -H",
+        "shared_state": "Per-NUMA memory visible with -a flag"
+      }
+    ]
+  }
+}

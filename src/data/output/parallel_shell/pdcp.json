@@ -1,0 +1,160 @@
+{
+  "command": "pdcp",
+  "category": "parallel_shell",
+  "description": "Parallel distributed copy utility. Part of pdsh, copies files to multiple remote hosts simultaneously. Essential for distributing files across HPC cluster nodes efficiently.",
+  "synopsis": "pdcp [options] src [src2...] dest",
+  "version_documented": "pdsh 2.34+",
+  "source_urls": ["https://github.com/chaos/pdsh"],
+  "installation": {
+    "package": "pdsh",
+    "notes": "Install via: apt install pdsh or yum install pdsh"
+  },
+  "global_options": [
+    {
+      "short": "-w",
+      "description": "Target hosts (required)",
+      "arguments": "<host_list>",
+      "argument_type": "string",
+      "example": "-w node[001-100]"
+    },
+    {
+      "short": "-x",
+      "description": "Exclude hosts",
+      "arguments": "<host_list>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-r",
+      "description": "Copy directories recursively"
+    },
+    {
+      "short": "-p",
+      "description": "Preserve file mode and timestamps"
+    },
+    {
+      "short": "-e",
+      "description": "Specify remote shell command",
+      "arguments": "<rsh_cmd>",
+      "argument_type": "string",
+      "default": "ssh"
+    },
+    {
+      "short": "-f",
+      "description": "Maximum concurrent connections",
+      "arguments": "<num>",
+      "argument_type": "integer",
+      "default": "32"
+    },
+    {
+      "short": "-t",
+      "description": "Connection timeout in seconds",
+      "arguments": "<seconds>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-l",
+      "description": "Remote username",
+      "arguments": "<user>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-v",
+      "description": "Verbose mode"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success on all hosts"
+    },
+    {
+      "code": 1,
+      "meaning": "One or more hosts failed"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Copy file to all compute nodes",
+      "command": "pdcp -w node[001-100] config.txt /etc/myapp/",
+      "requires_root": false
+    },
+    {
+      "description": "Copy directory recursively",
+      "command": "pdcp -r -w node[001-100] ./scripts/ /opt/scripts/",
+      "requires_root": false
+    },
+    {
+      "description": "Copy with preservation of attributes",
+      "command": "pdcp -rp -w node[001-100] ./data/ /shared/data/",
+      "requires_root": false
+    },
+    {
+      "description": "Copy to subset excluding some nodes",
+      "command": "pdcp -w node[001-100] -x node[050-060] file.txt /tmp/",
+      "requires_root": false
+    },
+    {
+      "description": "Copy with limited parallelism",
+      "command": "pdcp -f 16 -w node[001-100] large_file.tar /scratch/",
+      "requires_root": false
+    },
+    {
+      "description": "Copy multiple files",
+      "command": "pdcp -w node[001-100] file1.txt file2.txt file3.txt /data/",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "pdcp: no remote hosts specified",
+      "meaning": "Missing -w option",
+      "resolution": "Specify target hosts with -w flag"
+    },
+    {
+      "message": "pdcp: connect to host failed",
+      "meaning": "SSH connection failed",
+      "resolution": "Check SSH connectivity and host availability"
+    },
+    {
+      "message": "Permission denied",
+      "meaning": "No write access to destination",
+      "resolution": "Check permissions on destination directory"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["pdsh", "rpdcp", "scp", "rsync", "clush --copy"],
+    "notes": "pdcp is the parallel copy companion to pdsh. For reverse copy (from nodes to local), use rpdcp. For synchronization, consider parallel rsync."
+  },
+  "permissions": {
+    "read_operations": "Read access to source files",
+    "write_operations": "Write access to destination on remote hosts",
+    "notes": "Uses SSH by default, requires appropriate SSH keys"
+  },
+  "limitations": [
+    "Does not sync/update like rsync",
+    "No compression (use rsync for large files over slow links)",
+    "One-directional (local to remote)",
+    "Requires destination directory to exist"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "node_state",
+        "fields": ["hostname"],
+        "description": "Targets nodes by hostname"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "pdsh -w",
+        "shared_state": "Same host targeting syntax"
+      },
+      {
+        "command": "nodeset",
+        "shared_state": "Same node range expressions"
+      }
+    ]
+  }
+}

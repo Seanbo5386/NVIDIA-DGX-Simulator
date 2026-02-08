@@ -1,0 +1,363 @@
+{
+  "command": "top",
+  "category": "monitoring",
+  "description": "Dynamic real-time view of running system processes. The top command provides a continuously updating display of process activity including CPU and memory usage, process states, and system load averages. Part of the procps-ng package, it is an essential tool for monitoring system health and identifying resource-intensive processes on HPC nodes. Top reads information from /proc filesystem and can be used interactively or in batch mode for scripting.",
+  "synopsis": "top [options]",
+  "version_documented": "procps-ng 3.3.17+",
+  "source_urls": [
+    "https://man7.org/linux/man-pages/man1/top.1.html",
+    "https://gitlab.com/procps-ng/procps"
+  ],
+  "installation": {
+    "package": "procps-ng",
+    "notes": "Part of the procps-ng package (or procps on older systems) which is installed by default on virtually all Linux distributions. Provides process monitoring utilities including top, ps, free, and uptime."
+  },
+  "global_options": [
+    {
+      "short": "-b",
+      "long": "--batch",
+      "description": "Starts top in batch mode, which could be useful for sending output from top to other programs or to a file. In this mode, top will not accept input and runs until the iterations limit set with -n option or until killed."
+    },
+    {
+      "short": "-c",
+      "long": "--cmdline",
+      "description": "Toggle command line/program name. This starts top with the last remembered command line/program name state reversed."
+    },
+    {
+      "short": "-d",
+      "long": "--delay",
+      "description": "Specifies the delay between screen updates. Overrides the default delay of 3.0 seconds. Fractional seconds are accepted.",
+      "arguments": "<secs>",
+      "argument_type": "number",
+      "default": "3.0",
+      "example": "top -d 1"
+    },
+    {
+      "short": "-e",
+      "description": "Enforce summary area memory scaling as: k (KiB), m (MiB), g (GiB), t (TiB), p (PiB), e (EiB).",
+      "arguments": "<k|m|g|t|p|e>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-E",
+      "description": "Enforce task area memory scaling as: k (KiB), m (MiB), g (GiB), t (TiB), p (PiB), e (EiB).",
+      "arguments": "<k|m|g|t|p|e>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-H",
+      "long": "--threads",
+      "description": "Instructs top to display individual threads. Without this option, a summation of all threads in each process is shown."
+    },
+    {
+      "short": "-i",
+      "long": "--idle",
+      "description": "Toggle idle process display. Top will not show idle or zombie processes."
+    },
+    {
+      "short": "-n",
+      "long": "--iterations",
+      "description": "Specifies the maximum number of iterations or frames top should produce before ending. Often used with -b for batch mode.",
+      "arguments": "<number>",
+      "argument_type": "integer",
+      "example": "top -bn 1"
+    },
+    {
+      "short": "-o",
+      "long": "--sort-field",
+      "description": "Specifies the name of the field on which to sort. Prefix a '+' to sort high-to-low, '-' for low-to-high.",
+      "arguments": "<fieldname>",
+      "argument_type": "string",
+      "example": "top -o %MEM"
+    },
+    {
+      "short": "-O",
+      "description": "Output field names. This option acts as a form of help, printing each of the available field names on a separate line, then exiting."
+    },
+    {
+      "short": "-p",
+      "long": "--pid",
+      "description": "Monitor only processes with specified process IDs. This option can be given up to 20 times, or a comma-separated list can be provided.",
+      "arguments": "<pid>[,pid...]",
+      "argument_type": "string",
+      "example": "top -p 1234,5678"
+    },
+    {
+      "short": "-s",
+      "long": "--secure",
+      "description": "Starts top in secure mode, disabling potentially dangerous interactive commands."
+    },
+    {
+      "short": "-S",
+      "long": "--cumulative",
+      "description": "Enable cumulative time mode. Each process is listed with the cpu time that it and its dead children have used."
+    },
+    {
+      "short": "-u",
+      "long": "--user",
+      "description": "Show only processes with a user id or user name matching that given. Only the effective user is matched.",
+      "arguments": "<user>",
+      "argument_type": "string",
+      "example": "top -u root"
+    },
+    {
+      "short": "-U",
+      "long": "--User",
+      "description": "Show only processes with a user id or user name matching that given. Matches real, effective, saved, and filesystem user.",
+      "arguments": "<user>",
+      "argument_type": "string",
+      "example": "top -U slurmuser"
+    },
+    {
+      "short": "-w",
+      "long": "--width",
+      "description": "Output width. In batch mode, when used without argument, top will format output using COLUMNS= environment variable or with unlimited width when neither is available.",
+      "arguments": "[number]",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-1",
+      "description": "Single/Separate CPU states toggle. Starts top with the last remembered Cpu states portion of the summary area reversed."
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Show usage summary and exit."
+    },
+    {
+      "short": "-v",
+      "long": "--version",
+      "description": "Show version information and exit."
+    }
+  ],
+  "output_formats": {
+    "interactive": "Real-time updating display with header (uptime, tasks, CPU, memory) and process table. Refreshes at configured interval.",
+    "batch": "Non-interactive output suitable for parsing or logging. Each iteration produces a complete snapshot of system and process state."
+  },
+  "environment_variables": [
+    {
+      "name": "HOME",
+      "description": "Used to determine the location of the configuration file (~/.toprc).",
+      "affects_command": "Configuration file location for saving and restoring top settings."
+    },
+    {
+      "name": "TERM",
+      "description": "Terminal type for screen output formatting.",
+      "affects_command": "Determines color capabilities and screen control sequences."
+    },
+    {
+      "name": "COLUMNS",
+      "description": "Number of columns in batch mode output.",
+      "affects_command": "Controls output width in batch mode when -w is used without argument."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - general failure, invalid option, or process not found"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run top in batch mode for a single snapshot (useful for scripting)",
+      "command": "top -bn 1",
+      "output_example": "top - 14:32:01 up 45 days,  3:21,  2 users,  load average: 0.52, 0.48, 0.41\nTasks: 342 total,   1 running, 341 sleeping,   0 stopped,   0 zombie\n%Cpu(s):  2.3 us,  0.8 sy,  0.0 ni, 96.5 id,  0.2 wa,  0.0 hi,  0.1 si,  0.0 st\nMiB Mem : 515900.5 total, 229070.3 free, 120563.2 used, 166267.0 buff/cache\nMiB Swap:  16383.0 total,  16383.0 free,      0.0 used. 391829.5 avail Mem\n\n    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND\n   1234 user1     20   0  25.4g  12.3g   256m S  45.2   2.5   123:45.67 python\n   5678 user2     20   0  18.2g   8.1g   128m S  32.1   1.6    98:12.34 cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor processes for a specific user",
+      "command": "top -u username",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor specific process by PID",
+      "command": "top -p 1234",
+      "requires_root": false
+    },
+    {
+      "description": "Run with 1-second refresh rate",
+      "command": "top -d 1",
+      "requires_root": false
+    },
+    {
+      "description": "Batch mode with 5 iterations and 2-second delay",
+      "command": "top -bn 5 -d 2",
+      "requires_root": false
+    },
+    {
+      "description": "Show all threads for processes",
+      "command": "top -H",
+      "requires_root": false
+    },
+    {
+      "description": "Sort by memory usage",
+      "command": "top -o %MEM",
+      "requires_root": false
+    },
+    {
+      "description": "Capture top output to file for analysis",
+      "command": "top -bn 1 > /tmp/top_snapshot.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Extract CPU-intensive processes in batch mode",
+      "command": "top -bn 1 -o %CPU | head -20",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor multiple specific PIDs",
+      "command": "top -p 1234,5678,9012",
+      "requires_root": false
+    },
+    {
+      "description": "Display human-readable memory in GiB",
+      "command": "top -E g -e g",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "top: unknown option",
+      "meaning": "An unrecognized option was specified",
+      "resolution": "Check the option syntax with 'top --help' and verify the option is supported by your version."
+    },
+    {
+      "message": "top: pid limit (20) exceeded",
+      "meaning": "More than 20 PIDs were specified with the -p option",
+      "resolution": "Reduce the number of PIDs to monitor to 20 or fewer, or use user filtering (-u) instead."
+    },
+    {
+      "message": "top: no valid UID provided",
+      "meaning": "Invalid user specified for -u or -U option",
+      "resolution": "Verify the username or UID exists on the system using 'id username' or 'getent passwd username'."
+    },
+    {
+      "message": "top: can't open /proc",
+      "meaning": "The /proc filesystem is not mounted or accessible",
+      "resolution": "Ensure /proc is mounted (mount -t proc proc /proc). This is typically done automatically at boot."
+    },
+    {
+      "message": "top: failed tty get",
+      "meaning": "Cannot obtain terminal settings, often in non-interactive environments",
+      "resolution": "Use -b (batch) mode when running in scripts or non-interactive sessions."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "htop",
+      "ps",
+      "nvidia-smi",
+      "free",
+      "vmstat",
+      "sar",
+      "mpstat",
+      "pidstat",
+      "atop",
+      "iotop",
+      "uptime",
+      "kill"
+    ],
+    "uses_library": [],
+    "notes": "The top command reads process information from /proc filesystem. On HPC systems with GPU workloads, use nvidia-smi alongside top to monitor GPU processes that may consume significant CPU resources for data preprocessing. The htop command provides an enhanced interactive alternative with easier navigation and visualization. For job schedulers like Slurm, process resource usage reported by top should correlate with job accounting data."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required for viewing own processes. All users can see basic process information. Viewing detailed information about other users' processes may show limited data for non-root users.",
+    "write_operations": "Interactive commands that affect processes (kill, renice) require appropriate permissions. Renicing to higher priority requires root.",
+    "notes": "In secure mode (-s), interactive commands that could affect processes are disabled. Some kernel-level statistics may not be available to non-root users in restricted environments."
+  },
+  "limitations": [
+    "Process statistics are point-in-time snapshots and CPU percentages are calculated between refresh intervals",
+    "The -p option is limited to 20 PIDs maximum",
+    "Interactive mode requires a terminal; use -b for scripted usage",
+    "CPU percentages can exceed 100% on multi-core systems when showing per-process totals",
+    "Memory values in the summary area may differ slightly from 'free' due to timing and calculation methods",
+    "On systems with many processes (thousands), screen refresh may introduce overhead",
+    "Thread display (-H) can produce very long process lists on systems with many threads",
+    "Does not show GPU process information directly; use nvidia-smi for GPU workloads"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "cpu_usage_user",
+          "cpu_usage_system",
+          "cpu_usage_nice",
+          "cpu_usage_idle",
+          "cpu_usage_iowait",
+          "cpu_usage_irq",
+          "cpu_usage_softirq",
+          "cpu_usage_steal",
+          "load_average_1min",
+          "load_average_5min",
+          "load_average_15min",
+          "memory_total",
+          "memory_used",
+          "memory_free",
+          "memory_buffers",
+          "memory_cached",
+          "memory_available",
+          "swap_total",
+          "swap_used",
+          "swap_free",
+          "uptime",
+          "process_count_total",
+          "process_count_running",
+          "process_count_sleeping",
+          "process_count_stopped",
+          "process_count_zombie"
+        ],
+        "description": "Reads comprehensive system state including CPU utilization breakdown, load averages, memory statistics, swap usage, uptime, and process state counts from /proc filesystem."
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Process creation/termination",
+        "effect": "Task counts and process list update as processes are created, forked, or terminated."
+      },
+      {
+        "state_change": "CPU activity",
+        "effect": "CPU percentage columns and summary percentages change based on process scheduling and execution."
+      },
+      {
+        "state_change": "Memory allocation/deallocation",
+        "effect": "Memory columns (RES, VIRT, SHR) and summary memory values update as processes allocate or release memory."
+      },
+      {
+        "state_change": "System load changes",
+        "effect": "Load average values update based on runnable and blocked process counts over time."
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ps",
+        "shared_state": "Process information (PID, user, CPU, memory, command) is consistent with ps output for the same moment in time."
+      },
+      {
+        "command": "htop",
+        "shared_state": "Process listing and system statistics are derived from the same /proc data; displays should be consistent."
+      },
+      {
+        "command": "free",
+        "shared_state": "Memory summary values in top header match the output of free command."
+      },
+      {
+        "command": "uptime",
+        "shared_state": "Load averages and uptime shown in top header match uptime command output."
+      },
+      {
+        "command": "vmstat",
+        "shared_state": "CPU and memory statistics are consistent with vmstat readings."
+      },
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU processes shown by nvidia-smi should correspond to processes visible in top, though GPU utilization is only available via nvidia-smi."
+      }
+    ]
+  }
+}

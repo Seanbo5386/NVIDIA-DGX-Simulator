@@ -1,0 +1,159 @@
+{
+  "command": "nmon",
+  "category": "monitoring",
+  "description": "Nigel's performance Monitor for Linux. Interactive tool showing CPU, memory, network, disk, and other system metrics. Useful for real-time HPC node performance analysis.",
+  "synopsis": "nmon [options]",
+  "version_documented": "nmon 16+",
+  "source_urls": ["http://nmon.sourceforge.net/"],
+  "installation": {
+    "package": "nmon",
+    "notes": "Install via: apt install nmon or yum install nmon"
+  },
+  "global_options": [
+    {
+      "short": "-f",
+      "description": "Spreadsheet output mode (background)"
+    },
+    {
+      "short": "-s",
+      "description": "Seconds between snapshots",
+      "arguments": "<seconds>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-c",
+      "description": "Number of snapshots to take",
+      "arguments": "<count>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-t",
+      "description": "Include top processes"
+    },
+    {
+      "short": "-T",
+      "description": "Include top processes with command line"
+    },
+    {
+      "short": "-m",
+      "description": "Output directory",
+      "arguments": "<dir>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-F",
+      "description": "Output filename",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-h",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Interactive mode",
+      "command": "nmon",
+      "output_example": "[Interactive TUI showing system metrics]\nPress: c=CPU, m=Memory, d=Disk, n=Network, t=Top, q=Quit",
+      "requires_root": false
+    },
+    {
+      "description": "Record to file for analysis",
+      "command": "nmon -f -s 30 -c 120",
+      "requires_root": false
+    },
+    {
+      "description": "Record with top processes",
+      "command": "nmon -fT -s 60 -c 60",
+      "requires_root": false
+    },
+    {
+      "description": "Specify output directory",
+      "command": "nmon -f -m /tmp/nmon_data -s 10 -c 360",
+      "requires_root": false
+    },
+    {
+      "description": "Custom output filename",
+      "command": "nmon -F job_12345.nmon -s 30 -c 100",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "nmon: command not found",
+      "meaning": "Package not installed",
+      "resolution": "Install nmon package"
+    },
+    {
+      "message": "Cannot create output file",
+      "meaning": "Output directory not writable",
+      "resolution": "Check directory permissions or use -m flag"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["top", "htop", "dstat", "sar", "vmstat"],
+    "notes": "Interactive keys: c=CPU, m=Memory, d=Disk, n=Network, N=NFS, j=JFS, k=Kernel, t=Top, .=only busy disks. Output files can be analyzed with nmon_analyser Excel spreadsheet."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "Write access for output directory",
+    "notes": "Some detailed stats may need root"
+  },
+  "limitations": [
+    "No GPU monitoring",
+    "Output analysis requires separate tools",
+    "TUI requires terminal",
+    "InfiniBand stats not included"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["cpu_count", "memory_total"],
+        "description": "Reads CPU and memory statistics"
+      },
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["device"],
+        "description": "Reads disk I/O statistics"
+      },
+      {
+        "state_domain": "network_eth_state",
+        "fields": ["interface", "rx_bytes", "tx_bytes"],
+        "description": "Reads network statistics"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "System activity",
+        "effect": "Metrics update in real-time"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "top",
+        "shared_state": "Process and CPU metrics correlate"
+      },
+      {
+        "command": "free",
+        "shared_state": "Memory statistics match"
+      },
+      {
+        "command": "iostat",
+        "shared_state": "Disk I/O statistics consistent"
+      }
+    ]
+  }
+}

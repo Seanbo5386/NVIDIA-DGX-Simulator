@@ -1,0 +1,152 @@
+{
+  "command": "strace",
+  "category": "general",
+  "description": "Trace system calls and signals. Diagnostic tool for debugging program behavior. Invaluable for troubleshooting HPC application issues.",
+  "synopsis": "strace [options] <command> [args]",
+  "version_documented": "strace 5.10+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/strace.1.html"],
+  "installation": {
+    "package": "strace",
+    "notes": "Install via package manager."
+  },
+  "global_options": [
+    {
+      "short": "-e",
+      "description": "Filter syscalls",
+      "arguments": "<expr>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-f",
+      "description": "Follow child processes"
+    },
+    {
+      "short": "-p",
+      "description": "Attach to PID",
+      "arguments": "<pid>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-o",
+      "description": "Output to file",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-c",
+      "description": "Count time and calls"
+    },
+    {
+      "short": "-t",
+      "description": "Prefix with timestamp"
+    },
+    {
+      "short": "-T",
+      "description": "Show time spent in syscall"
+    },
+    {
+      "short": "-s",
+      "description": "Max string size",
+      "arguments": "<size>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-y",
+      "description": "Print paths for file descriptors"
+    },
+    {
+      "short": "-ff",
+      "description": "Follow forks, separate files"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success (if child exits 0)"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Trace all syscalls",
+      "command": "strace ./my_program",
+      "requires_root": false
+    },
+    {
+      "description": "Trace file operations",
+      "command": "strace -e trace=file ./program",
+      "requires_root": false
+    },
+    {
+      "description": "Trace network calls",
+      "command": "strace -e trace=network ./program",
+      "requires_root": false
+    },
+    {
+      "description": "Attach to running process",
+      "command": "strace -p 12345",
+      "requires_root": true
+    },
+    {
+      "description": "Summary statistics",
+      "command": "strace -c ./program",
+      "requires_root": false
+    },
+    {
+      "description": "Trace with children",
+      "command": "strace -f mpirun -np 4 ./mpi_program",
+      "requires_root": false
+    },
+    {
+      "description": "Output to file with time",
+      "command": "strace -tt -T -o trace.log ./program",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "attach: ptrace(PTRACE_SEIZE): Operation not permitted",
+      "meaning": "Cannot attach to process",
+      "resolution": "Use sudo or check ptrace permissions"
+    },
+    {
+      "message": "Can't stat",
+      "meaning": "Program not found",
+      "resolution": "Check program path"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["ltrace", "gdb", "perf"],
+    "notes": "-e trace=file,network for common debug. -c gives syscall profile. Overhead can affect timing."
+  },
+  "permissions": {
+    "read_operations": "Read process memory",
+    "write_operations": "N/A",
+    "notes": "Attaching to others' processes requires root"
+  },
+  "limitations": [
+    "Significant performance overhead",
+    "Can change program timing/behavior",
+    "May not work on all kernels"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["processes"],
+        "description": "Traces process system calls"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ps",
+        "shared_state": "Traces process shown in ps"
+      }
+    ]
+  }
+}

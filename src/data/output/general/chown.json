@@ -1,0 +1,116 @@
+{
+  "command": "chown",
+  "category": "general",
+  "description": "Change file owner and group. Transfers file ownership between users. Essential for setting up shared HPC project directories.",
+  "synopsis": "chown [options] <owner>[:group] <file>...",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/chown.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-R",
+      "long": "--recursive",
+      "description": "Operate recursively"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Output for every file"
+    },
+    {
+      "short": "-c",
+      "long": "--changes",
+      "description": "Report only changes"
+    },
+    {
+      "long": "--reference",
+      "description": "Use reference file's owner",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "long": "--from",
+      "description": "Change only if current owner matches",
+      "arguments": "<owner:group>",
+      "argument_type": "string"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Change owner",
+      "command": "chown user file.txt",
+      "requires_root": true
+    },
+    {
+      "description": "Change owner and group",
+      "command": "chown user:group file.txt",
+      "requires_root": true
+    },
+    {
+      "description": "Change group only",
+      "command": "chown :group file.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Recursive change",
+      "command": "chown -R user:group /project/data",
+      "requires_root": true
+    },
+    {
+      "description": "Match reference file",
+      "command": "chown --reference=template.txt newfile.txt",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Operation not permitted",
+      "meaning": "Only root can change owners",
+      "resolution": "Use sudo"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["chmod", "chgrp", "ls -l"],
+    "notes": "Only root can change owner. Users can change group to groups they belong to. Use with chmod for full access control."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "Root required for owner change",
+    "notes": "Group change needs membership"
+  },
+  "limitations": [
+    "Cannot give away own files on most systems",
+    "Root required for owner changes"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Changes file ownership",
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ls -l",
+        "shared_state": "Owner shown in ls"
+      }
+    ]
+  }
+}

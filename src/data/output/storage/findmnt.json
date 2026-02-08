@@ -1,0 +1,181 @@
+{
+  "command": "findmnt",
+  "category": "storage",
+  "description": "Find and display mounted filesystems. Provides tree-view of mount hierarchy with detailed information about mount options, filesystem type, and source. More informative than mount command for analysis.",
+  "synopsis": "findmnt [options] [device|mountpoint]",
+  "version_documented": "util-linux 2.37+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/findmnt.8.html"],
+  "installation": {
+    "package": "util-linux",
+    "notes": "Part of util-linux, installed by default on all Linux distributions."
+  },
+  "global_options": [
+    {
+      "short": "-l",
+      "long": "--list",
+      "description": "Output as list instead of tree"
+    },
+    {
+      "short": "-t",
+      "long": "--types",
+      "description": "Filter by filesystem type",
+      "arguments": "<type>",
+      "argument_type": "string",
+      "example": "-t nfs,lustre"
+    },
+    {
+      "short": "-o",
+      "long": "--output",
+      "description": "Specify output columns",
+      "arguments": "<columns>",
+      "argument_type": "string",
+      "example": "-o TARGET,SOURCE,FSTYPE,SIZE"
+    },
+    {
+      "short": "-J",
+      "long": "--json",
+      "description": "Output in JSON format"
+    },
+    {
+      "short": "-P",
+      "long": "--pairs",
+      "description": "Output as key=value pairs"
+    },
+    {
+      "short": "-n",
+      "long": "--noheadings",
+      "description": "Do not print header"
+    },
+    {
+      "short": "-D",
+      "long": "--df",
+      "description": "Include space usage (like df)"
+    },
+    {
+      "short": "-T",
+      "long": "--target",
+      "description": "Show mount point info",
+      "arguments": "<path>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-S",
+      "long": "--source",
+      "description": "Show source device info",
+      "arguments": "<device>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error or nothing found"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show mount tree",
+      "command": "findmnt",
+      "output_example": "TARGET                       SOURCE     FSTYPE     OPTIONS\n/                            /dev/nvme0n1p1 ext4     rw,relatime\n├─/boot                      /dev/nvme0n1p2 ext4     rw,relatime\n├─/scratch                   /dev/nvme1n1 xfs        rw,noatime\n└─/lustre                    mds01@tcp:/fs lustre    rw,flock",
+      "requires_root": false
+    },
+    {
+      "description": "List format with space usage",
+      "command": "findmnt -l -D",
+      "requires_root": false
+    },
+    {
+      "description": "Show only specific filesystem types",
+      "command": "findmnt -t nfs,lustre",
+      "requires_root": false
+    },
+    {
+      "description": "JSON output for scripting",
+      "command": "findmnt -J",
+      "requires_root": false
+    },
+    {
+      "description": "Find mount point for a path",
+      "command": "findmnt -T /home/user/data",
+      "requires_root": false
+    },
+    {
+      "description": "Show specific columns",
+      "command": "findmnt -o TARGET,SOURCE,FSTYPE,SIZE,AVAIL,USE%",
+      "requires_root": false
+    },
+    {
+      "description": "Check if path is mounted",
+      "command": "findmnt /scratch && echo 'Mounted' || echo 'Not mounted'",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "findmnt: not found",
+      "meaning": "Specified mount point or device not mounted",
+      "resolution": "Verify mount point or device is correct"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["mount", "umount", "df", "lsblk"],
+    "notes": "findmnt provides more flexible output than mount command. Tree view shows mount hierarchy including bind mounts and submounts. Use -D for df-like space information."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "N/A - read-only command",
+    "notes": "Reads from /proc/self/mountinfo"
+  },
+  "limitations": [
+    "Cannot mount/unmount (use mount/umount)",
+    "Space usage requires -D flag",
+    "Some virtual filesystems may have incomplete info"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": [
+          "device",
+          "mount_point",
+          "fs_type",
+          "mount_options",
+          "total_size",
+          "available_size"
+        ],
+        "description": "Reads mount table and optionally space usage"
+      },
+      {
+        "state_domain": "storage_lustre_state",
+        "fields": ["mount_point", "filesystem"],
+        "description": "Shows Lustre mounts when present"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Mount/unmount operation",
+        "effect": "Mount tree updates"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "mount",
+        "shared_state": "Same mount information"
+      },
+      {
+        "command": "df",
+        "shared_state": "Space usage matches with -D flag"
+      }
+    ]
+  }
+}

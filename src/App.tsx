@@ -1,43 +1,55 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { SimulatorView } from "./components/SimulatorView";
-import { FaultInjection } from "./components/FaultInjection";
+import { LabsAndScenariosView } from "./components/LabsAndScenariosView";
 import { LabWorkspace } from "./components/LabWorkspace";
 import { ExamWorkspace } from "./components/ExamWorkspace";
 import { WelcomeScreen } from "./components/WelcomeScreen";
 import { Documentation } from "./components/Documentation";
 import { StudyDashboard } from "./components/StudyDashboard";
 import { LearningPaths } from "./components/LearningPaths";
+import { SpacedReviewDrill } from "./components/SpacedReviewDrill";
+import { TierUnlockNotificationContainer } from "./components/TierUnlockNotification";
+import { ExamGauntlet } from "./components/ExamGauntlet";
+import { FreeMode } from "./components/FreeMode";
 import { getTotalPathStats } from "./utils/learningPathEngine";
 import { useSimulationStore } from "./store/simulationStore";
+import { useLearningProgressStore } from "./store/learningProgressStore";
 import { useMetricsSimulation } from "./hooks/useMetricsSimulation";
 import { initializeScenario } from "./utils/scenarioLoader";
 import { safeParseClusterJSON } from "./utils/clusterSchema";
 import {
   Monitor,
   BookOpen,
-  Settings,
+  FlaskConical,
   Play,
   Pause,
   RotateCcw,
   Download,
   Upload,
-  TrendingUp,
-  GraduationCap,
 } from "lucide-react";
 
-type View = "simulator" | "labs" | "docs";
+type View = "simulator" | "labs" | "reference";
 
 function App() {
   const [currentView, setCurrentView] = useState<View>("simulator");
   const [showLabWorkspace, setShowLabWorkspace] = useState(false);
   const [showExamWorkspace, setShowExamWorkspace] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(
+    () => localStorage.getItem("ncp-aii-welcome-dismissed") !== "true",
+  );
   const [showStudyDashboard, setShowStudyDashboard] = useState(false);
   const [showLearningPaths, setShowLearningPaths] = useState(false);
+  const [showSpacedReviewDrill, setShowSpacedReviewDrill] = useState(false);
+  const [showExamGauntlet, setShowExamGauntlet] = useState(false);
+  const [showFreeMode, setShowFreeMode] = useState(false);
   const [learningProgress, setLearningProgress] = useState({
     completed: 0,
     total: 0,
   });
+
+  // Get due reviews count from learning progress store
+  const dueReviews = useLearningProgressStore((state) => state.getDueReviews());
+  const dueReviewCount = dueReviews.length;
 
   const {
     cluster,
@@ -96,23 +108,11 @@ function App() {
     input.click();
   };
 
-  const handleStartLab = async (domain: string) => {
-    // Map domain to first scenario in that domain
-    const domainScenarios: Record<string, string> = {
-      domain1: "domain1-server-post",
-      domain2: "domain2-mig-setup",
-      domain3: "domain3-slurm-config",
-      domain4: "domain4-dcgmi-diag",
-      domain5: "domain5-xid-errors",
-    };
-
-    const scenarioId = domainScenarios[domain];
-    if (scenarioId) {
-      const success = await initializeScenario(scenarioId);
-      if (success) {
-        setCurrentView("simulator"); // Switch to simulator view
-        setShowLabWorkspace(true); // Show lab workspace overlay
-      }
+  const handleStartScenario = async (scenarioId: string) => {
+    const success = await initializeScenario(scenarioId);
+    if (success) {
+      setCurrentView("simulator");
+      setShowLabWorkspace(true);
     }
   };
 
@@ -120,6 +120,18 @@ function App() {
     setCurrentView("simulator"); // Switch to simulator view
     setShowExamWorkspace(true); // Show exam workspace overlay
   };
+
+  // Handler for tier unlock notification "Try Now" button
+  const handleNavigateToTier = useCallback(
+    (familyId: string, _tier: number) => {
+      // Navigate to Labs view and open Learning Paths
+      setCurrentView("labs");
+      setShowLearningPaths(true);
+      // Could be enhanced to navigate to specific family/tier content
+      console.log(`Navigating to ${familyId} tier ${_tier}`);
+    },
+    [],
+  );
 
   return (
     <div className="h-screen bg-gray-900 text-gray-100 flex flex-col overflow-hidden">
@@ -209,10 +221,16 @@ function App() {
 
       {/* Navigation */}
       <nav
+        role="tablist"
+        aria-label="Main navigation"
         className={`bg-gray-800 border-b border-gray-700 px-6 transition-all duration-300 ${showLabWorkspace ? "ml-[600px]" : ""}`}
       >
         <div className="flex gap-1">
           <button
+            role="tab"
+            id="tab-simulator"
+            aria-selected={currentView === "simulator"}
+            aria-controls="panel-simulator"
             onClick={() => setCurrentView("simulator")}
             className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
               currentView === "simulator"
@@ -224,21 +242,44 @@ function App() {
             <span className="font-medium">Simulator</span>
           </button>
           <button
+            role="tab"
+            id="tab-labs"
+            aria-selected={currentView === "labs"}
+            aria-controls="panel-labs"
             data-testid="nav-labs"
             onClick={() => setCurrentView("labs")}
-            className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
+            className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors relative ${
               currentView === "labs"
                 ? "border-nvidia-green text-nvidia-green"
                 : "border-transparent text-gray-400 hover:text-gray-200"
             }`}
           >
-            <Settings className="w-4 h-4" />
+            <FlaskConical className="w-4 h-4" />
             <span className="font-medium">Labs & Scenarios</span>
+            {/* Review Notification Badge */}
+            {dueReviewCount > 0 && (
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowSpacedReviewDrill(true);
+                }}
+                role="status"
+                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-full transition-colors shadow-md cursor-pointer"
+                title={`${dueReviewCount} review${dueReviewCount > 1 ? "s" : ""} due`}
+                aria-label={`${dueReviewCount} reviews due. Click to start review drill.`}
+              >
+                {dueReviewCount > 9 ? "9+" : dueReviewCount}
+              </span>
+            )}
           </button>
           <button
-            onClick={() => setCurrentView("docs")}
+            role="tab"
+            id="tab-reference"
+            aria-selected={currentView === "reference"}
+            aria-controls="panel-reference"
+            onClick={() => setCurrentView("reference")}
             className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
-              currentView === "docs"
+              currentView === "reference"
                 ? "border-nvidia-green text-nvidia-green"
                 : "border-transparent text-gray-400 hover:text-gray-200"
             }`}
@@ -252,6 +293,8 @@ function App() {
       {/* Main Content */}
       <main
         id="main-content"
+        role="tabpanel"
+        aria-labelledby={`tab-${currentView}`}
         className={`flex-1 h-0 flex flex-col overflow-hidden transition-all duration-300 ${showLabWorkspace ? "ml-[600px]" : ""}`}
       >
         {currentView === "simulator" && (
@@ -259,312 +302,18 @@ function App() {
         )}
 
         {currentView === "labs" && (
-          <div data-testid="labs-list" className="p-6 h-full overflow-auto">
-            <div className="max-w-6xl mx-auto">
-              {/* Fault Injection System */}
-              <FaultInjection />
-
-              {/* Lab Scenarios */}
-              <div className="mt-8">
-                <h2 className="text-2xl font-bold text-nvidia-green mb-6">
-                  Interactive Labs & Scenarios
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {/* Domain 1: Systems and Server Bring-Up */}
-                  <div
-                    data-testid="domain-1-card"
-                    className="bg-gray-800 rounded-lg p-6 border border-gray-700"
-                  >
-                    <div className="text-sm text-nvidia-green font-semibold mb-2">
-                      Domain 1 • 31%
-                    </div>
-                    <h3 className="text-lg font-bold mb-3">
-                      Systems & Server Bring-Up
-                    </h3>
-                    <ul className="space-y-2 text-sm text-gray-300">
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        DGX SuperPOD Initial Deployment
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        Firmware Upgrade Workflow
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        Cable Validation
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        Power and Cooling Validation
-                      </li>
-                    </ul>
-                    <button
-                      onClick={() => handleStartLab("domain1")}
-                      className="mt-4 w-full bg-nvidia-green text-black py-2 rounded-lg font-medium hover:bg-nvidia-darkgreen transition-colors"
-                    >
-                      Start Labs
-                    </button>
-                  </div>
-
-                  {/* Domain 2: Physical Layer Management */}
-                  <div
-                    data-testid="domain-2-card"
-                    className="bg-gray-800 rounded-lg p-6 border border-gray-700"
-                  >
-                    <div className="text-sm text-nvidia-green font-semibold mb-2">
-                      Domain 2 • 5%
-                    </div>
-                    <h3 className="text-lg font-bold mb-3">
-                      Physical Layer Management
-                    </h3>
-                    <ul className="space-y-2 text-sm text-gray-300">
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        BlueField DPU Configuration
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        MIG Partitioning
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        Advanced MIG Scenarios
-                      </li>
-                    </ul>
-                    <button
-                      onClick={() => handleStartLab("domain2")}
-                      className="mt-4 w-full bg-nvidia-green text-black py-2 rounded-lg font-medium hover:bg-nvidia-darkgreen transition-colors"
-                    >
-                      Start Labs
-                    </button>
-                  </div>
-
-                  {/* Domain 3: Control Plane Installation */}
-                  <div
-                    data-testid="domain-3-card"
-                    className="bg-gray-800 rounded-lg p-6 border border-gray-700"
-                  >
-                    <div className="text-sm text-nvidia-green font-semibold mb-2">
-                      Domain 3 • 19%
-                    </div>
-                    <h3 className="text-lg font-bold mb-3">
-                      Control Plane Installation
-                    </h3>
-                    <ul className="space-y-2 text-sm text-gray-300">
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        BCM High Availability Setup
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        Slurm with GPU GRES
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        Container Toolkit Setup
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        Pyxis/Enroot with Slurm
-                      </li>
-                    </ul>
-                    <button
-                      onClick={() => handleStartLab("domain3")}
-                      className="mt-4 w-full bg-nvidia-green text-black py-2 rounded-lg font-medium hover:bg-nvidia-darkgreen transition-colors"
-                    >
-                      Start Labs
-                    </button>
-                  </div>
-
-                  {/* Domain 4: Cluster Test and Verification */}
-                  <div
-                    data-testid="domain-4-card"
-                    className="bg-gray-800 rounded-lg p-6 border border-gray-700"
-                  >
-                    <div className="text-sm text-nvidia-green font-semibold mb-2">
-                      Domain 4 • 33%
-                    </div>
-                    <h3 className="text-lg font-bold mb-3">
-                      Cluster Test & Verification
-                    </h3>
-                    <ul className="space-y-2 text-sm text-gray-300">
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        Single-Node Stress Test
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        HPL Benchmark
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        NCCL Tests (Single & Multi-Node)
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        Storage Validation
-                      </li>
-                    </ul>
-                    <button
-                      onClick={() => handleStartLab("domain4")}
-                      className="mt-4 w-full bg-nvidia-green text-black py-2 rounded-lg font-medium hover:bg-nvidia-darkgreen transition-colors"
-                    >
-                      Start Labs
-                    </button>
-                  </div>
-
-                  {/* Domain 5: Troubleshooting */}
-                  <div
-                    data-testid="domain-5-card"
-                    className="bg-gray-800 rounded-lg p-6 border border-gray-700"
-                  >
-                    <div className="text-sm text-nvidia-green font-semibold mb-2">
-                      Domain 5 • 12%
-                    </div>
-                    <h3 className="text-lg font-bold mb-3">
-                      Troubleshooting & Optimization
-                    </h3>
-                    <ul className="space-y-2 text-sm text-gray-300">
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        Low HPL Performance
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        GPU Faults in NVSM
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        InfiniBand Link Errors
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-nvidia-green">▸</span>
-                        Container GPU Visibility Issues
-                      </li>
-                    </ul>
-                    <button
-                      onClick={() => handleStartLab("domain5")}
-                      className="mt-4 w-full bg-nvidia-green text-black py-2 rounded-lg font-medium hover:bg-nvidia-darkgreen transition-colors"
-                    >
-                      Start Labs
-                    </button>
-                  </div>
-
-                  {/* Practice Exam */}
-                  <div
-                    data-testid="practice-exam-card"
-                    className="bg-gradient-to-br from-nvidia-green to-nvidia-darkgreen rounded-lg p-6 border border-nvidia-green"
-                  >
-                    <div className="text-sm text-black font-semibold mb-2">
-                      Full Exam Simulation
-                    </div>
-                    <h3 className="text-lg font-bold text-black mb-3">
-                      NCP-AII Practice Exam
-                    </h3>
-                    <p className="text-sm text-gray-900 mb-4">
-                      Take a timed mock exam with questions covering all five
-                      domains. Get instant feedback and detailed explanations.
-                    </p>
-                    <button
-                      onClick={handleBeginExam}
-                      className="w-full bg-black text-nvidia-green py-2 rounded-lg font-medium hover:bg-gray-900 transition-colors"
-                    >
-                      Begin Practice Exam
-                    </button>
-                  </div>
-
-                  {/* Learning Paths */}
-                  <div className="bg-gray-800 rounded-lg p-6 border border-purple-600">
-                    <div className="text-sm text-purple-400 font-semibold mb-2 flex items-center gap-2">
-                      <GraduationCap className="w-4 h-4" />
-                      Guided Learning
-                    </div>
-                    <h3 className="text-lg font-bold mb-3">Learning Paths</h3>
-
-                    {/* Progress indicator */}
-                    <div className="mb-4">
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-400">Progress</span>
-                        <span className="text-purple-400">
-                          {learningProgress.completed}/{learningProgress.total}{" "}
-                          lessons
-                        </span>
-                      </div>
-                      <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-purple-600 transition-all duration-300"
-                          style={{
-                            width: `${learningProgress.total > 0 ? (learningProgress.completed / learningProgress.total) * 100 : 0}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    <ul className="space-y-2 text-sm text-gray-300">
-                      <li className="flex items-start gap-2">
-                        <span className="text-purple-400">▸</span>
-                        Structured curricula for each domain
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-purple-400">▸</span>
-                        Step-by-step interactive tutorials
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-purple-400">▸</span>
-                        Hands-on command practice
-                      </li>
-                    </ul>
-                    <button
-                      onClick={() => setShowLearningPaths(true)}
-                      className="mt-4 w-full bg-purple-600 text-white py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors"
-                    >
-                      {learningProgress.completed > 0
-                        ? "Continue Learning"
-                        : "Start Learning"}
-                    </button>
-                  </div>
-
-                  {/* Study Progress Dashboard */}
-                  <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                    <div className="text-sm text-blue-400 font-semibold mb-2 flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4" />
-                      Track Your Progress
-                    </div>
-                    <h3 className="text-lg font-bold mb-3">Study Dashboard</h3>
-                    <ul className="space-y-2 text-sm text-gray-300">
-                      <li className="flex items-start gap-2">
-                        <span className="text-blue-400">▸</span>
-                        View exam history & scores
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-blue-400">▸</span>
-                        Track domain performance
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-blue-400">▸</span>
-                        Study streak & recommendations
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-blue-400">▸</span>
-                        Identify weak areas
-                      </li>
-                    </ul>
-                    <button
-                      onClick={() => setShowStudyDashboard(true)}
-                      className="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                    >
-                      View Progress
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <LabsAndScenariosView
+            onStartScenario={handleStartScenario}
+            onBeginExam={handleBeginExam}
+            onOpenLearningPaths={() => setShowLearningPaths(true)}
+            onOpenStudyDashboard={() => setShowStudyDashboard(true)}
+            onOpenExamGauntlet={() => setShowExamGauntlet(true)}
+            onOpenFreeMode={() => setShowFreeMode(true)}
+            learningProgress={learningProgress}
+          />
         )}
 
-        {currentView === "docs" && <Documentation />}
+        {currentView === "reference" && <Documentation />}
       </main>
 
       {/* Footer */}
@@ -591,7 +340,14 @@ function App() {
         <ExamWorkspace onClose={() => setShowExamWorkspace(false)} />
       )}
       {/* Welcome Splash Screen */}
-      {showWelcome && <WelcomeScreen onClose={() => setShowWelcome(false)} />}
+      {showWelcome && (
+        <WelcomeScreen
+          onClose={() => {
+            localStorage.setItem("ncp-aii-welcome-dismissed", "true");
+            setShowWelcome(false);
+          }}
+        />
+      )}
 
       {/* Study Dashboard Modal */}
       {showStudyDashboard && (
@@ -625,6 +381,29 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Spaced Review Drill Modal */}
+      {showSpacedReviewDrill && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center p-4">
+          <SpacedReviewDrill
+            onComplete={() => setShowSpacedReviewDrill(false)}
+            onSnooze={() => setShowSpacedReviewDrill(false)}
+          />
+        </div>
+      )}
+
+      {/* Exam Gauntlet Modal */}
+      {showExamGauntlet && (
+        <ExamGauntlet onExit={() => setShowExamGauntlet(false)} />
+      )}
+
+      {/* Free Mode */}
+      {showFreeMode && <FreeMode onClose={() => setShowFreeMode(false)} />}
+
+      {/* Tier Unlock Notifications */}
+      <TierUnlockNotificationContainer
+        onNavigateToTier={handleNavigateToTier}
+      />
     </div>
   );
 }

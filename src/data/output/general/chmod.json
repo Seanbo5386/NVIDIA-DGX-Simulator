@@ -1,0 +1,110 @@
+{
+  "command": "chmod",
+  "category": "general",
+  "description": "Change file mode bits. Sets read, write, execute permissions on files. Essential for managing executable scripts and data access in HPC.",
+  "synopsis": "chmod [options] <mode> <file>...",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/chmod.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-R",
+      "long": "--recursive",
+      "description": "Change files and directories recursively"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Output for every file processed"
+    },
+    {
+      "short": "-c",
+      "long": "--changes",
+      "description": "Report only when change is made"
+    },
+    {
+      "long": "--reference",
+      "description": "Use reference file's mode",
+      "arguments": "<file>",
+      "argument_type": "path"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Make executable",
+      "command": "chmod +x script.sh",
+      "requires_root": false
+    },
+    {
+      "description": "Set specific permissions",
+      "command": "chmod 755 myapp",
+      "requires_root": false
+    },
+    {
+      "description": "Remove write for others",
+      "command": "chmod o-w file.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Recursive chmod",
+      "command": "chmod -R 750 project/",
+      "requires_root": false
+    },
+    {
+      "description": "Read-only for all",
+      "command": "chmod 444 important_data.txt",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Operation not permitted",
+      "meaning": "Not owner of file",
+      "resolution": "Use sudo or contact owner"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["chown", "chgrp", "ls -l"],
+    "notes": "Numeric mode: 4=read, 2=write, 1=execute. 755=rwxr-xr-x, 644=rw-r--r--. SSH keys need 600."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "Must own file or be root",
+    "notes": "Cannot change permissions on others' files"
+  },
+  "limitations": [
+    "Cannot change ownership (use chown)",
+    "Setuid/setgid require root"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Modifies file permissions",
+        "requires_privilege": "file owner"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ls -l",
+        "shared_state": "Permissions shown in ls"
+      }
+    ]
+  }
+}

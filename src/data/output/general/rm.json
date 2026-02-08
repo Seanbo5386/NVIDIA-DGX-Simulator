@@ -1,0 +1,137 @@
+{
+  "command": "rm",
+  "category": "general",
+  "description": "Remove files or directories. Deletes files and optionally directories. Critical for managing HPC scratch space and cleaning up job outputs.",
+  "synopsis": "rm [options] <file>...",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/rm.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-r",
+      "long": "--recursive",
+      "description": "Remove directories and contents"
+    },
+    {
+      "short": "-f",
+      "long": "--force",
+      "description": "Ignore nonexistent files, never prompt"
+    },
+    {
+      "short": "-i",
+      "description": "Prompt before each removal"
+    },
+    {
+      "short": "-I",
+      "description": "Prompt once before removing many files"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Explain what is being done"
+    },
+    {
+      "short": "-d",
+      "long": "--dir",
+      "description": "Remove empty directories"
+    },
+    {
+      "long": "--preserve-root",
+      "description": "Do not remove / (default)"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Remove file",
+      "command": "rm file.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Remove directory recursively",
+      "command": "rm -r directory/",
+      "requires_root": false
+    },
+    {
+      "description": "Force remove without prompts",
+      "command": "rm -rf /scratch/user/old_job/",
+      "requires_root": false
+    },
+    {
+      "description": "Remove with verbose",
+      "command": "rm -rv temp_files/",
+      "requires_root": false
+    },
+    {
+      "description": "Clean old job outputs",
+      "command": "rm -rf /scratch/$USER/job_*/output_*.tmp",
+      "requires_root": false
+    },
+    {
+      "description": "Interactive removal",
+      "command": "rm -i important_files/*",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "cannot remove: Permission denied",
+      "meaning": "No write permission",
+      "resolution": "Check permissions or use sudo"
+    },
+    {
+      "message": "cannot remove: Directory not empty",
+      "meaning": "Directory has contents",
+      "resolution": "Use -r for recursive removal"
+    },
+    {
+      "message": "cannot remove: Device or resource busy",
+      "meaning": "File is in use",
+      "resolution": "Close applications using the file"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["rmdir", "unlink", "shred"],
+    "notes": "-rf is dangerous - no recovery. Consider using trash-cli for safety. Always verify paths before running."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "Write to parent directory",
+    "notes": "Cannot remove files you don't own without root"
+  },
+  "limitations": [
+    "No built-in undo/recovery",
+    "Cannot remove mount points",
+    "Sticky bit directories require ownership"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Removes files and directories",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ls",
+        "shared_state": "Removed files no longer listed"
+      }
+    ]
+  }
+}

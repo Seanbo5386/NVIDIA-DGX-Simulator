@@ -1,0 +1,112 @@
+{
+  "command": "crontab",
+  "category": "general",
+  "description": "Maintain crontab files for individual users. Schedules recurring tasks. Used for automated maintenance and monitoring on HPC systems.",
+  "synopsis": "crontab [options] [file]",
+  "version_documented": "cronie 1.5+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/crontab.1.html"],
+  "installation": {
+    "package": "cronie",
+    "notes": "Part of cronie/cron package."
+  },
+  "global_options": [
+    {
+      "short": "-e",
+      "description": "Edit crontab"
+    },
+    {
+      "short": "-l",
+      "description": "List crontab"
+    },
+    {
+      "short": "-r",
+      "description": "Remove crontab"
+    },
+    {
+      "short": "-u",
+      "description": "Specify user (admin only)",
+      "arguments": "<user>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-i",
+      "description": "Prompt before removal"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Edit crontab",
+      "command": "crontab -e",
+      "requires_root": false
+    },
+    {
+      "description": "List crontab",
+      "command": "crontab -l",
+      "requires_root": false
+    },
+    {
+      "description": "Remove crontab",
+      "command": "crontab -ri",
+      "requires_root": false
+    },
+    {
+      "description": "Install from file",
+      "command": "crontab my_jobs.cron",
+      "requires_root": false
+    },
+    {
+      "description": "View another user (admin)",
+      "command": "crontab -l -u otheruser",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "not allowed to use crontab",
+      "meaning": "User blocked from cron",
+      "resolution": "Check /etc/cron.allow and /etc/cron.deny"
+    },
+    {
+      "message": "errors in crontab file",
+      "meaning": "Invalid crontab syntax",
+      "resolution": "Fix syntax errors"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["at", "systemd-timers", "scrontab"],
+    "notes": "Format: minute hour day month weekday command. Use scrontab for SLURM-scheduled jobs."
+  },
+  "permissions": {
+    "read_operations": "Read own crontab",
+    "write_operations": "Edit own crontab",
+    "notes": "Admin for other users"
+  },
+  "limitations": [
+    "No job dependencies",
+    "No retry on failure",
+    "Limited to minute precision"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "system_state",
+        "fields": ["scheduled_tasks"],
+        "description": "Schedules recurring tasks",
+        "requires_privilege": "user"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

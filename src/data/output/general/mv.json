@@ -1,0 +1,142 @@
+{
+  "command": "mv",
+  "category": "general",
+  "description": "Move or rename files. Relocates files and directories or changes their names. Used in HPC for organizing outputs and atomic file operations.",
+  "synopsis": "mv [options] <source>... <dest>",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/mv.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-f",
+      "long": "--force",
+      "description": "Do not prompt before overwriting"
+    },
+    {
+      "short": "-i",
+      "long": "--interactive",
+      "description": "Prompt before overwrite"
+    },
+    {
+      "short": "-n",
+      "long": "--no-clobber",
+      "description": "Do not overwrite existing"
+    },
+    {
+      "short": "-u",
+      "long": "--update",
+      "description": "Move only when source is newer"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Explain what is being done"
+    },
+    {
+      "short": "-t",
+      "long": "--target-directory",
+      "description": "Move all sources into directory",
+      "arguments": "<directory>",
+      "argument_type": "path"
+    },
+    {
+      "long": "--backup",
+      "description": "Make backup of existing dest",
+      "arguments": "[=control]",
+      "argument_type": "string"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Rename file",
+      "command": "mv old_name.txt new_name.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Move to directory",
+      "command": "mv file.txt /scratch/user/data/",
+      "requires_root": false
+    },
+    {
+      "description": "Move multiple files",
+      "command": "mv *.log /archive/logs/",
+      "requires_root": false
+    },
+    {
+      "description": "Atomic result publish",
+      "command": "mv results.tmp results.final",
+      "requires_root": false
+    },
+    {
+      "description": "Move with backup",
+      "command": "mv --backup=numbered config.yaml config.yaml",
+      "requires_root": false
+    },
+    {
+      "description": "Organize job outputs",
+      "command": "mv job_${SLURM_JOB_ID}_* /results/completed/",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "cannot move to itself",
+      "meaning": "Source and dest are same",
+      "resolution": "Use different destination"
+    },
+    {
+      "message": "Invalid cross-device link",
+      "meaning": "Move across filesystems failed",
+      "resolution": "Copy then delete instead"
+    },
+    {
+      "message": "Directory not empty",
+      "meaning": "Cannot overwrite non-empty directory",
+      "resolution": "Remove destination first"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["cp", "rm", "rename"],
+    "notes": "Same-filesystem moves are instant (just rename). Cross-filesystem moves copy then delete. Atomic for signaling."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "Write to both source and dest directories",
+    "notes": "Standard user for owned files"
+  },
+  "limitations": [
+    "Cross-filesystem is copy+delete (not atomic)",
+    "Cannot move to different filesystem atomically"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Moves/renames files",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ls",
+        "shared_state": "File location updated"
+      }
+    ]
+  }
+}

@@ -1,0 +1,1381 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "HPC Cluster State Domains",
+  "description": "Comprehensive state domain definitions for HPC cluster simulation context building",
+  "version": "1.0.0",
+  "created": "2025-02-03",
+  "state_domains": {
+    "gpu_state": {
+      "description": "GPU hardware and driver state information from NVIDIA SMI and NVML",
+      "source_commands": [
+        "nvidia-smi",
+        "nvidia-smi -q",
+        "nvidia-smi --query-gpu"
+      ],
+      "fields": {
+        "gpu_id": {
+          "type": "integer",
+          "description": "Zero-based GPU index on the local system"
+        },
+        "uuid": {
+          "type": "string",
+          "description": "Globally unique immutable identifier for the GPU",
+          "pattern": "^GPU-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Official product name of the GPU (e.g., 'NVIDIA A100-SXM4-80GB')"
+        },
+        "temperature": {
+          "type": "integer",
+          "description": "Current GPU core temperature",
+          "unit": "celsius",
+          "minimum": 0,
+          "maximum": 120
+        },
+        "power_draw": {
+          "type": "number",
+          "description": "Current power consumption of the GPU",
+          "unit": "watts",
+          "minimum": 0
+        },
+        "power_limit": {
+          "type": "number",
+          "description": "Current power limit setting for the GPU",
+          "unit": "watts",
+          "minimum": 0
+        },
+        "utilization_gpu": {
+          "type": "integer",
+          "description": "Percentage of time the GPU compute units were active",
+          "unit": "percent",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "utilization_memory": {
+          "type": "integer",
+          "description": "Percentage of time the memory controller was active",
+          "unit": "percent",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "memory_total": {
+          "type": "integer",
+          "description": "Total installed GPU memory",
+          "unit": "MiB"
+        },
+        "memory_used": {
+          "type": "integer",
+          "description": "Currently allocated GPU memory",
+          "unit": "MiB"
+        },
+        "memory_free": {
+          "type": "integer",
+          "description": "Available GPU memory",
+          "unit": "MiB"
+        },
+        "ecc_mode": {
+          "type": "string",
+          "description": "Current ECC memory mode status",
+          "enum": ["Enabled", "Disabled", "N/A"]
+        },
+        "ecc_errors_correctable": {
+          "type": "integer",
+          "description": "Count of correctable (single-bit) ECC errors since last reset",
+          "minimum": 0
+        },
+        "ecc_errors_uncorrectable": {
+          "type": "integer",
+          "description": "Count of uncorrectable (double-bit) ECC errors since last reset",
+          "minimum": 0
+        },
+        "persistence_mode": {
+          "type": "string",
+          "description": "Whether the driver remains loaded when no applications are using the GPU",
+          "enum": ["Enabled", "Disabled"]
+        },
+        "compute_mode": {
+          "type": "string",
+          "description": "GPU compute access mode controlling process sharing",
+          "enum": [
+            "Default",
+            "Exclusive_Thread",
+            "Exclusive_Process",
+            "Prohibited"
+          ]
+        },
+        "pci_bus_id": {
+          "type": "string",
+          "description": "PCI bus address in domain:bus:device.function format",
+          "pattern": "^[0-9A-Fa-f]{8}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}\\.[0-9]$"
+        },
+        "pcie_link_gen_current": {
+          "type": "integer",
+          "description": "Current PCIe link generation (1-5)",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "pcie_link_width_current": {
+          "type": "integer",
+          "description": "Current PCIe link width in lanes",
+          "enum": [1, 2, 4, 8, 16, 32]
+        },
+        "driver_version": {
+          "type": "string",
+          "description": "NVIDIA driver version string",
+          "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$"
+        },
+        "cuda_version": {
+          "type": "string",
+          "description": "CUDA toolkit version supported by the driver",
+          "pattern": "^[0-9]+\\.[0-9]+$"
+        },
+        "status": {
+          "type": "string",
+          "description": "Overall GPU operational status",
+          "enum": ["OK", "Warning", "Error", "Unknown"]
+        },
+        "throttle_reason": {
+          "type": "string",
+          "description": "Current reason for clock throttling if any",
+          "enum": [
+            "None",
+            "GpuIdle",
+            "ApplicationsClocksSetting",
+            "SwPowerCap",
+            "HwSlowdown",
+            "HwThermalSlowdown",
+            "HwPowerBrakeSlowdown",
+            "SyncBoost",
+            "SwThermalSlowdown",
+            "DisplayClockSetting"
+          ]
+        }
+      }
+    },
+    "gpu_process_state": {
+      "description": "Information about processes currently using GPU resources",
+      "source_commands": ["nvidia-smi pmon", "nvidia-smi --query-compute-apps"],
+      "fields": {
+        "pid": {
+          "type": "integer",
+          "description": "Process ID of the application using the GPU",
+          "minimum": 1
+        },
+        "gpu_id": {
+          "type": "integer",
+          "description": "GPU index the process is running on",
+          "minimum": 0
+        },
+        "process_name": {
+          "type": "string",
+          "description": "Name or path of the executable"
+        },
+        "used_memory": {
+          "type": "integer",
+          "description": "GPU memory allocated by this process",
+          "unit": "MiB",
+          "minimum": 0
+        },
+        "compute_utilization": {
+          "type": "integer",
+          "description": "Percentage of GPU compute resources used by this process",
+          "unit": "percent",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of GPU context used by the process",
+          "enum": ["C", "G", "C+G"],
+          "enum_descriptions": {
+            "C": "Compute context (CUDA/OpenCL)",
+            "G": "Graphics context",
+            "C+G": "Both compute and graphics contexts"
+          }
+        }
+      }
+    },
+    "job_state": {
+      "description": "Slurm job scheduling and execution state information",
+      "source_commands": ["squeue", "sacct", "scontrol show job"],
+      "fields": {
+        "job_id": {
+          "type": "integer",
+          "description": "Unique Slurm job identifier",
+          "minimum": 1
+        },
+        "job_name": {
+          "type": "string",
+          "description": "User-specified name for the job"
+        },
+        "user": {
+          "type": "string",
+          "description": "Username of the job owner"
+        },
+        "state": {
+          "type": "string",
+          "description": "Current job state in Slurm",
+          "enum": [
+            "PENDING",
+            "RUNNING",
+            "SUSPENDED",
+            "COMPLETED",
+            "CANCELLED",
+            "FAILED",
+            "TIMEOUT",
+            "NODE_FAIL",
+            "PREEMPTED",
+            "BOOT_FAIL",
+            "DEADLINE",
+            "OUT_OF_MEMORY",
+            "COMPLETING",
+            "CONFIGURING",
+            "RESIZING",
+            "REVOKED",
+            "SPECIAL_EXIT"
+          ]
+        },
+        "partition": {
+          "type": "string",
+          "description": "Slurm partition (queue) the job is submitted to"
+        },
+        "nodes": {
+          "type": "string",
+          "description": "Node list in Slurm compressed format (e.g., 'node[001-004]')"
+        },
+        "num_nodes": {
+          "type": "integer",
+          "description": "Number of nodes allocated to the job",
+          "minimum": 1
+        },
+        "num_cpus": {
+          "type": "integer",
+          "description": "Number of CPU cores allocated to the job",
+          "minimum": 1
+        },
+        "num_gpus": {
+          "type": "integer",
+          "description": "Number of GPUs allocated to the job",
+          "minimum": 0
+        },
+        "time_limit": {
+          "type": "string",
+          "description": "Maximum allowed runtime in D-HH:MM:SS or UNLIMITED format"
+        },
+        "time_used": {
+          "type": "string",
+          "description": "Elapsed runtime in D-HH:MM:SS format"
+        },
+        "submit_time": {
+          "type": "string",
+          "description": "Job submission timestamp in ISO 8601 format",
+          "format": "date-time"
+        },
+        "start_time": {
+          "type": "string",
+          "description": "Job start timestamp in ISO 8601 format (null if not started)",
+          "format": "date-time"
+        },
+        "end_time": {
+          "type": "string",
+          "description": "Job end timestamp in ISO 8601 format (null if not ended)",
+          "format": "date-time"
+        },
+        "priority": {
+          "type": "integer",
+          "description": "Slurm calculated job priority (higher = more priority)",
+          "minimum": 0
+        },
+        "qos": {
+          "type": "string",
+          "description": "Quality of Service level assigned to the job"
+        },
+        "account": {
+          "type": "string",
+          "description": "Slurm account/project used for accounting"
+        },
+        "exit_code": {
+          "type": "string",
+          "description": "Exit code in 'exit_status:signal' format (e.g., '0:0')"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Reason code for pending or failed jobs",
+          "enum": [
+            "None",
+            "Priority",
+            "Dependency",
+            "Resources",
+            "PartitionDown",
+            "PartitionInactive",
+            "PartitionNodeLimit",
+            "PartitionTimeLimit",
+            "ReqNodeNotAvail",
+            "QOSMaxJobsPerUserLimit",
+            "QOSMaxCpuPerUserLimit",
+            "QOSMaxGRESPerUser",
+            "AssocMaxJobsLimit",
+            "JobHeldAdmin",
+            "JobHeldUser",
+            "BeginTime",
+            "Licenses",
+            "InvalidAccount",
+            "InvalidQOS",
+            "BadConstraints",
+            "NodeDown",
+            "SystemFailure"
+          ]
+        }
+      }
+    },
+    "node_state": {
+      "description": "Compute node status and resource availability",
+      "source_commands": ["sinfo", "scontrol show node"],
+      "fields": {
+        "hostname": {
+          "type": "string",
+          "description": "Short hostname of the compute node"
+        },
+        "state": {
+          "type": "string",
+          "description": "Primary node state in Slurm",
+          "enum": [
+            "ALLOCATED",
+            "COMPLETING",
+            "DOWN",
+            "DRAINED",
+            "DRAINING",
+            "FAIL",
+            "FAILING",
+            "FUTURE",
+            "IDLE",
+            "MAINT",
+            "MIXED",
+            "PLANNED",
+            "POWERED_DOWN",
+            "POWERING_DOWN",
+            "POWERING_UP",
+            "REBOOT_ISSUED",
+            "REBOOT_REQUESTED",
+            "RESERVED",
+            "UNKNOWN"
+          ]
+        },
+        "state_flags": {
+          "type": "array",
+          "description": "Additional state flags modifying the primary state",
+          "items": {
+            "type": "string",
+            "enum": [
+              "CLOUD",
+              "COMPLETING",
+              "DRAIN",
+              "DYNAMIC_FUTURE",
+              "DYNAMIC_NORM",
+              "FAIL",
+              "INVALID_REG",
+              "MAINT",
+              "NO_RESPOND",
+              "NOT_RESPONDING",
+              "PLANNED",
+              "POWERED_DOWN",
+              "POWERING_DOWN",
+              "POWERING_UP",
+              "REBOOT_ISSUED",
+              "REBOOT_REQUESTED",
+              "RESERVED"
+            ]
+          }
+        },
+        "cpus_total": {
+          "type": "integer",
+          "description": "Total number of CPU cores on the node",
+          "minimum": 1
+        },
+        "cpus_alloc": {
+          "type": "integer",
+          "description": "Number of CPU cores currently allocated to jobs",
+          "minimum": 0
+        },
+        "cpus_idle": {
+          "type": "integer",
+          "description": "Number of CPU cores available for allocation",
+          "minimum": 0
+        },
+        "memory_total": {
+          "type": "integer",
+          "description": "Total RAM on the node",
+          "unit": "MB"
+        },
+        "memory_alloc": {
+          "type": "integer",
+          "description": "RAM currently allocated to jobs",
+          "unit": "MB"
+        },
+        "memory_free": {
+          "type": "integer",
+          "description": "RAM available for allocation",
+          "unit": "MB"
+        },
+        "gpus_total": {
+          "type": "integer",
+          "description": "Total number of GPUs on the node",
+          "minimum": 0
+        },
+        "gpus_alloc": {
+          "type": "integer",
+          "description": "Number of GPUs currently allocated to jobs",
+          "minimum": 0
+        },
+        "gpus_idle": {
+          "type": "integer",
+          "description": "Number of GPUs available for allocation",
+          "minimum": 0
+        },
+        "partitions": {
+          "type": "array",
+          "description": "List of Slurm partitions this node belongs to",
+          "items": {
+            "type": "string"
+          }
+        },
+        "features": {
+          "type": "array",
+          "description": "Node features/constraints for job matching",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reason": {
+          "type": "string",
+          "description": "Reason for non-available states (drain, down, etc.)"
+        },
+        "weight": {
+          "type": "integer",
+          "description": "Node weight for scheduling priority",
+          "minimum": 1
+        },
+        "boot_time": {
+          "type": "string",
+          "description": "Last system boot timestamp in ISO 8601 format",
+          "format": "date-time"
+        },
+        "slurmd_start_time": {
+          "type": "string",
+          "description": "Slurmd daemon start timestamp in ISO 8601 format",
+          "format": "date-time"
+        }
+      }
+    },
+    "partition_state": {
+      "description": "Slurm partition (queue) configuration and status",
+      "source_commands": ["scontrol show partition"],
+      "fields": {
+        "partition_name": {
+          "type": "string",
+          "description": "Name of the Slurm partition"
+        },
+        "state": {
+          "type": "string",
+          "description": "Partition operational state",
+          "enum": ["UP", "DOWN", "DRAIN", "INACTIVE"]
+        },
+        "nodes": {
+          "type": "string",
+          "description": "Node list in Slurm compressed format"
+        },
+        "total_nodes": {
+          "type": "integer",
+          "description": "Total number of nodes in the partition",
+          "minimum": 0
+        },
+        "total_cpus": {
+          "type": "integer",
+          "description": "Total CPU cores across all partition nodes",
+          "minimum": 0
+        },
+        "max_time": {
+          "type": "string",
+          "description": "Maximum job runtime limit (D-HH:MM:SS or UNLIMITED)"
+        },
+        "default_time": {
+          "type": "string",
+          "description": "Default job runtime if not specified (D-HH:MM:SS or UNLIMITED)"
+        },
+        "max_nodes": {
+          "type": "integer",
+          "description": "Maximum nodes per job (null for UNLIMITED)",
+          "minimum": 1
+        },
+        "min_nodes": {
+          "type": "integer",
+          "description": "Minimum nodes per job",
+          "minimum": 1
+        },
+        "default": {
+          "type": "boolean",
+          "description": "Whether this is the default partition for job submission"
+        },
+        "priority_tier": {
+          "type": "integer",
+          "description": "Partition priority tier for scheduling",
+          "minimum": 0
+        },
+        "preempt_mode": {
+          "type": "string",
+          "description": "Job preemption policy for this partition",
+          "enum": ["OFF", "CANCEL", "CHECKPOINT", "REQUEUE", "SUSPEND"]
+        },
+        "allow_groups": {
+          "type": "array",
+          "description": "Unix groups allowed to submit jobs (empty = all allowed)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "deny_groups": {
+          "type": "array",
+          "description": "Unix groups denied from submitting jobs",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allow_accounts": {
+          "type": "array",
+          "description": "Slurm accounts allowed to submit jobs (empty = all allowed)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "deny_accounts": {
+          "type": "array",
+          "description": "Slurm accounts denied from submitting jobs",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "network_ib_state": {
+      "description": "InfiniBand fabric port and link state information",
+      "source_commands": ["ibstat", "ibstatus", "perfquery", "ibdiagnet"],
+      "fields": {
+        "device": {
+          "type": "string",
+          "description": "InfiniBand HCA device name (e.g., 'mlx5_0')"
+        },
+        "port": {
+          "type": "integer",
+          "description": "Port number on the HCA",
+          "minimum": 1
+        },
+        "state": {
+          "type": "string",
+          "description": "Port logical state",
+          "enum": ["Down", "Initializing", "Armed", "Active"]
+        },
+        "physical_state": {
+          "type": "string",
+          "description": "Port physical link state",
+          "enum": [
+            "Sleep",
+            "Polling",
+            "Disabled",
+            "PortConfigurationTraining",
+            "LinkUp",
+            "LinkErrorRecovery",
+            "PhyTest"
+          ]
+        },
+        "link_speed": {
+          "type": "string",
+          "description": "Negotiated link signaling rate",
+          "enum": [
+            "2.5 Gbps (SDR)",
+            "5.0 Gbps (DDR)",
+            "10.0 Gbps (QDR)",
+            "14.0 Gbps (FDR)",
+            "25.0 Gbps (EDR)",
+            "50.0 Gbps (HDR)",
+            "100.0 Gbps (NDR)",
+            "200.0 Gbps (XDR)"
+          ]
+        },
+        "link_width": {
+          "type": "string",
+          "description": "Number of data lanes in the link",
+          "enum": ["1x", "2x", "4x", "8x", "12x"]
+        },
+        "rate": {
+          "type": "number",
+          "description": "Effective bandwidth (speed x width)",
+          "unit": "Gb/s"
+        },
+        "lid": {
+          "type": "integer",
+          "description": "Local Identifier assigned by the subnet manager",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "sm_lid": {
+          "type": "integer",
+          "description": "LID of the Subnet Manager",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "guid": {
+          "type": "string",
+          "description": "Port GUID in hexadecimal format",
+          "pattern": "^0x[0-9a-fA-F]{16}$"
+        },
+        "node_guid": {
+          "type": "string",
+          "description": "Node GUID in hexadecimal format",
+          "pattern": "^0x[0-9a-fA-F]{16}$"
+        },
+        "sys_guid": {
+          "type": "string",
+          "description": "System GUID in hexadecimal format",
+          "pattern": "^0x[0-9a-fA-F]{16}$"
+        },
+        "cap_mask": {
+          "type": "string",
+          "description": "Port capability mask in hexadecimal",
+          "pattern": "^0x[0-9a-fA-F]+$"
+        },
+        "link_layer": {
+          "type": "string",
+          "description": "Link layer protocol in use",
+          "enum": ["InfiniBand", "Ethernet"]
+        },
+        "error_counters": {
+          "type": "object",
+          "description": "InfiniBand port error and performance counters",
+          "properties": {
+            "symbol_errors": {
+              "type": "integer",
+              "description": "Symbol error count",
+              "minimum": 0
+            },
+            "link_error_recovery": {
+              "type": "integer",
+              "description": "Link error recovery count",
+              "minimum": 0
+            },
+            "link_downed": {
+              "type": "integer",
+              "description": "Link down count",
+              "minimum": 0
+            },
+            "rcv_errors": {
+              "type": "integer",
+              "description": "Receive error count",
+              "minimum": 0
+            },
+            "rcv_remote_physical_errors": {
+              "type": "integer",
+              "description": "Remote physical receive error count",
+              "minimum": 0
+            },
+            "rcv_switch_relay_errors": {
+              "type": "integer",
+              "description": "Switch relay receive error count",
+              "minimum": 0
+            },
+            "xmit_discards": {
+              "type": "integer",
+              "description": "Transmit discard count",
+              "minimum": 0
+            },
+            "xmit_constraint_errors": {
+              "type": "integer",
+              "description": "Transmit constraint error count",
+              "minimum": 0
+            },
+            "rcv_constraint_errors": {
+              "type": "integer",
+              "description": "Receive constraint error count",
+              "minimum": 0
+            },
+            "local_link_integrity_errors": {
+              "type": "integer",
+              "description": "Local link integrity error count",
+              "minimum": 0
+            },
+            "excessive_buffer_overrun_errors": {
+              "type": "integer",
+              "description": "Excessive buffer overrun error count",
+              "minimum": 0
+            },
+            "vl15_dropped": {
+              "type": "integer",
+              "description": "VL15 dropped packet count",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "network_eth_state": {
+      "description": "Ethernet network interface state and statistics",
+      "source_commands": ["ip addr", "ip link", "ethtool", "cat /proc/net/dev"],
+      "fields": {
+        "interface": {
+          "type": "string",
+          "description": "Network interface name (e.g., 'eth0', 'eno1')"
+        },
+        "state": {
+          "type": "string",
+          "description": "Interface operational state",
+          "enum": [
+            "up",
+            "down",
+            "unknown",
+            "dormant",
+            "notpresent",
+            "lowerlayerdown"
+          ]
+        },
+        "mac_address": {
+          "type": "string",
+          "description": "Hardware MAC address",
+          "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
+        },
+        "ipv4_address": {
+          "type": "string",
+          "description": "Primary IPv4 address in CIDR notation",
+          "format": "ipv4"
+        },
+        "ipv4_netmask": {
+          "type": "string",
+          "description": "IPv4 subnet mask in dotted decimal",
+          "format": "ipv4"
+        },
+        "ipv6_address": {
+          "type": "string",
+          "description": "Primary IPv6 address in CIDR notation",
+          "format": "ipv6"
+        },
+        "mtu": {
+          "type": "integer",
+          "description": "Maximum transmission unit size",
+          "unit": "bytes",
+          "minimum": 68,
+          "maximum": 65535
+        },
+        "speed": {
+          "type": "integer",
+          "description": "Link speed",
+          "unit": "Mbps"
+        },
+        "duplex": {
+          "type": "string",
+          "description": "Link duplex mode",
+          "enum": ["full", "half", "unknown"]
+        },
+        "driver": {
+          "type": "string",
+          "description": "Kernel driver name for the interface"
+        },
+        "rx_packets": {
+          "type": "integer",
+          "description": "Total packets received",
+          "minimum": 0
+        },
+        "tx_packets": {
+          "type": "integer",
+          "description": "Total packets transmitted",
+          "minimum": 0
+        },
+        "rx_bytes": {
+          "type": "integer",
+          "description": "Total bytes received",
+          "unit": "bytes",
+          "minimum": 0
+        },
+        "tx_bytes": {
+          "type": "integer",
+          "description": "Total bytes transmitted",
+          "unit": "bytes",
+          "minimum": 0
+        },
+        "rx_errors": {
+          "type": "integer",
+          "description": "Receive error count",
+          "minimum": 0
+        },
+        "tx_errors": {
+          "type": "integer",
+          "description": "Transmit error count",
+          "minimum": 0
+        },
+        "rx_dropped": {
+          "type": "integer",
+          "description": "Receive dropped packet count",
+          "minimum": 0
+        },
+        "tx_dropped": {
+          "type": "integer",
+          "description": "Transmit dropped packet count",
+          "minimum": 0
+        }
+      }
+    },
+    "storage_lustre_state": {
+      "description": "Lustre parallel filesystem state and statistics",
+      "source_commands": ["lfs df", "lctl get_param", "lfs getstripe"],
+      "fields": {
+        "filesystem": {
+          "type": "string",
+          "description": "Lustre filesystem name"
+        },
+        "mount_point": {
+          "type": "string",
+          "description": "Local mount point path"
+        },
+        "mdt_status": {
+          "type": "string",
+          "description": "Metadata Target status",
+          "enum": ["active", "degraded", "unavailable"]
+        },
+        "ost_count": {
+          "type": "integer",
+          "description": "Number of Object Storage Targets",
+          "minimum": 1
+        },
+        "ost_status": {
+          "type": "string",
+          "description": "Overall OST health status",
+          "enum": ["all_active", "degraded", "critical"]
+        },
+        "total_space": {
+          "type": "integer",
+          "description": "Total filesystem capacity",
+          "unit": "bytes"
+        },
+        "used_space": {
+          "type": "integer",
+          "description": "Space currently in use",
+          "unit": "bytes"
+        },
+        "free_space": {
+          "type": "integer",
+          "description": "Available space",
+          "unit": "bytes"
+        },
+        "total_inodes": {
+          "type": "integer",
+          "description": "Total inode capacity",
+          "minimum": 0
+        },
+        "used_inodes": {
+          "type": "integer",
+          "description": "Inodes currently in use",
+          "minimum": 0
+        },
+        "free_inodes": {
+          "type": "integer",
+          "description": "Available inodes",
+          "minimum": 0
+        },
+        "client_count": {
+          "type": "integer",
+          "description": "Number of active client mounts",
+          "minimum": 0
+        },
+        "stripe_count": {
+          "type": "integer",
+          "description": "Default stripe count for new files",
+          "minimum": 1
+        },
+        "stripe_size": {
+          "type": "integer",
+          "description": "Default stripe size for new files",
+          "unit": "bytes",
+          "minimum": 65536
+        }
+      }
+    },
+    "storage_local_state": {
+      "description": "Local disk and storage device state",
+      "source_commands": ["df", "lsblk", "smartctl", "mount"],
+      "fields": {
+        "device": {
+          "type": "string",
+          "description": "Block device path (e.g., '/dev/sda1', '/dev/nvme0n1p1')"
+        },
+        "mount_point": {
+          "type": "string",
+          "description": "Filesystem mount point path"
+        },
+        "fs_type": {
+          "type": "string",
+          "description": "Filesystem type",
+          "enum": [
+            "ext4",
+            "xfs",
+            "btrfs",
+            "tmpfs",
+            "nfs",
+            "nfs4",
+            "lustre",
+            "gpfs",
+            "swap",
+            "vfat",
+            "ntfs"
+          ]
+        },
+        "total_size": {
+          "type": "integer",
+          "description": "Total filesystem size",
+          "unit": "bytes"
+        },
+        "used_size": {
+          "type": "integer",
+          "description": "Space currently in use",
+          "unit": "bytes"
+        },
+        "available_size": {
+          "type": "integer",
+          "description": "Space available to non-root users",
+          "unit": "bytes"
+        },
+        "use_percent": {
+          "type": "number",
+          "description": "Percentage of space used",
+          "unit": "percent",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "mount_options": {
+          "type": "array",
+          "description": "Active mount options",
+          "items": {
+            "type": "string"
+          }
+        },
+        "read_only": {
+          "type": "boolean",
+          "description": "Whether the filesystem is mounted read-only"
+        },
+        "model": {
+          "type": "string",
+          "description": "Disk drive model name"
+        },
+        "serial": {
+          "type": "string",
+          "description": "Disk drive serial number"
+        },
+        "smart_status": {
+          "type": "string",
+          "description": "SMART health assessment",
+          "enum": ["PASSED", "FAILED", "UNKNOWN"]
+        }
+      }
+    },
+    "system_state": {
+      "description": "General system information and resource utilization",
+      "source_commands": [
+        "uname",
+        "cat /proc/cpuinfo",
+        "cat /proc/meminfo",
+        "uptime",
+        "timedatectl"
+      ],
+      "fields": {
+        "hostname": {
+          "type": "string",
+          "description": "Short hostname of the system"
+        },
+        "fqdn": {
+          "type": "string",
+          "description": "Fully qualified domain name"
+        },
+        "kernel_version": {
+          "type": "string",
+          "description": "Linux kernel version string"
+        },
+        "os_name": {
+          "type": "string",
+          "description": "Operating system name (e.g., 'Red Hat Enterprise Linux')"
+        },
+        "os_version": {
+          "type": "string",
+          "description": "Operating system version"
+        },
+        "architecture": {
+          "type": "string",
+          "description": "CPU architecture",
+          "enum": ["x86_64", "aarch64", "ppc64le"]
+        },
+        "uptime_seconds": {
+          "type": "integer",
+          "description": "System uptime since last boot",
+          "unit": "seconds",
+          "minimum": 0
+        },
+        "boot_time": {
+          "type": "string",
+          "description": "System boot timestamp in ISO 8601 format",
+          "format": "date-time"
+        },
+        "cpu_model": {
+          "type": "string",
+          "description": "CPU model name"
+        },
+        "cpu_count": {
+          "type": "integer",
+          "description": "Total logical CPUs (cores x threads)",
+          "minimum": 1
+        },
+        "cpu_cores_per_socket": {
+          "type": "integer",
+          "description": "Physical cores per CPU socket",
+          "minimum": 1
+        },
+        "cpu_sockets": {
+          "type": "integer",
+          "description": "Number of CPU sockets",
+          "minimum": 1
+        },
+        "memory_total": {
+          "type": "integer",
+          "description": "Total physical RAM",
+          "unit": "bytes"
+        },
+        "memory_used": {
+          "type": "integer",
+          "description": "RAM currently in use (excluding buffers/cache)",
+          "unit": "bytes"
+        },
+        "memory_free": {
+          "type": "integer",
+          "description": "Completely free RAM",
+          "unit": "bytes"
+        },
+        "memory_available": {
+          "type": "integer",
+          "description": "RAM available for applications (including reclaimable)",
+          "unit": "bytes"
+        },
+        "swap_total": {
+          "type": "integer",
+          "description": "Total swap space",
+          "unit": "bytes"
+        },
+        "swap_used": {
+          "type": "integer",
+          "description": "Swap space currently in use",
+          "unit": "bytes"
+        },
+        "load_1min": {
+          "type": "number",
+          "description": "1-minute load average",
+          "minimum": 0
+        },
+        "load_5min": {
+          "type": "number",
+          "description": "5-minute load average",
+          "minimum": 0
+        },
+        "load_15min": {
+          "type": "number",
+          "description": "15-minute load average",
+          "minimum": 0
+        },
+        "timezone": {
+          "type": "string",
+          "description": "System timezone (e.g., 'America/New_York', 'UTC')"
+        },
+        "ntp_synchronized": {
+          "type": "boolean",
+          "description": "Whether system clock is synchronized via NTP"
+        }
+      }
+    },
+    "container_state": {
+      "description": "Container runtime state for Docker, Podman, Singularity, or Enroot",
+      "source_commands": [
+        "docker ps",
+        "docker inspect",
+        "podman ps",
+        "singularity instance list",
+        "enroot list"
+      ],
+      "fields": {
+        "container_id": {
+          "type": "string",
+          "description": "Unique container identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Container name"
+        },
+        "image": {
+          "type": "string",
+          "description": "Container image name with tag"
+        },
+        "image_id": {
+          "type": "string",
+          "description": "Image digest/ID"
+        },
+        "status": {
+          "type": "string",
+          "description": "Container lifecycle status",
+          "enum": [
+            "created",
+            "running",
+            "paused",
+            "restarting",
+            "removing",
+            "exited",
+            "dead"
+          ]
+        },
+        "created": {
+          "type": "string",
+          "description": "Container creation timestamp in ISO 8601 format",
+          "format": "date-time"
+        },
+        "started": {
+          "type": "string",
+          "description": "Container start timestamp in ISO 8601 format",
+          "format": "date-time"
+        },
+        "ports": {
+          "type": "array",
+          "description": "Published port mappings",
+          "items": {
+            "type": "object",
+            "properties": {
+              "host_ip": {
+                "type": "string",
+                "description": "Host IP address"
+              },
+              "host_port": {
+                "type": "integer",
+                "description": "Host port number"
+              },
+              "container_port": {
+                "type": "integer",
+                "description": "Container port number"
+              },
+              "protocol": {
+                "type": "string",
+                "description": "Protocol",
+                "enum": ["tcp", "udp"]
+              }
+            }
+          }
+        },
+        "mounts": {
+          "type": "array",
+          "description": "Volume and bind mounts",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Mount type",
+                "enum": ["bind", "volume", "tmpfs"]
+              },
+              "source": {
+                "type": "string",
+                "description": "Source path or volume name"
+              },
+              "destination": {
+                "type": "string",
+                "description": "Container mount path"
+              },
+              "read_only": {
+                "type": "boolean",
+                "description": "Whether mount is read-only"
+              }
+            }
+          }
+        },
+        "gpus_attached": {
+          "type": "array",
+          "description": "GPU UUIDs attached to the container",
+          "items": {
+            "type": "string"
+          }
+        },
+        "runtime": {
+          "type": "string",
+          "description": "Container runtime in use",
+          "enum": [
+            "docker",
+            "podman",
+            "singularity",
+            "enroot",
+            "nvidia-container-runtime"
+          ]
+        },
+        "pid": {
+          "type": "integer",
+          "description": "Host PID of the container init process",
+          "minimum": 1
+        },
+        "exit_code": {
+          "type": "integer",
+          "description": "Container exit code (null if still running)"
+        }
+      }
+    },
+    "firmware_state": {
+      "description": "Device firmware versions and update status",
+      "source_commands": [
+        "nvidia-smi -q",
+        "mlxfwmanager",
+        "ipmitool mc info",
+        "dmidecode"
+      ],
+      "fields": {
+        "device_type": {
+          "type": "string",
+          "description": "Type of device",
+          "enum": [
+            "gpu",
+            "hca",
+            "switch",
+            "bmc",
+            "bios",
+            "cpld",
+            "nvswitch",
+            "ssd"
+          ]
+        },
+        "device_id": {
+          "type": "string",
+          "description": "Device identifier (UUID, serial, or PCI address)"
+        },
+        "current_version": {
+          "type": "string",
+          "description": "Currently installed firmware version"
+        },
+        "available_version": {
+          "type": "string",
+          "description": "Latest available firmware version (null if not checked)"
+        },
+        "update_available": {
+          "type": "boolean",
+          "description": "Whether a firmware update is available"
+        },
+        "psid": {
+          "type": "string",
+          "description": "Parameter Set ID for Mellanox devices (null for non-Mellanox)"
+        },
+        "last_updated": {
+          "type": "string",
+          "description": "Timestamp of last firmware update in ISO 8601 format",
+          "format": "date-time"
+        }
+      }
+    },
+    "fabric_state": {
+      "description": "NVSwitch and NVLink fabric interconnect state",
+      "source_commands": [
+        "nvidia-smi nvlink -s",
+        "nvidia-smi nvswitch",
+        "nvswitchctl"
+      ],
+      "fields": {
+        "nvswitch_id": {
+          "type": "integer",
+          "description": "NVSwitch index in the system",
+          "minimum": 0
+        },
+        "nvswitch_uuid": {
+          "type": "string",
+          "description": "NVSwitch unique identifier",
+          "pattern": "^NVSwitch-[0-9a-f-]+$"
+        },
+        "nvlink_version": {
+          "type": "string",
+          "description": "NVLink protocol version",
+          "enum": ["NVLink2", "NVLink3", "NVLink4"]
+        },
+        "links": {
+          "type": "array",
+          "description": "NVLink port status array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "link_id": {
+                "type": "integer",
+                "description": "Link index on the switch or GPU",
+                "minimum": 0
+              },
+              "state": {
+                "type": "string",
+                "description": "Link operational state",
+                "enum": ["active", "inactive", "disabled", "error"]
+              },
+              "remote_device_type": {
+                "type": "string",
+                "description": "Type of device at the remote end",
+                "enum": ["gpu", "nvswitch", "cpu"]
+              },
+              "remote_device_id": {
+                "type": "string",
+                "description": "UUID or ID of the remote device"
+              },
+              "bandwidth": {
+                "type": "number",
+                "description": "Link bandwidth capacity",
+                "unit": "GB/s"
+              },
+              "tx_throughput": {
+                "type": "number",
+                "description": "Current transmit throughput",
+                "unit": "GB/s"
+              },
+              "rx_throughput": {
+                "type": "number",
+                "description": "Current receive throughput",
+                "unit": "GB/s"
+              },
+              "replay_errors": {
+                "type": "integer",
+                "description": "NVLink replay error count",
+                "minimum": 0
+              },
+              "recovery_errors": {
+                "type": "integer",
+                "description": "NVLink recovery error count",
+                "minimum": 0
+              },
+              "crc_errors": {
+                "type": "integer",
+                "description": "NVLink CRC error count",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "throughput_rx": {
+          "type": "number",
+          "description": "Total receive throughput across all links",
+          "unit": "GB/s"
+        },
+        "throughput_tx": {
+          "type": "number",
+          "description": "Total transmit throughput across all links",
+          "unit": "GB/s"
+        },
+        "fatal_errors": {
+          "type": "integer",
+          "description": "Fatal error count on the NVSwitch",
+          "minimum": 0
+        },
+        "non_fatal_errors": {
+          "type": "integer",
+          "description": "Non-fatal error count on the NVSwitch",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

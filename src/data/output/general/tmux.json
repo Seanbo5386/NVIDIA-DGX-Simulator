@@ -1,0 +1,139 @@
+{
+  "command": "tmux",
+  "category": "general",
+  "description": "Terminal multiplexer with session management. Creates persistent sessions with multiple windows and panes. Modern alternative to screen for HPC work.",
+  "synopsis": "tmux [command] [options]",
+  "version_documented": "tmux 3.0+",
+  "source_urls": ["https://github.com/tmux/tmux/wiki"],
+  "installation": {
+    "package": "tmux",
+    "notes": "Install via: apt install tmux or yum install tmux"
+  },
+  "subcommands": [
+    {
+      "name": "new-session",
+      "description": "Create new session"
+    },
+    {
+      "name": "attach-session",
+      "description": "Attach to existing session"
+    },
+    {
+      "name": "list-sessions",
+      "description": "List all sessions"
+    },
+    {
+      "name": "kill-session",
+      "description": "Kill a session"
+    },
+    {
+      "name": "send-keys",
+      "description": "Send keys to session"
+    }
+  ],
+  "global_options": [
+    {
+      "short": "-s",
+      "description": "Session name for new-session",
+      "arguments": "<name>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-t",
+      "description": "Target session for attach",
+      "arguments": "<name>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-d",
+      "description": "Detach other clients"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Start new session",
+      "command": "tmux new -s training",
+      "requires_root": false
+    },
+    {
+      "description": "List sessions",
+      "command": "tmux ls",
+      "output_example": "training: 2 windows (created Mon Mar 15 10:00:00 2024) (attached)\ndebug: 1 windows (created Mon Mar 15 09:00:00 2024)",
+      "requires_root": false
+    },
+    {
+      "description": "Attach to session",
+      "command": "tmux attach -t training",
+      "requires_root": false
+    },
+    {
+      "description": "Detached session with command",
+      "command": "tmux new -d -s job 'python train.py'",
+      "requires_root": false
+    },
+    {
+      "description": "Kill session",
+      "command": "tmux kill-session -t old_session",
+      "requires_root": false
+    },
+    {
+      "description": "Send command to session",
+      "command": "tmux send-keys -t training 'nvidia-smi' Enter",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "no server running",
+      "meaning": "No tmux server active",
+      "resolution": "Start a new session first"
+    },
+    {
+      "message": "session not found",
+      "meaning": "Session doesn't exist",
+      "resolution": "Check name with tmux ls"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["screen", "byobu", "nohup", "disown"],
+    "notes": "Key bindings: Ctrl-b d (detach), Ctrl-b c (new window), Ctrl-b n/p (next/prev), Ctrl-b % (split vertical), Ctrl-b \" (split horizontal). More scriptable than screen."
+  },
+  "permissions": {
+    "read_operations": "User sessions only",
+    "write_operations": "User can manage sessions",
+    "notes": "Sessions survive SSH disconnects"
+  },
+  "limitations": [
+    "Learning curve for key bindings",
+    "Config file in ~/.tmux.conf",
+    "Socket location can cause issues"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "gpu_process_state",
+        "fields": ["pid"],
+        "description": "Sessions can contain GPU processes",
+        "requires_privilege": "user"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ps",
+        "shared_state": "tmux processes visible"
+      }
+    ]
+  }
+}

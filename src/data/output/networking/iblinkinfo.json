@@ -1,0 +1,353 @@
+{
+  "command": "iblinkinfo",
+  "category": "networking",
+  "description": "Query InfiniBand link information for fabric topology discovery. iblinkinfo displays the link status of all links in an InfiniBand fabric by traversing the fabric using subnet management queries. It shows the connections between switches, HCAs, and routers including port states, link speeds, and physical states. This tool is essential for fabric topology verification, link health monitoring, and troubleshooting connectivity issues across the entire InfiniBand network.",
+  "synopsis": "iblinkinfo [options]",
+  "version_documented": "rdma-core 44.0+",
+  "source_urls": [
+    "https://github.com/linux-rdma/rdma-core",
+    "https://linux.die.net/man/8/iblinkinfo"
+  ],
+  "installation": {
+    "package": "infiniband-diags",
+    "notes": "On RHEL/CentOS: yum install infiniband-diags. On Ubuntu/Debian: apt install infiniband-diags. Requires a running Subnet Manager (OpenSM or vendor SM) for fabric discovery. Part of the OFED InfiniBand diagnostic utilities."
+  },
+  "global_options": [
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display usage information and available options."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display the iblinkinfo version information."
+    },
+    {
+      "short": "-C",
+      "long": "--Ca",
+      "description": "Specify the local HCA (Channel Adapter) to use for fabric queries.",
+      "arguments": "<ca_name>",
+      "argument_type": "string",
+      "example": "iblinkinfo -C mlx5_0"
+    },
+    {
+      "short": "-P",
+      "long": "--Port",
+      "description": "Specify the local port number to use for fabric queries.",
+      "arguments": "<port_num>",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "iblinkinfo -P 1"
+    },
+    {
+      "short": "-S",
+      "long": "--switch",
+      "description": "Show only links from the specified switch GUID.",
+      "arguments": "<switch_guid>",
+      "argument_type": "string",
+      "example": "iblinkinfo -S 0x506b4b03005a0000"
+    },
+    {
+      "short": "-D",
+      "long": "--Direct",
+      "description": "Use directed route for queries instead of LID-based addressing. Useful when fabric is not fully configured.",
+      "arguments": "<dr_path>",
+      "argument_type": "string",
+      "example": "iblinkinfo -D 0,1,4"
+    },
+    {
+      "short": "-l",
+      "long": "--line",
+      "description": "Output in line-per-link format for easier parsing and scripting."
+    },
+    {
+      "short": "-p",
+      "long": "--port",
+      "description": "Show only information for the specified port on the local node.",
+      "arguments": "<port>",
+      "argument_type": "integer",
+      "example": "iblinkinfo -p 1"
+    },
+    {
+      "short": "-R",
+      "long": "--GNDN",
+      "description": "Print only links that do not have both ends active (problematic links)."
+    },
+    {
+      "short": "-s",
+      "long": "--speed",
+      "description": "Show only links not running at the specified speed or higher.",
+      "arguments": "<speed>",
+      "argument_type": "string",
+      "example": "iblinkinfo -s 25"
+    },
+    {
+      "short": "-w",
+      "long": "--width",
+      "description": "Show only links not running at the specified width or wider.",
+      "arguments": "<width>",
+      "argument_type": "string",
+      "example": "iblinkinfo -w 4x"
+    },
+    {
+      "short": "-d",
+      "long": "--down",
+      "description": "Show only links that are in the down state."
+    },
+    {
+      "short": "-L",
+      "long": "--load-cache",
+      "description": "Load and use a cached fabric snapshot from file instead of querying live fabric.",
+      "arguments": "<filename>",
+      "argument_type": "path",
+      "example": "iblinkinfo -L /tmp/ibnetdiscover.cache"
+    },
+    {
+      "short": "-n",
+      "long": "--node-name-map",
+      "description": "Use the specified node name map file for translating GUIDs to human-readable names.",
+      "arguments": "<filename>",
+      "argument_type": "path",
+      "example": "iblinkinfo -n /etc/opensm/ib-node-name-map"
+    },
+    {
+      "long": "--timeout",
+      "description": "Set the timeout for subnet management queries in milliseconds.",
+      "arguments": "<ms>",
+      "argument_type": "integer",
+      "default": "1000",
+      "example": "iblinkinfo --timeout 5000"
+    },
+    {
+      "long": "--retries",
+      "description": "Set the number of retries for failed queries.",
+      "arguments": "<count>",
+      "argument_type": "integer",
+      "default": "3",
+      "example": "iblinkinfo --retries 5"
+    }
+  ],
+  "output_formats": {
+    "default": "Tree-structured format showing each switch with its connected ports and remote endpoints. Each link shows local port, state, physical state, speed/width, and the remote node information.",
+    "line": "One line per link format for easier parsing. Each line contains: switch GUID, local port, state, speed, remote node info. Enabled with -l flag."
+  },
+  "environment_variables": [
+    {
+      "name": "IBDIAG_CA",
+      "description": "Default Channel Adapter to use for queries.",
+      "example": "IBDIAG_CA=mlx5_0 iblinkinfo",
+      "affects_command": "Sets the default HCA when -C is not specified."
+    },
+    {
+      "name": "IBDIAG_PORT",
+      "description": "Default port number to use for queries.",
+      "example": "IBDIAG_PORT=1 iblinkinfo",
+      "affects_command": "Sets the default port when -P is not specified."
+    },
+    {
+      "name": "IB_NODE_NAME_MAP",
+      "description": "Path to the node name map file for GUID-to-name translation.",
+      "example": "IB_NODE_NAME_MAP=/etc/opensm/ib-node-name-map iblinkinfo",
+      "affects_command": "Provides human-readable node names instead of raw GUIDs."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - fabric query completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - failed to query fabric or encountered communication errors"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display all links in the fabric with full topology",
+      "command": "iblinkinfo",
+      "output_example": "Switch 0x506b4b03005a1234 Quantum Mellanox Technologies:\n      1    1[  ] ==( 4X      25.78125 Gbps Active/  LinkUp)==>       1    1[  ] \"compute-node-01 mlx5_0\" ( )\n      2    2[  ] ==( 4X      25.78125 Gbps Active/  LinkUp)==>       1    1[  ] \"compute-node-02 mlx5_0\" ( )",
+      "requires_root": false
+    },
+    {
+      "description": "Show only links that are down",
+      "command": "iblinkinfo -d",
+      "output_example": "Switch 0x506b4b03005a1234 Quantum Mellanox Technologies:\n      5    5[  ] ==(                Down/ Polling)==>       [  ] \"\" ( )",
+      "requires_root": false
+    },
+    {
+      "description": "Show links not running at expected speed (find degraded links)",
+      "command": "iblinkinfo -s 25",
+      "output_example": "Switch 0x506b4b03005a1234 Quantum Mellanox Technologies:\n      3    3[  ] ==( 4X      12.5 Gbps Active/  LinkUp)==>       1    1[  ] \"compute-node-03 mlx5_0\" ( )",
+      "requires_root": false
+    },
+    {
+      "description": "Show links not running at expected width (find degraded links)",
+      "command": "iblinkinfo -w 4x",
+      "output_example": "Switch 0x506b4b03005a1234 Quantum Mellanox Technologies:\n      4    4[  ] ==( 1X      25.78125 Gbps Active/  LinkUp)==>       1    1[  ] \"compute-node-04 mlx5_0\" ( )",
+      "requires_root": false
+    },
+    {
+      "description": "Show only problematic links (not both ends active)",
+      "command": "iblinkinfo -R",
+      "output_example": "Switch 0x506b4b03005a1234 Quantum Mellanox Technologies:\n      5    5[  ] ==(                Down/ Polling)==>       [  ] \"\" ( )\n      6    6[  ] ==(                Down/ Disabled)==>       [  ] \"\" ( )",
+      "requires_root": false
+    },
+    {
+      "description": "Output in line format for scripting",
+      "command": "iblinkinfo -l",
+      "output_example": "0x506b4b03005a1234 \"Quantum\" 1 4X 25.78125 Active LinkUp 0x506b4b0300ab1234 \"compute-node-01 mlx5_0\" 1",
+      "requires_root": false
+    },
+    {
+      "description": "Query fabric through a specific HCA and port",
+      "command": "iblinkinfo -C mlx5_0 -P 1",
+      "output_example": "Switch 0x506b4b03005a1234 Quantum Mellanox Technologies:\n      1    1[  ] ==( 4X      25.78125 Gbps Active/  LinkUp)==>       1    1[  ] \"compute-node-01 mlx5_0\" ( )",
+      "requires_root": false
+    },
+    {
+      "description": "Use node name map for human-readable output",
+      "command": "iblinkinfo -n /etc/opensm/ib-node-name-map",
+      "output_example": "Switch 0x506b4b03005a1234 spine-switch-01:\n      1    1[  ] ==( 4X      25.78125 Gbps Active/  LinkUp)==>       1    1[  ] \"gpu-node-01 HCA-1\" ( )",
+      "requires_root": false
+    },
+    {
+      "description": "Query a specific switch by GUID",
+      "command": "iblinkinfo -S 0x506b4b03005a1234",
+      "output_example": "Switch 0x506b4b03005a1234 Quantum Mellanox Technologies:\n      1    1[  ] ==( 4X      25.78125 Gbps Active/  LinkUp)==>       1    1[  ] \"compute-node-01 mlx5_0\" ( )\n      2    2[  ] ==( 4X      25.78125 Gbps Active/  LinkUp)==>       1    1[  ] \"compute-node-02 mlx5_0\" ( )",
+      "requires_root": false
+    },
+    {
+      "description": "Load cached topology instead of live query",
+      "command": "iblinkinfo -L /tmp/fabric-snapshot.cache",
+      "output_example": "Switch 0x506b4b03005a1234 Quantum Mellanox Technologies:\n      1    1[  ] ==( 4X      25.78125 Gbps Active/  LinkUp)==>       1    1[  ] \"compute-node-01 mlx5_0\" ( )",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "ibwarn: [xxxx] mad_rpc_open_port: can't open UMAD port",
+      "meaning": "Cannot access the InfiniBand device for management queries",
+      "resolution": "Verify InfiniBand drivers are loaded with 'lsmod | grep mlx'. Check that the HCA exists with 'ibstat -l'. Ensure the RDMA subsystem is properly initialized."
+    },
+    {
+      "message": "ibwarn: [xxxx] _do_madrpc: recv failed: Connection timed out",
+      "meaning": "Subnet management queries are timing out, often due to fabric congestion or SM issues",
+      "resolution": "Increase timeout with --timeout option. Verify the Subnet Manager is running with 'sminfo'. Check fabric health and congestion."
+    },
+    {
+      "message": "No subnet manager found",
+      "meaning": "No Subnet Manager is active on the fabric",
+      "resolution": "Start OpenSM or vendor Subnet Manager. On management node: 'systemctl start opensm' or '/etc/init.d/opensmd start'. A working SM is required for fabric-wide queries."
+    },
+    {
+      "message": "Failed to find any switch",
+      "meaning": "No InfiniBand switches were found in the fabric",
+      "resolution": "Verify the local port is connected to the fabric with 'ibstat'. Check that switches are powered on and properly cabled. Ensure SM has completed fabric discovery."
+    },
+    {
+      "message": "ibwarn: [xxxx] mad_rpc: _do_madrpc failed; dport (Lid 0x....)",
+      "meaning": "Failed to communicate with a specific node in the fabric",
+      "resolution": "The target node may be down or unreachable. Check physical connectivity. Verify SM routing tables are current."
+    },
+    {
+      "message": "Can't resolve CA name",
+      "meaning": "The specified HCA name with -C does not exist",
+      "resolution": "List available HCAs with 'ibstat -l' and use a valid device name. Device names are typically mlx5_0, mlx5_1, etc."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "ibstat",
+      "ibstatus",
+      "ibnetdiscover",
+      "ibdiagnet",
+      "ibhosts",
+      "ibswitches",
+      "ibrouters",
+      "ibportstate",
+      "perfquery",
+      "smpquery",
+      "sminfo",
+      "opensm",
+      "mlxlink"
+    ],
+    "uses_library": ["libibmad", "libibumad", "libibnetdisc"],
+    "notes": "iblinkinfo complements ibstat by providing fabric-wide link information rather than just local HCA status. For initial topology discovery, use ibnetdiscover. For comprehensive fabric diagnostics including error counters and routing analysis, use ibdiagnet. For detailed link signal quality and cable diagnostics on NVIDIA/Mellanox adapters, use mlxlink. iblinkinfo requires an active Subnet Manager (SM) for fabric queries."
+  },
+  "permissions": {
+    "read_operations": "No special permissions typically required for basic queries if RDMA device permissions allow user access. May require membership in appropriate groups (e.g., 'rdma' group).",
+    "write_operations": "iblinkinfo is read-only and does not modify any fabric or device settings.",
+    "notes": "On some systems, access to /dev/infiniband/umad* devices may require root or group membership. The tool performs only read operations through Subnet Management Protocol (SMP) queries."
+  },
+  "limitations": [
+    "Requires an active Subnet Manager (SM) running on the fabric for full functionality",
+    "Query time increases with fabric size as it traverses all switches",
+    "Does not show detailed error counters (use perfquery or ibdiagnet for that)",
+    "Does not provide signal quality or cable diagnostics (use mlxlink for that)",
+    "Output can be verbose on large fabrics with hundreds of switches",
+    "Real-time link state changes may not be immediately reflected if SM hasn't updated routing",
+    "Cannot modify link states or port configurations (read-only tool)",
+    "Does not show historical link state changes or flapping information"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": [
+          "fabric_topology",
+          "switch_ports",
+          "link_state",
+          "physical_state",
+          "link_speed",
+          "link_width",
+          "remote_node_guid",
+          "remote_port",
+          "node_description"
+        ],
+        "description": "iblinkinfo reads fabric-wide link state information by querying switches through the Subnet Manager using SMP (Subnet Management Protocol)"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Link state changes on any port (Active, Down, Init, Armed)",
+        "effect": "The link state is reflected in the output for that specific connection"
+      },
+      {
+        "state_change": "Physical link state changes (LinkUp, Polling, Disabled)",
+        "effect": "Physical state is shown for each link in the fabric"
+      },
+      {
+        "state_change": "Link speed or width renegotiation",
+        "effect": "New speed/width values are displayed for affected links"
+      },
+      {
+        "state_change": "New nodes added to fabric",
+        "effect": "New links appear in output after SM discovers and configures them"
+      },
+      {
+        "state_change": "Nodes removed from fabric",
+        "effect": "Corresponding links show as down or disappear from output"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ibstat",
+        "shared_state": "Local HCA port state information matches the local endpoint shown in iblinkinfo output"
+      },
+      {
+        "command": "ibnetdiscover",
+        "shared_state": "Fabric topology and node connections are consistent between tools"
+      },
+      {
+        "command": "ibdiagnet",
+        "shared_state": "Link states and fabric topology information are consistent"
+      },
+      {
+        "command": "ibswitches",
+        "shared_state": "Switch inventory matches the switches shown in iblinkinfo output"
+      }
+    ]
+  }
+}

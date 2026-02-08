@@ -1,0 +1,121 @@
+{
+  "command": "tail",
+  "category": "general",
+  "description": "Output the last part of files. Shows end of files and can follow growing files. Essential for monitoring HPC job logs in real-time.",
+  "synopsis": "tail [options] [file...]",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/tail.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-n",
+      "long": "--lines",
+      "description": "Number of lines",
+      "arguments": "<N>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-c",
+      "long": "--bytes",
+      "description": "Number of bytes",
+      "arguments": "<N>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-f",
+      "long": "--follow",
+      "description": "Follow file as it grows"
+    },
+    {
+      "short": "-F",
+      "description": "Follow with retry (handles rotation)"
+    },
+    {
+      "long": "--pid",
+      "description": "Stop following when PID dies",
+      "arguments": "<pid>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-q",
+      "long": "--quiet",
+      "description": "No headers"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Last 10 lines (default)",
+      "command": "tail job.log",
+      "requires_root": false
+    },
+    {
+      "description": "Follow log file",
+      "command": "tail -f training.log",
+      "requires_root": false
+    },
+    {
+      "description": "Last 100 lines",
+      "command": "tail -n 100 error.log",
+      "requires_root": false
+    },
+    {
+      "description": "Follow multiple files",
+      "command": "tail -f *.log",
+      "requires_root": false
+    },
+    {
+      "description": "Follow until process ends",
+      "command": "tail -f output.log --pid=12345",
+      "requires_root": false
+    },
+    {
+      "description": "Start from line N",
+      "command": "tail -n +100 file.txt",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [],
+  "interoperability": {
+    "related_commands": ["head", "less", "multitail"],
+    "notes": "-f is invaluable for monitoring jobs. -F handles log rotation. +N means start from line N rather than last N."
+  },
+  "permissions": {
+    "read_operations": "Read access to file",
+    "write_operations": "N/A",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "-f blocks until interrupted",
+    "Large files need seek support"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads end of files"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "head",
+        "shared_state": "Opposite ends of file"
+      }
+    ]
+  }
+}

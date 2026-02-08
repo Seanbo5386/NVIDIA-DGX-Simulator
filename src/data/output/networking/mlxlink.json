@@ -1,0 +1,565 @@
+{
+  "command": "mlxlink",
+  "category": "networking",
+  "description": "Query and configure link parameters for Mellanox/NVIDIA network adapters including speed, FEC, and diagnostics. mlxlink is a comprehensive diagnostic tool for debugging and managing link status across various cable types (passive, active, transceiver, backplane) on NVIDIA/Mellanox networking devices. It provides detailed information about link state, module characteristics, signal quality, error counters, and supports advanced features like PRBS testing and eye diagram analysis.",
+  "synopsis": "mlxlink [options] -d <device>",
+  "version_documented": "MFT 4.30.0+",
+  "source_urls": [
+    "https://docs.nvidia.com/networking/display/mftv4300/mlxlink+utility"
+  ],
+  "installation": {
+    "package": "mft",
+    "notes": "Mellanox Firmware Tools (MFT). On RHEL/CentOS: Download and install from NVIDIA website or use MLNX_OFED package. The mft package provides mlxlink along with other firmware and diagnostic tools. Requires MST (Mellanox Software Tools) driver to be loaded."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--device",
+      "description": "Target MST device name (required). This is the MST device identifier, typically in the form of /dev/mst/mt4123_pciconf0 or similar.",
+      "arguments": "<device>",
+      "argument_type": "string",
+      "required": true,
+      "example": "-d /dev/mst/mt4123_pciconf0"
+    },
+    {
+      "short": "-p",
+      "long": "--port",
+      "description": "Port number to query or configure. For multi-port devices, specifies which port to operate on.",
+      "arguments": "<port_number>",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "-p 1"
+    },
+    {
+      "long": "--port_type",
+      "description": "Specifies the port type to query. NETWORK for network ports (default), PCIE for PCIe information, or OOB for out-of-band management.",
+      "arguments": "<NETWORK|PCIE|OOB>",
+      "argument_type": "string",
+      "default": "NETWORK",
+      "example": "--port_type PCIE"
+    },
+    {
+      "short": "-m",
+      "long": "--show_module",
+      "description": "Show module/transceiver information including vendor, part number, serial number, type, and supported speeds."
+    },
+    {
+      "short": "-e",
+      "long": "--show_eye",
+      "description": "Show eye opening information for signal quality assessment. Displays eye height (mV), eye phase (psec), and physical grade for each lane."
+    },
+    {
+      "short": "-c",
+      "long": "--show_counters",
+      "description": "Show physical error counters and BER (Bit Error Rate) statistics including symbol errors, CRC errors, and link error counts."
+    },
+    {
+      "long": "--cable",
+      "description": "Show cable information and diagnostics. Can be combined with --ddm for Digital Diagnostic Monitoring, --dump for EEPROM data, or --read/--write for direct memory access."
+    },
+    {
+      "long": "--show_fec",
+      "description": "Show FEC (Forward Error Correction) capabilities and current settings including supported modes and active FEC configuration."
+    },
+    {
+      "long": "--fec",
+      "short": "-k",
+      "description": "Set FEC mode override. Available modes: AU (Auto), NF (No-FEC), FC (FireCode), RS (Reed-Solomon), LL (LL-RS-FEC).",
+      "arguments": "<AU|NF|FC|RS|LL>",
+      "argument_type": "string",
+      "example": "--fec RS"
+    },
+    {
+      "long": "--speed",
+      "short": "-s",
+      "description": "Set link speed. Specify speed combination for link negotiation.",
+      "arguments": "<speed>",
+      "argument_type": "string",
+      "example": "--speed HDR"
+    },
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Show all available information including module info, counters, eye opening, FEC settings, and device information."
+    },
+    {
+      "long": "--json",
+      "description": "Output in JSON format for easier parsing and integration with monitoring tools."
+    },
+    {
+      "long": "--ddm",
+      "description": "Show module Digital Diagnostic Monitoring (DDM) information including temperature, voltage, TX/RX power, and bias current. Used with --cable flag."
+    },
+    {
+      "long": "--pcie",
+      "description": "Show PCIe link information including link speed, link width, and PCIe generation. Equivalent to using --port_type PCIE."
+    },
+    {
+      "long": "--depth",
+      "description": "PCIe hierarchy depth parameter for PCIe queries.",
+      "arguments": "<depth>",
+      "argument_type": "integer",
+      "example": "--depth 3"
+    },
+    {
+      "long": "--pcie_index",
+      "description": "PCIe index parameter for PCIe queries.",
+      "arguments": "<index>",
+      "argument_type": "integer",
+      "example": "--pcie_index 0"
+    },
+    {
+      "long": "--node",
+      "description": "PCIe node parameter for PCIe queries.",
+      "arguments": "<node>",
+      "argument_type": "integer",
+      "example": "--node 0"
+    },
+    {
+      "long": "--test_mode",
+      "description": "Enable or disable PRBS test mode. EN (enable), DS (disable), TU (tuning mode).",
+      "arguments": "<EN|DS|TU>",
+      "argument_type": "string",
+      "example": "--test_mode EN"
+    },
+    {
+      "long": "--rx_prbs",
+      "description": "Set RX PRBS pattern for testing. Patterns: PRBS31, PRBS23, PRBS7, PRBS11, PRBS9, SSPRQ.",
+      "arguments": "<pattern>",
+      "argument_type": "string",
+      "example": "--rx_prbs PRBS31"
+    },
+    {
+      "long": "--tx_prbs",
+      "description": "Set TX PRBS pattern for testing. Patterns: PRBS31, PRBS23, PRBS7, PRBS11, PRBS9, SSPRQ.",
+      "arguments": "<pattern>",
+      "argument_type": "string",
+      "example": "--tx_prbs PRBS31"
+    },
+    {
+      "long": "--lanes",
+      "description": "Specify individual lanes for PRBS testing (0-7).",
+      "arguments": "<lane_numbers>",
+      "argument_type": "string",
+      "example": "--lanes 0,1,2,3"
+    },
+    {
+      "long": "--show_serdes_tx",
+      "description": "Show SerDes transmitter parameters including pre-emphasis, main tap, and post-emphasis settings."
+    },
+    {
+      "long": "--serdes_tx",
+      "description": "Configure SerDes transmitter tap parameters with optional lane specification.",
+      "arguments": "<parameters>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--show_device",
+      "description": "Show general device information including firmware version and hardware capabilities."
+    },
+    {
+      "long": "--port_state",
+      "short": "-a",
+      "description": "Set port administrative state. UP (enable), DN (disable), TG (toggle).",
+      "arguments": "<UP|DN|TG>",
+      "argument_type": "string",
+      "example": "--port_state UP"
+    },
+    {
+      "long": "--loopback",
+      "short": "-l",
+      "description": "Configure loopback mode. NO (none), RM (remote), PH (physical), EX (external), LL (local).",
+      "arguments": "<NO|RM|PH|EX|LL>",
+      "argument_type": "string",
+      "example": "--loopback PH"
+    },
+    {
+      "long": "--margin",
+      "description": "Enable eye margin scanning for advanced signal integrity analysis."
+    },
+    {
+      "long": "--measure_time",
+      "description": "Set measurement time for eye margin scanning (10-900 seconds).",
+      "arguments": "<seconds>",
+      "argument_type": "integer",
+      "example": "--measure_time 60"
+    },
+    {
+      "long": "--eye_select",
+      "description": "Select eye position for PAM4 signals. UP, MID, DOWN, or ALL.",
+      "arguments": "<UP|MID|DOWN|ALL>",
+      "argument_type": "string",
+      "example": "--eye_select ALL"
+    },
+    {
+      "long": "--show_links",
+      "description": "Show valid PCIe link enumeration when using PCIe port type."
+    },
+    {
+      "long": "--dump",
+      "description": "Dump EEPROM page data from cable/module. Used with --cable flag.",
+      "arguments": "[page]",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--read",
+      "description": "Read from cable memory at specified page and offset. Used with --cable flag.",
+      "arguments": "<page> <offset> <length>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--write",
+      "description": "Write to cable memory at specified page and offset. Used with --cable flag.",
+      "arguments": "<page> <offset> <data>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--database",
+      "description": "Store SerDes configuration permanently in device database."
+    },
+    {
+      "long": "--prbs_select",
+      "description": "Select PRBS test side for module testing. HOST or MEDIA.",
+      "arguments": "<HOST|MEDIA>",
+      "argument_type": "string",
+      "example": "--prbs_select HOST"
+    },
+    {
+      "long": "--prbs_mode",
+      "description": "Enable or disable module PRBS mode. EN (enable), DS (disable).",
+      "arguments": "<EN|DS>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--generator_pattern",
+      "description": "Set PRBS generator pattern for module testing.",
+      "arguments": "<pattern>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--checker_pattern",
+      "description": "Set PRBS checker pattern for module testing.",
+      "arguments": "<pattern>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--lane_rate",
+      "description": "Set lane rate for module PRBS testing. HDR, EDR, NDR options.",
+      "arguments": "<rate>",
+      "argument_type": "string",
+      "example": "--lane_rate HDR"
+    },
+    {
+      "long": "--show_diagnostic_info",
+      "description": "Show PRBS diagnostic counters for module testing."
+    },
+    {
+      "long": "--clear_diagnostic_info",
+      "description": "Clear/reset PRBS diagnostic counters."
+    },
+    {
+      "long": "--invert_rx_polarity",
+      "description": "Invert RX polarity for PRBS testing."
+    },
+    {
+      "long": "--invert_tx_polarity",
+      "description": "Invert TX polarity for PRBS testing."
+    },
+    {
+      "long": "--pcie_error_injection",
+      "description": "Configure PCIe error injection for testing (ConnectX-7+). Error types include ABORT, BAD_DLLP_LCRC, BAD_TLP_LCRC, ECRC, poisoned TLPs, malformed TLPs, ACS violations, link down.",
+      "arguments": "<error_type>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--error_duration",
+      "description": "Set duration for PCIe error injection (packet count or microseconds).",
+      "arguments": "<duration>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--dbdf",
+      "description": "Target device specification for PCIe error injection (domain:bus:device.function).",
+      "arguments": "<dbdf>",
+      "argument_type": "string",
+      "example": "--dbdf 0000:3b:00.0"
+    },
+    {
+      "long": "--show_external_phy",
+      "description": "Show external PHY information (for Spectrum switches)."
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help message and available options."
+    },
+    {
+      "short": "-v",
+      "long": "--version",
+      "description": "Display mlxlink version information."
+    }
+  ],
+  "output_formats": {
+    "default": "Human-readable multi-line format showing operational status, link state, speed, width, module information, and relevant diagnostics based on query flags used.",
+    "json": "Structured JSON output for programmatic parsing. Enabled with --json flag. Contains all queried information in key-value format suitable for monitoring integration."
+  },
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - command failed (device not found, invalid arguments, operation failed)"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show basic link status and operational state",
+      "command": "mlxlink -d /dev/mst/mt4123_pciconf0",
+      "output_example": "Operational Info\n----------------\nState                           : Active\nPhysical state                  : LinkUp\nSpeed                           : HDR\nWidth                           : 4x\nFEC                             : RS-FEC",
+      "requires_root": true
+    },
+    {
+      "description": "Show module/transceiver information",
+      "command": "mlxlink -d /dev/mst/mt4123_pciconf0 -m",
+      "output_example": "Module Info\n-----------\nVendor name                     : Mellanox\nVendor OUI                      : 0x0002c9\nVendor PN                       : MCP1600-C003E30N\nVendor SN                       : MT2051FT05432\nTemperature                     : 45 C\nModule type                     : QSFP28",
+      "requires_root": true
+    },
+    {
+      "description": "Show eye diagram/opening measurements for signal quality",
+      "command": "mlxlink -d /dev/mst/mt4123_pciconf0 -e",
+      "output_example": "Eye Opening Info (Physical Grade)\n----------------------------------\nLane 0: Grade: 5, Height: 35 mV, Phase: 15 psec\nLane 1: Grade: 5, Height: 33 mV, Phase: 14 psec\nLane 2: Grade: 5, Height: 34 mV, Phase: 15 psec\nLane 3: Grade: 5, Height: 32 mV, Phase: 14 psec",
+      "requires_root": true
+    },
+    {
+      "description": "Show physical error counters and BER statistics",
+      "command": "mlxlink -d /dev/mst/mt4123_pciconf0 -c",
+      "output_example": "Physical Counters\n-----------------\nSymbol Errors                   : 0\nCorrected Bits                  : 0\nRaw BER                         : 0\nEffective BER                   : 0\nFEC corrected symbols           : 1234\nFEC uncorrectable errors        : 0",
+      "requires_root": true
+    },
+    {
+      "description": "Show cable diagnostics with Digital Diagnostic Monitoring",
+      "command": "mlxlink -d /dev/mst/mt4123_pciconf0 --cable --ddm",
+      "output_example": "Cable DDM Info\n--------------\nTemperature                     : 42.5 C\nVoltage                         : 3.3 V\nTX Power Lane 0                 : -2.5 dBm\nRX Power Lane 0                 : -3.1 dBm\nTX Bias Lane 0                  : 7.2 mA",
+      "requires_root": true
+    },
+    {
+      "description": "Show PCIe link information",
+      "command": "mlxlink -d /dev/mst/mt4123_pciconf0 --port_type PCIE --depth 1 --pcie_index 0 --node 0",
+      "output_example": "PCIe Link Info\n--------------\nPCIe Gen                        : Gen4\nLink Speed                      : 16 GT/s\nLink Width                      : x16\nMax Read Request                : 512 B",
+      "requires_root": true
+    },
+    {
+      "description": "Output in JSON format for scripting/monitoring",
+      "command": "mlxlink -d /dev/mst/mt4123_pciconf0 --json",
+      "output_example": "{\"operational_info\":{\"state\":\"Active\",\"physical_state\":\"LinkUp\",\"speed\":\"HDR\",\"width\":\"4x\"}}",
+      "requires_root": true
+    },
+    {
+      "description": "Show all available information",
+      "command": "mlxlink -d /dev/mst/mt4123_pciconf0 -a",
+      "output_example": "[Shows comprehensive output including operational info, module info, counters, eye opening, FEC capabilities, and device information]",
+      "requires_root": true
+    },
+    {
+      "description": "Show FEC capabilities and current settings",
+      "command": "mlxlink -d /dev/mst/mt4123_pciconf0 --show_fec",
+      "output_example": "FEC Capabilities\n----------------\nSupported FEC                   : No-FEC, RS-FEC, FC-FEC\nActive FEC                      : RS-FEC\nFEC Override                    : Auto",
+      "requires_root": true
+    },
+    {
+      "description": "Set FEC mode to Reed-Solomon",
+      "command": "mlxlink -d /dev/mst/mt4123_pciconf0 --fec RS",
+      "output_example": "FEC override set to RS-FEC",
+      "requires_root": true
+    },
+    {
+      "description": "Enable PRBS31 test pattern for link testing",
+      "command": "mlxlink -d /dev/mst/mt4123_pciconf0 --test_mode EN --rx_prbs PRBS31 --tx_prbs PRBS31",
+      "output_example": "PRBS test mode enabled\nTX Pattern: PRBS31\nRX Pattern: PRBS31",
+      "requires_root": true
+    },
+    {
+      "description": "Query specific port on a device",
+      "command": "mlxlink -d /dev/mst/mt4123_pciconf0 -p 2",
+      "output_example": "[Shows operational info for port 2]",
+      "requires_root": true
+    },
+    {
+      "description": "Dump cable EEPROM data",
+      "command": "mlxlink -d /dev/mst/mt4123_pciconf0 --cable --dump",
+      "output_example": "EEPROM Page 0:\n00: 0d 00 06 00 00 00 00 00 00 00 00 00 00 00 00 00\n10: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n...",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No MST devices found",
+      "meaning": "MST driver is not loaded or no NVIDIA/Mellanox devices are present",
+      "resolution": "Load MST driver with 'mst start'. Verify Mellanox/NVIDIA devices are present with 'lspci | grep -i mellanox'. Check MST status with 'mst status'."
+    },
+    {
+      "message": "Device <device> not found",
+      "meaning": "The specified MST device path does not exist",
+      "resolution": "Use 'mst status' to list available MST devices. Device names follow pattern /dev/mst/mt<model>_pciconf<n>."
+    },
+    {
+      "message": "Failed to open device",
+      "meaning": "Permission denied or device busy",
+      "resolution": "Run command as root or with sudo. Ensure no other application is exclusively using the device."
+    },
+    {
+      "message": "Port not supported",
+      "meaning": "The specified port number does not exist on this device",
+      "resolution": "Check device specifications for number of ports. Use -p 1 for single-port devices."
+    },
+    {
+      "message": "Operation not supported on this device",
+      "meaning": "The requested feature is not available on this hardware",
+      "resolution": "Verify device supports the feature. Some features require newer hardware (ConnectX-5+, ConnectX-7+ for certain features)."
+    },
+    {
+      "message": "Link is down",
+      "meaning": "Cannot retrieve certain information because the link is not active",
+      "resolution": "Check physical cable connections. Verify remote port is up. Check for cable damage or incorrect cable type."
+    },
+    {
+      "message": "Eye scan failed",
+      "meaning": "Eye diagram measurement failed, possibly due to link instability",
+      "resolution": "Recovery from failed eye scans may require system reboot. Ensure link is stable before attempting eye scan."
+    },
+    {
+      "message": "FEC mode not supported",
+      "meaning": "The requested FEC mode is not supported on this link type or speed",
+      "resolution": "Use --show_fec to see supported FEC modes for the current link configuration."
+    },
+    {
+      "message": "Loopback requires link to be fully down",
+      "meaning": "Cannot configure loopback while link is in polling or training state (ConnectX-7+)",
+      "resolution": "Disable the port completely before configuring loopback mode."
+    }
+  ],
+  "environment_variables": [
+    {
+      "name": "MST_DEVICE_PATH",
+      "description": "Override default MST device path",
+      "example": "MST_DEVICE_PATH=/dev/mst",
+      "affects_command": "Changes the base path for MST device discovery"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "mst",
+      "ibstat",
+      "ibstatus",
+      "iblinkinfo",
+      "perfquery",
+      "ethtool",
+      "mlxconfig",
+      "mlxfwmanager",
+      "flint",
+      "mstflint",
+      "ibdiagnet"
+    ],
+    "uses_library": ["libmft", "libmtcr", "libibverbs", "libibmad"],
+    "notes": "mlxlink is part of MFT (Mellanox Firmware Tools) suite. It queries adapter hardware directly through MST interface, providing more detailed information than standard InfiniBand tools. For basic IB status, use ibstat/ibstatus. For firmware operations, use mlxfwmanager/flint. For configuration, use mlxconfig."
+  },
+  "permissions": {
+    "read_operations": "Root privileges required for all operations. mlxlink accesses hardware directly through MST driver.",
+    "write_operations": "Root privileges required. Write operations (--fec, --speed, --port_state, --loopback, PRBS testing) modify adapter configuration.",
+    "notes": "MST driver must be loaded (mst start). Some operations may require adapter firmware support. PRBS testing and eye scans may temporarily disrupt link operation."
+  },
+  "limitations": [
+    "Requires MST driver to be loaded (mst start)",
+    "Only works with NVIDIA/Mellanox adapters (ConnectX series, Spectrum switches)",
+    "Some features require specific hardware generations (eye scan, PCIe error injection)",
+    "Eye scan failure may require system reboot to recover",
+    "PRBS testing disrupts normal link operation",
+    "Not all FEC modes available on all link types/speeds",
+    "PCIe error injection only available on ConnectX-7 and newer",
+    "Cannot query remote device information (use iblinkinfo for fabric-wide view)"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": [
+          "link_speed",
+          "link_width",
+          "state",
+          "physical_state",
+          "error_counters",
+          "fec_mode",
+          "symbol_errors",
+          "crc_errors",
+          "ber",
+          "eye_opening"
+        ],
+        "description": "mlxlink reads InfiniBand/Ethernet link state and diagnostic information directly from adapter hardware"
+      },
+      {
+        "state_domain": "firmware_state",
+        "fields": ["firmware_version", "hardware_version", "device_type"],
+        "description": "mlxlink reads firmware and hardware information from the adapter"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["link_speed", "fec_mode", "port_state", "loopback_mode"],
+        "description": "mlxlink can configure link parameters including speed, FEC mode, and port state",
+        "requires_flags": ["--speed", "--fec", "--port_state", "--loopback"],
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Link state changes (Active, Down, Init, Polling)",
+        "effect": "Operational state and physical state fields reflect new link condition"
+      },
+      {
+        "state_change": "Error counter increments (symbol errors, CRC errors)",
+        "effect": "Counter values increase; BER statistics update accordingly"
+      },
+      {
+        "state_change": "Module temperature changes",
+        "effect": "DDM temperature readings update; may trigger threshold warnings"
+      },
+      {
+        "state_change": "Speed/FEC negotiation completes",
+        "effect": "Speed and FEC mode fields show negotiated values"
+      },
+      {
+        "state_change": "Cable insertion/removal",
+        "effect": "Module info becomes available/unavailable; link state changes"
+      },
+      {
+        "state_change": "Firmware update",
+        "effect": "Firmware version field updates after adapter reset"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ibstat",
+        "shared_state": "Link state, speed, width (ibstat shows basic IB status; mlxlink provides detailed diagnostics)"
+      },
+      {
+        "command": "ibstatus",
+        "shared_state": "Port state, link state (similar information in different format)"
+      },
+      {
+        "command": "ethtool",
+        "shared_state": "Link state, speed, module info (for Ethernet mode operation)"
+      },
+      {
+        "command": "perfquery",
+        "shared_state": "Error counters (perfquery shows IB performance counters; mlxlink shows physical layer counters)"
+      },
+      {
+        "command": "mlxconfig",
+        "shared_state": "Device configuration (mlxconfig for persistent settings; mlxlink for runtime and diagnostics)"
+      }
+    ]
+  }
+}

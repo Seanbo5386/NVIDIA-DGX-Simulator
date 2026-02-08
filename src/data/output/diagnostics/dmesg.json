@@ -1,0 +1,471 @@
+{
+  "command": "dmesg",
+  "category": "diagnostics",
+  "description": "Print or control the kernel ring buffer - essential for viewing kernel messages, driver loading, and hardware events. The dmesg command is used to examine or control the kernel ring buffer, which contains messages from the kernel including hardware detection, driver initialization, system errors, and various kernel subsystem messages. It is a critical diagnostic tool for understanding system boot sequences, hardware issues, and driver problems.",
+  "synopsis": "dmesg [options]",
+  "version_documented": "util-linux 2.37+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/dmesg.1.html"],
+  "installation": {
+    "package": "util-linux",
+    "notes": "Part of the util-linux package which is installed by default on virtually all Linux distributions. The dmesg command requires read access to /dev/kmsg (kernel 3.5+) or the deprecated syslog(2) interface."
+  },
+  "global_options": [
+    {
+      "short": "-C",
+      "long": "--clear",
+      "description": "Clear the ring buffer. This removes all messages from the kernel ring buffer.",
+      "example": "dmesg -C"
+    },
+    {
+      "short": "-c",
+      "long": "--read-clear",
+      "description": "Clear the ring buffer after first printing its contents. Useful for capturing messages then clearing.",
+      "example": "dmesg -c > /tmp/dmesg.log"
+    },
+    {
+      "short": "-D",
+      "long": "--console-off",
+      "description": "Disable the printing of messages to the console. Kernel messages will still be logged but not displayed on console.",
+      "example": "dmesg -D"
+    },
+    {
+      "short": "-E",
+      "long": "--console-on",
+      "description": "Enable printing messages to the console. Re-enables console output after it was disabled.",
+      "example": "dmesg -E"
+    },
+    {
+      "short": "-d",
+      "long": "--show-delta",
+      "description": "Display the timestamp and the time delta spent between messages. Useful for timing analysis.",
+      "example": "dmesg -d"
+    },
+    {
+      "short": "-e",
+      "long": "--reltime",
+      "description": "Display the local time and the delta in human-readable format. Combines relative time with local clock.",
+      "example": "dmesg -e"
+    },
+    {
+      "short": "-f",
+      "long": "--facility",
+      "description": "Restrict output to the given comma-separated list of facilities. Available facilities: kern, user, mail, daemon, auth, syslog, lpr, news.",
+      "arguments": "<list>",
+      "argument_type": "string",
+      "example": "dmesg -f kern,daemon"
+    },
+    {
+      "short": "-H",
+      "long": "--human",
+      "description": "Enable human-readable output. This implies --color and --reltime for better readability, and uses a pager.",
+      "example": "dmesg -H"
+    },
+    {
+      "short": "-J",
+      "long": "--json",
+      "description": "Use JSON output format. Outputs messages in structured JSON for programmatic parsing.",
+      "example": "dmesg -J"
+    },
+    {
+      "short": "-k",
+      "long": "--kernel",
+      "description": "Print kernel messages. This is the default behavior, filtering to kern facility.",
+      "example": "dmesg -k"
+    },
+    {
+      "short": "-l",
+      "long": "--level",
+      "description": "Restrict output to the given comma-separated list of levels. Levels: emerg, alert, crit, err, warn, notice, info, debug. Supports + and - operators.",
+      "arguments": "<list>",
+      "argument_type": "string",
+      "example": "dmesg -l err,crit,alert,emerg"
+    },
+    {
+      "short": "-L",
+      "long": "--color",
+      "description": "Colorize the output. Accepts optional argument: auto (default), never, or always.",
+      "arguments": "[when]",
+      "argument_type": "string",
+      "default": "auto",
+      "example": "dmesg -L=always"
+    },
+    {
+      "short": "-n",
+      "long": "--console-level",
+      "description": "Set the level at which printing of messages is done to the console. Only messages with level lower than specified are printed.",
+      "arguments": "<level>",
+      "argument_type": "integer",
+      "example": "dmesg -n 1"
+    },
+    {
+      "short": "-P",
+      "long": "--nopager",
+      "description": "Do not pipe output into a pager. By default, --human uses a pager.",
+      "example": "dmesg -H -P"
+    },
+    {
+      "short": "-p",
+      "long": "--force-prefix",
+      "description": "Add facility, level, or timestamp information to each line of a multi-line message.",
+      "example": "dmesg -p"
+    },
+    {
+      "short": "-r",
+      "long": "--raw",
+      "description": "Print the raw message buffer without stripping the log-level prefixes. Shows priority numbers.",
+      "example": "dmesg -r"
+    },
+    {
+      "short": "-S",
+      "long": "--syslog",
+      "description": "Force use of the syslog(2) kernel interface to read kernel messages. Deprecated, /dev/kmsg is preferred.",
+      "example": "dmesg -S"
+    },
+    {
+      "short": "-s",
+      "long": "--buffer-size",
+      "description": "Use a buffer of specified size to query the kernel ring buffer. Default is 16392 bytes.",
+      "arguments": "<size>",
+      "argument_type": "integer",
+      "example": "dmesg -s 65536"
+    },
+    {
+      "short": "-T",
+      "long": "--ctime",
+      "description": "Print human-readable timestamps. Converts monotonic timestamps to local wall-clock time.",
+      "example": "dmesg -T"
+    },
+    {
+      "short": "-t",
+      "long": "--notime",
+      "description": "Do not print kernel timestamps. Shows only the message text without time prefix.",
+      "example": "dmesg -t"
+    },
+    {
+      "short": "-u",
+      "long": "--userspace",
+      "description": "Print userspace messages. Shows messages from user-space applications written to /dev/kmsg.",
+      "example": "dmesg -u"
+    },
+    {
+      "short": "-w",
+      "long": "--follow",
+      "description": "Wait for new messages. Like tail -f, continuously displays new kernel messages as they arrive.",
+      "example": "dmesg -w"
+    },
+    {
+      "short": "-W",
+      "long": "--follow-new",
+      "description": "Wait and print only new messages. Similar to --follow but does not print existing buffer contents.",
+      "example": "dmesg -W"
+    },
+    {
+      "short": "-x",
+      "long": "--decode",
+      "description": "Decode facility and level numbers to human-readable prefixes. Shows facility and priority as text.",
+      "example": "dmesg -x"
+    },
+    {
+      "short": "-F",
+      "long": "--file",
+      "description": "Read the syslog messages from the given file. Expects syslog format, not /dev/kmsg format.",
+      "arguments": "<file>",
+      "argument_type": "path",
+      "example": "dmesg -F /var/log/dmesg"
+    },
+    {
+      "short": "-K",
+      "long": "--kmsg-file",
+      "description": "Read /dev/kmsg messages from the given file. Expects raw kmsg format.",
+      "arguments": "<file>",
+      "argument_type": "path",
+      "example": "dmesg -K /tmp/kmsg.dump"
+    },
+    {
+      "long": "--since",
+      "description": "Display record since the specified time. Supports various time formats.",
+      "arguments": "<time>",
+      "argument_type": "string",
+      "example": "dmesg --since '1 hour ago'"
+    },
+    {
+      "long": "--until",
+      "description": "Display record until the specified time. Supports various time formats.",
+      "arguments": "<time>",
+      "argument_type": "string",
+      "example": "dmesg --until '2024-01-15 10:00:00'"
+    },
+    {
+      "long": "--time-format",
+      "description": "Print timestamps using the given format. Supported: ctime, reltime, delta, iso, raw.",
+      "arguments": "<format>",
+      "argument_type": "string",
+      "example": "dmesg --time-format=iso"
+    },
+    {
+      "long": "--noescape",
+      "description": "Disable character escaping. By default, unprintable and potentially unsafe characters are escaped.",
+      "example": "dmesg --noescape"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help text and exit.",
+      "example": "dmesg --help"
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version information and exit.",
+      "example": "dmesg --version"
+    }
+  ],
+  "output_formats": {
+    "default": "Plain text format with timestamps and kernel messages, one message per line.",
+    "human": "Human-readable format with colorized output, relative timestamps, and pager support (enabled with -H).",
+    "json": "Structured JSON output for programmatic parsing (enabled with -J). Each message includes timestamp, priority, facility, and message text.",
+    "raw": "Raw kernel ring buffer format with numeric priority prefixes (enabled with -r).",
+    "decoded": "Messages with decoded facility and level as readable prefixes like 'kern:err:' (enabled with -x)."
+  },
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - general failure"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "View all kernel messages (basic dmesg)",
+      "command": "dmesg",
+      "output_example": "[    0.000000] Linux version 5.15.0-generic...\n[    0.000000] Command line: BOOT_IMAGE=/vmlinuz...\n[    1.234567] nvidia: loading out-of-tree module...",
+      "requires_root": false
+    },
+    {
+      "description": "Human-readable output with timestamps and colors",
+      "command": "dmesg -H",
+      "output_example": "[Jan15 10:30] nvidia: loading out-of-tree module taints kernel.\n[  +0.001234] nvidia: module license 'NVIDIA' taints kernel.\n[  +0.567890] nvidia 0000:3b:00.0: enabling device (0000 -> 0003)",
+      "requires_root": false
+    },
+    {
+      "description": "Display messages with human-readable timestamps",
+      "command": "dmesg -T",
+      "output_example": "[Mon Jan 15 10:30:15 2024] nvidia: loading out-of-tree module taints kernel.\n[Mon Jan 15 10:30:16 2024] NVRM: loading NVIDIA UNIX x86_64 Kernel Module  535.154.05",
+      "requires_root": false
+    },
+    {
+      "description": "Show only error and critical messages",
+      "command": "dmesg -l err,crit,alert,emerg",
+      "output_example": "[   12.345678] nvidia 0000:3b:00.0: GPU has fallen off the bus.\n[   12.345700] nvidia 0000:3b:00.0: Xid (PCI:0000:3b:00.0): 79, pid=1234, GPU has fallen off the bus.",
+      "requires_root": false
+    },
+    {
+      "description": "Follow new kernel messages in real-time",
+      "command": "dmesg -w",
+      "output_example": "[  123.456789] usb 1-1: new high-speed USB device number 5 using xhci_hcd\n[  123.567890] usb 1-1: New USB device found, idVendor=0bda...",
+      "requires_root": false
+    },
+    {
+      "description": "Filter for NVIDIA driver messages",
+      "command": "dmesg | grep -i nvidia",
+      "output_example": "[    1.234567] nvidia: loading out-of-tree module taints kernel.\n[    1.234600] nvidia: module license 'NVIDIA' taints kernel.\n[    1.345678] NVRM: loading NVIDIA UNIX x86_64 Kernel Module  535.154.05",
+      "requires_root": false
+    },
+    {
+      "description": "Search for GPU and PCIe errors",
+      "command": "dmesg | grep -iE 'gpu|pcie|nvrm|xid'",
+      "output_example": "[   12.345678] NVRM: Xid (PCI:0000:3b:00.0): 79, GPU has fallen off the bus.\n[   12.345700] pcieport 0000:00:01.0: AER: Uncorrected (Fatal) error received",
+      "requires_root": false
+    },
+    {
+      "description": "Show kernel messages with decoded facility and level",
+      "command": "dmesg -x",
+      "output_example": "kern  :warn  : [    1.234567] nvidia: loading out-of-tree module taints kernel.\nkern  :info  : [    1.345678] NVRM: loading NVIDIA UNIX x86_64 Kernel Module",
+      "requires_root": false
+    },
+    {
+      "description": "Clear the kernel ring buffer (requires root)",
+      "command": "dmesg -C",
+      "requires_root": true
+    },
+    {
+      "description": "Read and clear kernel messages to file",
+      "command": "dmesg -c > /var/log/dmesg-snapshot.log",
+      "requires_root": true
+    },
+    {
+      "description": "Show messages from the last hour",
+      "command": "dmesg --since '1 hour ago'",
+      "requires_root": false
+    },
+    {
+      "description": "Output in JSON format for parsing",
+      "command": "dmesg -J | head -20",
+      "output_example": "{\"dmesg\": [{\"pri\": \"6\",\"time\": \"0.000000\",\"msg\": \"Linux version 5.15.0...\"}]}",
+      "requires_root": false
+    },
+    {
+      "description": "Check for memory errors (ECC/MCE)",
+      "command": "dmesg | grep -iE 'mce|ecc|edac|memory error'",
+      "output_example": "[   45.678901] EDAC MC0: 1 CE memory read error on CPU_SrcID#0_Ha#0_Chan#0_DIMM#1\n[   45.678902] mce: [Hardware Error]: Machine check events logged",
+      "requires_root": false
+    },
+    {
+      "description": "Check for InfiniBand driver messages",
+      "command": "dmesg | grep -iE 'mlx5|ib_|infiniband|rdma'",
+      "output_example": "[    2.345678] mlx5_core 0000:86:00.0: firmware version: 20.35.1012\n[    2.456789] mlx5_core 0000:86:00.0: 126.016 Gb/s available PCIe bandwidth",
+      "requires_root": false
+    },
+    {
+      "description": "Check for OOM killer activity",
+      "command": "dmesg | grep -iE 'oom|out of memory|killed process'",
+      "output_example": "[  567.890123] Out of memory: Killed process 12345 (python) total-vm:256789012kB\n[  567.890200] oom_reaper: reaped process 12345 (python), now anon-rss:0kB",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "dmesg: read kernel buffer failed: Operation not permitted",
+      "meaning": "Insufficient permissions to read the kernel ring buffer",
+      "resolution": "Run dmesg with sudo/root privileges, or check if kernel.dmesg_restrict sysctl is set. On some systems: sysctl kernel.dmesg_restrict=0"
+    },
+    {
+      "message": "dmesg: klogctl failed: Operation not permitted",
+      "meaning": "Cannot access the kernel log via syslog interface",
+      "resolution": "Requires root privileges or CAP_SYSLOG capability. Run with sudo or adjust permissions."
+    },
+    {
+      "message": "dmesg: cannot open /dev/kmsg: Permission denied",
+      "meaning": "No read access to the kernel message device",
+      "resolution": "Run as root or ensure user has appropriate permissions. May need to be in 'kmem' group on some systems."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "journalctl",
+      "syslog",
+      "rsyslog",
+      "systemd-journald",
+      "cat /var/log/messages",
+      "cat /var/log/syslog",
+      "cat /var/log/kern.log"
+    ],
+    "uses_library": [],
+    "notes": "On systemd-based systems, dmesg and journalctl both have access to kernel messages but through different interfaces. dmesg reads directly from the kernel ring buffer (/dev/kmsg), while journalctl reads from the systemd journal. Both should show consistent kernel messages, though journalctl may have additional metadata. For persistent logs across reboots, journalctl or traditional syslog files should be used."
+  },
+  "permissions": {
+    "read_operations": "Reading kernel messages may require root privileges depending on kernel.dmesg_restrict sysctl setting. Default on many distributions allows non-root read access.",
+    "write_operations": "Clearing the buffer (-C, -c), enabling/disabling console (-D, -E), and setting console level (-n) all require root privileges or CAP_SYSLOG capability.",
+    "notes": "The kernel.dmesg_restrict sysctl (0=unrestricted, 1=restricted to CAP_SYSLOG) controls whether non-root users can read kernel messages. Many HPC systems restrict access for security."
+  },
+  "limitations": [
+    "Kernel ring buffer is circular and has limited size; old messages are overwritten when full",
+    "Timestamps are monotonic from boot and may drift from wall-clock time (-T converts but may be inaccurate for old messages)",
+    "After suspend/resume, timestamp conversion with -T may be incorrect",
+    "Buffer size is determined at kernel compile time or boot parameters",
+    "Messages from before kernel logging initialization are not captured",
+    "On busy systems, messages may be lost if buffer overflows faster than it can be read"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "kernel_messages",
+          "boot_messages",
+          "hardware_events",
+          "driver_messages",
+          "error_logs"
+        ],
+        "description": "Reads kernel ring buffer which contains system boot sequence, hardware detection, driver initialization, and kernel subsystem messages reflecting overall system state."
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "driver_load_status",
+          "gpu_errors",
+          "xid_errors",
+          "pcie_events"
+        ],
+        "description": "Kernel messages include NVIDIA driver loading status, GPU Xid errors, PCIe errors, and NVLink events that reflect GPU health and state."
+      },
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["driver_status", "link_events", "firmware_version"],
+        "description": "InfiniBand and RDMA driver messages (mlx5_core, ib_*, rdma) appear in kernel log showing network adapter initialization and events."
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "system_state",
+        "fields": ["kernel_ring_buffer", "console_logging_state"],
+        "description": "Can clear the kernel ring buffer and control console logging state. These are administrative operations.",
+        "requires_flags": ["-C", "-c", "-D", "-E", "-n"],
+        "requires_privilege": "root or CAP_SYSLOG"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "GPU driver loads or unloads",
+        "effect": "Kernel messages logged for NVIDIA driver initialization including module load, device detection, and firmware version"
+      },
+      {
+        "state_change": "GPU error occurs (Xid error)",
+        "effect": "NVRM Xid error messages logged with error code and affected GPU PCI address"
+      },
+      {
+        "state_change": "GPU falls off bus",
+        "effect": "Critical error messages logged indicating GPU hardware failure requiring system intervention"
+      },
+      {
+        "state_change": "PCIe error detected",
+        "effect": "AER (Advanced Error Reporting) messages logged with error type and affected device"
+      },
+      {
+        "state_change": "Memory error (ECC/MCE)",
+        "effect": "EDAC or MCE messages logged with error details, memory location, and correction status"
+      },
+      {
+        "state_change": "InfiniBand link state changes",
+        "effect": "mlx5_core driver messages logged for link up/down, speed negotiation, and firmware events"
+      },
+      {
+        "state_change": "NVLink error occurs",
+        "effect": "NVLink-related kernel messages logged indicating fabric communication issues"
+      },
+      {
+        "state_change": "OOM killer activates",
+        "effect": "Out of memory messages logged with details of killed processes and memory state"
+      },
+      {
+        "state_change": "System boot",
+        "effect": "Full boot sequence logged including hardware detection, driver loading, and subsystem initialization"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "journalctl",
+        "shared_state": "Both access kernel messages; journalctl -k shows same kernel messages as dmesg on systemd systems"
+      },
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU errors visible in nvidia-smi (Xid errors, ECC errors) also appear in dmesg kernel logs"
+      },
+      {
+        "command": "ibstat",
+        "shared_state": "InfiniBand port state changes visible in dmesg correspond to states reported by ibstat"
+      },
+      {
+        "command": "lspci",
+        "shared_state": "PCIe device detection in dmesg corresponds to devices shown by lspci"
+      },
+      {
+        "command": "nvidia-bug-report.sh",
+        "shared_state": "NVIDIA bug reports include dmesg output as part of diagnostic collection"
+      }
+    ]
+  }
+}

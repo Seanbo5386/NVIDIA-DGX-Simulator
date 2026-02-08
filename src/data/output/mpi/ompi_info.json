@@ -1,0 +1,169 @@
+{
+  "command": "ompi_info",
+  "category": "mpi",
+  "description": "Display information about the Open MPI installation. Shows version, configuration options, available components, and build parameters. Essential for debugging MPI configuration issues in HPC environments.",
+  "synopsis": "ompi_info [options]",
+  "version_documented": "Open MPI 4.1+",
+  "source_urls": ["https://www.open-mpi.org/doc/current/man1/ompi_info.1.php"],
+  "installation": {
+    "package": "openmpi",
+    "notes": "Part of Open MPI installation. Install via: apt install openmpi-bin or via module load openmpi"
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Show all information"
+    },
+    {
+      "long": "--parsable",
+      "description": "Output in parsable format"
+    },
+    {
+      "long": "--param",
+      "description": "Show MCA parameters",
+      "arguments": "<type> <component>",
+      "argument_type": "string",
+      "example": "--param btl all"
+    },
+    {
+      "short": "-c",
+      "long": "--config",
+      "description": "Show configuration options used at build time"
+    },
+    {
+      "long": "--path",
+      "description": "Show installation paths"
+    },
+    {
+      "long": "--version",
+      "description": "Show version information"
+    },
+    {
+      "short": "-v",
+      "long": "--level",
+      "description": "Verbosity level (1-9)",
+      "arguments": "<level>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--arch",
+      "description": "Show architecture"
+    },
+    {
+      "long": "--hostname",
+      "description": "Show hostname"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show Open MPI version",
+      "command": "ompi_info --version",
+      "output_example": "Open MPI v4.1.5\n\nhttps://www.open-mpi.org/community/help/",
+      "requires_root": false
+    },
+    {
+      "description": "Show all available components",
+      "command": "ompi_info",
+      "output_example": "                 Package: Open MPI user@host Distribution\n                Open MPI: 4.1.5\n  Open MPI repo revision: v4.1.5\n   Open MPI release date: Feb 23, 2023\n                Open RTE: 4.1.5\n        MCA btl: openib (MCA v2.1.0, API v3.1.0, Component v4.1.5)\n        MCA btl: self (MCA v2.1.0, API v3.1.0, Component v4.1.5)\n        MCA btl: tcp (MCA v2.1.0, API v3.1.0, Component v4.1.5)\n        MCA btl: vader (MCA v2.1.0, API v3.1.0, Component v4.1.5)",
+      "requires_root": false
+    },
+    {
+      "description": "Show build configuration",
+      "command": "ompi_info -c",
+      "requires_root": false
+    },
+    {
+      "description": "Show BTL (byte transfer layer) parameters",
+      "command": "ompi_info --param btl all",
+      "requires_root": false
+    },
+    {
+      "description": "Show UCX parameters",
+      "command": "ompi_info --param pml ucx",
+      "requires_root": false
+    },
+    {
+      "description": "Check for CUDA support",
+      "command": "ompi_info | grep -i cuda",
+      "requires_root": false
+    },
+    {
+      "description": "Check for InfiniBand support",
+      "command": "ompi_info | grep -iE '(openib|ucx|mlx)'",
+      "requires_root": false
+    },
+    {
+      "description": "Show parsable output for scripting",
+      "command": "ompi_info --parsable --all",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "ompi_info: command not found",
+      "meaning": "Open MPI not installed or not in PATH",
+      "resolution": "Install Open MPI or load appropriate module"
+    },
+    {
+      "message": "Unable to open/load component",
+      "meaning": "MCA component library cannot be loaded",
+      "resolution": "Check library dependencies with ldd"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["mpirun", "mpiexec", "mpicc", "ucx_info", "fi_info"],
+    "notes": "ompi_info shows available MCA (Modular Component Architecture) components. Key components for HPC: btl (byte transfer layer - openib, ucx), pml (point-to-point messaging - ucx, ob1), coll (collective operations)."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "N/A - read-only command",
+    "notes": "Shows build-time and runtime configuration"
+  },
+  "limitations": [
+    "Shows installed components, not which are actually usable at runtime",
+    "Does not validate network connectivity or device availability",
+    "Different module versions may show different components"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["hostname", "architecture"],
+        "description": "Shows system where Open MPI is installed"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Module load/unload",
+        "effect": "Different Open MPI version may be shown"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "mpirun --version",
+        "shared_state": "Open MPI version matches"
+      },
+      {
+        "command": "which mpirun",
+        "shared_state": "Same Open MPI installation"
+      }
+    ]
+  }
+}

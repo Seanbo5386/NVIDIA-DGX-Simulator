@@ -1,0 +1,151 @@
+{
+  "command": "hwloc-info",
+  "category": "system_info",
+  "description": "Query specific topology objects and their attributes. Provides detailed information about individual CPUs, caches, NUMA nodes, or devices. Useful for scripting topology queries.",
+  "synopsis": "hwloc-info [options] [location]",
+  "version_documented": "hwloc 2.0+",
+  "source_urls": ["https://www.open-mpi.org/projects/hwloc/doc/"],
+  "installation": {
+    "package": "hwloc",
+    "notes": "Install via: apt install hwloc or yum install hwloc"
+  },
+  "global_options": [
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Verbose output"
+    },
+    {
+      "short": "-s",
+      "long": "--silent",
+      "description": "Only show object counts"
+    },
+    {
+      "short": "-n",
+      "long": "--number-of",
+      "description": "Show count of object type",
+      "arguments": "<type>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--ancestors",
+      "description": "Show ancestor objects"
+    },
+    {
+      "long": "--children",
+      "description": "Show child objects"
+    },
+    {
+      "long": "--descendants",
+      "description": "Show all descendants",
+      "arguments": "<type>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-p",
+      "long": "--physical",
+      "description": "Use physical indexes"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show machine summary",
+      "command": "hwloc-info",
+      "output_example": "depth 0:           1 Machine (type #0)\n depth 1:           2 Package (type #1)\n depth 2:           2 NUMANode (type #2)\n depth 3:           2 L3Cache (type #6)\n depth 4:          64 L2Cache (type #6)\n depth 5:          64 L1dCache (type #6)\n depth 6:          64 Core (type #5)\n depth 7:         128 PU (type #6)",
+      "requires_root": false
+    },
+    {
+      "description": "Count cores",
+      "command": "hwloc-info -n core",
+      "output_example": "64",
+      "requires_root": false
+    },
+    {
+      "description": "Query specific core",
+      "command": "hwloc-info core:0",
+      "requires_root": false
+    },
+    {
+      "description": "Show NUMA node info",
+      "command": "hwloc-info numa:0",
+      "requires_root": false
+    },
+    {
+      "description": "Show core ancestors",
+      "command": "hwloc-info --ancestors core:0",
+      "requires_root": false
+    },
+    {
+      "description": "Show package children",
+      "command": "hwloc-info --children package:0",
+      "requires_root": false
+    },
+    {
+      "description": "Count PUs per core",
+      "command": "hwloc-info --descendants pu core:0",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Object not found",
+      "meaning": "Specified topology object doesn't exist",
+      "resolution": "Check object type and index"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["hwloc-ls", "lstopo", "hwloc-calc", "hwloc-bind"],
+    "notes": "Object types: machine, package, numanode, l3cache, l2cache, l1dcache, l1icache, core, pu, pcidev, osdev. Use in scripts to query topology programmatically."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "N/A - read-only command",
+    "notes": "Reads from sysfs"
+  },
+  "limitations": [
+    "Object indexing can be confusing",
+    "Some info may require root",
+    "Output format varies by object type"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["cpu_count", "numa_nodes", "cache_sizes"],
+        "description": "Queries specific topology objects"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "CPU online/offline",
+        "effect": "Object counts may change"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "hwloc-ls",
+        "shared_state": "Object attributes match tree view"
+      },
+      {
+        "command": "lscpu",
+        "shared_state": "Core and thread counts consistent"
+      }
+    ]
+  }
+}

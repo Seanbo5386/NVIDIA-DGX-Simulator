@@ -1,0 +1,159 @@
+{
+  "command": "smartctl",
+  "category": "storage",
+  "description": "Control and monitor SMART-enabled storage devices. Queries drive health, runs tests, and retrieves error logs. Essential for HPC storage reliability monitoring.",
+  "synopsis": "smartctl [options] <device>",
+  "version_documented": "smartmontools 7.2+",
+  "source_urls": [
+    "https://www.smartmontools.org/browser/trunk/smartmontools/smartctl.8.in"
+  ],
+  "installation": {
+    "package": "smartmontools",
+    "notes": "Install via: apt install smartmontools or yum install smartmontools"
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Show all SMART information"
+    },
+    {
+      "short": "-H",
+      "long": "--health",
+      "description": "Show SMART health status"
+    },
+    {
+      "short": "-i",
+      "long": "--info",
+      "description": "Show device identity"
+    },
+    {
+      "short": "-A",
+      "long": "--attributes",
+      "description": "Show SMART attributes"
+    },
+    {
+      "short": "-l",
+      "long": "--log",
+      "description": "Show SMART log",
+      "arguments": "<type>",
+      "argument_type": "string",
+      "example": "-l error"
+    },
+    {
+      "short": "-t",
+      "long": "--test",
+      "description": "Run SMART test",
+      "arguments": "<type>",
+      "argument_type": "string",
+      "example": "-t short"
+    },
+    {
+      "short": "-d",
+      "long": "--device",
+      "description": "Device type",
+      "arguments": "<type>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-j",
+      "long": "--json",
+      "description": "JSON output"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success, no issues"
+    },
+    {
+      "code": 1,
+      "meaning": "Command line error"
+    },
+    {
+      "code": 4,
+      "meaning": "SMART check failed"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Check drive health",
+      "command": "smartctl -H /dev/sda",
+      "output_example": "SMART overall-health self-assessment test result: PASSED",
+      "requires_root": true
+    },
+    {
+      "description": "All SMART info",
+      "command": "smartctl -a /dev/nvme0n1",
+      "requires_root": true
+    },
+    {
+      "description": "Show attributes",
+      "command": "smartctl -A /dev/sda",
+      "requires_root": true
+    },
+    {
+      "description": "Show error log",
+      "command": "smartctl -l error /dev/sda",
+      "requires_root": true
+    },
+    {
+      "description": "Run short test",
+      "command": "smartctl -t short /dev/sda",
+      "requires_root": true
+    },
+    {
+      "description": "JSON output for scripting",
+      "command": "smartctl -j -a /dev/nvme0n1",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Permission denied",
+      "meaning": "Need root access",
+      "resolution": "Run with sudo"
+    },
+    {
+      "message": "SMART support is: Unavailable",
+      "meaning": "Device doesn't support SMART",
+      "resolution": "Use different monitoring method"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["nvme", "hdparm", "lsblk", "smartd"],
+    "notes": "For NVMe, use nvme smart-log for native info. smartctl adds -d nvme support. Monitor important attributes: Reallocated_Sector_Ct, Current_Pending_Sector, Offline_Uncorrectable."
+  },
+  "permissions": {
+    "read_operations": "Root required",
+    "write_operations": "Root for tests",
+    "notes": "Direct device access needs root"
+  },
+  "limitations": [
+    "Requires root",
+    "NVMe support may be limited",
+    "Some drives hide issues"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["device"],
+        "description": "Queries drive SMART data"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Drive error",
+        "effect": "Error counters increment"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvme smart-log",
+        "shared_state": "NVMe health data overlaps"
+      }
+    ]
+  }
+}

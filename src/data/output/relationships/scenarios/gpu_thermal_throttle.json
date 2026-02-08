@@ -1,0 +1,82 @@
+{
+  "$schema": "../../schema.json",
+  "scenario_id": "gpu_thermal_throttle",
+  "scenario_name": "GPU Thermal Throttling",
+  "description": "Simulates GPU reducing clock speeds due to high temperature, affecting performance but not availability",
+  "severity": "warning",
+  "initial_state_change": {
+    "domain": "gpu_state",
+    "affected_entity": "GPU index 2 on node dgx-node-01",
+    "changes": {
+      "temperature": 85,
+      "throttle_reason": "thermal",
+      "clocks_current_sm": 1200,
+      "clocks_current_memory": 1512
+    }
+  },
+  "affected_commands": [
+    {
+      "command": "nvidia-smi",
+      "category": "gpu_management",
+      "output_before": "|   2  NVIDIA A100-SXM4-80GB On | 00000000:47:00.0 Off |                    0 |\n| N/A   45C    P0   120W / 400W |   8192MiB / 81920MiB |     65%      Default |",
+      "output_after": "|   2  NVIDIA A100-SXM4-80GB On | 00000000:47:00.0 Off |                    0 |\n| N/A   85C    P0   350W / 400W |   8192MiB / 81920MiB |     45%      Default |",
+      "key_differences": [
+        "Temperature increased to 85C",
+        "Utilization dropped due to throttling",
+        "Power draw near limit"
+      ]
+    },
+    {
+      "command": "nvidia-smi -q -d PERFORMANCE",
+      "category": "gpu_management",
+      "output_before": "    Clocks Throttle Reasons\n        Idle                              : Not Active\n        Applications Clocks Setting       : Not Active\n        SW Power Cap                      : Not Active\n        HW Slowdown                       : Not Active\n        HW Thermal Slowdown               : Not Active\n        HW Power Brake Slowdown           : Not Active\n        SW Thermal Slowdown               : Not Active",
+      "output_after": "    Clocks Throttle Reasons\n        Idle                              : Not Active\n        Applications Clocks Setting       : Not Active\n        SW Power Cap                      : Not Active\n        HW Slowdown                       : Active\n        HW Thermal Slowdown               : Active\n        HW Power Brake Slowdown           : Not Active\n        SW Thermal Slowdown               : Active",
+      "key_differences": [
+        "HW Slowdown: Active",
+        "HW Thermal Slowdown: Active",
+        "SW Thermal Slowdown: Active"
+      ]
+    },
+    {
+      "command": "nvidia-smi -q -d CLOCK",
+      "category": "gpu_management",
+      "output_before": "    Clocks\n        Graphics                          : 1410 MHz\n        SM                                : 1410 MHz\n        Memory                            : 1593 MHz",
+      "output_after": "    Clocks\n        Graphics                          : 1200 MHz\n        SM                                : 1200 MHz\n        Memory                            : 1512 MHz",
+      "key_differences": [
+        "Graphics/SM clocks reduced from 1410 to 1200 MHz",
+        "Memory clocks reduced"
+      ]
+    },
+    {
+      "command": "dcgmi health -c",
+      "category": "gpu_management",
+      "output_before": "| GPU 2      | Green  | Passed |",
+      "output_after": "| GPU 2      | Yellow | Warning |\nWarnings: GPU 2 - Thermal throttling detected",
+      "key_differences": ["Health status Yellow", "Thermal warning"]
+    }
+  ],
+  "recovery_actions": [
+    {
+      "action": "Check GPU fan status",
+      "command": "nvidia-smi -q -d FAN"
+    },
+    {
+      "action": "Check ambient temperature",
+      "command": "ipmitool sdr type temperature"
+    },
+    {
+      "action": "Reduce workload temporarily",
+      "command": "scontrol update NodeName=dgx-node-01 State=DRAIN Reason='thermal throttling'"
+    },
+    {
+      "action": "Check datacenter cooling",
+      "command": "Manual inspection required"
+    }
+  ],
+  "simulator_notes": [
+    "Throttling affects performance but GPU remains operational",
+    "Jobs continue running but may take longer",
+    "Temperature should fluctuate based on workload",
+    "Clock speeds should recover when temperature drops"
+  ]
+}

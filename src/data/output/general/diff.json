@@ -1,0 +1,163 @@
+{
+  "command": "diff",
+  "category": "general",
+  "description": "Compare files line by line. Shows differences between files. Used in HPC for comparing configurations, outputs, and validating results.",
+  "synopsis": "diff [options] <file1> <file2>",
+  "version_documented": "GNU diffutils 3.7+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/diff.1.html"],
+  "installation": {
+    "package": "diffutils",
+    "notes": "Part of diffutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-u",
+      "long": "--unified",
+      "description": "Unified format (common for patches)",
+      "arguments": "[lines]",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-c",
+      "long": "--context",
+      "description": "Context format",
+      "arguments": "[lines]",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-r",
+      "long": "--recursive",
+      "description": "Compare directories recursively"
+    },
+    {
+      "short": "-q",
+      "long": "--brief",
+      "description": "Report only if different"
+    },
+    {
+      "short": "-s",
+      "long": "--report-identical-files",
+      "description": "Report when files are identical"
+    },
+    {
+      "short": "-i",
+      "long": "--ignore-case",
+      "description": "Ignore case differences"
+    },
+    {
+      "short": "-w",
+      "long": "--ignore-all-space",
+      "description": "Ignore all whitespace"
+    },
+    {
+      "short": "-B",
+      "long": "--ignore-blank-lines",
+      "description": "Ignore blank line changes"
+    },
+    {
+      "long": "--color",
+      "description": "Colorize output",
+      "arguments": "[when]",
+      "argument_type": "string"
+    },
+    {
+      "short": "-y",
+      "long": "--side-by-side",
+      "description": "Side by side comparison"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Files are identical"
+    },
+    {
+      "code": 1,
+      "meaning": "Files are different"
+    },
+    {
+      "code": 2,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Compare files",
+      "command": "diff file1.txt file2.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Unified diff for patch",
+      "command": "diff -u original.py modified.py > changes.patch",
+      "requires_root": false
+    },
+    {
+      "description": "Compare directories",
+      "command": "diff -r dir1/ dir2/",
+      "requires_root": false
+    },
+    {
+      "description": "Brief comparison",
+      "command": "diff -q config_old.yaml config_new.yaml",
+      "requires_root": false
+    },
+    {
+      "description": "Ignore whitespace",
+      "command": "diff -w results1.csv results2.csv",
+      "requires_root": false
+    },
+    {
+      "description": "Side by side",
+      "command": "diff -y --width=120 file1.txt file2.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Validate job outputs",
+      "command": "diff expected_output.txt actual_output.txt && echo 'PASS'",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No such file or directory",
+      "meaning": "File not found",
+      "resolution": "Check file paths"
+    },
+    {
+      "message": "Binary files differ",
+      "meaning": "Files are binary and different",
+      "resolution": "Use cmp for binary files"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["patch", "cmp", "vimdiff"],
+    "notes": "Exit code 1 means different (useful in scripts). -u format needed for patch. Use colordiff for color."
+  },
+  "permissions": {
+    "read_operations": "Read both files",
+    "write_operations": "N/A",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Line-based comparison",
+    "Large files use significant memory",
+    "Binary comparison limited"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads files to compare"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "patch",
+        "shared_state": "Applies diffs created by diff"
+      }
+    ]
+  }
+}

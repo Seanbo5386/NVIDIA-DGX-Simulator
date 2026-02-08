@@ -1,0 +1,186 @@
+{
+  "command": "sprio",
+  "category": "cluster_management",
+  "description": "View priority factors for jobs in the Slurm queue. Shows how job priority is calculated from multiple factors including age, fair-share, job size, partition, and QOS. Essential for understanding why jobs are scheduled in a particular order.",
+  "synopsis": "sprio [OPTIONS]",
+  "version_documented": "Slurm 23.02+",
+  "source_urls": ["https://slurm.schedmd.com/sprio.html"],
+  "installation": {
+    "package": "slurm-client",
+    "notes": "Part of Slurm workload manager client utilities."
+  },
+  "global_options": [
+    {
+      "short": "-j",
+      "long": "--jobs",
+      "description": "Show priority for specific job IDs",
+      "arguments": "<job_list>",
+      "argument_type": "string",
+      "example": "-j 12345,12346"
+    },
+    {
+      "short": "-l",
+      "long": "--long",
+      "description": "Report more detailed priority information"
+    },
+    {
+      "short": "-n",
+      "long": "--noheader",
+      "description": "Do not print header line"
+    },
+    {
+      "short": "-o",
+      "long": "--format",
+      "description": "Specify output format",
+      "arguments": "<format>",
+      "argument_type": "string",
+      "example": "-o \"%.15i %.8u %.10Y %.10A %.10F %.10J %.10P %.10Q\""
+    },
+    {
+      "short": "-p",
+      "long": "--partition",
+      "description": "Show jobs in specific partition(s)",
+      "arguments": "<partition_list>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-u",
+      "long": "--user",
+      "description": "Show jobs for specific user(s)",
+      "arguments": "<user_list>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-w",
+      "long": "--weights",
+      "description": "Show the priority weights for each factor"
+    },
+    {
+      "short": "-M",
+      "long": "--clusters",
+      "description": "Clusters to query (federated clusters)",
+      "arguments": "<cluster_list>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show priority factors for all pending jobs",
+      "command": "sprio",
+      "output_example": "  JOBID PARTITION     USER   PRIORITY       SITE        AGE  FAIRSHARE    JOBSIZE  PARTITION        QOS        NICE\n  12345     gpu     user1       1234          0        100        500        100        500         34          0\n  12346     gpu     user2       1156          0         80        450        100        500         26          0",
+      "requires_root": false
+    },
+    {
+      "description": "Show priority for specific job",
+      "command": "sprio -j 12345",
+      "requires_root": false
+    },
+    {
+      "description": "Show detailed priority with long format",
+      "command": "sprio -l",
+      "requires_root": false
+    },
+    {
+      "description": "Show my jobs' priority",
+      "command": "sprio -u $USER",
+      "requires_root": false
+    },
+    {
+      "description": "Show priority weights configuration",
+      "command": "sprio -w",
+      "output_example": "  JOBID PARTITION     USER   PRIORITY       SITE        AGE  FAIRSHARE    JOBSIZE  PARTITION        QOS        NICE\nWeights                                        1       1000       5000        500       1000       2000",
+      "requires_root": false
+    },
+    {
+      "description": "Custom format showing key factors",
+      "command": "sprio -o \"%.15i %.8u %.10Y %.10A %.10F\"",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "slurm_load_job error: Invalid job id specified",
+      "meaning": "Job ID does not exist",
+      "resolution": "Verify job ID with squeue"
+    },
+    {
+      "message": "PriorityType must be multifactor",
+      "meaning": "Cluster not using multifactor priority",
+      "resolution": "sprio requires PriorityType=priority/multifactor in slurm.conf"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["squeue", "sshare", "scontrol show job", "sacctmgr"],
+    "notes": "sprio shows how multifactor priority is computed. Components include: AGE (how long in queue), FAIRSHARE (user/account historical usage), JOBSIZE (resource requests), PARTITION (partition priority), QOS (quality of service), NICE (user adjustment). Higher total PRIORITY means earlier scheduling."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "N/A - read-only command",
+    "notes": "All users can view priority information"
+  },
+  "limitations": [
+    "Only works with multifactor priority plugin",
+    "Priority changes dynamically as jobs age",
+    "Does not predict actual start time (use squeue --start)",
+    "Fair-share calculations depend on accounting data"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "job_state",
+        "fields": ["job_id", "user", "partition", "priority", "qos"],
+        "description": "Reads job priority factors from Slurm controller"
+      },
+      {
+        "state_domain": "partition_state",
+        "fields": ["partition_name", "priority_tier"],
+        "description": "Partition priority contributes to job priority"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Job submission",
+        "effect": "New job appears with initial priority"
+      },
+      {
+        "state_change": "Time passes",
+        "effect": "AGE factor increases for waiting jobs"
+      },
+      {
+        "state_change": "Job completion by same user",
+        "effect": "FAIRSHARE factor may change"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "squeue",
+        "shared_state": "Job IDs and queue order reflect priority"
+      },
+      {
+        "command": "sshare",
+        "shared_state": "Fair-share values contribute to priority"
+      }
+    ]
+  }
+}

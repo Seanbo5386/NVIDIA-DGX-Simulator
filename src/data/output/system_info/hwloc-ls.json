@@ -1,0 +1,160 @@
+{
+  "command": "hwloc-ls",
+  "category": "system_info",
+  "description": "Display hardware topology in graphical tree format. Shows hierarchical view of CPUs, caches, memory, PCI devices, and their relationships. Alias for lstopo in text mode.",
+  "synopsis": "hwloc-ls [options]",
+  "version_documented": "hwloc 2.0+",
+  "source_urls": ["https://www.open-mpi.org/projects/hwloc/doc/"],
+  "installation": {
+    "package": "hwloc",
+    "notes": "Install via: apt install hwloc or yum install hwloc"
+  },
+  "global_options": [
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Verbose output with more details"
+    },
+    {
+      "short": "-p",
+      "long": "--physical",
+      "description": "Use physical (OS) indexes"
+    },
+    {
+      "short": "-l",
+      "long": "--logical",
+      "description": "Use logical (hwloc) indexes"
+    },
+    {
+      "long": "--no-caches",
+      "description": "Hide cache levels"
+    },
+    {
+      "long": "--no-io",
+      "description": "Hide I/O devices"
+    },
+    {
+      "long": "--only",
+      "description": "Show only specific object type",
+      "arguments": "<type>",
+      "argument_type": "string",
+      "example": "--only core"
+    },
+    {
+      "long": "--restrict",
+      "description": "Restrict to specific cpuset",
+      "arguments": "<cpuset>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show topology tree",
+      "command": "hwloc-ls",
+      "output_example": "Machine (256GB total)\n  Package L#0\n    NUMANode L#0 (128GB)\n    L3 L#0 (45MB)\n      L2 L#0 (1280KB) + L1d L#0 (48KB) + L1i L#0 (32KB) + Core L#0\n        PU L#0 (P#0)\n        PU L#1 (P#64)\n      ...",
+      "requires_root": false
+    },
+    {
+      "description": "Show only cores",
+      "command": "hwloc-ls --only core",
+      "requires_root": false
+    },
+    {
+      "description": "Show with physical indexes",
+      "command": "hwloc-ls -p",
+      "requires_root": false
+    },
+    {
+      "description": "Verbose output with attributes",
+      "command": "hwloc-ls -v",
+      "requires_root": false
+    },
+    {
+      "description": "Show without I/O devices",
+      "command": "hwloc-ls --no-io",
+      "requires_root": false
+    },
+    {
+      "description": "Show GPUs only",
+      "command": "hwloc-ls --only osdev",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "hwloc-ls: unknown option",
+      "meaning": "Invalid command line option",
+      "resolution": "Check option spelling"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "lstopo",
+      "hwloc-info",
+      "hwloc-bind",
+      "numactl",
+      "lscpu"
+    ],
+    "notes": "hwloc-ls is equivalent to lstopo with text output. Useful for understanding NUMA topology and CPU/GPU locality for process placement optimization."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "N/A - read-only command",
+    "notes": "Root may be needed to see all PCI device details"
+  },
+  "limitations": [
+    "Text output less detailed than lstopo graphical",
+    "Large systems may have very verbose output",
+    "Some device info may require root"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["cpu_count", "memory_total", "numa_nodes"],
+        "description": "Reads hardware topology from sysfs"
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["pci_bus_id"],
+        "description": "Shows GPU device locality"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Hardware configuration change",
+        "effect": "Topology view updates"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "lstopo",
+        "shared_state": "Same topology information in different format"
+      },
+      {
+        "command": "lscpu",
+        "shared_state": "CPU topology matches"
+      },
+      {
+        "command": "numactl -H",
+        "shared_state": "NUMA topology consistent"
+      }
+    ]
+  }
+}

@@ -1,0 +1,181 @@
+{
+  "command": "fwupdmgr",
+  "category": "firmware",
+  "description": "Linux Vendor Firmware Service (LVFS) client for updating device firmware. Updates BIOS, storage controllers, and peripherals from LVFS repository. General-purpose firmware management.",
+  "synopsis": "fwupdmgr [command] [options]",
+  "version_documented": "fwupd 1.7+",
+  "source_urls": ["https://fwupd.org/"],
+  "installation": {
+    "package": "fwupd",
+    "notes": "Install via: apt install fwupd or yum install fwupd"
+  },
+  "subcommands": [
+    {
+      "name": "get-devices",
+      "description": "List all devices that support firmware updates"
+    },
+    {
+      "name": "get-updates",
+      "description": "List available firmware updates"
+    },
+    {
+      "name": "refresh",
+      "description": "Download latest metadata from LVFS"
+    },
+    {
+      "name": "update",
+      "description": "Install available firmware updates"
+    },
+    {
+      "name": "install",
+      "description": "Install specific firmware file"
+    },
+    {
+      "name": "get-history",
+      "description": "Show firmware update history"
+    }
+  ],
+  "global_options": [
+    {
+      "short": "-y",
+      "long": "--assume-yes",
+      "description": "Non-interactive mode"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Verbose output"
+    },
+    {
+      "long": "--force",
+      "description": "Force operation"
+    },
+    {
+      "long": "--offline",
+      "description": "Schedule update for next reboot"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    },
+    {
+      "code": 2,
+      "meaning": "Nothing to do"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "List supported devices",
+      "command": "fwupdmgr get-devices",
+      "output_example": "├─Dell System BIOS:\n│     Device ID:          abc123def456\n│     Current version:    1.15.0\n│     Vendor:             Dell Inc.\n│     Flags:              internal|updatable\n├─NVMe SSD:\n│     Device ID:          xyz789ghi012\n│     Current version:    2.1.0",
+      "requires_root": false
+    },
+    {
+      "description": "Check for updates",
+      "command": "fwupdmgr get-updates",
+      "requires_root": false
+    },
+    {
+      "description": "Refresh metadata",
+      "command": "fwupdmgr refresh",
+      "requires_root": true
+    },
+    {
+      "description": "Install all updates",
+      "command": "fwupdmgr update",
+      "requires_root": true
+    },
+    {
+      "description": "Schedule offline update",
+      "command": "fwupdmgr update --offline",
+      "requires_root": true
+    },
+    {
+      "description": "Install specific firmware",
+      "command": "fwupdmgr install firmware.cab",
+      "requires_root": true
+    },
+    {
+      "description": "View update history",
+      "command": "fwupdmgr get-history",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No updatable devices",
+      "meaning": "No devices support firmware updates via fwupd",
+      "resolution": "Check vendor support for LVFS"
+    },
+    {
+      "message": "Failed to download",
+      "meaning": "Cannot fetch firmware from LVFS",
+      "resolution": "Check internet connectivity and proxy settings"
+    },
+    {
+      "message": "Signature verification failed",
+      "meaning": "Firmware signature invalid",
+      "resolution": "Re-download or verify firmware source"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["dmidecode", "lspci", "nvme", "smartctl"],
+    "notes": "LVFS provides signed firmware from vendors. Some updates require reboot. Not all hardware vendors participate in LVFS. For NVIDIA NICs, use mlxup instead."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for queries",
+    "write_operations": "Root required for updates",
+    "notes": "Uses polkit for privilege escalation"
+  },
+  "limitations": [
+    "Limited to LVFS-participating vendors",
+    "Some updates require reboot",
+    "Not for NVIDIA/Mellanox NICs (use mlxup)",
+    "May conflict with vendor tools"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "firmware_state",
+        "fields": ["firmware_version"],
+        "description": "Reads device firmware versions"
+      },
+      {
+        "state_domain": "system_state",
+        "fields": ["bios_version"],
+        "description": "Reads BIOS/UEFI version"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "firmware_state",
+        "fields": ["firmware_version"],
+        "description": "Updates device firmware",
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "LVFS metadata refresh",
+        "effect": "New updates become available"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "dmidecode",
+        "shared_state": "BIOS version matches after update"
+      }
+    ]
+  }
+}

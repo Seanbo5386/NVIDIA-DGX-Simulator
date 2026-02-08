@@ -1,0 +1,223 @@
+{
+  "command": "apptainer",
+  "category": "containers",
+  "description": "Container platform designed for HPC environments (formerly Singularity). Enables running containers without root privileges, supports MPI, GPU passthrough, and tight integration with HPC schedulers. The open-source continuation of Singularity.",
+  "synopsis": "apptainer [global options] <command> [command options]",
+  "version_documented": "Apptainer 1.2+",
+  "source_urls": [
+    "https://apptainer.org/docs/user/main/",
+    "https://apptainer.org/docs/user/main/quick_start.html"
+  ],
+  "installation": {
+    "package": "apptainer",
+    "notes": "Install via: apt install apptainer or yum install apptainer. Also available via EPEL repository."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--debug",
+      "description": "Enable debug output"
+    },
+    {
+      "short": "-q",
+      "long": "--quiet",
+      "description": "Suppress output"
+    },
+    {
+      "short": "-s",
+      "long": "--silent",
+      "description": "Only print errors"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Increase verbosity"
+    },
+    {
+      "long": "--version",
+      "description": "Show version"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Show help"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "build",
+      "description": "Build a container image",
+      "synopsis": "apptainer build [options] <image> <build_spec>"
+    },
+    {
+      "name": "exec",
+      "description": "Execute a command in a container",
+      "synopsis": "apptainer exec [options] <image> <command>"
+    },
+    {
+      "name": "run",
+      "description": "Run the container's default runscript",
+      "synopsis": "apptainer run [options] <image>"
+    },
+    {
+      "name": "shell",
+      "description": "Start interactive shell in container",
+      "synopsis": "apptainer shell [options] <image>"
+    },
+    {
+      "name": "pull",
+      "description": "Pull container image from registry",
+      "synopsis": "apptainer pull [options] <image>"
+    },
+    {
+      "name": "instance",
+      "description": "Manage container instances",
+      "synopsis": "apptainer instance <start|stop|list> [options]"
+    },
+    {
+      "name": "inspect",
+      "description": "Show container metadata",
+      "synopsis": "apptainer inspect [options] <image>"
+    }
+  ],
+  "environment_variables": [
+    {
+      "name": "APPTAINER_CACHEDIR",
+      "description": "Directory for caching images and layers",
+      "example": "APPTAINER_CACHEDIR=/scratch/$USER/.apptainer",
+      "affects_command": "Modifies container behavior"
+    },
+    {
+      "name": "APPTAINER_TMPDIR",
+      "description": "Temporary directory for builds",
+      "example": "APPTAINER_TMPDIR=/tmp",
+      "affects_command": "Modifies container behavior"
+    },
+    {
+      "name": "APPTAINER_BIND",
+      "description": "Paths to bind mount into container",
+      "example": "APPTAINER_BIND=/data,/scratch",
+      "affects_command": "Modifies container behavior"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    },
+    {
+      "code": 255,
+      "meaning": "Container returned non-zero exit"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run container with GPU support",
+      "command": "apptainer exec --nv pytorch.sif python train.py",
+      "requires_root": false
+    },
+    {
+      "description": "Pull container from Docker Hub",
+      "command": "apptainer pull docker://nvcr.io/nvidia/pytorch:23.10-py3",
+      "requires_root": false
+    },
+    {
+      "description": "Run with bind mounts",
+      "command": "apptainer exec --bind /data:/data,/scratch:/scratch container.sif ./run.sh",
+      "requires_root": false
+    },
+    {
+      "description": "Interactive shell in container",
+      "command": "apptainer shell --nv container.sif",
+      "requires_root": false
+    },
+    {
+      "description": "Run MPI job in container",
+      "command": "srun apptainer exec --nv mpi_container.sif ./mpi_application",
+      "requires_root": false
+    },
+    {
+      "description": "Build container from definition file",
+      "command": "apptainer build container.sif definition.def",
+      "requires_root": false
+    },
+    {
+      "description": "Run with specific GPU visible",
+      "command": "CUDA_VISIBLE_DEVICES=0 apptainer exec --nv container.sif nvidia-smi",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "FATAL: container creation failed",
+      "meaning": "Cannot create container namespace or mount points",
+      "resolution": "Check user namespaces are enabled, verify bind paths exist"
+    },
+    {
+      "message": "FATAL: While making image from oci registry",
+      "meaning": "Cannot pull image from registry",
+      "resolution": "Check network connectivity and registry authentication"
+    },
+    {
+      "message": "NVIDIA GPU support was requested, but no NVIDIA driver",
+      "meaning": "Cannot initialize GPU access",
+      "resolution": "Verify NVIDIA driver is loaded, check nvidia-smi"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["singularity", "docker", "enroot", "podman"],
+    "notes": "Apptainer is the community continuation of Singularity. Containers run without root privileges, making it ideal for HPC multi-tenant environments. The --nv flag enables NVIDIA GPU passthrough using nvidia-container-cli."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "Root required for building some container types",
+    "notes": "User namespaces allow rootless container execution"
+  },
+  "limitations": [
+    "Cannot run privileged containers (by design)",
+    "Some Docker containers may need modification",
+    "User namespace support required in kernel",
+    "Network isolation options more limited than Docker"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": ["gpu_id", "driver_version", "cuda_version"],
+        "description": "With --nv, reads GPU state for passthrough"
+      },
+      {
+        "state_domain": "container_state",
+        "fields": ["image"],
+        "description": "Reads container image for execution"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "container_state",
+        "fields": ["container_id", "status", "pid"],
+        "description": "Creates container process state"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Container start",
+        "effect": "Process created with container namespace"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "singularity",
+        "shared_state": "Same container format and runtime behavior"
+      },
+      {
+        "command": "nvidia-smi (inside container)",
+        "shared_state": "GPU state visible with --nv flag"
+      }
+    ]
+  }
+}

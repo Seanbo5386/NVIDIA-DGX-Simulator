@@ -1,0 +1,99 @@
+{
+  "$schema": "../../schema.json",
+  "scenario_id": "ib_link_failure",
+  "scenario_name": "InfiniBand Link Failure",
+  "description": "Simulates an InfiniBand port going down due to cable issue, switch failure, or transceiver problem",
+  "severity": "critical",
+  "initial_state_change": {
+    "domain": "network_ib_state",
+    "affected_entity": "mlx5_0 port 1 on node dgx-node-02",
+    "changes": {
+      "state": "Down",
+      "physical_state": "Polling",
+      "rate": 0,
+      "link_layer": "InfiniBand"
+    }
+  },
+  "affected_commands": [
+    {
+      "command": "ibstat",
+      "category": "networking",
+      "output_before": "CA 'mlx5_0'\n        Port 1:\n                State: Active\n                Physical state: LinkUp\n                Rate: 200\n                Link layer: InfiniBand",
+      "output_after": "CA 'mlx5_0'\n        Port 1:\n                State: Down\n                Physical state: Polling\n                Rate: 0\n                Link layer: InfiniBand",
+      "key_differences": ["State: Down", "Physical state: Polling", "Rate: 0"]
+    },
+    {
+      "command": "ibstatus",
+      "category": "networking",
+      "output_before": "mlx5_0 port 1: rate 200 Gb/sec (4X HDR), state ACTIVE",
+      "output_after": "mlx5_0 port 1: rate 0 Gb/sec, state DOWN",
+      "key_differences": ["State DOWN", "Rate 0"]
+    },
+    {
+      "command": "iblinkinfo",
+      "category": "networking",
+      "output_before": "0x0002c9030042ab91      1    1[  ] ==( 4X 25.78125 Gbps Active/  LinkUp)==>",
+      "output_after": "0x0002c9030042ab91      1    1[  ] ==( Down/Polling )==>",
+      "key_differences": ["Link shows Down/Polling instead of Active/LinkUp"]
+    },
+    {
+      "command": "mlxlink -d mlx5_0",
+      "category": "networking",
+      "output_before": "Operational Info\n  State            : Active\n  Physical state   : Link up\n  Speed            : HDR\n  Width            : 4x",
+      "output_after": "Operational Info\n  State            : Down\n  Physical state   : Polling\n  Speed            : N/A\n  Width            : N/A\n\nTroubleshooting Info\n  Recommendation   : Check cable/transceiver on both ends",
+      "key_differences": [
+        "State: Down",
+        "Physical state: Polling",
+        "Troubleshooting recommendations"
+      ]
+    },
+    {
+      "command": "dmesg | tail",
+      "category": "diagnostics",
+      "output_before": "[no IB errors]",
+      "output_after": "[54321.123] mlx5_core 0000:3b:00.0: Port 1 link down\n[54321.124] ib_core: ib0: port 1 is now: Down",
+      "key_differences": ["Port link down message in kernel log"]
+    },
+    {
+      "command": "sinfo",
+      "category": "cluster_management",
+      "output_before": "dgx-node-02  gpu  idle",
+      "output_after": "dgx-node-02  gpu  drain",
+      "key_differences": [
+        "Node may be drained if configured for network health checks"
+      ]
+    }
+  ],
+  "recovery_actions": [
+    {
+      "action": "Check physical cable connection",
+      "command": "Manual inspection required"
+    },
+    {
+      "action": "Check link diagnostics",
+      "command": "mlxlink -d mlx5_0 --show_eye"
+    },
+    {
+      "action": "Check transceiver health",
+      "command": "mlxlink -d mlx5_0 -m"
+    },
+    {
+      "action": "Check switch port status",
+      "command": "ssh ib-switch 'show interfaces ethernet'"
+    },
+    {
+      "action": "Reset port (if software issue)",
+      "command": "mlxlink -d mlx5_0 --port_state DN && sleep 2 && mlxlink -d mlx5_0 --port_state UP"
+    },
+    {
+      "action": "Return node to service after fix",
+      "command": "scontrol update NodeName=dgx-node-02 State=RESUME"
+    }
+  ],
+  "simulator_notes": [
+    "IB link failure affects MPI and RDMA communication",
+    "Jobs requiring multi-node communication will fail",
+    "Node may be automatically drained by health monitoring",
+    "Other ports on same HCA may still function"
+  ]
+}

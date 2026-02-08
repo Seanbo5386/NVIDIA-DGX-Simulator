@@ -1,0 +1,167 @@
+{
+  "command": "ucx_info",
+  "category": "networking",
+  "description": "Display information about UCX (Unified Communication X) configuration and available transports. UCX is the high-performance communication framework used by many MPI implementations and NCCL for GPU-direct RDMA.",
+  "synopsis": "ucx_info [options]",
+  "version_documented": "UCX 1.14+",
+  "source_urls": ["https://openucx.readthedocs.io/en/master/running.html"],
+  "installation": {
+    "package": "ucx",
+    "notes": "Install via: apt install ucx or yum install ucx. Part of MLNX_OFED or HPC-X."
+  },
+  "global_options": [
+    {
+      "short": "-v",
+      "long": "--version",
+      "description": "Display UCX version"
+    },
+    {
+      "short": "-d",
+      "long": "--devices",
+      "description": "Show available devices"
+    },
+    {
+      "short": "-c",
+      "long": "--config",
+      "description": "Show UCX configuration parameters"
+    },
+    {
+      "short": "-b",
+      "long": "--build-config",
+      "description": "Show build configuration"
+    },
+    {
+      "short": "-t",
+      "long": "--transports",
+      "description": "Show available transports"
+    },
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Show all information"
+    },
+    {
+      "short": "-f",
+      "long": "--full",
+      "description": "Show full config with hidden params"
+    },
+    {
+      "short": "-y",
+      "long": "--type",
+      "description": "Show specific config type",
+      "arguments": "<type>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show UCX version",
+      "command": "ucx_info -v",
+      "output_example": "# UCT version=1.14.0 revision 0123456\n# configured with: --enable-mt --with-cuda=/usr/local/cuda --with-gdrcopy",
+      "requires_root": false
+    },
+    {
+      "description": "Show available devices and transports",
+      "command": "ucx_info -d",
+      "output_example": "# Memory domain: cuda_cpy\n#   Component: cuda\n#   Transport: cuda_copy\n#\n# Memory domain: mlx5_0\n#   Component: ib\n#   Transport: rc_mlx5\n#   Transport: ud_mlx5\n#   Transport: dc_mlx5",
+      "requires_root": false
+    },
+    {
+      "description": "Show all transports",
+      "command": "ucx_info -t",
+      "requires_root": false
+    },
+    {
+      "description": "Show UCX configuration parameters",
+      "command": "ucx_info -c",
+      "requires_root": false
+    },
+    {
+      "description": "Show full configuration including hidden",
+      "command": "ucx_info -cf",
+      "requires_root": false
+    },
+    {
+      "description": "Show build configuration",
+      "command": "ucx_info -b",
+      "requires_root": false
+    },
+    {
+      "description": "Check for CUDA/GPU support",
+      "command": "ucx_info -d | grep -i cuda",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "ucx_info: command not found",
+      "meaning": "UCX not installed",
+      "resolution": "Install UCX package or load HPC-X module"
+    },
+    {
+      "message": "No devices found",
+      "meaning": "No UCX-compatible devices detected",
+      "resolution": "Check IB/RDMA drivers and CUDA installation"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["ompi_info", "ibstat", "nvidia-smi", "ucx_perftest"],
+    "notes": "UCX provides high-performance communication for MPI (via UCX PML) and NCCL. Important transports: rc_mlx5 (reliable connected), dc_mlx5 (dynamic connected), cuda_copy (GPU memory). GPU-direct support requires GDRCopy."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "N/A - read-only command",
+    "notes": "Device access may require RDMA permissions"
+  },
+  "limitations": [
+    "Shows available transports, not runtime selection",
+    "Device availability depends on drivers",
+    "CUDA support requires UCX built with CUDA"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["device"],
+        "description": "Shows IB devices available to UCX"
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["cuda_version"],
+        "description": "Shows CUDA transport availability"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Driver load/unload",
+        "effect": "Available transports change"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ibstat",
+        "shared_state": "IB devices shown in both"
+      },
+      {
+        "command": "ompi_info",
+        "shared_state": "UCX PML availability"
+      }
+    ]
+  }
+}

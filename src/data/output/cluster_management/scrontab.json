@@ -1,0 +1,108 @@
+{
+  "command": "scrontab",
+  "category": "cluster_management",
+  "description": "SLURM cron-like job scheduler. Manages recurring batch jobs using cron syntax. Enables scheduled job submission on HPC clusters.",
+  "synopsis": "scrontab [options] [file]",
+  "version_documented": "SLURM 20.11+",
+  "source_urls": ["https://slurm.schedmd.com/scrontab.html"],
+  "installation": {
+    "package": "slurm-client",
+    "notes": "Part of SLURM workload manager."
+  },
+  "global_options": [
+    {
+      "short": "-e",
+      "description": "Edit scrontab"
+    },
+    {
+      "short": "-l",
+      "description": "List scrontab"
+    },
+    {
+      "short": "-r",
+      "description": "Remove scrontab"
+    },
+    {
+      "short": "-u",
+      "description": "Edit user's scrontab (admin)",
+      "arguments": "<user>",
+      "argument_type": "string"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Edit scrontab",
+      "command": "scrontab -e",
+      "requires_root": false
+    },
+    {
+      "description": "List current scrontab",
+      "command": "scrontab -l",
+      "requires_root": false
+    },
+    {
+      "description": "Remove scrontab",
+      "command": "scrontab -r",
+      "requires_root": false
+    },
+    {
+      "description": "Install from file",
+      "command": "scrontab my_jobs.scron",
+      "requires_root": false
+    },
+    {
+      "description": "Daily backup job at 2am",
+      "command": "echo '0 2 * * * /home/user/backup.sh' | scrontab",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "scrontab: not enabled",
+      "meaning": "scrontab not configured",
+      "resolution": "Contact admin to enable scrontab"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["sbatch", "crontab"],
+    "notes": "Uses cron-like syntax. Jobs submitted via SLURM scheduler. Requires cluster support."
+  },
+  "permissions": {
+    "read_operations": "Read own scrontab",
+    "write_operations": "Edit own scrontab",
+    "notes": "Admin for other users"
+  },
+  "limitations": [
+    "Cluster must have scrontab enabled",
+    "Jobs use SLURM resources",
+    "Limited compared to full cron"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "job_state",
+        "fields": ["scheduled_jobs"],
+        "description": "Schedules recurring jobs",
+        "requires_privilege": "user"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "sbatch",
+        "shared_state": "scrontab submits via sbatch"
+      }
+    ]
+  }
+}

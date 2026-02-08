@@ -1,6 +1,7 @@
 # Usage Guide - NVIDIA AI Infrastructure Simulator
 
 ## Table of Contents
+
 1. [First Steps](#first-steps)
 2. [Terminal Commands](#terminal-commands)
 3. [MIG Configuration Walkthrough](#mig-configuration-walkthrough)
@@ -51,6 +52,12 @@ Open the **Terminal** tab and try these commands to get familiar:
 # See what's available
 help
 
+# Get rich documentation for a command
+explain-json nvidia-smi
+
+# Try practice exercises
+practice beginner
+
 # Check GPU status
 nvidia-smi
 
@@ -66,9 +73,87 @@ ibstat
 
 ## Terminal Commands
 
+### Learning Tools
+
+#### Rich Documentation with explain-json
+
+```bash
+# Get comprehensive command documentation from JSON definitions
+explain-json nvidia-smi
+
+# Includes usage patterns, exit codes, error resolutions
+explain-json dcgmi
+
+# Works with any supported command
+explain-json sinfo
+```
+
+The `explain-json` command provides richer output than basic `help`, including:
+
+- Complete synopsis and description
+- Common usage examples with explanations
+- All available options and flags
+- Exit codes and their meanings
+- Common error messages and resolutions
+- Related commands
+
+#### Practice Exercises with practice
+
+```bash
+# Get 3 random practice exercises
+practice
+
+# Get exercises filtered by difficulty
+practice beginner
+practice intermediate
+practice advanced
+
+# Get exercises for a specific command
+practice nvidia-smi
+
+# Get exercises for a category
+practice category gpu_management
+practice category diagnostics
+practice category networking
+```
+
+The `practice` command generates learning exercises with:
+
+- Scenario-based prompts
+- Difficulty level (beginner/intermediate/advanced)
+- Hints to guide you
+- Expected command answers
+- Available categories: gpu_management, diagnostics, cluster_management, networking, containers, storage
+
+### Command Documentation from JSON Definitions
+
+All simulator commands now use comprehensive JSON definitions for help output.
+This provides:
+
+- **Consistent formatting** across all commands
+- **Rich examples** with output previews
+- **Exit code documentation** explaining return values
+- **Common error messages** with resolutions
+- **Related commands** suggestions
+
+Commands like `nvidia-smi --help`, `sinfo --help`, `dcgmi --help`, etc. now display
+structured documentation sourced from `src/data/output/` JSON files.
+
+#### How it Works
+
+When you run `command --help`, the simulator:
+
+1. Looks up the command in the JSON definition registry
+2. Formats the definition using ANSI colors for terminal display
+3. Shows usage patterns, options, examples, and error resolutions
+
+This ensures help output is always accurate and matches the actual command behavior
+defined in the JSON specification files.
+
 ### GPU Management with nvidia-smi
 
 #### Basic Status
+
 ```bash
 # Show all GPUs
 nvidia-smi
@@ -84,6 +169,7 @@ nvidia-smi -q -i 0
 ```
 
 #### NVLink Information
+
 ```bash
 # Check NVLink status
 nvidia-smi nvlink --status
@@ -93,6 +179,7 @@ nvidia-smi topo -m
 ```
 
 #### Power Management
+
 ```bash
 # Set power limit to 350W on GPU 0
 nvidia-smi -i 0 -pl 350
@@ -104,6 +191,7 @@ nvidia-smi -i 0 -pm 1
 ### DCGM Operations
 
 #### Discovery and Health
+
 ```bash
 # Discover GPUs
 dcgmi discovery -l
@@ -113,6 +201,7 @@ dcgmi health --check
 ```
 
 #### Diagnostics
+
 ```bash
 # Quick diagnostic (2 seconds)
 dcgmi diag --mode 1
@@ -125,6 +214,7 @@ dcgmi diag --mode 3
 ```
 
 #### Group Management
+
 ```bash
 # Create a GPU group
 dcgmi group -c training-gpus
@@ -136,6 +226,7 @@ dcgmi group -l
 ### BMC Management with ipmitool
 
 #### Sensor Monitoring
+
 ```bash
 # List all sensors
 ipmitool sensor list
@@ -145,6 +236,7 @@ ipmitool sdr list
 ```
 
 #### System Information
+
 ```bash
 # BMC firmware info
 ipmitool mc info
@@ -160,12 +252,14 @@ ipmitool fru print
 ```
 
 #### Network Configuration
+
 ```bash
 # Show BMC LAN config
 ipmitool lan print 1
 ```
 
 #### User Management
+
 ```bash
 # List BMC users
 ipmitool user list 1
@@ -174,6 +268,7 @@ ipmitool user list 1
 ### InfiniBand Tools
 
 #### Port Status
+
 ```bash
 # Show HCA and port information
 ibstat
@@ -183,6 +278,7 @@ ibportstate
 ```
 
 #### Error Monitoring
+
 ```bash
 # Check error counters (critical for troubleshooting)
 ibporterrors
@@ -192,6 +288,7 @@ perfquery
 ```
 
 #### Fabric Discovery
+
 ```bash
 # Show fabric links
 iblinkinfo
@@ -208,6 +305,7 @@ ibdiagnet
 Multi-Instance GPU (MIG) allows you to partition A100/H100 GPUs into smaller instances. Here's a complete workflow:
 
 ### Step 1: Check Current Status
+
 ```bash
 # Check if MIG is enabled
 nvidia-smi
@@ -216,6 +314,7 @@ nvidia-smi
 ```
 
 ### Step 2: Enable MIG Mode
+
 ```bash
 # Enable MIG on GPU 0
 nvidia-smi -i 0 -mig 1
@@ -225,6 +324,7 @@ nvidia-smi -i 0 -mig 1
 ```
 
 ### Step 3: List Available Profiles
+
 ```bash
 # Show what MIG profiles are available
 nvidia-smi mig -lgip
@@ -237,6 +337,7 @@ nvidia-smi mig -lgip
 ```
 
 ### Step 4: Create GPU Instances
+
 ```bash
 # Create three 1g.5gb instances on GPU 0
 nvidia-smi mig -i 0 -cgi 19,19,19 -C
@@ -246,6 +347,7 @@ nvidia-smi mig -i 0 -cgi 19,19,19 -C
 ```
 
 ### Step 5: Verify Instances
+
 ```bash
 # List GPU instances
 nvidia-smi mig -lgi
@@ -255,6 +357,7 @@ nvidia-smi -L
 ```
 
 ### Step 6: Clean Up
+
 ```bash
 # Destroy all instances
 nvidia-smi mig -i 0 -dgi
@@ -267,6 +370,7 @@ nvidia-smi
 ```
 
 ### Common MIG Profile IDs
+
 - **19**: 1g.5gb (4.75 GB, 14 SMs) - Max 7 instances
 - **20**: 1g.10gb (9.62 GB, 14 SMs) - Max 4 instances
 - **14**: 2g.10gb (9.62 GB, 28 SMs) - Max 3 instances
@@ -281,6 +385,7 @@ nvidia-smi
 **Problem**: GPU temperature is above 80°C
 
 **Investigation**:
+
 ```bash
 # Check current temperature and power
 nvidia-smi -q -i 0 -d TEMPERATURE,POWER
@@ -294,6 +399,7 @@ nvidia-smi -q -i 0 -d CLOCK | grep "Throttle"
 ```
 
 **Resolution**:
+
 - Verify fan speeds are adequate
 - Check inlet/exhaust temperatures
 - Reduce power limit if needed: `nvidia-smi -i 0 -pl 300`
@@ -303,6 +409,7 @@ nvidia-smi -q -i 0 -d CLOCK | grep "Throttle"
 **Problem**: GPU showing ECC errors
 
 **Investigation**:
+
 ```bash
 # Check ECC error counts
 nvidia-smi -q -i 0 -d ECC
@@ -315,6 +422,7 @@ nvidia-smi -q -i 0
 ```
 
 **What to look for**:
+
 - **Single-bit errors**: Usually correctable, monitor for trends
 - **Double-bit errors**: Critical - GPU replacement needed if persistent
 - **XID 48**: Double-bit ECC error - serious hardware issue
@@ -324,6 +432,7 @@ nvidia-smi -q -i 0
 **Problem**: Degraded network performance
 
 **Investigation**:
+
 ```bash
 # Check port status
 ibstat
@@ -339,12 +448,14 @@ perfquery
 ```
 
 **Key error counters**:
+
 - **SymbolErrors > 0**: Bad cable or transceiver
 - **LinkDowned > expected**: Flapping link
 - **PortRcvErrors**: Physical layer issues
 - **PortXmitWait high**: Congestion
 
 **Resolution**:
+
 - Identify the problematic port
 - Check cable seating
 - Verify cable type matches requirements
@@ -355,6 +466,7 @@ perfquery
 **Problem**: Slow multi-GPU communication
 
 **Investigation**:
+
 ```bash
 # Check NVLink status
 nvidia-smi nvlink --status
@@ -370,6 +482,7 @@ nvidia-smi topo -m
 ```
 
 **Resolution**:
+
 - Reset GPU if link is down: `nvidia-smi --gpu-reset -i 0`
 - Check for XID 74 (NVLink error)
 - Verify GPU seating in chassis
@@ -432,6 +545,8 @@ nvidia-smi topo -m
 ## Getting Help
 
 - Type `help` in the terminal for command list
+- Type `explain-json <command>` for comprehensive command documentation
+- Type `practice` to test your knowledge with exercises
 - Check the **Documentation** tab for reference materials
 - Review XID error codes in the docs
 - Consult the official NVIDIA certification resources

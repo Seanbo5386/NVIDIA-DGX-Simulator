@@ -1,0 +1,478 @@
+{
+  "command": "sar",
+  "category": "monitoring",
+  "description": "Collect, report, and save system activity information. The sar (System Activity Reporter) command is the primary tool for collecting and displaying system performance data over time. It can report on CPU utilization, memory usage, I/O activity, network statistics, and many other system metrics. Unlike real-time tools like top or vmstat, sar excels at historical analysis by reading data collected by the sa1 and sa2 utilities from data files stored in /var/log/sa/. On HPC clusters, sar is essential for capacity planning, performance trending, and post-mortem analysis of job performance issues.",
+  "synopsis": "sar [options] [-A] [-B] [-b] [-C] [-d] [-F] [-H] [-h] [-p] [-q] [-R] [-r] [-S] [-t] [-u] [-V] [-v] [-W] [-w] [-y] [-z] [interval [count]]",
+  "version_documented": "sysstat 12.5+",
+  "source_urls": [
+    "https://man7.org/linux/man-pages/man1/sar.1.html",
+    "https://github.com/sysstat/sysstat"
+  ],
+  "installation": {
+    "package": "sysstat",
+    "notes": "Part of the sysstat package which includes system performance monitoring tools (sar, iostat, mpstat, pidstat). Install with 'apt install sysstat' on Debian/Ubuntu, 'yum install sysstat' on RHEL/CentOS, or 'dnf install sysstat' on Fedora. Enable data collection with 'systemctl enable --now sysstat' to start the sa1/sa2 collectors."
+  },
+  "global_options": [
+    {
+      "short": "-A",
+      "description": "Report all available statistics. Equivalent to specifying all individual statistic options. Provides a comprehensive system activity report.",
+      "example": "sar -A"
+    },
+    {
+      "short": "-B",
+      "description": "Report paging statistics including page faults, pages paged in/out, and page scan activity.",
+      "example": "sar -B"
+    },
+    {
+      "short": "-b",
+      "description": "Report I/O and transfer rate statistics. Shows transactions per second, blocks read/written, and other block device activity.",
+      "example": "sar -b"
+    },
+    {
+      "short": "-C",
+      "description": "Display comments that have been inserted in the data file (using sadc -C option).",
+      "example": "sar -C"
+    },
+    {
+      "short": "-d",
+      "description": "Report activity for each block device. Shows detailed per-device I/O statistics including read/write rates and utilization.",
+      "example": "sar -d"
+    },
+    {
+      "short": "-e",
+      "description": "Set the ending time of the report. Used with -f to specify a time range for historical data analysis.",
+      "arguments": "hh:mm[:ss]",
+      "argument_type": "string",
+      "example": "sar -f /var/log/sa/sa01 -s 08:00:00 -e 17:00:00"
+    },
+    {
+      "short": "-F",
+      "description": "Report filesystem statistics including filesystem utilization and inode usage.",
+      "example": "sar -F"
+    },
+    {
+      "short": "-f",
+      "description": "Extract records from the specified file instead of the default /var/log/sa/saDD file. Use this for historical data analysis.",
+      "arguments": "filename",
+      "argument_type": "path",
+      "example": "sar -f /var/log/sa/sa15"
+    },
+    {
+      "short": "-H",
+      "description": "Report hugepages utilization statistics. Shows free, used, and percentage of hugepages in use.",
+      "example": "sar -H"
+    },
+    {
+      "short": "-h",
+      "description": "Display help message and exit.",
+      "example": "sar -h"
+    },
+    {
+      "short": "-I",
+      "description": "Report statistics for specified interrupt(s). Can specify individual interrupts, ALL, SUM, or XALL.",
+      "arguments": "{int_list | SUM | ALL | XALL}",
+      "argument_type": "string",
+      "example": "sar -I ALL"
+    },
+    {
+      "short": "-m",
+      "description": "Report power management statistics. Keywords include CPU, FAN, FREQ, IN, TEMP, USB.",
+      "arguments": "{keyword[,...] | ALL}",
+      "argument_type": "string",
+      "example": "sar -m CPU,FREQ"
+    },
+    {
+      "short": "-n",
+      "description": "Report network statistics. Keywords include DEV (interface), EDEV (errors), NFS, NFSD, SOCK, IP, EIP, ICMP, EICMP, TCP, ETCP, UDP, SOCK6, IP6, EIP6, ICMP6, EICMP6, UDP6, FC, SOFT.",
+      "arguments": "{keyword[,...] | ALL}",
+      "argument_type": "string",
+      "example": "sar -n DEV"
+    },
+    {
+      "short": "-o",
+      "description": "Save the readings to a file in binary format for later analysis. Can be read back with sar -f.",
+      "arguments": "filename",
+      "argument_type": "path",
+      "example": "sar -o /tmp/sar_data 1 60"
+    },
+    {
+      "short": "-P",
+      "description": "Report per-processor statistics for the specified processor(s). Use ALL for all processors.",
+      "arguments": "{cpu_list | ALL}",
+      "argument_type": "string",
+      "example": "sar -P ALL"
+    },
+    {
+      "short": "-p",
+      "description": "Pretty print device names. Use persistent device names from /dev/disk instead of device mapper numbers.",
+      "example": "sar -dp"
+    },
+    {
+      "short": "-q",
+      "description": "Report queue length and load averages. Shows run queue length, number of processes, and load averages.",
+      "example": "sar -q"
+    },
+    {
+      "short": "-R",
+      "description": "Report memory statistics including free memory pages and memory utilization.",
+      "example": "sar -R"
+    },
+    {
+      "short": "-r",
+      "description": "Report memory utilization statistics. Shows free and used memory, buffers, cache, and percentage utilization.",
+      "example": "sar -r"
+    },
+    {
+      "short": "-S",
+      "description": "Report swap space utilization statistics. Shows free and used swap, and percentage utilization.",
+      "example": "sar -S"
+    },
+    {
+      "short": "-s",
+      "description": "Set the starting time of the report. Used with -f to specify a time range for historical data analysis.",
+      "arguments": "hh:mm[:ss]",
+      "argument_type": "string",
+      "example": "sar -f /var/log/sa/sa01 -s 08:00:00"
+    },
+    {
+      "short": "-u",
+      "description": "Report CPU utilization. Shows percentage of CPU time in user, nice, system, iowait, steal, and idle states. This is the default report if no other option is specified.",
+      "example": "sar -u"
+    },
+    {
+      "short": "-V",
+      "description": "Print version number and exit.",
+      "example": "sar -V"
+    },
+    {
+      "short": "-v",
+      "description": "Report status of kernel tables. Shows number of used entries in process, inode, file, and other kernel tables.",
+      "example": "sar -v"
+    },
+    {
+      "short": "-W",
+      "description": "Report swapping statistics. Shows pages swapped in and out per second.",
+      "example": "sar -W"
+    },
+    {
+      "short": "-w",
+      "description": "Report task creation and system switching activity. Shows process creations per second and context switches per second.",
+      "example": "sar -w"
+    },
+    {
+      "short": "-y",
+      "description": "Report TTY device activity. Shows number of receive and transmit characters per second for each terminal.",
+      "example": "sar -y"
+    },
+    {
+      "short": "-z",
+      "description": "Omit output for devices that did not have any activity during the sample period.",
+      "example": "sar -dz"
+    },
+    {
+      "long": "--dec",
+      "description": "Specify the number of decimal places to use for displaying values.",
+      "arguments": "{0 | 1 | 2}",
+      "argument_type": "integer",
+      "default": "2",
+      "example": "sar --dec=0"
+    },
+    {
+      "long": "--human",
+      "description": "Print sizes in human readable format (e.g., 1.0K, 2.5M, 1.2G).",
+      "example": "sar --human -r"
+    },
+    {
+      "long": "--pretty",
+      "description": "Make the report easier to read by aligning columns.",
+      "example": "sar --pretty -d"
+    },
+    {
+      "long": "--sadc",
+      "description": "Print the location of the sadc data collector.",
+      "example": "sar --sadc"
+    }
+  ],
+  "output_formats": {
+    "default": "Text-based tabular output showing statistics with columns for various metrics and timestamp for each sample.",
+    "json": "JSON formatted output (sadf -j) for programmatic parsing and integration with monitoring systems.",
+    "xml": "XML formatted output (sadf -x) for structured data exchange.",
+    "csv": "CSV formatted output (sadf -d) with semicolon delimiters for spreadsheet analysis.",
+    "human": "Human-readable output (--human) with sizes displayed in K, M, G units."
+  },
+  "environment_variables": [
+    {
+      "name": "S_COLORS",
+      "description": "Controls colorized output. Set to 'auto', 'always', or 'never'.",
+      "example": "S_COLORS=auto",
+      "affects_command": "Determines whether output is colorized when writing to a terminal."
+    },
+    {
+      "name": "S_COLORS_SGR",
+      "description": "Specifies the SGR (Select Graphic Rendition) codes for colors.",
+      "affects_command": "Customizes the specific color codes used in colorized output."
+    },
+    {
+      "name": "S_TIME_FORMAT",
+      "description": "Specifies the time format to use in the report. Values include ISO for ISO 8601 format.",
+      "example": "S_TIME_FORMAT=ISO",
+      "affects_command": "Changes the timestamp format in reports to ISO 8601 (YYYY-MM-DD HH:MM:SS)."
+    },
+    {
+      "name": "POSIXLY_CORRECT",
+      "description": "When set, enables POSIX-compliant behavior.",
+      "affects_command": "May affect certain output formatting and option handling."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - invalid option, file not found, or other failure"
+    },
+    {
+      "code": 2,
+      "meaning": "Usage error - incorrect syntax or missing required arguments"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display real-time CPU utilization every 2 seconds for 10 samples",
+      "command": "sar -u 2 10",
+      "output_example": "Linux 5.4.0-150-generic (compute-node-01)   01/15/2024   _x86_64_  (64 CPU)\n\n10:30:00 AM     CPU     %user     %nice   %system   %iowait    %steal     %idle\n10:30:02 AM     all      8.25      0.00      2.15      0.50      0.00     89.10\n10:30:04 AM     all     12.50      0.00      3.25      0.75      0.00     83.50\n10:30:06 AM     all     45.75      0.00      5.50      1.25      0.00     47.50",
+      "requires_root": false
+    },
+    {
+      "description": "Display memory utilization statistics",
+      "command": "sar -r 1 5",
+      "output_example": "Linux 5.4.0-150-generic (compute-node-01)   01/15/2024   _x86_64_  (64 CPU)\n\n10:30:00 AM kbmemfree kbmemused  %memused kbbuffers  kbcached  kbcommit   %commit\n10:30:01 AM  32456780 225678432     87.43   1234567  89012345 198765432     75.25",
+      "requires_root": false
+    },
+    {
+      "description": "View historical CPU data from today's data file",
+      "command": "sar -u -f /var/log/sa/sa$(date +%d)",
+      "requires_root": false
+    },
+    {
+      "description": "Display network interface statistics",
+      "command": "sar -n DEV 1 5",
+      "output_example": "Linux 5.4.0-150-generic (compute-node-01)   01/15/2024   _x86_64_  (64 CPU)\n\n10:30:00 AM     IFACE   rxpck/s   txpck/s    rxkB/s    txkB/s   rxcmp/s   txcmp/s  rxmcst/s\n10:30:01 AM      eth0  12345.00   9876.00  45678.90  34567.80      0.00      0.00     12.00\n10:30:01 AM       ib0  98765.00  87654.00 123456.78  98765.43      0.00      0.00      0.00",
+      "requires_root": false
+    },
+    {
+      "description": "Display block device I/O statistics",
+      "command": "sar -d 1 5",
+      "output_example": "Linux 5.4.0-150-generic (compute-node-01)   01/15/2024   _x86_64_  (64 CPU)\n\n10:30:00 AM       DEV       tps     rkB/s     wkB/s   areq-sz    aqu-sz     await     svctm     %util\n10:30:01 AM   nvme0n1    456.00  58368.00  29952.00    193.72      0.12      0.26      0.15     15.60",
+      "requires_root": false
+    },
+    {
+      "description": "Display load averages and queue length",
+      "command": "sar -q 1 5",
+      "output_example": "Linux 5.4.0-150-generic (compute-node-01)   01/15/2024   _x86_64_  (64 CPU)\n\n10:30:00 AM   runq-sz  plist-sz   ldavg-1   ldavg-5  ldavg-15   blocked\n10:30:01 AM         8       987      4.25      3.50      2.75         0",
+      "requires_root": false
+    },
+    {
+      "description": "Display all statistics for a specific time range from historical data",
+      "command": "sar -A -f /var/log/sa/sa15 -s 09:00:00 -e 17:00:00",
+      "requires_root": false
+    },
+    {
+      "description": "Display per-CPU statistics for all processors",
+      "command": "sar -P ALL 1 3",
+      "requires_root": false
+    },
+    {
+      "description": "Report network errors to diagnose connectivity issues",
+      "command": "sar -n EDEV 1 5",
+      "requires_root": false
+    },
+    {
+      "description": "Report TCP connection statistics",
+      "command": "sar -n TCP,ETCP 1 5",
+      "requires_root": false
+    },
+    {
+      "description": "Collect data to a binary file for later analysis",
+      "command": "sar -o /tmp/performance_data.sar 5 720",
+      "requires_root": false
+    },
+    {
+      "description": "Display swap space and swapping activity",
+      "command": "sar -S -W 1 5",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Cannot open /var/log/sa/saDD: No such file or directory",
+      "meaning": "The system activity data file for the specified day does not exist. Data collection may not be enabled.",
+      "resolution": "Enable sysstat data collection with 'systemctl enable --now sysstat'. Data files are created daily by the sa1 collector. Check if /var/log/sa/ directory exists and contains data files."
+    },
+    {
+      "message": "Invalid system activity file",
+      "meaning": "The specified file is not a valid sar data file or is corrupted.",
+      "resolution": "Verify the file was created by sadc. Check file permissions and ensure the file is not truncated. Try using a different data file."
+    },
+    {
+      "message": "Requested activities not available in file",
+      "meaning": "The data file does not contain the requested statistics type.",
+      "resolution": "The sadc collector may not have been configured to collect this data. Check /etc/sysstat/sysstat configuration. Try a different statistics option or use -A to see all available data."
+    },
+    {
+      "message": "sar: invalid option",
+      "meaning": "An unrecognized option was specified on the command line.",
+      "resolution": "Check the option syntax with 'sar -h' and verify the option is supported by your sysstat version."
+    },
+    {
+      "message": "End time must be greater than start time",
+      "meaning": "The -e (end) time specified is before the -s (start) time.",
+      "resolution": "Ensure the end time is after the start time. Times are in 24-hour format."
+    },
+    {
+      "message": "Cannot handle so many processors",
+      "meaning": "The sar binary was compiled with support for fewer processors than are present in the system.",
+      "resolution": "Upgrade to a newer version of sysstat compiled with higher processor limits."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "vmstat",
+      "iostat",
+      "mpstat",
+      "pidstat",
+      "sadc",
+      "sa1",
+      "sa2",
+      "sadf",
+      "tapestat",
+      "cifsiostat",
+      "nfsiostat",
+      "top",
+      "htop",
+      "dstat",
+      "atop"
+    ],
+    "uses_library": ["sysstat"],
+    "notes": "The sar command is part of the sysstat suite and works in conjunction with sadc (system activity data collector), sa1 (daily data collection), and sa2 (daily summary generation). Data is stored in /var/log/sa/saDD files where DD is the day of the month. Use sadf to convert sar data to different formats (CSV, JSON, XML) for integration with monitoring systems. On HPC clusters, sar is invaluable for correlating system performance with job execution times. The historical data capability makes sar superior to real-time tools like vmstat for post-mortem analysis. Combine with iostat for detailed I/O analysis and mpstat for per-CPU breakdown."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required. All users can view system activity statistics. Reading historical data files requires read access to /var/log/sa/ directory.",
+    "write_operations": "Writing output files (-o option) requires write access to the target directory. Data collection by sadc typically requires root or appropriate system permissions.",
+    "notes": "The sa1 and sa2 cron jobs that collect data typically run as root. Historical data files in /var/log/sa/ are usually readable by all users but owned by root."
+  },
+  "limitations": [
+    "Historical data requires sysstat service to be enabled and running; data collection does not happen automatically on fresh installations",
+    "Data files are stored per day and typically retained for 7-28 days depending on system configuration",
+    "Cannot query across multiple days in a single command; must process each day's file separately",
+    "Real-time collection interval minimum is 1 second; sub-second sampling not supported",
+    "Network statistics (-n) for InfiniBand may require additional configuration",
+    "Some statistics may not be available on all kernel versions or system configurations",
+    "Data file format may change between sysstat versions; older files may not be readable",
+    "Memory usage displayed may differ slightly from /proc/meminfo due to timing and calculation methods",
+    "Does not provide per-process breakdown; use pidstat for process-level statistics"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "cpu_usage_user",
+          "cpu_usage_system",
+          "cpu_usage_nice",
+          "cpu_usage_idle",
+          "cpu_usage_iowait",
+          "cpu_usage_steal",
+          "memory_total",
+          "memory_free",
+          "memory_used",
+          "memory_buffers",
+          "memory_cached",
+          "swap_total",
+          "swap_free",
+          "swap_used",
+          "load_average_1min",
+          "load_average_5min",
+          "load_average_15min",
+          "context_switches_per_second",
+          "process_creations_per_second",
+          "interrupts_per_second"
+        ],
+        "description": "Reads system-wide performance metrics from /proc/stat, /proc/meminfo, /proc/loadavg, and /proc/vmstat. Also reads historical data from /var/log/sa/saDD binary files collected by sadc."
+      },
+      {
+        "state_domain": "storage_local_state",
+        "fields": [
+          "device_name",
+          "read_ops_per_second",
+          "write_ops_per_second",
+          "read_bytes_per_second",
+          "write_bytes_per_second",
+          "await_ms",
+          "utilization_percent",
+          "queue_length"
+        ],
+        "description": "Reads block device I/O statistics from /proc/diskstats for disk activity reports (-d, -b options)."
+      },
+      {
+        "state_domain": "network_eth_state",
+        "fields": [
+          "interface_name",
+          "rx_packets_per_second",
+          "tx_packets_per_second",
+          "rx_bytes_per_second",
+          "tx_bytes_per_second",
+          "rx_errors_per_second",
+          "tx_errors_per_second",
+          "collisions_per_second",
+          "rx_dropped_per_second",
+          "tx_dropped_per_second"
+        ],
+        "description": "Reads network interface statistics from /proc/net/dev for network activity reports (-n DEV, -n EDEV options)."
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "CPU load and scheduling activity",
+        "effect": "CPU utilization percentages (%user, %system, %iowait, %idle) reflect workload changes in real-time."
+      },
+      {
+        "state_change": "Memory allocation and deallocation",
+        "effect": "Memory statistics (kbmemfree, kbmemused, %memused, kbcached) update as applications allocate and free memory."
+      },
+      {
+        "state_change": "Block device I/O activity",
+        "effect": "Disk statistics (tps, rkB/s, wkB/s, await, %util) reflect storage access patterns from applications."
+      },
+      {
+        "state_change": "Network traffic",
+        "effect": "Network interface statistics (rxpck/s, txpck/s, rxkB/s, txkB/s) update with packet transmission and reception."
+      },
+      {
+        "state_change": "sadc data collection (via cron)",
+        "effect": "Historical data files in /var/log/sa/ are updated every 10 minutes by default, enabling retrospective analysis."
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "vmstat",
+        "shared_state": "CPU utilization (us, sy, id, wa) and memory statistics from both commands are derived from the same kernel data structures."
+      },
+      {
+        "command": "iostat",
+        "shared_state": "Block device I/O statistics and CPU utilization reported by iostat match sar -d and sar -u at equivalent time intervals."
+      },
+      {
+        "command": "mpstat",
+        "shared_state": "Per-CPU statistics from mpstat correspond to sar -P ALL output, both reading from /proc/stat."
+      },
+      {
+        "command": "free",
+        "shared_state": "Memory utilization statistics from free command align with sar -r output, both sourced from /proc/meminfo."
+      }
+    ]
+  }
+}

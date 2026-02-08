@@ -1,0 +1,170 @@
+{
+  "command": "pidstat",
+  "category": "monitoring",
+  "description": "Report statistics for Linux tasks (processes). Part of sysstat, shows CPU, memory, I/O, and context switch statistics per process. Useful for identifying resource-intensive processes in HPC workloads.",
+  "synopsis": "pidstat [options] [interval [count]]",
+  "version_documented": "sysstat 12.0+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/pidstat.1.html"],
+  "installation": {
+    "package": "sysstat",
+    "notes": "Install via: apt install sysstat or yum install sysstat"
+  },
+  "global_options": [
+    {
+      "short": "-u",
+      "description": "Report CPU utilization (default)"
+    },
+    {
+      "short": "-r",
+      "description": "Report page faults and memory utilization"
+    },
+    {
+      "short": "-d",
+      "description": "Report I/O statistics"
+    },
+    {
+      "short": "-w",
+      "description": "Report context switches"
+    },
+    {
+      "short": "-t",
+      "description": "Display statistics for threads"
+    },
+    {
+      "short": "-p",
+      "description": "Select process(es) by PID",
+      "arguments": "<pid_list|ALL>",
+      "argument_type": "string",
+      "example": "-p 1234,5678"
+    },
+    {
+      "short": "-C",
+      "description": "Select processes by command name regex",
+      "arguments": "<command>",
+      "argument_type": "string",
+      "example": "-C python"
+    },
+    {
+      "short": "-G",
+      "description": "Select processes by process group name",
+      "arguments": "<name>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-l",
+      "description": "Display full command line"
+    },
+    {
+      "short": "-h",
+      "description": "Display horizontally (one line per timestamp)"
+    },
+    {
+      "long": "--human",
+      "description": "Human-readable sizes"
+    },
+    {
+      "short": "-V",
+      "description": "Display version"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Invalid arguments"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Monitor CPU usage of all processes",
+      "command": "pidstat 1",
+      "output_example": "Linux 5.15.0-88-generic (dgx-node-01)   01/15/2024      _x86_64_        (128 CPU)\n\n02:30:45 PM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command\n02:30:46 PM  1000      1234   89.00    2.00    0.00    0.00   91.00    15  python\n02:30:46 PM  1000      5678   45.00    1.00    0.00    0.00   46.00    23  mpirun",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor specific process with memory",
+      "command": "pidstat -r -p 1234 1",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor all Python processes",
+      "command": "pidstat -C python -u -r 1",
+      "requires_root": false
+    },
+    {
+      "description": "Show I/O statistics",
+      "command": "pidstat -d 1 5",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor threads of a process",
+      "command": "pidstat -t -p 1234 1",
+      "requires_root": false
+    },
+    {
+      "description": "Show context switches",
+      "command": "pidstat -w 1",
+      "requires_root": false
+    },
+    {
+      "description": "Full command line with all stats",
+      "command": "pidstat -urd -l 1",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "pidstat: invalid option",
+      "meaning": "Unknown command line option",
+      "resolution": "Check available options with pidstat -h"
+    },
+    {
+      "message": "Requested activities not available",
+      "meaning": "Kernel doesn't support requested statistics",
+      "resolution": "Check kernel configuration"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["top", "htop", "ps", "mpstat", "iostat"],
+    "notes": "pidstat provides per-process detail that top/htop show interactively. Particularly useful for scripting and logging process behavior over time."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for own processes",
+    "write_operations": "N/A - read-only command",
+    "notes": "Root may be needed to see all processes"
+  },
+  "limitations": [
+    "Cannot show GPU utilization per process (use nvidia-smi pmon)",
+    "Short-lived processes may be missed between intervals",
+    "Thread stats require -t flag"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["cpu_count"],
+        "description": "Reads per-process statistics from /proc"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Process activity",
+        "effect": "Statistics reflect current process state"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "top",
+        "shared_state": "Process CPU percentages should be similar"
+      },
+      {
+        "command": "ps aux",
+        "shared_state": "Process list and basic stats match"
+      }
+    ]
+  }
+}

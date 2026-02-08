@@ -1,0 +1,136 @@
+{
+  "command": "cuda-memcheck",
+  "category": "cuda_tools",
+  "description": "Memory checking tool for CUDA applications. Detects memory errors, race conditions, and uninitialized memory. Essential for debugging GPU memory issues.",
+  "synopsis": "cuda-memcheck [options] <application> [args]",
+  "version_documented": "CUDA Toolkit 11.x (deprecated in 12.x, use compute-sanitizer)",
+  "source_urls": ["https://docs.nvidia.com/cuda/cuda-memcheck/"],
+  "installation": {
+    "package": "cuda-toolkit",
+    "notes": "Part of CUDA Toolkit. Deprecated in CUDA 12.x, replaced by compute-sanitizer."
+  },
+  "global_options": [
+    {
+      "long": "--tool",
+      "description": "Select checking tool",
+      "arguments": "<tool>",
+      "argument_type": "string",
+      "example": "--tool memcheck"
+    },
+    {
+      "long": "--leak-check",
+      "description": "Enable leak checking",
+      "arguments": "<full|no>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--report-api-errors",
+      "description": "Report API errors",
+      "arguments": "<all|no>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--save",
+      "description": "Save results to file",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "long": "--log-file",
+      "description": "Log output file",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "No errors detected"
+    },
+    {
+      "code": 1,
+      "meaning": "Errors detected"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Basic memory check",
+      "command": "cuda-memcheck ./gpu_app",
+      "output_example": "========= CUDA-MEMCHECK\n========= ERROR SUMMARY: 0 errors",
+      "requires_root": false
+    },
+    {
+      "description": "With leak checking",
+      "command": "cuda-memcheck --leak-check full ./gpu_app",
+      "requires_root": false
+    },
+    {
+      "description": "Race condition check",
+      "command": "cuda-memcheck --tool racecheck ./gpu_app",
+      "requires_root": false
+    },
+    {
+      "description": "Initialization check",
+      "command": "cuda-memcheck --tool initcheck ./gpu_app",
+      "requires_root": false
+    },
+    {
+      "description": "Sync check",
+      "command": "cuda-memcheck --tool synccheck ./gpu_app",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Invalid __global__ read",
+      "meaning": "Out of bounds memory access",
+      "resolution": "Check array bounds in kernel"
+    },
+    {
+      "message": "Memory leak detected",
+      "meaning": "GPU memory not freed",
+      "resolution": "Add missing cudaFree calls"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["compute-sanitizer", "cuda-gdb", "nvprof", "nsys"],
+    "notes": "Deprecated in CUDA 12.x - use compute-sanitizer instead. Tools: memcheck (memory errors), racecheck (races), initcheck (uninitialized), synccheck (synchronization)."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "N/A - analysis tool",
+    "notes": "Needs GPU access"
+  },
+  "limitations": [
+    "Deprecated - use compute-sanitizer",
+    "Significant performance overhead",
+    "May miss some error types"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": ["gpu_id"],
+        "description": "Analyzes GPU memory operations"
+      },
+      {
+        "state_domain": "gpu_process_state",
+        "fields": ["pid", "gpu_memory_used"],
+        "description": "Monitors process GPU memory"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "compute-sanitizer",
+        "shared_state": "Replacement tool with same functionality"
+      }
+    ]
+  }
+}

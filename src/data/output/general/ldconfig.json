@@ -1,0 +1,135 @@
+{
+  "command": "ldconfig",
+  "category": "general",
+  "description": "Configure dynamic linker run-time bindings. Updates shared library cache. Essential when installing new libraries like CUDA on HPC systems.",
+  "synopsis": "ldconfig [options] [dirs]",
+  "version_documented": "glibc 2.31+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/ldconfig.8.html"],
+  "installation": {
+    "package": "libc-bin",
+    "notes": "Part of glibc, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Verbose output"
+    },
+    {
+      "short": "-n",
+      "description": "Only process specified directories"
+    },
+    {
+      "short": "-N",
+      "description": "Don't rebuild cache"
+    },
+    {
+      "short": "-X",
+      "description": "Don't update symlinks"
+    },
+    {
+      "short": "-p",
+      "long": "--print-cache",
+      "description": "Print cache contents"
+    },
+    {
+      "short": "-c",
+      "long": "--format",
+      "description": "Cache format",
+      "arguments": "<format>",
+      "argument_type": "string"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Update cache",
+      "command": "ldconfig",
+      "requires_root": true
+    },
+    {
+      "description": "Update with verbose",
+      "command": "ldconfig -v",
+      "requires_root": true
+    },
+    {
+      "description": "Print cache",
+      "command": "ldconfig -p",
+      "requires_root": false
+    },
+    {
+      "description": "Search for library",
+      "command": "ldconfig -p | grep cuda",
+      "requires_root": false
+    },
+    {
+      "description": "Add CUDA library path",
+      "command": "echo '/usr/local/cuda/lib64' > /etc/ld.so.conf.d/cuda.conf && ldconfig",
+      "requires_root": true
+    },
+    {
+      "description": "Verbose cache rebuild",
+      "command": "ldconfig -v 2>&1 | head -50",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Permission denied",
+      "meaning": "Not running as root",
+      "resolution": "Use sudo"
+    },
+    {
+      "message": "is not a symbolic link",
+      "meaning": "Library naming issue",
+      "resolution": "Check library symlinks"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["ldd", "ld.so"],
+    "notes": "Run after installing libraries. Config files in /etc/ld.so.conf.d/. LD_LIBRARY_PATH is alternative for non-root."
+  },
+  "permissions": {
+    "read_operations": "Read library directories",
+    "write_operations": "Updates /etc/ld.so.cache",
+    "notes": "Root required for cache update"
+  },
+  "limitations": [
+    "Only system libraries (root)",
+    "Cannot add user directories to system cache",
+    "LD_LIBRARY_PATH bypasses cache"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Scans library directories"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "system_state",
+        "fields": ["system_libraries"],
+        "description": "Updates library cache",
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ldd",
+        "shared_state": "ldd uses library cache"
+      }
+    ]
+  }
+}

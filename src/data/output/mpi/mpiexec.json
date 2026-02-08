@@ -1,0 +1,633 @@
+{
+  "command": "mpiexec",
+  "category": "mpi",
+  "description": "mpiexec is the standardized MPI process launcher defined in the MPI-2 specification for starting parallel MPI applications across multiple processes and nodes. In Open MPI and MPICH implementations, mpiexec is functionally equivalent to mpirun and serves as the primary mechanism for launching distributed parallel applications using the Message Passing Interface (MPI) standard. mpiexec handles process spawning, resource allocation, standard I/O forwarding, signal propagation, and process management across heterogeneous computing environments. In HPC clusters, mpiexec is commonly used to launch GPU-aware MPI applications, enabling efficient communication between processes using technologies like CUDA-aware MPI, UCX, and NCCL for collective operations. It supports various transport layers including InfiniBand, RoCE, and TCP, and integrates with resource managers like Slurm and PBS for job scheduling.",
+  "synopsis": "mpiexec [global_options] [local_options] <program> [program_args]",
+  "version_documented": "Open MPI 4.x/5.x, MPICH 3.x/4.x",
+  "source_urls": [
+    "https://www.open-mpi.org/doc/current/man1/mpiexec.1.php",
+    "https://www.mpich.org/static/docs/latest/www1/mpiexec.html",
+    "https://docs.open-mpi.org/en/main/running-apps/quickstart.html"
+  ],
+  "installation": {
+    "package": "openmpi or mpich",
+    "notes": "Part of Open MPI or MPICH distribution. May be installed via package manager (apt install openmpi-bin or mpich), module system (module load openmpi), or compiled from source. For GPU-aware MPI, ensure the MPI implementation is compiled with CUDA support (--with-cuda for Open MPI) and UCX with GPU memory support."
+  },
+  "global_options": [
+    {
+      "short": "-n",
+      "long": "--np",
+      "description": "Run this many copies of the program on the given nodes. This option indicates that the specified number of processes will be launched.",
+      "arguments": "num",
+      "argument_type": "integer",
+      "required": true,
+      "example": "mpiexec -np 4 ./my_mpi_app"
+    },
+    {
+      "short": "-H",
+      "long": "--host",
+      "description": "Comma-delimited list of hosts on which to run processes. Optionally, specify the number of slots per host using host:slots syntax.",
+      "arguments": "host1[:slots],host2[:slots],...",
+      "argument_type": "string",
+      "example": "mpiexec -np 8 --host node01:4,node02:4 ./my_mpi_app"
+    },
+    {
+      "long": "--hostfile",
+      "description": "Provide a hostfile (also called machinefile) containing the list of hosts on which to run. Each line can specify a host and optionally the number of slots.",
+      "arguments": "filename",
+      "argument_type": "path",
+      "example": "mpiexec -np 16 --hostfile hosts.txt ./my_mpi_app"
+    },
+    {
+      "long": "--machinefile",
+      "description": "Synonym for --hostfile. Provide a file containing the list of hosts.",
+      "arguments": "filename",
+      "argument_type": "path",
+      "example": "mpiexec -np 8 --machinefile machines.txt ./my_mpi_app"
+    },
+    {
+      "short": "-x",
+      "description": "Export the specified environment variable(s) to the remote nodes before executing the program. Can specify VAR or VAR=value format. Use multiple -x flags for multiple variables.",
+      "arguments": "VAR[=value]",
+      "argument_type": "string",
+      "example": "mpiexec -np 4 -x LD_LIBRARY_PATH -x CUDA_VISIBLE_DEVICES=0,1 ./my_mpi_app"
+    },
+    {
+      "long": "--mca",
+      "description": "Pass context-specific MCA (Modular Component Architecture) parameters. Format is --mca <key> <value>. Controls runtime behavior including communication transports, memory allocation, and debugging.",
+      "arguments": "key value",
+      "argument_type": "string",
+      "example": "mpiexec -np 4 --mca btl ^openib --mca pml ucx ./my_mpi_app"
+    },
+    {
+      "long": "--bind-to",
+      "description": "Bind processes to the specified resource type. Common values: none, hwthread, core, l1cache, l2cache, l3cache, socket, numa, board. Controls CPU affinity for better performance.",
+      "arguments": "resource",
+      "argument_type": "string",
+      "default": "core",
+      "example": "mpiexec -np 4 --bind-to core ./my_mpi_app"
+    },
+    {
+      "long": "--map-by",
+      "description": "Map processes according to the specified policy. Common values: slot, hwthread, core, socket, numa, node. Determines how processes are distributed across resources.",
+      "arguments": "policy",
+      "argument_type": "string",
+      "default": "slot",
+      "example": "mpiexec -np 8 --map-by socket --bind-to core ./my_mpi_app"
+    },
+    {
+      "long": "--rank-by",
+      "description": "Rank processes according to the specified policy. Determines the order in which MPI ranks are assigned to processes.",
+      "arguments": "policy",
+      "argument_type": "string",
+      "example": "mpiexec -np 8 --rank-by slot ./my_mpi_app"
+    },
+    {
+      "long": "--report-bindings",
+      "description": "Report any bindings for launched processes. Displays which CPU cores each MPI rank is bound to, useful for verifying affinity settings.",
+      "example": "mpiexec -np 4 --bind-to core --report-bindings ./my_mpi_app"
+    },
+    {
+      "long": "--display-map",
+      "description": "Display a table showing the mapped process layout. Shows which nodes and slots each rank is assigned to.",
+      "example": "mpiexec -np 4 --display-map ./my_mpi_app"
+    },
+    {
+      "long": "--display-allocation",
+      "description": "Display the allocation being used by the job including node names and slots.",
+      "example": "mpiexec -np 4 --display-allocation ./my_mpi_app"
+    },
+    {
+      "long": "--oversubscribe",
+      "description": "Allow running more processes than available slots. Nodes are allowed to be oversubscribed even if the system does not permit it by default.",
+      "example": "mpiexec -np 8 --oversubscribe ./my_mpi_app"
+    },
+    {
+      "long": "--use-hwthread-cpus",
+      "description": "Use hardware threads (hyperthreads) as independent CPUs. By default, Open MPI only considers physical cores.",
+      "example": "mpiexec -np 16 --use-hwthread-cpus ./my_mpi_app"
+    },
+    {
+      "short": "-N",
+      "long": "--npernode",
+      "description": "Launch N processes per node on all allocated nodes.",
+      "arguments": "num",
+      "argument_type": "integer",
+      "example": "mpiexec -np 8 --npernode 4 ./my_mpi_app"
+    },
+    {
+      "long": "--npersocket",
+      "description": "Launch N processes per socket on all allocated nodes.",
+      "arguments": "num",
+      "argument_type": "integer",
+      "example": "mpiexec -np 8 --npersocket 2 ./my_mpi_app"
+    },
+    {
+      "long": "--cpus-per-proc",
+      "description": "Number of CPUs to allocate to each process. Useful for hybrid MPI+OpenMP applications.",
+      "arguments": "num",
+      "argument_type": "integer",
+      "example": "mpiexec -np 4 --cpus-per-proc 8 ./hybrid_app"
+    },
+    {
+      "long": "--output-filename",
+      "description": "Direct the stdout and stderr from each process to separate files with the specified base filename. Files are named basename.rank.stdout and basename.rank.stderr.",
+      "arguments": "filename",
+      "argument_type": "path",
+      "example": "mpiexec -np 4 --output-filename output ./my_mpi_app"
+    },
+    {
+      "long": "--merge-stderr-to-stdout",
+      "description": "Merge stderr to stdout for all processes.",
+      "example": "mpiexec -np 4 --merge-stderr-to-stdout ./my_mpi_app"
+    },
+    {
+      "long": "--tag-output",
+      "description": "Tag each output line with the process rank and stream (stdout/stderr). Useful for distinguishing output from multiple processes.",
+      "example": "mpiexec -np 4 --tag-output ./my_mpi_app"
+    },
+    {
+      "long": "--timestamp-output",
+      "description": "Timestamp each output line with the time since launch.",
+      "example": "mpiexec -np 4 --timestamp-output ./my_mpi_app"
+    },
+    {
+      "long": "--wdir",
+      "description": "Change to the specified directory before launching processes. By default, processes start in the directory where mpiexec was invoked.",
+      "arguments": "directory",
+      "argument_type": "path",
+      "example": "mpiexec -np 4 --wdir /scratch/user/work ./my_mpi_app"
+    },
+    {
+      "long": "--prefix",
+      "description": "Specify the Open MPI installation prefix on remote nodes if it differs from the local installation.",
+      "arguments": "directory",
+      "argument_type": "path",
+      "example": "mpiexec -np 4 --prefix /opt/openmpi ./my_mpi_app"
+    },
+    {
+      "long": "--preload-binary",
+      "description": "Copy the executable to remote nodes before starting execution. Useful when the executable is not on a shared filesystem.",
+      "example": "mpiexec -np 4 --preload-binary ./my_mpi_app"
+    },
+    {
+      "long": "--preload-files",
+      "description": "Preload specified files on remote nodes before starting execution.",
+      "arguments": "files",
+      "argument_type": "string",
+      "example": "mpiexec -np 4 --preload-files input.dat,config.txt ./my_mpi_app"
+    },
+    {
+      "short": "-q",
+      "long": "--quiet",
+      "description": "Suppress informational messages from mpiexec.",
+      "example": "mpiexec -np 4 --quiet ./my_mpi_app"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Be verbose. Increase verbosity of mpiexec output.",
+      "example": "mpiexec -np 4 --verbose ./my_mpi_app"
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Print version information and exit."
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help message and exit."
+    },
+    {
+      "long": "--timeout",
+      "description": "Set a timeout (in seconds) after which mpiexec will abort the job.",
+      "arguments": "seconds",
+      "argument_type": "integer",
+      "example": "mpiexec -np 4 --timeout 3600 ./my_mpi_app"
+    },
+    {
+      "long": "--get-stack-traces",
+      "description": "Obtain stack traces from all processes upon timeout or abnormal termination.",
+      "example": "mpiexec -np 4 --timeout 3600 --get-stack-traces ./my_mpi_app"
+    },
+    {
+      "long": "--debug",
+      "description": "Enable debugging of the Open MPI runtime layer.",
+      "example": "mpiexec -np 4 --debug ./my_mpi_app"
+    },
+    {
+      "long": "--app",
+      "description": "Provide an appfile, a file containing multiple application contexts for MPMD (Multiple Program Multiple Data) launch.",
+      "arguments": "appfile",
+      "argument_type": "path",
+      "example": "mpiexec --app my_appfile.txt"
+    },
+    {
+      "long": "--path",
+      "description": "Set the PATH environment variable on remote nodes.",
+      "arguments": "path",
+      "argument_type": "string",
+      "example": "mpiexec -np 4 --path /opt/bin:/usr/local/bin ./my_mpi_app"
+    },
+    {
+      "long": "--enable-recovery",
+      "description": "Enable recovery from process failure. Allows the application to handle process failures gracefully.",
+      "example": "mpiexec -np 4 --enable-recovery ./fault_tolerant_app"
+    },
+    {
+      "long": "--continuous",
+      "description": "Re-spawn failed processes to maintain the original number of processes.",
+      "example": "mpiexec -np 4 --continuous ./resilient_app"
+    },
+    {
+      "long": "--max-restarts",
+      "description": "Maximum number of times to restart failed processes.",
+      "arguments": "num",
+      "argument_type": "integer",
+      "example": "mpiexec -np 4 --max-restarts 3 ./my_mpi_app"
+    }
+  ],
+  "environment_variables": [
+    {
+      "name": "OMPI_MCA_btl",
+      "description": "Specifies which byte transfer layer (BTL) components to use for point-to-point messaging. Common values include tcp, openib, sm (shared memory), self.",
+      "example": "OMPI_MCA_btl=self,sm,tcp",
+      "affects_command": "Controls the transport layer for MPI communication. Use ^component to exclude a component."
+    },
+    {
+      "name": "OMPI_MCA_pml",
+      "description": "Specifies the point-to-point management layer. Common values: ucx (for UCX transport), ob1 (for BTL-based transport).",
+      "example": "OMPI_MCA_pml=ucx",
+      "affects_command": "Selects the messaging layer implementation. UCX is preferred for high-performance networking."
+    },
+    {
+      "name": "OMPI_MCA_mpi_cuda_support",
+      "description": "Enable or disable CUDA-aware MPI support.",
+      "example": "OMPI_MCA_mpi_cuda_support=1",
+      "affects_command": "When enabled, MPI can directly transfer GPU memory without staging through host memory."
+    },
+    {
+      "name": "OMPI_MCA_opal_cuda_support",
+      "description": "Enable CUDA support at the OPAL layer (lower-level than MPI layer).",
+      "example": "OMPI_MCA_opal_cuda_support=1",
+      "affects_command": "Required for GPU-aware MPI operations."
+    },
+    {
+      "name": "OMPI_MCA_coll",
+      "description": "Specifies collective communication components. Can use tuned, basic, hcoll (Mellanox HCOLL), or cuda (GPU-aware).",
+      "example": "OMPI_MCA_coll=^hcoll",
+      "affects_command": "Controls collective operation algorithms and hardware offload."
+    },
+    {
+      "name": "OMPI_COMM_WORLD_SIZE",
+      "description": "Set by mpiexec at runtime. Contains the total number of MPI processes in MPI_COMM_WORLD.",
+      "example": "OMPI_COMM_WORLD_SIZE=16",
+      "affects_command": "Read-only variable available to applications."
+    },
+    {
+      "name": "OMPI_COMM_WORLD_RANK",
+      "description": "Set by mpiexec at runtime. Contains the rank of the current process in MPI_COMM_WORLD.",
+      "example": "OMPI_COMM_WORLD_RANK=0",
+      "affects_command": "Read-only variable available to applications."
+    },
+    {
+      "name": "OMPI_COMM_WORLD_LOCAL_SIZE",
+      "description": "Set by mpiexec at runtime. Contains the number of MPI processes on the local node.",
+      "example": "OMPI_COMM_WORLD_LOCAL_SIZE=4",
+      "affects_command": "Read-only variable available to applications."
+    },
+    {
+      "name": "OMPI_COMM_WORLD_LOCAL_RANK",
+      "description": "Set by mpiexec at runtime. Contains the local rank of the current process on its node.",
+      "example": "OMPI_COMM_WORLD_LOCAL_RANK=0",
+      "affects_command": "Read-only variable available to applications. Useful for GPU assignment."
+    },
+    {
+      "name": "PATH",
+      "description": "System PATH environment variable. Must include the directory containing mpiexec and the MPI libraries.",
+      "example": "PATH=/opt/openmpi/bin:$PATH",
+      "affects_command": "Required for mpiexec to be found and for remote process launching."
+    },
+    {
+      "name": "LD_LIBRARY_PATH",
+      "description": "Library search path. Must include Open MPI libraries and any application dependencies.",
+      "example": "LD_LIBRARY_PATH=/opt/openmpi/lib:$LD_LIBRARY_PATH",
+      "affects_command": "Required for dynamic linking of MPI libraries on remote nodes."
+    },
+    {
+      "name": "UCX_NET_DEVICES",
+      "description": "Specifies which network devices UCX should use.",
+      "example": "UCX_NET_DEVICES=mlx5_0:1",
+      "affects_command": "When using UCX PML, controls which IB/RoCE devices are used for communication."
+    },
+    {
+      "name": "UCX_TLS",
+      "description": "Specifies which UCX transport layers to use.",
+      "example": "UCX_TLS=rc,sm,cuda_copy,cuda_ipc",
+      "affects_command": "Controls UCX transport selection for optimal performance."
+    },
+    {
+      "name": "CUDA_VISIBLE_DEVICES",
+      "description": "Controls which GPUs are visible to CUDA applications.",
+      "example": "CUDA_VISIBLE_DEVICES=0,1,2,3",
+      "affects_command": "When exported with -x, controls GPU visibility per MPI rank."
+    },
+    {
+      "name": "NCCL_DEBUG",
+      "description": "Enables NCCL debug output.",
+      "example": "NCCL_DEBUG=INFO",
+      "affects_command": "When using NCCL with MPI, enables debugging output."
+    },
+    {
+      "name": "NCCL_IB_DISABLE",
+      "description": "Disable InfiniBand for NCCL communication.",
+      "example": "NCCL_IB_DISABLE=1",
+      "affects_command": "Forces NCCL to use alternative transports."
+    },
+    {
+      "name": "OMP_NUM_THREADS",
+      "description": "Number of OpenMP threads per process.",
+      "example": "OMP_NUM_THREADS=8",
+      "affects_command": "When exported with -x, controls threading for hybrid MPI+OpenMP applications."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - all MPI processes completed with exit code 0"
+    },
+    {
+      "code": 1,
+      "meaning": "General error - one or more MPI processes exited with a non-zero code or mpiexec encountered an error"
+    },
+    {
+      "code": 2,
+      "meaning": "Command line parse error - invalid options or arguments provided"
+    },
+    {
+      "code": 126,
+      "meaning": "The specified executable could not be invoked (permission denied)"
+    },
+    {
+      "code": 127,
+      "meaning": "The specified executable was not found"
+    },
+    {
+      "code": 137,
+      "meaning": "Job was terminated by signal SIGKILL (often due to out of memory)"
+    },
+    {
+      "code": 139,
+      "meaning": "Segmentation fault in MPI process"
+    },
+    {
+      "code": 255,
+      "meaning": "Internal mpiexec error or communication failure"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run a simple MPI application with 4 processes on the local machine",
+      "command": "mpiexec -np 4 ./my_mpi_app",
+      "output_example": "Hello from rank 0 of 4\nHello from rank 1 of 4\nHello from rank 2 of 4\nHello from rank 3 of 4"
+    },
+    {
+      "description": "Run MPI application across multiple nodes using a hostfile",
+      "command": "mpiexec -np 16 --hostfile hosts.txt ./my_mpi_app",
+      "output_example": "Running 16 processes across 4 nodes"
+    },
+    {
+      "description": "Run with specific hosts and slots per host",
+      "command": "mpiexec -np 8 --host node01:4,node02:4 ./my_mpi_app",
+      "output_example": "Running 4 processes on node01, 4 processes on node02"
+    },
+    {
+      "description": "Launch GPU-aware MPI application with UCX transport",
+      "command": "mpiexec -np 4 --mca pml ucx -x UCX_TLS=rc,sm,cuda_copy,cuda_ipc ./cuda_mpi_app",
+      "output_example": "UCX GPU memory support enabled\nCUDA-aware MPI initialized"
+    },
+    {
+      "description": "Run with process binding to cores and display bindings",
+      "command": "mpiexec -np 4 --bind-to core --report-bindings ./my_mpi_app",
+      "output_example": "[node01:12345] MCW rank 0 bound to socket 0[core 0]\n[node01:12346] MCW rank 1 bound to socket 0[core 1]"
+    },
+    {
+      "description": "Run hybrid MPI+OpenMP application with 4 MPI ranks and 8 threads each",
+      "command": "mpiexec -np 4 --cpus-per-proc 8 --bind-to core -x OMP_NUM_THREADS=8 ./hybrid_app",
+      "output_example": "Rank 0: Using 8 OpenMP threads\nRank 1: Using 8 OpenMP threads"
+    },
+    {
+      "description": "Map processes by socket for NUMA optimization",
+      "command": "mpiexec -np 8 --map-by socket --bind-to core ./my_mpi_app",
+      "output_example": "Processes mapped to sockets for optimal memory locality"
+    },
+    {
+      "description": "Run with tagged output to identify process sources",
+      "command": "mpiexec -np 4 --tag-output ./my_mpi_app",
+      "output_example": "[1,0]<stdout>:Hello from rank 0\n[1,1]<stdout>:Hello from rank 1"
+    },
+    {
+      "description": "Export CUDA environment variables to all processes",
+      "command": "mpiexec -np 4 -x LD_LIBRARY_PATH -x CUDA_HOME -x PATH ./cuda_app",
+      "output_example": "CUDA environment propagated to all ranks"
+    },
+    {
+      "description": "Run multi-GPU training with one GPU per rank using local rank",
+      "command": "mpiexec -np 8 --npernode 4 -x CUDA_VISIBLE_DEVICES ./train.py --local_rank $OMPI_COMM_WORLD_LOCAL_RANK",
+      "output_example": "Rank 0 using GPU 0\nRank 1 using GPU 1\nRank 2 using GPU 2\nRank 3 using GPU 3"
+    },
+    {
+      "description": "Disable specific BTL to avoid warnings",
+      "command": "mpiexec -np 4 --mca btl ^openib ./my_mpi_app",
+      "output_example": "openib BTL excluded from available transports"
+    },
+    {
+      "description": "Run with NCCL environment setup for multi-node GPU communication",
+      "command": "mpiexec -np 8 -x NCCL_DEBUG=INFO -x NCCL_IB_HCA=mlx5 ./nccl_app",
+      "output_example": "NCCL INFO Bootstrap: Using mlx5_0:1\nNCCL INFO comm 0x7f initialized"
+    },
+    {
+      "description": "Run MPMD (Multiple Program Multiple Data) job using appfile",
+      "command": "mpiexec --app myappfile.txt",
+      "output_example": "Ranks 0-3 running program A\nRanks 4-7 running program B"
+    },
+    {
+      "description": "Run with timeout and stack traces on failure",
+      "command": "mpiexec -np 4 --timeout 3600 --get-stack-traces ./long_running_app",
+      "output_example": "Timeout or failure will capture stack traces from all processes"
+    },
+    {
+      "description": "Use Slurm-allocated nodes with mpiexec (within salloc or sbatch)",
+      "command": "mpiexec -np $SLURM_NTASKS ./my_mpi_app",
+      "output_example": "Using Slurm allocation for process placement"
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "There are not enough slots available in the system to satisfy the N slots that were requested by the application",
+      "meaning": "The number of processes requested exceeds the available slots (CPUs/cores) on the specified hosts",
+      "resolution": "Reduce -np value, add more hosts to the hostfile, increase slots per host, or use --oversubscribe to allow oversubscription."
+    },
+    {
+      "message": "ORTE was unable to reliably start one or more daemons",
+      "meaning": "Open MPI could not launch daemon processes (orted) on remote nodes",
+      "resolution": "Verify SSH connectivity to remote nodes, check that Open MPI is installed at the same path, ensure firewalls allow ORTE communication ports."
+    },
+    {
+      "message": "A daemon (pid XXXXX) died unexpectedly with status 255 while attempting to launch so we are aborting",
+      "meaning": "A remote daemon crashed, often due to misconfiguration or missing dependencies",
+      "resolution": "Check that Open MPI installation is consistent across all nodes. Verify LD_LIBRARY_PATH includes all required libraries."
+    },
+    {
+      "message": "mpiexec was unable to find the specified executable",
+      "meaning": "The application executable was not found in the current directory or PATH",
+      "resolution": "Provide full path to executable, ensure it exists on all nodes, or use --preload-binary to copy it."
+    },
+    {
+      "message": "All processes were killed by signal X",
+      "meaning": "All MPI processes received a fatal signal (e.g., SIGSEGV, SIGKILL)",
+      "resolution": "Debug the application for memory errors. For SIGKILL (signal 9), check for out-of-memory conditions using system logs."
+    },
+    {
+      "message": "An MPI process has forked without calling MPI_Init first",
+      "meaning": "The application called fork() or similar without proper handling",
+      "resolution": "Set OMPI_MCA_mpi_warn_on_fork=0 to suppress warning if fork is intentional, or refactor code to avoid forking after MPI_Init."
+    },
+    {
+      "message": "The call to cuMemHostRegister(0x...) failed. CUDA memory registration fails",
+      "meaning": "CUDA-aware MPI failed to register GPU memory, often due to CUDA IPC issues or driver problems",
+      "resolution": "Verify CUDA driver version compatibility, check GPU accessibility, ensure UCX CUDA support is enabled."
+    },
+    {
+      "message": "UCX ERROR could not connect to remote peer",
+      "meaning": "UCX transport layer could not establish connection between processes",
+      "resolution": "Check network configuration, verify InfiniBand/RoCE connectivity, ensure UCX_NET_DEVICES points to correct interfaces."
+    },
+    {
+      "message": "PMIX ERROR: UNREACHABLE in file pmix_server.c",
+      "meaning": "PMIx server communication failed, often in Slurm-integrated environments",
+      "resolution": "Check PMIx installation, verify Slurm PMIx plugin configuration, or try --mca pmix ^pmix3."
+    },
+    {
+      "message": "The HCA port is inactive",
+      "meaning": "The specified InfiniBand port is not in active state",
+      "resolution": "Check IB port status with ibstat. Verify cable connections and subnet manager is running."
+    },
+    {
+      "message": "mpiexec has detected an attempt to run as root",
+      "meaning": "Open MPI prevents running as root by default for security",
+      "resolution": "Run as non-root user, or if root is required, use --allow-run-as-root flag."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "mpirun",
+      "orterun",
+      "srun",
+      "nvidia-smi",
+      "ibstat",
+      "ucx_info",
+      "ompi_info",
+      "hwloc-ls",
+      "numactl"
+    ],
+    "uses_library": [
+      "UCX",
+      "NCCL",
+      "libibverbs",
+      "librdmacm",
+      "hwloc",
+      "PMIx",
+      "CUDA",
+      "HCOLL",
+      "libfabric"
+    ],
+    "notes": "mpiexec is the MPI-2 standard name for the MPI launcher and is functionally equivalent to mpirun in Open MPI (both are symlinks to the same binary). When running under Slurm, mpiexec can be replaced by srun for better integration with job scheduler. For CUDA-aware MPI operations, Open MPI must be compiled with --with-cuda and UCX must have GPU memory support. mpiexec works with various transport layers: UCX (recommended for modern systems), BTL/openib (legacy InfiniBand), and TCP. For multi-node GPU training, mpiexec is often used alongside NCCL for collective communications."
+  },
+  "permissions": {
+    "read_operations": "Any user can launch MPI applications within their allocated resources",
+    "write_operations": "mpiexec spawns processes and creates temporary files for communication; does not require elevated privileges for normal operation",
+    "notes": "Running as root is disabled by default and requires --allow-run-as-root flag. Remote node access requires passwordless SSH or compatible launcher. In Slurm environments, access to nodes is controlled by the job scheduler allocation."
+  },
+  "limitations": [
+    "Process count limited by available slots unless --oversubscribe is used",
+    "Requires passwordless SSH or alternative launcher (like Slurm) for multi-node operation",
+    "CUDA-aware MPI requires Open MPI compiled with CUDA support and compatible GPU drivers",
+    "Maximum number of processes limited by system resources (file descriptors, memory)",
+    "InfiniBand/RoCE requires proper subnet manager configuration",
+    "Process binding options depend on hwloc library availability and accuracy",
+    "UCX transport may require specific versions for optimal GPU performance",
+    "Cross-version compatibility between Open MPI installations on different nodes is limited",
+    "Large-scale runs may require tuning MCA parameters for performance",
+    "GPU-direct RDMA requires compatible hardware and driver versions"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "job_state",
+        "fields": ["job_id", "allocated_nodes", "node_list", "tasks_per_node"],
+        "description": "When running under Slurm, mpiexec reads job allocation information to determine where to launch processes"
+      },
+      {
+        "state_domain": "node_state",
+        "fields": [
+          "hostname",
+          "cpu_count",
+          "memory_available",
+          "numa_topology"
+        ],
+        "description": "mpiexec queries node hardware topology for process mapping and binding decisions"
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["gpu_count", "gpu_index", "cuda_visible_devices"],
+        "description": "For GPU-aware MPI, mpiexec detects available GPUs and can set CUDA_VISIBLE_DEVICES per rank"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "gpu_process_state",
+        "fields": ["process_id", "gpu_memory_used", "compute_utilization"],
+        "description": "MPI processes launched by mpiexec consume GPU resources when using CUDA"
+      },
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "running_processes",
+          "network_connections",
+          "shared_memory_segments"
+        ],
+        "description": "mpiexec creates processes, network connections for MPI communication, and shared memory regions for intra-node communication"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Slurm job allocation granted",
+        "effect": "mpiexec can use allocated nodes from SLURM_JOB_NODELIST"
+      },
+      {
+        "state_change": "InfiniBand port state changes to active",
+        "effect": "IB transport becomes available for MPI communication"
+      },
+      {
+        "state_change": "GPU becomes available or CUDA_VISIBLE_DEVICES changes",
+        "effect": "GPU-aware MPI can utilize newly available GPUs"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "mpirun",
+        "shared_state": "Both commands are functionally identical in Open MPI and share all process and communication state"
+      },
+      {
+        "command": "srun",
+        "shared_state": "Both can launch parallel jobs within Slurm allocations and share node/process state information"
+      },
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU utilization and memory usage from MPI processes visible in nvidia-smi output"
+      }
+    ]
+  }
+}

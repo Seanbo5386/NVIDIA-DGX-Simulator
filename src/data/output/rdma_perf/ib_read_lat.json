@@ -1,0 +1,173 @@
+{
+  "command": "ib_read_lat",
+  "category": "rdma_perf",
+  "description": "RDMA read latency benchmark for InfiniBand and RoCE networks. Measures round-trip latency for RDMA read operations between two nodes, commonly used to verify low-latency fabric performance in HPC clusters.",
+  "synopsis": "ib_read_lat [options] [server_ip]",
+  "version_documented": "perftest 4.5+",
+  "source_urls": ["https://github.com/linux-rdma/perftest"],
+  "installation": {
+    "package": "perftest",
+    "notes": "Install via: apt install perftest or yum install perftest. Part of the standard RDMA performance testing suite."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--ib-dev",
+      "description": "Use specified IB device",
+      "arguments": "<dev>",
+      "argument_type": "string",
+      "example": "-d mlx5_0"
+    },
+    {
+      "short": "-i",
+      "long": "--ib-port",
+      "description": "Use specified port of IB device",
+      "arguments": "<port>",
+      "argument_type": "integer",
+      "default": "1"
+    },
+    {
+      "short": "-s",
+      "long": "--size",
+      "description": "Message size in bytes",
+      "arguments": "<size>",
+      "argument_type": "integer",
+      "default": "2"
+    },
+    {
+      "short": "-n",
+      "long": "--iters",
+      "description": "Number of iterations",
+      "arguments": "<iters>",
+      "argument_type": "integer",
+      "default": "1000"
+    },
+    {
+      "short": "-p",
+      "long": "--port",
+      "description": "TCP port for connection setup",
+      "arguments": "<port>",
+      "argument_type": "integer",
+      "default": "18515"
+    },
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Run all message sizes from 2 to 2^23"
+    },
+    {
+      "short": "-F",
+      "long": "--CPU-freq",
+      "description": "Show CPU frequency in output"
+    },
+    {
+      "long": "--output",
+      "description": "Output format",
+      "arguments": "<bandwidth|message_rate|latency>",
+      "argument_type": "string"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error (connection failed, invalid arguments)"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run as server (listening mode)",
+      "command": "ib_read_lat",
+      "requires_root": false
+    },
+    {
+      "description": "Run as client connecting to server",
+      "command": "ib_read_lat 192.168.1.100",
+      "output_example": "#bytes #iterations    t_min[usec]    t_max[usec]  t_typical[usec]    t_avg[usec]    t_stdev[usec]   99% percentile[usec]   99.9% percentile[usec]\n    2     1000           1.15           3.82           1.18            1.21         0.14               1.35                    2.15",
+      "requires_root": false
+    },
+    {
+      "description": "Test all message sizes",
+      "command": "ib_read_lat -a 192.168.1.100",
+      "requires_root": false
+    },
+    {
+      "description": "Test specific message size with more iterations",
+      "command": "ib_read_lat -s 64 -n 10000 192.168.1.100",
+      "requires_root": false
+    },
+    {
+      "description": "Use specific IB device and port",
+      "command": "ib_read_lat -d mlx5_0 -i 1 192.168.1.100",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Unable to find any IB devices",
+      "meaning": "No InfiniBand devices detected",
+      "resolution": "Verify IB drivers are loaded and device is present with ibstat"
+    },
+    {
+      "message": "Couldn't connect to server",
+      "meaning": "TCP connection for setup failed",
+      "resolution": "Verify server is running, IP is correct, and port is not blocked"
+    },
+    {
+      "message": "QP creation failed",
+      "meaning": "Cannot create Queue Pair for RDMA",
+      "resolution": "Check IB port is active and has valid LID/GID"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "ib_write_lat",
+      "ib_read_bw",
+      "ib_write_bw",
+      "ib_send_lat",
+      "ibstat",
+      "perfquery"
+    ],
+    "notes": "Part of perftest suite. Requires server mode running on remote node before client can connect. Results affected by CPU frequency scaling, NUMA placement, and network congestion."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for basic operation",
+    "write_operations": "N/A - benchmark tool",
+    "notes": "May require CAP_NET_RAW for some features or when using low-level QP types"
+  },
+  "limitations": [
+    "Synthetic benchmark may not reflect application performance",
+    "Results sensitive to system tuning (CPU governor, NUMA)",
+    "Single connection test does not show fabric-wide behavior",
+    "Requires coordinated execution on both endpoints"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["device", "port", "state", "rate", "lid"],
+        "description": "Reads IB port state for benchmark execution"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Link state change",
+        "effect": "Benchmark fails if link goes down during test"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ib_write_lat",
+        "shared_state": "Latency results should be similar for same message sizes"
+      },
+      {
+        "command": "ibstat",
+        "shared_state": "Link rate affects achievable bandwidth (not latency for small messages)"
+      }
+    ]
+  }
+}

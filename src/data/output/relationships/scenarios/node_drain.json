@@ -1,0 +1,76 @@
+{
+  "$schema": "../../schema.json",
+  "scenario_id": "node_drain",
+  "scenario_name": "Node Drain for Maintenance",
+  "description": "Simulates an administrator draining a node for maintenance, preventing new job scheduling",
+  "severity": "info",
+  "initial_state_change": {
+    "domain": "node_state",
+    "affected_entity": "Node dgx-node-03",
+    "changes": {
+      "state": "drain",
+      "reason": "Scheduled maintenance - firmware update"
+    }
+  },
+  "affected_commands": [
+    {
+      "command": "sinfo",
+      "category": "cluster_management",
+      "output_before": "PARTITION  AVAIL  TIMELIMIT  NODES  STATE  NODELIST\ngpu        up     infinite   4      idle   dgx-node-[01-04]",
+      "output_after": "PARTITION  AVAIL  TIMELIMIT  NODES  STATE  NODELIST\ngpu        up     infinite   3      idle   dgx-node-[01-02,04]\ngpu        up     infinite   1      drain  dgx-node-03",
+      "key_differences": [
+        "Node dgx-node-03 shows drain state",
+        "Idle count decreased"
+      ]
+    },
+    {
+      "command": "sinfo -N -l",
+      "category": "cluster_management",
+      "output_before": "NODELIST     NODES  PARTITION  STATE  CPUS  MEMORY  GRES\ndgx-node-03  1      gpu        idle   128   1024000 gpu:8",
+      "output_after": "NODELIST     NODES  PARTITION  STATE  CPUS  MEMORY  GRES           REASON\ndgx-node-03  1      gpu        drain  128   1024000 gpu:8          Scheduled maintenance - firmware update",
+      "key_differences": ["State changed to drain", "Reason field populated"]
+    },
+    {
+      "command": "scontrol show node dgx-node-03",
+      "category": "cluster_management",
+      "output_before": "NodeName=dgx-node-03 State=IDLE CPUTot=128 ...",
+      "output_after": "NodeName=dgx-node-03 State=DRAIN+DRAIN Reason=\"Scheduled maintenance - firmware update\" CPUTot=128 ...",
+      "key_differences": ["State=DRAIN", "Reason field set"]
+    },
+    {
+      "command": "squeue",
+      "category": "cluster_management",
+      "output_before": "Jobs may be assigned to dgx-node-03",
+      "output_after": "New jobs will not be scheduled to dgx-node-03",
+      "key_differences": ["Pending jobs wait longer if resources constrained"]
+    }
+  ],
+  "recovery_actions": [
+    {
+      "action": "Check if any jobs still running on node",
+      "command": "squeue -w dgx-node-03"
+    },
+    {
+      "action": "Wait for running jobs to complete",
+      "command": "watch 'squeue -w dgx-node-03'"
+    },
+    {
+      "action": "Perform maintenance tasks",
+      "command": "ssh dgx-node-03 'nvidia-smi -pm 0 && fwupdmgr update'"
+    },
+    {
+      "action": "Return node to service",
+      "command": "scontrol update NodeName=dgx-node-03 State=RESUME"
+    },
+    {
+      "action": "Verify node is available",
+      "command": "sinfo -n dgx-node-03"
+    }
+  ],
+  "simulator_notes": [
+    "Drain state prevents new job scheduling but allows running jobs to complete",
+    "If node has running jobs, state shows 'draining' until jobs finish",
+    "Reason field should be preserved and displayed",
+    "RESUME command clears drain state and reason"
+  ]
+}

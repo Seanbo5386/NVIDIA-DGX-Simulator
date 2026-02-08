@@ -1,0 +1,691 @@
+{
+  "command": "module",
+  "category": "modules",
+  "description": "Manage software environment through modulefiles (Environment Modules/Lmod). The module command dynamically modifies the user's shell environment to enable access to different software packages, compilers, libraries, and tools without conflicts. Essential in HPC environments for managing multiple versions of software, compilers (GCC, Intel, NVIDIA HPC SDK), MPI implementations, and CUDA toolkits. Lmod is a Lua-based module system that extends Environment Modules with features like hierarchical modules and module spider search.",
+  "synopsis": "module [options] sub-command [args...]",
+  "version_documented": "Lmod 8.7+, Environment Modules 5.0+",
+  "source_urls": [
+    "https://lmod.readthedocs.io/en/latest/",
+    "https://modules.readthedocs.io/en/latest/"
+  ],
+  "installation": {
+    "package": "lmod, environment-modules",
+    "notes": "Lmod typically installed via package manager (apt install lmod, yum install Lmod) or compiled from source. Environment Modules available as 'environment-modules' package. Requires shell initialization in /etc/profile.d/ or user's shell rc file. Modulefiles stored in paths defined by MODULEPATH."
+  },
+  "global_options": [
+    {
+      "short": "-t",
+      "long": "--terse",
+      "description": "Output in terse machine-readable format, one module per line",
+      "example": "module -t avail"
+    },
+    {
+      "short": "-l",
+      "long": "--long",
+      "description": "Output in long format with additional details like version and modification date",
+      "example": "module -l list"
+    },
+    {
+      "short": "-d",
+      "long": "--default",
+      "description": "List only default modules when used with avail",
+      "example": "module -d avail"
+    },
+    {
+      "short": "-q",
+      "long": "--quiet",
+      "description": "Suppress informational messages",
+      "example": "module -q load cuda/12.0"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Enable verbose output for debugging module operations",
+      "example": "module -v load gcc"
+    },
+    {
+      "short": "-D",
+      "long": "--debug",
+      "description": "Enable debug output showing internal module operations",
+      "example": "module -D load openmpi"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help information for module command",
+      "example": "module --help"
+    },
+    {
+      "long": "--version",
+      "description": "Display module system version information",
+      "example": "module --version"
+    },
+    {
+      "short": "-w",
+      "long": "--width",
+      "description": "Set output width for formatting (Lmod)",
+      "arguments": "WIDTH",
+      "argument_type": "integer",
+      "example": "module -w 120 avail"
+    },
+    {
+      "long": "--ignore-cache",
+      "description": "Ignore module cache and rebuild from modulefiles (Lmod)",
+      "example": "module --ignore-cache avail"
+    },
+    {
+      "long": "--mt",
+      "description": "Display module table information (Lmod debug)",
+      "example": "module --mt"
+    },
+    {
+      "long": "--raw",
+      "description": "Show raw modulefile content without evaluation",
+      "example": "module --raw show cuda/12.0"
+    },
+    {
+      "short": "-r",
+      "long": "--regexp",
+      "description": "Use regular expression matching for module names",
+      "example": "module -r avail 'cuda.*'"
+    },
+    {
+      "long": "--show-hidden",
+      "description": "Include hidden modules in output (modules starting with .)",
+      "example": "module --show-hidden avail"
+    },
+    {
+      "long": "--force",
+      "description": "Force operation even if it would break dependencies",
+      "example": "module --force unload gcc"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "load",
+      "description": "Load a module or modules into the current environment. Sets up PATH, LD_LIBRARY_PATH, and other environment variables defined in the modulefile. Also known as 'add' in some installations.",
+      "synopsis": "module load [options] modulefile [modulefile...]",
+      "options": [
+        {
+          "long": "--force",
+          "description": "Force load even if module conflicts with loaded modules"
+        },
+        {
+          "long": "--tag",
+          "description": "Apply a tag to the loaded module for later reference (Lmod)",
+          "arguments": "TAG_NAME",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "unload",
+      "description": "Unload a module from the current environment. Reverses the environment changes made when the module was loaded. Also known as 'rm' or 'remove' in some installations.",
+      "synopsis": "module unload [options] modulefile [modulefile...]",
+      "options": [
+        {
+          "long": "--force",
+          "description": "Force unload even if other modules depend on this module"
+        },
+        {
+          "short": "-a",
+          "long": "--all",
+          "description": "Unload all modules matching the given name pattern"
+        }
+      ]
+    },
+    {
+      "name": "list",
+      "description": "List all currently loaded modules in the environment. Shows module names and versions currently active in the shell session.",
+      "synopsis": "module list [options]",
+      "options": [
+        {
+          "short": "-t",
+          "long": "--terse",
+          "description": "Output in terse format, one module per line"
+        },
+        {
+          "short": "-l",
+          "long": "--long",
+          "description": "Output in long format with additional details"
+        }
+      ]
+    },
+    {
+      "name": "avail",
+      "description": "List all available modules in MODULEPATH. Shows modules that can be loaded. Respects module hierarchy in Lmod.",
+      "synopsis": "module avail [options] [pattern]",
+      "options": [
+        {
+          "short": "-t",
+          "long": "--terse",
+          "description": "Output in terse format, one module per line"
+        },
+        {
+          "short": "-l",
+          "long": "--long",
+          "description": "Output in long format showing full paths and dates"
+        },
+        {
+          "short": "-d",
+          "long": "--default",
+          "description": "Show only default module versions"
+        },
+        {
+          "short": "-a",
+          "long": "--all",
+          "description": "Show all modules including hidden ones"
+        },
+        {
+          "long": "--show-hidden",
+          "description": "Include hidden modules (starting with .) in listing"
+        }
+      ]
+    },
+    {
+      "name": "show",
+      "description": "Display the contents of a modulefile, showing what environment changes will be made when the module is loaded. Also known as 'display' in some installations.",
+      "synopsis": "module show [options] modulefile",
+      "options": [
+        {
+          "long": "--raw",
+          "description": "Show raw modulefile without interpretation"
+        }
+      ]
+    },
+    {
+      "name": "swap",
+      "description": "Swap one module for another. Unloads the first module and loads the second. Commonly used to switch between compiler versions or MPI implementations. Also known as 'switch'.",
+      "synopsis": "module swap [options] oldmodule newmodule",
+      "options": [
+        {
+          "long": "--force",
+          "description": "Force swap even if it would break module dependencies"
+        }
+      ]
+    },
+    {
+      "name": "purge",
+      "description": "Unload all loaded modules, returning to a clean environment. Use with caution as it removes all module-defined environment settings.",
+      "synopsis": "module purge [options]",
+      "options": [
+        {
+          "long": "--force",
+          "description": "Force purge including sticky modules (Lmod)"
+        }
+      ]
+    },
+    {
+      "name": "spider",
+      "description": "Search for modules across the entire module tree, including those not currently visible due to hierarchy restrictions. Lmod-specific command that shows all modules regardless of loaded prerequisites.",
+      "synopsis": "module spider [options] [pattern]",
+      "options": [
+        {
+          "short": "-r",
+          "long": "--regexp",
+          "description": "Use regular expression matching for the pattern"
+        }
+      ]
+    },
+    {
+      "name": "save",
+      "description": "Save the current module collection to a named collection for later restoration. Lmod-specific feature for managing module environments.",
+      "synopsis": "module save [collection_name]",
+      "options": [
+        {
+          "long": "--force",
+          "description": "Overwrite existing collection with the same name"
+        }
+      ]
+    },
+    {
+      "name": "restore",
+      "description": "Restore a previously saved module collection. Unloads current modules and loads the saved set. Lmod-specific feature.",
+      "synopsis": "module restore [collection_name]",
+      "options": []
+    },
+    {
+      "name": "savelist",
+      "description": "List all saved module collections. Lmod-specific feature.",
+      "synopsis": "module savelist [options]",
+      "options": [
+        {
+          "short": "-t",
+          "long": "--terse",
+          "description": "Output in terse format"
+        }
+      ]
+    },
+    {
+      "name": "describe",
+      "description": "Show a saved collection's contents without loading it. Lmod-specific feature.",
+      "synopsis": "module describe [collection_name]",
+      "options": []
+    },
+    {
+      "name": "use",
+      "description": "Add a directory to MODULEPATH, making modules in that directory available for loading.",
+      "synopsis": "module use [options] directory",
+      "options": [
+        {
+          "short": "-a",
+          "long": "--append",
+          "description": "Append directory to MODULEPATH instead of prepending"
+        }
+      ]
+    },
+    {
+      "name": "unuse",
+      "description": "Remove a directory from MODULEPATH, making its modules unavailable.",
+      "synopsis": "module unuse directory",
+      "options": []
+    },
+    {
+      "name": "whatis",
+      "description": "Display the description (whatis) text of a modulefile or search for modules matching a description.",
+      "synopsis": "module whatis [pattern]",
+      "options": []
+    },
+    {
+      "name": "keyword",
+      "description": "Search for modules whose whatis text contains the given keyword.",
+      "synopsis": "module keyword keyword",
+      "options": []
+    },
+    {
+      "name": "help",
+      "description": "Display help text defined in the modulefile.",
+      "synopsis": "module help modulefile",
+      "options": []
+    },
+    {
+      "name": "is-loaded",
+      "description": "Check if a module is currently loaded. Returns exit code 0 if loaded, non-zero otherwise. Useful in scripts.",
+      "synopsis": "module is-loaded modulefile",
+      "options": []
+    },
+    {
+      "name": "is-avail",
+      "description": "Check if a module is available for loading. Returns exit code 0 if available, non-zero otherwise.",
+      "synopsis": "module is-avail modulefile",
+      "options": []
+    },
+    {
+      "name": "reset",
+      "description": "Reset modules to the system default state defined by LMOD_SYSTEM_DEFAULT_MODULES (Lmod) or initial configuration.",
+      "synopsis": "module reset",
+      "options": []
+    }
+  ],
+  "output_formats": {
+    "default": "Human-readable formatted output with columns for module names",
+    "terse": "Machine-readable format with one module per line (-t flag)",
+    "long": "Extended format showing version, modification date, and path (-l flag)",
+    "json": "JSON output available in newer Lmod versions"
+  },
+  "environment_variables": [
+    {
+      "name": "MODULEPATH",
+      "description": "Colon-separated list of directories containing modulefiles. The module command searches these paths for available modules.",
+      "example": "MODULEPATH=/opt/modulefiles:/apps/modules",
+      "affects_command": "Defines where module avail and module load search for modulefiles"
+    },
+    {
+      "name": "LOADEDMODULES",
+      "description": "Colon-separated list of currently loaded modules. Managed automatically by the module command.",
+      "example": "LOADEDMODULES=cuda/12.0:gcc/11.2.0:openmpi/4.1.4",
+      "affects_command": "Tracks which modules are currently loaded in the environment"
+    },
+    {
+      "name": "_LMFILES_",
+      "description": "Colon-separated list of full paths to loaded modulefiles. Internal tracking variable.",
+      "example": "_LMFILES_=/apps/modules/cuda/12.0.lua:/apps/modules/gcc/11.2.0.lua",
+      "affects_command": "Maps loaded module names to their modulefile locations"
+    },
+    {
+      "name": "MODULESHOME",
+      "description": "Root directory of the module system installation.",
+      "example": "MODULESHOME=/opt/lmod/lmod",
+      "affects_command": "Locates module system scripts and configuration"
+    },
+    {
+      "name": "LMOD_DIR",
+      "description": "Directory containing Lmod command scripts.",
+      "example": "LMOD_DIR=/opt/lmod/lmod/libexec",
+      "affects_command": "Lmod internal path configuration"
+    },
+    {
+      "name": "LMOD_CMD",
+      "description": "Path to the Lmod command executable.",
+      "example": "LMOD_CMD=/opt/lmod/lmod/libexec/lmod",
+      "affects_command": "Specifies which Lmod binary to execute"
+    },
+    {
+      "name": "LMOD_SYSTEM_DEFAULT_MODULES",
+      "description": "Default modules to load when 'module reset' is called or on initial shell login.",
+      "example": "LMOD_SYSTEM_DEFAULT_MODULES=StdEnv:cuda/12.0",
+      "affects_command": "Defines the baseline module environment"
+    },
+    {
+      "name": "LMOD_PACKAGE_PATH",
+      "description": "Path to site-specific Lmod configuration Lua files.",
+      "example": "LMOD_PACKAGE_PATH=/opt/lmod/etc",
+      "affects_command": "Allows site customization of Lmod behavior"
+    },
+    {
+      "name": "LMOD_RC",
+      "description": "Path to Lmod runtime configuration file.",
+      "example": "LMOD_RC=/opt/lmod/etc/lmodrc.lua",
+      "affects_command": "Configures Lmod runtime behavior"
+    },
+    {
+      "name": "LMOD_ADMIN_FILE",
+      "description": "Path to file containing admin messages displayed when certain modules are loaded.",
+      "example": "LMOD_ADMIN_FILE=/opt/lmod/etc/admin.list",
+      "affects_command": "Enables admin messages for deprecated or restricted modules"
+    },
+    {
+      "name": "LMOD_COLORIZE",
+      "description": "Enable or disable colored output in Lmod (yes/no/auto).",
+      "example": "LMOD_COLORIZE=yes",
+      "affects_command": "Controls terminal color output"
+    },
+    {
+      "name": "LMOD_PAGER",
+      "description": "Pager program used for long output.",
+      "example": "LMOD_PAGER=less",
+      "affects_command": "Specifies how long output is displayed"
+    },
+    {
+      "name": "LMOD_AUTO_SWAP",
+      "description": "Enable automatic module swapping when loading incompatible modules (yes/no).",
+      "example": "LMOD_AUTO_SWAP=yes",
+      "affects_command": "Controls whether Lmod automatically swaps conflicting modules"
+    },
+    {
+      "name": "LMOD_EXACT_MATCH",
+      "description": "Require exact module name matches (yes/no).",
+      "example": "LMOD_EXACT_MATCH=no",
+      "affects_command": "Controls module name matching strictness"
+    },
+    {
+      "name": "LMOD_REDIRECT",
+      "description": "Enable output redirection to stderr (yes/no).",
+      "example": "LMOD_REDIRECT=yes",
+      "affects_command": "Controls whether module output goes to stderr"
+    },
+    {
+      "name": "LMOD_CACHED_LOADS",
+      "description": "Enable using cache for module loads (yes/no).",
+      "example": "LMOD_CACHED_LOADS=yes",
+      "affects_command": "Improves module load performance"
+    },
+    {
+      "name": "LMOD_IGNORE_CACHE",
+      "description": "Ignore module cache and scan modulefiles directly.",
+      "example": "LMOD_IGNORE_CACHE=1",
+      "affects_command": "Forces fresh modulefile scanning"
+    },
+    {
+      "name": "LMOD_SHORT_TIME",
+      "description": "Threshold in seconds for cache validity.",
+      "example": "LMOD_SHORT_TIME=2",
+      "affects_command": "Controls when to use cached module information"
+    },
+    {
+      "name": "LMOD_EXTENDED_DEFAULT",
+      "description": "Enable extended default matching (match partial version numbers).",
+      "example": "LMOD_EXTENDED_DEFAULT=yes",
+      "affects_command": "Allows loading modules with partial version specification"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - module operation completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "General error - module operation failed (e.g., module not found, load error)"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Load CUDA toolkit for GPU computing",
+      "command": "module load cuda/12.0",
+      "output_example": ""
+    },
+    {
+      "description": "Load CUDA and check what modules are loaded",
+      "command": "module load cuda/12.0 && module list",
+      "output_example": "Currently Loaded Modules:\n  1) cuda/12.0"
+    },
+    {
+      "description": "List all available CUDA modules",
+      "command": "module avail cuda",
+      "output_example": "---------------------- /apps/modules ----------------------\n   cuda/11.4    cuda/11.7    cuda/11.8    cuda/12.0 (D)    cuda/12.2"
+    },
+    {
+      "description": "Swap GCC compiler versions",
+      "command": "module swap gcc/9.3.0 gcc/11.2.0",
+      "output_example": "The following have been reloaded with a version change:\n  1) gcc/9.3.0 => gcc/11.2.0"
+    },
+    {
+      "description": "Search for all MPI implementations with spider",
+      "command": "module spider mpi",
+      "output_example": "---------------------------------------------------------------------\n  openmpi:\n---------------------------------------------------------------------\n    Versions:\n        openmpi/4.0.5\n        openmpi/4.1.4\n\n---------------------------------------------------------------------\n  mvapich2:\n---------------------------------------------------------------------\n    Versions:\n        mvapich2/2.3.7"
+    },
+    {
+      "description": "Show modulefile contents for CUDA",
+      "command": "module show cuda/12.0",
+      "output_example": "---------------------------------------------------------------------\n/apps/modules/cuda/12.0.lua:\n---------------------------------------------------------------------\nhelp([[CUDA Toolkit 12.0 - GPU computing platform]])\nwhatis(\"CUDA Toolkit 12.0\")\nsetenv(\"CUDA_HOME\",\"/usr/local/cuda-12.0\")\nprepend_path(\"PATH\",\"/usr/local/cuda-12.0/bin\")\nprepend_path(\"LD_LIBRARY_PATH\",\"/usr/local/cuda-12.0/lib64\")"
+    },
+    {
+      "description": "Load hierarchical module stack (compiler then MPI)",
+      "command": "module load gcc/11.2.0 openmpi/4.1.4",
+      "output_example": ""
+    },
+    {
+      "description": "Save current module environment as a collection",
+      "command": "module save my-gpu-env",
+      "output_example": "Saved current collection of modules to: \"my-gpu-env\""
+    },
+    {
+      "description": "Restore a saved module collection",
+      "command": "module restore my-gpu-env",
+      "output_example": "Restoring modules from user's my-gpu-env"
+    },
+    {
+      "description": "Purge all loaded modules",
+      "command": "module purge",
+      "output_example": ""
+    },
+    {
+      "description": "List available modules in terse format for scripting",
+      "command": "module -t avail 2>&1 | grep cuda",
+      "output_example": "cuda/11.4\ncuda/11.7\ncuda/11.8\ncuda/12.0\ncuda/12.2"
+    },
+    {
+      "description": "Load NVIDIA HPC SDK with CUDA and MPI support",
+      "command": "module load nvhpc/23.7",
+      "output_example": ""
+    },
+    {
+      "description": "Check if a module is loaded (for scripts)",
+      "command": "module is-loaded cuda && echo 'CUDA loaded' || echo 'CUDA not loaded'",
+      "output_example": "CUDA loaded"
+    },
+    {
+      "description": "Add a custom module path",
+      "command": "module use /home/user/my_modules",
+      "output_example": ""
+    },
+    {
+      "description": "Get detailed information about hidden prerequisites",
+      "command": "module spider openmpi/4.1.4",
+      "output_example": "---------------------------------------------------------------------\n  openmpi: openmpi/4.1.4\n---------------------------------------------------------------------\n\n    You will need to load all module(s) on any one of the lines below\n    before the \"openmpi/4.1.4\" module is available to load.\n\n      gcc/9.3.0\n      gcc/11.2.0\n      intel/2023.0"
+    },
+    {
+      "description": "Load Intel compiler and MKL for optimized math libraries",
+      "command": "module load intel/2023.0 mkl/2023.0",
+      "output_example": ""
+    },
+    {
+      "description": "Reset to default module environment",
+      "command": "module reset",
+      "output_example": "Resetting modules to system default"
+    },
+    {
+      "description": "Search for modules by keyword in description",
+      "command": "module keyword gpu",
+      "output_example": "---------------------------------------------------------------------\n\nThe following modules match your search criteria: \"gpu\"\n---------------------------------------------------------------------\n\n  cuda/12.0: CUDA Toolkit for GPU computing\n  nvhpc/23.7: NVIDIA HPC SDK with GPU compilers"
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Lmod has detected the following error: The following module(s) are unknown: \"cuda/99.0\"",
+      "meaning": "The specified module version does not exist",
+      "resolution": "Use 'module avail cuda' to see available versions, or 'module spider cuda' to search all available versions"
+    },
+    {
+      "message": "Lmod has detected the following error: These module(s) or extension(s) exist but cannot be loaded as requested: \"openmpi/4.1.4\"",
+      "meaning": "Module exists but has unmet prerequisites (common in hierarchical module systems)",
+      "resolution": "Use 'module spider openmpi/4.1.4' to see required prerequisites (e.g., compiler module)"
+    },
+    {
+      "message": "Module ERROR: Tcl command execution failed: conflict cuda",
+      "meaning": "The module conflicts with another loaded module",
+      "resolution": "Unload the conflicting module first with 'module unload <conflicting_module>' or use 'module swap'"
+    },
+    {
+      "message": "Unable to locate a modulefile for 'cuda'",
+      "meaning": "No modulefile found for the specified module name",
+      "resolution": "Check module name spelling, verify MODULEPATH includes the correct directories, use 'module avail' to list available modules"
+    },
+    {
+      "message": "Lmod Warning: Did not find: cuda",
+      "meaning": "Module not found in current MODULEPATH",
+      "resolution": "Use 'module spider cuda' to search across all module trees, or check if additional module paths need to be added with 'module use'"
+    },
+    {
+      "message": "MODULEPATH is not set",
+      "meaning": "The environment is not properly configured for the module system",
+      "resolution": "Source the module initialization script (e.g., 'source /etc/profile.d/modules.sh' or 'source /etc/profile.d/lmod.sh')"
+    },
+    {
+      "message": "Lmod has detected the following error: A load of module \"gcc/11.2.0\" would change existing modules",
+      "meaning": "Loading this module would require unloading/reloading other modules",
+      "resolution": "Either purge modules first with 'module purge', or set LMOD_AUTO_SWAP=yes to allow automatic swapping"
+    },
+    {
+      "message": "The following dependent module(s) are not currently loaded: gcc",
+      "meaning": "The module requires a prerequisite module to be loaded first",
+      "resolution": "Load the prerequisite module first (e.g., 'module load gcc' then 'module load openmpi')"
+    },
+    {
+      "message": "Lmod has detected the following error: Cannot unload module \"cuda/12.0\", it is required by: nccl/2.18",
+      "meaning": "Another loaded module depends on this module",
+      "resolution": "Unload dependent modules first, or use '--force' flag to force unload (may break other modules)"
+    },
+    {
+      "message": "Cannot find collection: \"my-collection\"",
+      "meaning": "The specified saved module collection does not exist",
+      "resolution": "Use 'module savelist' to see available collections, or save current modules with 'module save my-collection'"
+    },
+    {
+      "message": "Lmod Warning: Deprecated module: cuda/10.0",
+      "meaning": "The module has been marked as deprecated by administrators",
+      "resolution": "Consider using a newer version. Check admin messages for recommended alternatives."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "ml",
+      "lmod",
+      "spack",
+      "sbatch",
+      "srun",
+      "mpirun",
+      "nvcc",
+      "nvc++",
+      "gcc",
+      "source"
+    ],
+    "uses_library": ["Lua (Lmod)", "Tcl (Environment Modules)"],
+    "notes": "The 'ml' command is a convenient shortcut for common module operations in Lmod: 'ml' alone lists loaded modules, 'ml foo' loads foo, 'ml -foo' unloads foo. Module commands are typically sourced into the shell rather than executed as subprocesses. In Slurm job scripts, modules should be loaded after any Slurm directives. Module hierarchies are common in HPC where loading a compiler unlocks MPI modules built with that compiler. Spack package manager can generate modulefiles. NVIDIA HPC SDK (nvhpc) provides modulefiles for CUDA, nvcc, and GPU-optimized compilers."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required. Users can list and load any module in MODULEPATH.",
+    "write_operations": "Creating modulefiles requires write access to MODULEPATH directories (typically admin-only). Saving collections writes to ~/.lmod.d/ (user-writable).",
+    "notes": "Module system itself requires no elevated privileges. However, some modules may set up environments that access restricted resources. Site administrators control which modules are available and can use admin files to restrict or message about certain modules."
+  },
+  "limitations": [
+    "Environment changes only affect the current shell session; child processes inherit but cannot propagate back",
+    "Module conflicts must be manually resolved unless LMOD_AUTO_SWAP is enabled",
+    "Hierarchical modules require loading prerequisites in correct order",
+    "Module caches may become stale requiring 'module --ignore-cache' or cache rebuild",
+    "Different sites may have incompatible module naming conventions",
+    "Saved collections are user-specific and stored in home directory",
+    "Environment Modules (Tcl) and Lmod have slightly different syntax in modulefiles",
+    "Some modulefiles may have bugs or set incorrect paths",
+    "Module unload may not perfectly reverse all environment changes in complex cases"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["environment_variables", "shell_type", "module_cache"],
+        "description": "Reads MODULEPATH, LOADEDMODULES, and other environment variables to determine available and loaded modules"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "system_state",
+        "fields": ["environment_variables"],
+        "description": "Modifies PATH, LD_LIBRARY_PATH, MANPATH, and software-specific variables (CUDA_HOME, MPI_HOME, etc.)",
+        "requires_flags": [
+          "load",
+          "unload",
+          "swap",
+          "purge",
+          "restore",
+          "reset",
+          "use",
+          "unuse"
+        ]
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "MODULEPATH modified",
+        "effect": "Available modules list changes, may affect module resolution"
+      },
+      {
+        "state_change": "Module loaded/unloaded",
+        "effect": "LOADEDMODULES updated, environment variables modified, PATH/LD_LIBRARY_PATH changed"
+      },
+      {
+        "state_change": "Modulefile updated on disk",
+        "effect": "Future loads use new modulefile; requires cache refresh for immediate effect"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "sbatch",
+        "shared_state": "Slurm job scripts inherit loaded modules from submission environment unless explicitly loaded in script"
+      },
+      {
+        "command": "srun",
+        "shared_state": "Module environment propagates to srun commands within job"
+      },
+      {
+        "command": "mpirun",
+        "shared_state": "MPI environment variables set by MPI modules affect mpirun behavior"
+      },
+      {
+        "command": "nvcc",
+        "shared_state": "CUDA module sets CUDA_HOME and PATH needed for nvcc compilation"
+      }
+    ]
+  }
+}

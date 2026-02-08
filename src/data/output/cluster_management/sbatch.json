@@ -1,0 +1,1158 @@
+{
+  "command": "sbatch",
+  "category": "cluster_management",
+  "description": "sbatch submits a batch script to Slurm for execution. The batch script may be given to sbatch through a file name on the command line, or if no file name is specified, sbatch reads from standard input. The script typically contains one or more srun commands to launch parallel tasks. sbatch immediately returns control to the user after submission and prints the assigned job ID. Job options can be specified via command-line arguments or as #SBATCH directives within the script itself.",
+  "synopsis": "sbatch [OPTIONS...] script [args...]",
+  "version_documented": "Slurm 23.x",
+  "source_urls": ["https://slurm.schedmd.com/sbatch.html"],
+  "installation": {
+    "package": "slurm-client or slurm",
+    "notes": "Part of the Slurm workload manager. Requires access to a Slurm cluster with slurmctld running."
+  },
+  "global_options": [
+    {
+      "short": "-A",
+      "long": "--account",
+      "description": "Charge resources used by this job to the specified account. The account is an arbitrary string that may be used for tracking or billing purposes.",
+      "arguments": "account",
+      "argument_type": "string",
+      "example": "sbatch -A research script.sh"
+    },
+    {
+      "short": "-a",
+      "long": "--array",
+      "description": "Submit a job array with indices specified by the index specification. The index can be a range (0-100), a list (1,3,5,7), a range with step (0-100:10), or a combination. Optionally limit concurrent tasks with %N suffix (0-100%10 runs max 10 simultaneously).",
+      "arguments": "indexes",
+      "argument_type": "string",
+      "example": "sbatch --array=1-100%10 script.sh"
+    },
+    {
+      "long": "--batch",
+      "description": "Nodes to use for the batch script portion of the job. This can be different from the nodes requested for srun steps.",
+      "arguments": "hostlist",
+      "argument_type": "string"
+    },
+    {
+      "long": "--bb",
+      "description": "Burst Buffer specification for the job. Used with Cray DataWarp or other burst buffer implementations.",
+      "arguments": "spec",
+      "argument_type": "string"
+    },
+    {
+      "long": "--bbf",
+      "description": "Path to a file containing burst buffer directives.",
+      "arguments": "filename",
+      "argument_type": "path"
+    },
+    {
+      "long": "--begin",
+      "description": "Defer the job's eligibility until the specified time. Time formats include HH:MM:SS, YYYY-MM-DD, now+count[seconds|minutes|hours|days|weeks].",
+      "arguments": "time",
+      "argument_type": "string",
+      "example": "sbatch --begin=now+1hour script.sh"
+    },
+    {
+      "short": "-D",
+      "long": "--chdir",
+      "description": "Change to the specified directory before executing the batch script. The path can be absolute or relative to the current directory.",
+      "arguments": "directory",
+      "argument_type": "path",
+      "example": "sbatch --chdir=/scratch/user/work script.sh"
+    },
+    {
+      "long": "--cluster-constraint",
+      "description": "Specifies features required of the cluster when submitting to a federation of clusters.",
+      "arguments": "features",
+      "argument_type": "string"
+    },
+    {
+      "short": "-M",
+      "long": "--clusters",
+      "description": "Specify the cluster(s) to submit the job to. Multiple clusters may be specified as a comma-separated list.",
+      "arguments": "cluster_list",
+      "argument_type": "string",
+      "example": "sbatch -M cluster1,cluster2 script.sh"
+    },
+    {
+      "long": "--comment",
+      "description": "An arbitrary comment for the job, visible in squeue and sacct output.",
+      "arguments": "comment",
+      "argument_type": "string"
+    },
+    {
+      "short": "-C",
+      "long": "--constraint",
+      "description": "Nodes must have all the specified features. Multiple features can be combined with & (AND) or | (OR) operators. Feature expressions can be complex using parentheses.",
+      "arguments": "features",
+      "argument_type": "string",
+      "example": "sbatch --constraint=\"gpu&a100\" script.sh"
+    },
+    {
+      "long": "--container",
+      "description": "Path to an OCI container bundle. Used with the Pyxis or other container plugins for Slurm to run the job inside a container.",
+      "arguments": "path",
+      "argument_type": "path",
+      "example": "sbatch --container=/path/to/container script.sh"
+    },
+    {
+      "long": "--contiguous",
+      "description": "If set, the allocated nodes must form a contiguous set. This may delay job start time if contiguous nodes are not available."
+    },
+    {
+      "short": "-S",
+      "long": "--core-spec",
+      "description": "Count of cores to reserve for system use on each allocated node. These cores are not available to the job.",
+      "arguments": "num",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--cores-per-socket",
+      "description": "Request nodes with at least the specified number of cores per socket.",
+      "arguments": "cores",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--cpu-freq",
+      "description": "Request that the CPU frequency be set to a specific value or range. Values can be Low, Medium, High, HighM1 (highest minus one), or specific frequency in KHz.",
+      "arguments": "frequency",
+      "argument_type": "string",
+      "example": "sbatch --cpu-freq=2000000 script.sh"
+    },
+    {
+      "short": "-c",
+      "long": "--cpus-per-task",
+      "description": "Request the specified number of CPUs per task. This is used to allocate multiple CPUs to each task, commonly needed for multi-threaded applications.",
+      "arguments": "ncpus",
+      "argument_type": "integer",
+      "example": "sbatch -c 8 script.sh"
+    },
+    {
+      "long": "--cpus-per-gpu",
+      "description": "Request the specified number of CPUs for each GPU allocated to the job.",
+      "arguments": "ncpus",
+      "argument_type": "integer",
+      "example": "sbatch --cpus-per-gpu=10 --gpus=4 script.sh"
+    },
+    {
+      "long": "--deadline",
+      "description": "Remove the job if it is not completed by this deadline. Time format is the same as --begin. The job must finish by this time or it will be terminated.",
+      "arguments": "time",
+      "argument_type": "string"
+    },
+    {
+      "long": "--delay-boot",
+      "description": "Do not reboot nodes until this number of minutes after the job start time. Used with node reboot features.",
+      "arguments": "minutes",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-d",
+      "long": "--dependency",
+      "description": "Defer the start of this job until the specified dependencies have been satisfied. Types include: after:jobid, afterany:jobid, afternotok:jobid, afterok:jobid, singleton. Multiple dependencies can be combined with commas (AND) or question marks (OR).",
+      "arguments": "dependency_list",
+      "argument_type": "string",
+      "example": "sbatch --dependency=afterok:12345:12346 script.sh"
+    },
+    {
+      "short": "-m",
+      "long": "--distribution",
+      "description": "Specify alternate distribution methods for tasks across nodes. Options include block, cyclic, arbitrary, and plane with optional second level for sockets/cores.",
+      "arguments": "dist",
+      "argument_type": "string",
+      "example": "sbatch --distribution=cyclic script.sh"
+    },
+    {
+      "short": "-e",
+      "long": "--error",
+      "description": "File to redirect standard error. Filename patterns using replacement symbols are supported (%j for job ID, %x for job name, etc.).",
+      "arguments": "filename",
+      "argument_type": "path",
+      "example": "sbatch --error=job_%j.err script.sh"
+    },
+    {
+      "long": "--exclude",
+      "description": "Explicitly exclude certain nodes from the job's resource allocation.",
+      "arguments": "hostlist",
+      "argument_type": "string",
+      "example": "sbatch --exclude=node[001-010] script.sh"
+    },
+    {
+      "long": "--exclusive",
+      "description": "Request exclusive access to allocated nodes. The job will not share nodes with other jobs. Can optionally specify 'user' to share only with jobs from the same user, or 'mcs' for MCS isolation.",
+      "arguments": "user|mcs",
+      "argument_type": "string"
+    },
+    {
+      "long": "--export",
+      "description": "Identify which environment variables from the submission environment should be propagated to the job. Options: ALL (default), NONE, or specific variables.",
+      "arguments": "vars",
+      "argument_type": "string",
+      "example": "sbatch --export=ALL,MY_VAR=value script.sh"
+    },
+    {
+      "long": "--export-file",
+      "description": "Specify a file containing environment variable definitions to export to the job.",
+      "arguments": "filename",
+      "argument_type": "path"
+    },
+    {
+      "long": "--extra-node-info",
+      "description": "Specifies extra node information in the format sockets:cores:threads. Overrides individual socket/core/thread options.",
+      "arguments": "S:C:T",
+      "argument_type": "string"
+    },
+    {
+      "short": "-B",
+      "long": "--extra-node-info",
+      "description": "Specify extra node information: sockets per node, cores per socket, and threads per core.",
+      "arguments": "sockets[:cores[:threads]]",
+      "argument_type": "string"
+    },
+    {
+      "long": "--get-user-env",
+      "description": "Retrieve the login environment variables for the user. This option is implicitly set when the -D (--chdir) option is used.",
+      "arguments": "timeout",
+      "argument_type": "string"
+    },
+    {
+      "long": "--gid",
+      "description": "Submit the job with the specified group ID. Only available to privileged users.",
+      "arguments": "group",
+      "argument_type": "string"
+    },
+    {
+      "long": "--gpu-bind",
+      "description": "Bind tasks to GPUs. Options include closest, map_gpu, mask_gpu, per_task, single.",
+      "arguments": "type",
+      "argument_type": "string",
+      "example": "sbatch --gpu-bind=closest script.sh"
+    },
+    {
+      "long": "--gpu-freq",
+      "description": "Request specific GPU frequency settings. Can specify memory and/or graphics frequencies.",
+      "arguments": "frequency",
+      "argument_type": "string",
+      "example": "sbatch --gpu-freq=high script.sh"
+    },
+    {
+      "short": "-G",
+      "long": "--gpus",
+      "description": "Total number of GPUs required for the job. Can specify GPU type (e.g., --gpus=a100:4).",
+      "arguments": "[type:]num",
+      "argument_type": "string",
+      "example": "sbatch --gpus=4 script.sh"
+    },
+    {
+      "long": "--gpus-per-node",
+      "description": "Number of GPUs required per allocated node. Can specify GPU type.",
+      "arguments": "[type:]num",
+      "argument_type": "string",
+      "example": "sbatch --gpus-per-node=2 script.sh"
+    },
+    {
+      "long": "--gpus-per-socket",
+      "description": "Number of GPUs required per socket. Can specify GPU type.",
+      "arguments": "[type:]num",
+      "argument_type": "string"
+    },
+    {
+      "long": "--gpus-per-task",
+      "description": "Number of GPUs required per task. Can specify GPU type.",
+      "arguments": "[type:]num",
+      "argument_type": "string",
+      "example": "sbatch --gpus-per-task=1 script.sh"
+    },
+    {
+      "long": "--gres",
+      "description": "Specifies a comma-delimited list of generic consumable resources required per node. Common gres types include gpu, mps, and shard.",
+      "arguments": "list",
+      "argument_type": "string",
+      "example": "sbatch --gres=gpu:2 script.sh"
+    },
+    {
+      "long": "--gres-flags",
+      "description": "Specify generic resource task binding options. Options include disable-binding, enforce-binding, one-task-per-sharing.",
+      "arguments": "flags",
+      "argument_type": "string"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help information and exit."
+    },
+    {
+      "short": "-H",
+      "long": "--hold",
+      "description": "Submit the job in a held state. The job will remain in the queue but will not be scheduled until released with scontrol release."
+    },
+    {
+      "long": "--hint",
+      "description": "Bind tasks according to application hints. Options: compute_bound, memory_bound, multithread (use hyperthreads), nomultithread.",
+      "arguments": "type",
+      "argument_type": "string"
+    },
+    {
+      "long": "--ignore-pbs",
+      "description": "Ignore any PBS directives (#PBS) in the batch script."
+    },
+    {
+      "short": "-i",
+      "long": "--input",
+      "description": "Specify the file from which to read standard input. By default, stdin is connected to /dev/null.",
+      "arguments": "filename",
+      "argument_type": "path",
+      "example": "sbatch --input=input.dat script.sh"
+    },
+    {
+      "short": "-J",
+      "long": "--job-name",
+      "description": "Specify a name for the job allocation. The job name is displayed in squeue output and used for output filename patterns.",
+      "arguments": "jobname",
+      "argument_type": "string",
+      "example": "sbatch --job-name=training script.sh"
+    },
+    {
+      "long": "--kill-on-invalid-dep",
+      "description": "If a job has an invalid dependency and it can never run, kill it immediately.",
+      "arguments": "yes|no",
+      "argument_type": "string"
+    },
+    {
+      "short": "-L",
+      "long": "--licenses",
+      "description": "Request licenses for the job. Licenses are cluster-managed resources that can limit concurrent usage.",
+      "arguments": "license_list",
+      "argument_type": "string",
+      "example": "sbatch --licenses=matlab:1 script.sh"
+    },
+    {
+      "long": "--mail-type",
+      "description": "Notify user by email when certain event types occur. Multiple types can be comma-separated. Types: NONE, BEGIN, END, FAIL, REQUEUE, ALL, STAGE_OUT, TIME_LIMIT, TIME_LIMIT_90, TIME_LIMIT_80, TIME_LIMIT_50, ARRAY_TASKS.",
+      "arguments": "type",
+      "argument_type": "string",
+      "example": "sbatch --mail-type=BEGIN,END,FAIL script.sh"
+    },
+    {
+      "long": "--mail-user",
+      "description": "Email address to receive notifications. Multiple addresses can be comma-separated.",
+      "arguments": "email",
+      "argument_type": "string",
+      "example": "sbatch --mail-user=user@example.com script.sh"
+    },
+    {
+      "long": "--mcs-label",
+      "description": "Used with MCS (Multi-Category Security) plugin to specify the MCS label for the job.",
+      "arguments": "label",
+      "argument_type": "string"
+    },
+    {
+      "long": "--mem",
+      "description": "Specify the real memory required per node. Different units may be specified using the suffix K, M, G, or T. Default is megabytes.",
+      "arguments": "size[units]",
+      "argument_type": "string",
+      "example": "sbatch --mem=64G script.sh"
+    },
+    {
+      "long": "--mem-bind",
+      "description": "Bind tasks to memory. Options include local, none, p[refer], rank, v[erbose], map_mem, mask_mem.",
+      "arguments": "type",
+      "argument_type": "string"
+    },
+    {
+      "long": "--mem-per-cpu",
+      "description": "Minimum memory required per allocated CPU. Different units may be specified using the suffix K, M, G, or T.",
+      "arguments": "size[units]",
+      "argument_type": "string",
+      "example": "sbatch --mem-per-cpu=4G script.sh"
+    },
+    {
+      "long": "--mem-per-gpu",
+      "description": "Minimum memory required per allocated GPU. Different units may be specified using the suffix K, M, G, or T.",
+      "arguments": "size[units]",
+      "argument_type": "string",
+      "example": "sbatch --mem-per-gpu=32G script.sh"
+    },
+    {
+      "long": "--mincpus",
+      "description": "Specify the minimum number of logical CPUs/processors per node.",
+      "arguments": "num",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--network",
+      "description": "Specify information about the network interfaces to be used for the job.",
+      "arguments": "type",
+      "argument_type": "string"
+    },
+    {
+      "long": "--nice",
+      "description": "Run the job with an adjusted scheduling priority within Slurm. A negative nice value increases the priority (requires admin privileges).",
+      "arguments": "adjustment",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--no-kill",
+      "description": "Do not automatically terminate a job if one of the nodes it is allocated fails. The job will assume all responsibility for fault-tolerance."
+    },
+    {
+      "long": "--no-requeue",
+      "description": "Specifies that the batch job should never be requeued under any circumstances. Overrides the partition's default requeue setting."
+    },
+    {
+      "short": "-F",
+      "long": "--nodefile",
+      "description": "Request nodes from the specified file, which contains a list of hostnames.",
+      "arguments": "filename",
+      "argument_type": "path"
+    },
+    {
+      "long": "--nodelist",
+      "description": "Request a specific list of nodes for the job allocation.",
+      "arguments": "hostlist",
+      "argument_type": "string",
+      "example": "sbatch --nodelist=node[001-004] script.sh"
+    },
+    {
+      "short": "-w",
+      "long": "--nodelist",
+      "description": "Request specific nodes by name.",
+      "arguments": "hostlist",
+      "argument_type": "string"
+    },
+    {
+      "short": "-N",
+      "long": "--nodes",
+      "description": "Request a specific number of nodes for the job. Can specify a minimum and maximum (e.g., 2-4).",
+      "arguments": "minnodes[-maxnodes]",
+      "argument_type": "string",
+      "example": "sbatch -N 4 script.sh"
+    },
+    {
+      "short": "-n",
+      "long": "--ntasks",
+      "description": "Request the specified number of tasks. Unless combined with --ntasks-per-node, this option specifies the total number of tasks across all nodes.",
+      "arguments": "number",
+      "argument_type": "integer",
+      "example": "sbatch -n 32 script.sh"
+    },
+    {
+      "long": "--ntasks-per-core",
+      "description": "Request the maximum number of tasks to be invoked per core. Requires --ntasks-per-node to also be set.",
+      "arguments": "ntasks",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--ntasks-per-gpu",
+      "description": "Request the number of tasks to be invoked per GPU.",
+      "arguments": "ntasks",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--ntasks-per-node",
+      "description": "Request the specified number of tasks per node. This is useful for hybrid MPI/OpenMP jobs.",
+      "arguments": "ntasks",
+      "argument_type": "integer",
+      "example": "sbatch --ntasks-per-node=4 script.sh"
+    },
+    {
+      "long": "--ntasks-per-socket",
+      "description": "Request the maximum number of tasks to be invoked per socket.",
+      "arguments": "ntasks",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-o",
+      "long": "--output",
+      "description": "File to redirect standard output. Supports replacement symbols: %A (array job ID), %a (array task ID), %j (job ID), %J (job ID with step), %N (hostname), %n (node ID), %s (step ID), %t (task ID), %u (username), %x (job name).",
+      "arguments": "filename",
+      "argument_type": "path",
+      "example": "sbatch --output=job_%j_%x.out script.sh"
+    },
+    {
+      "short": "-O",
+      "long": "--overcommit",
+      "description": "Overcommit resources. Allow more tasks to be launched than CPUs are available. This is useful for I/O-bound jobs."
+    },
+    {
+      "long": "--oversubscribe",
+      "description": "Allow the job to share nodes with other running jobs. This is the opposite of --exclusive.",
+      "arguments": "yes|no|ok|user|mcs",
+      "argument_type": "string"
+    },
+    {
+      "long": "--parsable",
+      "description": "Output only the job ID in a parsable format, suitable for scripts."
+    },
+    {
+      "short": "-p",
+      "long": "--partition",
+      "description": "Request a specific partition for the job. Multiple partitions may be specified as a comma-separated list.",
+      "arguments": "partition_names",
+      "argument_type": "string",
+      "example": "sbatch -p gpu,compute script.sh"
+    },
+    {
+      "long": "--power",
+      "description": "Specify power management options for the job.",
+      "arguments": "flags",
+      "argument_type": "string"
+    },
+    {
+      "long": "--prefer",
+      "description": "Request nodes with preferred features. Unlike --constraint, the job can run on nodes without these features if necessary.",
+      "arguments": "features",
+      "argument_type": "string"
+    },
+    {
+      "long": "--priority",
+      "description": "Request a specific job priority. Only available to privileged users.",
+      "arguments": "value",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--profile",
+      "description": "Enable profiling of the job. Options: All, None, Energy, Task, Filesystem, Network.",
+      "arguments": "type",
+      "argument_type": "string"
+    },
+    {
+      "long": "--propagate",
+      "description": "Specify which resource limits should be propagated to the job. Default is to propagate all limits.",
+      "arguments": "limits",
+      "argument_type": "string"
+    },
+    {
+      "short": "-q",
+      "long": "--qos",
+      "description": "Request a Quality of Service for the job. QoS affects job scheduling priority and resource limits.",
+      "arguments": "qos",
+      "argument_type": "string",
+      "example": "sbatch --qos=high script.sh"
+    },
+    {
+      "short": "-Q",
+      "long": "--quiet",
+      "description": "Suppress informational messages from sbatch. Errors will still be displayed."
+    },
+    {
+      "long": "--reboot",
+      "description": "Force the allocated nodes to reboot before starting the job. Only available on some systems with specialized node boot management."
+    },
+    {
+      "long": "--requeue",
+      "description": "Specifies that the batch job should be requeued after node failure. This is the default on most systems unless overridden."
+    },
+    {
+      "long": "--reservation",
+      "description": "Request resources from the specified reservation.",
+      "arguments": "name",
+      "argument_type": "string",
+      "example": "sbatch --reservation=maintenance script.sh"
+    },
+    {
+      "long": "--signal",
+      "description": "Signal the job when approaching time limit. Format: [B:|R:]signal[@time]. B: sends to batch script, R: sends only to spawned job steps.",
+      "arguments": "signal[@time]",
+      "argument_type": "string",
+      "example": "sbatch --signal=B:USR1@60 script.sh"
+    },
+    {
+      "long": "--sockets-per-node",
+      "description": "Request nodes with at least the specified number of sockets.",
+      "arguments": "sockets",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--spread-job",
+      "description": "Spread the job over as many nodes as possible, requesting only one task per node until all nodes are used."
+    },
+    {
+      "long": "--switches",
+      "description": "Request a maximum number of leaf switches. Can specify optional maximum wait time.",
+      "arguments": "count[@time]",
+      "argument_type": "string",
+      "example": "sbatch --switches=1@5:00:00 script.sh"
+    },
+    {
+      "long": "--test-only",
+      "description": "Validate the batch script and return an estimate of when the job would start. The job is not actually submitted."
+    },
+    {
+      "long": "--thread-spec",
+      "description": "Count of threads to reserve for system use on each node.",
+      "arguments": "num",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--threads-per-core",
+      "description": "Request nodes with at least the specified number of threads per core (hyperthreads).",
+      "arguments": "threads",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-t",
+      "long": "--time",
+      "description": "Set a limit on the total run time of the job. Formats: minutes, minutes:seconds, hours:minutes:seconds, days-hours, days-hours:minutes, days-hours:minutes:seconds.",
+      "arguments": "time",
+      "argument_type": "string",
+      "example": "sbatch --time=24:00:00 script.sh"
+    },
+    {
+      "long": "--time-min",
+      "description": "Set a minimum time limit for the job. The job may be killed after this time if resources are needed.",
+      "arguments": "time",
+      "argument_type": "string"
+    },
+    {
+      "long": "--tmp",
+      "description": "Specify the minimum amount of temporary disk space required per node.",
+      "arguments": "size[units]",
+      "argument_type": "string"
+    },
+    {
+      "long": "--uid",
+      "description": "Submit the job under a different user ID. Only available to privileged users.",
+      "arguments": "user",
+      "argument_type": "string"
+    },
+    {
+      "long": "--usage",
+      "description": "Display brief help message and exit."
+    },
+    {
+      "long": "--use-min-nodes",
+      "description": "Use the minimum number of nodes that satisfies the resource request rather than the maximum."
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Increase the verbosity of sbatch's output. Multiple -v options will increase verbosity."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version information and exit."
+    },
+    {
+      "long": "--wait",
+      "description": "Do not exit until the submitted job terminates. The exit code reflects the job's exit code."
+    },
+    {
+      "long": "--wait-all-nodes",
+      "description": "Do not begin execution until all nodes are ready for use.",
+      "arguments": "0|1",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--wckey",
+      "description": "Specify a Workload Characterization Key for job tracking.",
+      "arguments": "wckey",
+      "argument_type": "string"
+    },
+    {
+      "long": "--wrap",
+      "description": "Wrap the specified command string in a simple shell script and submit that script. Useful for single-command jobs without creating a script file.",
+      "arguments": "command_string",
+      "argument_type": "string",
+      "example": "sbatch --wrap=\"hostname; sleep 60\""
+    },
+    {
+      "short": "-x",
+      "long": "--exclude",
+      "description": "Explicitly exclude certain nodes from the resource allocation.",
+      "arguments": "hostlist",
+      "argument_type": "string"
+    }
+  ],
+  "output_formats": {
+    "default": "On successful submission, sbatch prints a single line: 'Submitted batch job <jobid>'",
+    "parsable": "With --parsable option, outputs only the job ID number for scripting purposes.",
+    "verbose": "With -v option, displays additional information about the submission including resource allocation details.",
+    "filename_patterns": "%A: Job array master job ID. %a: Job array index number. %j: Job ID number. %J: Job ID and step ID (jobid.stepid). %N: Short hostname of first node in allocation. %n: Node identifier relative to current job (0, 1, 2, etc.). %s: Step ID within job. %t: Task identifier (rank) relative to current job. %u: Username. %x: Job name.",
+    "test_only": "With --test-only, displays estimated job start time and allocated resources without actually submitting.",
+    "script_directives": "Batch scripts can contain #SBATCH directives that specify job options (e.g., #SBATCH --job-name=training, #SBATCH --nodes=4). Directives must appear at the top of the script before any executable commands. Command-line options override #SBATCH directives."
+  },
+  "environment_variables": [
+    {
+      "name": "SBATCH_ACCOUNT",
+      "description": "Default account to charge. Equivalent to -A option.",
+      "example": "SBATCH_ACCOUNT=research",
+      "affects_command": "Sets the default account for job charging"
+    },
+    {
+      "name": "SBATCH_CLUSTERS",
+      "description": "Default clusters for job submission. Equivalent to -M option.",
+      "example": "SBATCH_CLUSTERS=cluster1",
+      "affects_command": "Specifies default cluster(s) for job submission"
+    },
+    {
+      "name": "SBATCH_CONSTRAINT",
+      "description": "Default node feature constraints. Equivalent to -C option.",
+      "example": "SBATCH_CONSTRAINT=gpu",
+      "affects_command": "Sets default node feature requirements"
+    },
+    {
+      "name": "SBATCH_DEBUG",
+      "description": "Set debug level for sbatch. Higher values produce more output.",
+      "example": "SBATCH_DEBUG=3",
+      "affects_command": "Controls debug output verbosity"
+    },
+    {
+      "name": "SBATCH_DISTRIBUTION",
+      "description": "Default task distribution. Equivalent to -m option.",
+      "example": "SBATCH_DISTRIBUTION=cyclic",
+      "affects_command": "Sets default task distribution method"
+    },
+    {
+      "name": "SBATCH_EXCLUSIVE",
+      "description": "Default exclusive node allocation setting.",
+      "example": "SBATCH_EXCLUSIVE=1",
+      "affects_command": "Enables exclusive node allocation by default"
+    },
+    {
+      "name": "SBATCH_EXPORT",
+      "description": "Default environment export setting. Equivalent to --export.",
+      "example": "SBATCH_EXPORT=ALL",
+      "affects_command": "Controls which environment variables are exported to jobs"
+    },
+    {
+      "name": "SBATCH_GET_USER_ENV",
+      "description": "Default setting for retrieving user environment.",
+      "example": "SBATCH_GET_USER_ENV=10",
+      "affects_command": "Controls whether to retrieve login environment"
+    },
+    {
+      "name": "SBATCH_GPUS",
+      "description": "Default GPU count. Equivalent to -G option.",
+      "example": "SBATCH_GPUS=4",
+      "affects_command": "Sets default number of GPUs"
+    },
+    {
+      "name": "SBATCH_GPUS_PER_NODE",
+      "description": "Default GPUs per node.",
+      "example": "SBATCH_GPUS_PER_NODE=2",
+      "affects_command": "Sets default GPUs per node"
+    },
+    {
+      "name": "SBATCH_GRES",
+      "description": "Default generic resources. Equivalent to --gres.",
+      "example": "SBATCH_GRES=gpu:2",
+      "affects_command": "Sets default generic resources"
+    },
+    {
+      "name": "SBATCH_MEM_BIND",
+      "description": "Default memory binding options.",
+      "example": "SBATCH_MEM_BIND=local",
+      "affects_command": "Sets default memory binding"
+    },
+    {
+      "name": "SBATCH_NETWORK",
+      "description": "Default network options.",
+      "example": "SBATCH_NETWORK=sn_all",
+      "affects_command": "Sets default network configuration"
+    },
+    {
+      "name": "SBATCH_NO_KILL",
+      "description": "Do not automatically terminate job on node failure.",
+      "example": "SBATCH_NO_KILL=1",
+      "affects_command": "Disables automatic termination on node failure"
+    },
+    {
+      "name": "SBATCH_NO_REQUEUE",
+      "description": "Disable automatic requeuing of the job.",
+      "example": "SBATCH_NO_REQUEUE=1",
+      "affects_command": "Prevents job from being requeued"
+    },
+    {
+      "name": "SBATCH_OPEN_MODE",
+      "description": "File open mode for output/error files. Values: append or truncate.",
+      "example": "SBATCH_OPEN_MODE=append",
+      "affects_command": "Controls how output files are opened"
+    },
+    {
+      "name": "SBATCH_OVERCOMMIT",
+      "description": "Allow overcommitting resources.",
+      "example": "SBATCH_OVERCOMMIT=1",
+      "affects_command": "Enables resource overcommit"
+    },
+    {
+      "name": "SBATCH_PARTITION",
+      "description": "Default partition. Equivalent to -p option.",
+      "example": "SBATCH_PARTITION=gpu",
+      "affects_command": "Sets default partition for job submission"
+    },
+    {
+      "name": "SBATCH_PROFILE",
+      "description": "Default profiling options.",
+      "example": "SBATCH_PROFILE=All",
+      "affects_command": "Enables profiling by default"
+    },
+    {
+      "name": "SBATCH_QOS",
+      "description": "Default Quality of Service. Equivalent to -q option.",
+      "example": "SBATCH_QOS=high",
+      "affects_command": "Sets default QoS for jobs"
+    },
+    {
+      "name": "SBATCH_RESERVATION",
+      "description": "Default reservation. Equivalent to --reservation.",
+      "example": "SBATCH_RESERVATION=special",
+      "affects_command": "Sets default reservation"
+    },
+    {
+      "name": "SBATCH_SIGNAL",
+      "description": "Default signal settings.",
+      "example": "SBATCH_SIGNAL=USR1@60",
+      "affects_command": "Sets default signal behavior"
+    },
+    {
+      "name": "SBATCH_TIMELIMIT",
+      "description": "Default time limit. Equivalent to -t option.",
+      "example": "SBATCH_TIMELIMIT=24:00:00",
+      "affects_command": "Sets default job time limit"
+    },
+    {
+      "name": "SBATCH_WAIT",
+      "description": "Wait for job completion.",
+      "example": "SBATCH_WAIT=1",
+      "affects_command": "Makes sbatch wait for job completion"
+    },
+    {
+      "name": "SBATCH_WCKEY",
+      "description": "Default workload characterization key.",
+      "example": "SBATCH_WCKEY=project1",
+      "affects_command": "Sets default wckey for jobs"
+    },
+    {
+      "name": "SLURM_CONF",
+      "description": "Path to the Slurm configuration file.",
+      "example": "SLURM_CONF=/etc/slurm/slurm.conf",
+      "affects_command": "Specifies which Slurm configuration to use"
+    },
+    {
+      "name": "SLURM_JOB_ID",
+      "description": "Set by Slurm within the batch script: The ID of the job allocation.",
+      "example": "SLURM_JOB_ID=12345",
+      "affects_command": "Available inside the batch script to identify the running job"
+    },
+    {
+      "name": "SLURM_JOB_NAME",
+      "description": "Set by Slurm within the batch script: Name of the job.",
+      "example": "SLURM_JOB_NAME=training",
+      "affects_command": "Available inside the batch script with the job name"
+    },
+    {
+      "name": "SLURM_JOB_NODELIST",
+      "description": "Set by Slurm within the batch script: List of nodes allocated to the job.",
+      "example": "SLURM_JOB_NODELIST=node[001-004]",
+      "affects_command": "Available inside the batch script with allocated node list"
+    },
+    {
+      "name": "SLURM_JOB_NUM_NODES",
+      "description": "Set by Slurm within the batch script: Number of nodes allocated to the job.",
+      "example": "SLURM_JOB_NUM_NODES=4",
+      "affects_command": "Available inside the batch script with node count"
+    },
+    {
+      "name": "SLURM_NTASKS",
+      "description": "Set by Slurm within the batch script: Number of tasks requested.",
+      "example": "SLURM_NTASKS=32",
+      "affects_command": "Available inside the batch script with total task count"
+    },
+    {
+      "name": "SLURM_CPUS_PER_TASK",
+      "description": "Set by Slurm within the batch script: Number of CPUs requested per task.",
+      "example": "SLURM_CPUS_PER_TASK=8",
+      "affects_command": "Available inside the batch script with CPUs per task"
+    },
+    {
+      "name": "SLURM_GPUS",
+      "description": "Set by Slurm within the batch script: Number of GPUs requested.",
+      "example": "SLURM_GPUS=4",
+      "affects_command": "Available inside the batch script with GPU count"
+    },
+    {
+      "name": "SLURM_ARRAY_JOB_ID",
+      "description": "Set by Slurm within the batch script: Job array master job ID (only for array jobs).",
+      "example": "SLURM_ARRAY_JOB_ID=12345",
+      "affects_command": "Available inside array job scripts with master job ID"
+    },
+    {
+      "name": "SLURM_ARRAY_TASK_ID",
+      "description": "Set by Slurm within the batch script: Job array index number (only for array jobs).",
+      "example": "SLURM_ARRAY_TASK_ID=42",
+      "affects_command": "Available inside array job scripts with current task index"
+    },
+    {
+      "name": "SLURM_SUBMIT_DIR",
+      "description": "Set by Slurm within the batch script: Directory from which sbatch was invoked.",
+      "example": "SLURM_SUBMIT_DIR=/home/user/project",
+      "affects_command": "Available inside the batch script with submission directory"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - job was submitted successfully and job ID was returned"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - job submission failed due to invalid options, resource unavailability, or other errors"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Submit a basic batch script",
+      "command": "sbatch script.sh",
+      "output_example": "Submitted batch job 12345"
+    },
+    {
+      "description": "Submit with explicit resource requirements",
+      "command": "sbatch -n 4 -c 8 --mem=32G script.sh",
+      "output_example": "Submitted batch job 12346"
+    },
+    {
+      "description": "Submit a GPU job to the GPU partition",
+      "command": "sbatch --gpus=4 --partition=gpu script.sh",
+      "output_example": "Submitted batch job 12347"
+    },
+    {
+      "description": "Submit a multi-node MPI job",
+      "command": "sbatch -N 4 --ntasks-per-node=8 --mem=128G script.sh",
+      "output_example": "Submitted batch job 12348"
+    },
+    {
+      "description": "Submit a job array with 100 tasks",
+      "command": "sbatch --array=1-100 script.sh",
+      "output_example": "Submitted batch job 12349"
+    },
+    {
+      "description": "Submit job array with concurrent limit",
+      "command": "sbatch --array=1-100%10 script.sh",
+      "output_example": "Submitted batch job 12350"
+    },
+    {
+      "description": "Submit with dependency on previous job completion",
+      "command": "sbatch --dependency=afterok:12345 script.sh",
+      "output_example": "Submitted batch job 12351"
+    },
+    {
+      "description": "Submit with multiple dependencies",
+      "command": "sbatch --dependency=afterok:12345:12346,afterany:12347 script.sh",
+      "output_example": "Submitted batch job 12352"
+    },
+    {
+      "description": "Submit with named output files",
+      "command": "sbatch --output=job_%j_%x.out --error=job_%j_%x.err script.sh",
+      "output_example": "Submitted batch job 12353"
+    },
+    {
+      "description": "Submit with email notifications",
+      "command": "sbatch --mail-type=BEGIN,END,FAIL --mail-user=user@example.com script.sh",
+      "output_example": "Submitted batch job 12354"
+    },
+    {
+      "description": "Submit a job in held state",
+      "command": "sbatch --hold script.sh",
+      "output_example": "Submitted batch job 12355"
+    },
+    {
+      "description": "Submit with time limit and specific partition",
+      "command": "sbatch --time=24:00:00 --partition=compute --qos=normal script.sh",
+      "output_example": "Submitted batch job 12356"
+    },
+    {
+      "description": "Submit with deferred start time",
+      "command": "sbatch --begin=now+2hours script.sh",
+      "output_example": "Submitted batch job 12357"
+    },
+    {
+      "description": "Submit using wrap for inline command",
+      "command": "sbatch --wrap=\"hostname && sleep 60 && echo done\"",
+      "output_example": "Submitted batch job 12358"
+    },
+    {
+      "description": "Submit with exclusive node access",
+      "command": "sbatch --exclusive --nodes=2 script.sh",
+      "output_example": "Submitted batch job 12359"
+    },
+    {
+      "description": "Test submission without actually submitting",
+      "command": "sbatch --test-only script.sh",
+      "output_example": "Job 12360 would start at 2025-01-15T14:30:00"
+    },
+    {
+      "description": "Submit with node feature constraints",
+      "command": "sbatch --constraint=\"gpu&a100\" --gpus=8 script.sh",
+      "output_example": "Submitted batch job 12361"
+    },
+    {
+      "description": "Submit with parsable output for scripting",
+      "command": "sbatch --parsable script.sh",
+      "output_example": "12362"
+    },
+    {
+      "description": "Submit a container job with Pyxis",
+      "command": "sbatch --container=/path/to/container.sqsh script.sh",
+      "output_example": "Submitted batch job 12363"
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "sbatch: error: Batch job submission failed: Invalid account or account/partition combination specified",
+      "meaning": "The specified account does not exist or is not allowed for the requested partition",
+      "resolution": "Verify account name with 'sacctmgr show account'. Check account-partition associations."
+    },
+    {
+      "message": "sbatch: error: Batch job submission failed: Requested node configuration is not available",
+      "meaning": "The requested resources (nodes, CPUs, memory, GPUs) exceed what is available in the partition",
+      "resolution": "Use 'sinfo' to check available resources. Reduce resource request or choose a different partition."
+    },
+    {
+      "message": "sbatch: error: Batch job submission failed: Invalid partition name specified",
+      "meaning": "The specified partition does not exist or is not available to the user",
+      "resolution": "Use 'sinfo' to list available partitions. Check partition spelling."
+    },
+    {
+      "message": "sbatch: error: Batch job submission failed: QOSMaxSubmitJobPerUserLimit",
+      "meaning": "The user has exceeded the maximum number of jobs allowed to be submitted under the specified QoS",
+      "resolution": "Wait for existing jobs to complete or cancel some jobs. Check QoS limits with sacctmgr."
+    },
+    {
+      "message": "sbatch: error: Unable to open file script.sh",
+      "meaning": "The batch script file does not exist or is not readable",
+      "resolution": "Verify the script file path and permissions. Ensure the file exists."
+    },
+    {
+      "message": "sbatch: error: Batch script contains DOS line breaks",
+      "meaning": "The script was created/edited on Windows and contains CRLF line endings",
+      "resolution": "Convert line endings using 'dos2unix script.sh' or 'sed -i 's/\\r$//' script.sh'"
+    },
+    {
+      "message": "sbatch: error: Invalid dependency specification",
+      "meaning": "The dependency specification is malformed or references non-existent jobs",
+      "resolution": "Check dependency syntax. Verify referenced job IDs exist with squeue."
+    },
+    {
+      "message": "sbatch: error: Batch job submission failed: Invalid time limit specified",
+      "meaning": "The time limit format is incorrect or exceeds partition maximum",
+      "resolution": "Use correct time format (HH:MM:SS or D-HH:MM:SS). Check partition limits with scontrol show partition."
+    },
+    {
+      "message": "sbatch: error: Batch job submission failed: Access/permission denied",
+      "meaning": "User does not have permission to submit jobs to the specified partition or with the specified resources",
+      "resolution": "Contact administrator to verify account permissions and partition access."
+    },
+    {
+      "message": "sbatch: error: Unable to contact slurm controller (connect failure)",
+      "meaning": "Cannot connect to the Slurm controller daemon (slurmctld)",
+      "resolution": "Check if slurmctld is running. Verify network connectivity. Ensure SLURM_CONF is correct."
+    },
+    {
+      "message": "sbatch: error: Memory specification can not be satisfied",
+      "meaning": "The requested memory exceeds what is available on any node",
+      "resolution": "Reduce memory request or use a partition with higher memory nodes."
+    },
+    {
+      "message": "sbatch: error: invalid feature specification",
+      "meaning": "The --constraint option contains invalid feature names or syntax",
+      "resolution": "Use 'sinfo -o \"%f\"' to see available features. Check constraint syntax."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "srun",
+      "squeue",
+      "scancel",
+      "scontrol",
+      "sacct",
+      "sinfo",
+      "salloc",
+      "sstat"
+    ],
+    "notes": "sbatch submits jobs that typically use srun within the batch script to launch parallel tasks. After submission, jobs can be monitored with squeue, cancelled with scancel, and their history viewed with sacct. Job parameters can be modified with scontrol update. sbatch works in conjunction with the Slurm scheduler to allocate resources and manage job execution across the cluster."
+  },
+  "permissions": {
+    "read_operations": "Any user can submit jobs to partitions they have access to",
+    "write_operations": "Job submission creates new job records in Slurm's job queue",
+    "notes": "User access to partitions, accounts, QoS, and reservations is controlled by Slurm's account management. Some options (--uid, --gid, --nice with negative values) require administrative privileges."
+  },
+  "limitations": [
+    "Maximum number of jobs per user/account may be limited by QoS policies",
+    "Resource requests are constrained by partition limits",
+    "Job array sizes may be limited by cluster configuration (MaxArraySize)",
+    "Time limits are constrained by partition maximum time limits",
+    "Some features require specific plugins (e.g., --container requires Pyxis)",
+    "Memory and CPU requests must fit within available node configurations",
+    "Dependencies can only reference jobs from the same cluster (or federated clusters)",
+    "Script files must use Unix line endings (not Windows CRLF)",
+    "Environment variable propagation may vary based on --export settings"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "partition_state",
+        "fields": [
+          "partition_name",
+          "state",
+          "max_time",
+          "max_nodes",
+          "max_cpus_per_node",
+          "max_mem_per_node",
+          "available_features",
+          "default_resources"
+        ],
+        "description": "sbatch reads partition configuration to validate resource requests and determine default values"
+      },
+      {
+        "state_domain": "node_state",
+        "fields": ["hostname", "state", "cpus", "memory", "gpus", "features"],
+        "description": "sbatch verifies that requested resources can be satisfied by available nodes"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "job_state",
+        "fields": [
+          "job_id",
+          "name",
+          "user",
+          "state",
+          "partition",
+          "account",
+          "qos",
+          "time_limit",
+          "nodes_requested",
+          "cpus_requested",
+          "memory_requested",
+          "gpus_requested",
+          "submit_time",
+          "priority",
+          "dependencies",
+          "work_directory",
+          "command"
+        ],
+        "description": "sbatch creates a new job record with PENDING state in the Slurm job queue"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "squeue",
+        "shared_state": "Newly submitted job appears immediately in squeue output with PENDING state"
+      },
+      {
+        "command": "sacct",
+        "shared_state": "Job submission recorded in accounting database with submit_time and requested resources"
+      },
+      {
+        "command": "scontrol show job",
+        "shared_state": "Full job details available via scontrol immediately after submission"
+      },
+      {
+        "command": "sprio",
+        "shared_state": "Job priority factors calculated and visible for pending jobs"
+      }
+    ]
+  }
+}

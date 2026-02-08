@@ -1,0 +1,122 @@
+{
+  "command": "deviceQuery",
+  "category": "cuda_tools",
+  "description": "CUDA sample application that queries and displays GPU device properties. Shows detailed information about CUDA capabilities, compute version, memory, clocks, and features for each GPU. Standard tool for verifying CUDA installation and GPU capabilities.",
+  "synopsis": "deviceQuery [options]",
+  "version_documented": "CUDA Samples 12.0+",
+  "source_urls": [
+    "https://github.com/NVIDIA/cuda-samples/tree/master/Samples/1_Utilities/deviceQuery"
+  ],
+  "installation": {
+    "package": "cuda-samples",
+    "notes": "Part of CUDA Samples. Build from CUDA SDK: cd /usr/local/cuda/samples/1_Utilities/deviceQuery && make. Or install cuda-samples package."
+  },
+  "global_options": [],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - CUDA devices found and queried"
+    },
+    {
+      "code": 1,
+      "meaning": "Failure - no CUDA devices or driver error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Query all GPU devices",
+      "command": "deviceQuery",
+      "output_example": "deviceQuery Starting...\n\n CUDA Device Query (Runtime API) version (CUDART static linking)\n\nDetected 8 CUDA Capable device(s)\n\nDevice 0: \"NVIDIA A100-SXM4-80GB\"\n  CUDA Driver Version / Runtime Version          12.2 / 12.2\n  CUDA Capability Major/Minor version number:    8.0\n  Total amount of global memory:                 81920 MBytes (85899345920 bytes)\n  (108) Multiprocessors, (64) CUDA Cores/MP:     6912 CUDA Cores\n  GPU Max Clock rate:                            1410 MHz (1.41 GHz)\n  Memory Clock rate:                             1593 Mhz\n  Memory Bus Width:                              5120-bit\n  L2 Cache Size:                                 41943040 bytes\n  Maximum Texture Dimension Size (x,y,z)         1D=(131072), 2D=(131072, 65536), 3D=(16384, 16384, 16384)\n  Maximum Layered 1D Texture Size, (num) layers  1D=(32768), 2048 layers\n  Maximum Layered 2D Texture Size, (num) layers  2D=(32768, 32768), 2048 layers\n  Total amount of constant memory:               65536 bytes\n  Total amount of shared memory per block:       49152 bytes\n  Total number of registers available per block: 65536\n  Warp size:                                     32\n  Maximum number of threads per multiprocessor:  2048\n  Maximum number of threads per block:           1024\n  Max dimension size of a thread block (x,y,z): (1024, 1024, 64)\n  Max dimension size of a grid size    (x,y,z): (2147483647, 65535, 65535)\n  Maximum memory pitch:                          2147483647 bytes\n  Texture alignment:                             512 bytes\n  Concurrent copy and kernel execution:          Yes with 3 copy engine(s)\n  Run time limit on kernels:                     No\n  Integrated GPU sharing Host Memory:            No\n  Support host page-locked memory mapping:       Yes\n  Alignment requirement for Surfaces:            Yes\n  Device has ECC support:                        Enabled\n  Device supports Unified Addressing (UVA):      Yes\n  Device supports Compute Preemption:            Yes\n  Supports Cooperative Kernel Launch:            Yes\n  Device PCI Domain ID / Bus ID / location ID:   0 / 7 / 0\n\ndeviceQuery, CUDA Driver = CUDART, CUDA Driver Version = 12.2, CUDA Runtime Version = 12.2, NumDevs = 8, Device0 = NVIDIA A100-SXM4-80GB\nResult = PASS",
+      "requires_root": false
+    },
+    {
+      "description": "Quick CUDA installation check",
+      "command": "deviceQuery | grep -E '(Detected|CUDA Driver|Result)'",
+      "requires_root": false
+    },
+    {
+      "description": "Check deviceQuery across cluster nodes",
+      "command": "pdsh -w node[001-010] deviceQuery 2>&1 | grep Result",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "cudaGetDeviceCount returned 35",
+      "meaning": "CUDA driver version insufficient for CUDA runtime",
+      "resolution": "Update NVIDIA driver to match CUDA version"
+    },
+    {
+      "message": "cudaGetDeviceCount returned 100",
+      "meaning": "No CUDA-capable device detected",
+      "resolution": "Check nvidia-smi, verify driver loaded with lsmod | grep nvidia"
+    },
+    {
+      "message": "deviceQuery: command not found",
+      "meaning": "CUDA samples not installed or not in PATH",
+      "resolution": "Build CUDA samples or add to PATH"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "nvidia-smi",
+      "nvidia-smi -q",
+      "nvcc --version",
+      "bandwidthTest"
+    ],
+    "notes": "deviceQuery provides CUDA-level view of GPU properties. Use nvidia-smi for driver-level monitoring. deviceQuery is often the first test after CUDA installation."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "N/A - read-only query",
+    "notes": "Requires NVIDIA driver and CUDA runtime"
+  },
+  "limitations": [
+    "Only shows static device properties, not current utilization",
+    "Must be compiled for each CUDA version",
+    "Not installed by default (part of samples)",
+    "Output format may vary between CUDA versions"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "gpu_id",
+          "name",
+          "memory_total",
+          "cuda_version",
+          "driver_version",
+          "pci_bus_id",
+          "ecc_mode"
+        ],
+        "description": "Reads GPU hardware and driver properties via CUDA runtime"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "GPU added or removed",
+        "effect": "Device count changes"
+      },
+      {
+        "state_change": "Driver update",
+        "effect": "CUDA version information changes"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi -L",
+        "shared_state": "GPU names and count must match"
+      },
+      {
+        "command": "nvidia-smi -q",
+        "shared_state": "ECC mode, memory size, PCI bus ID consistent"
+      },
+      {
+        "command": "nvcc --version",
+        "shared_state": "CUDA runtime version matches"
+      }
+    ]
+  }
+}

@@ -1,0 +1,434 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/hpc-command-schema.json",
+  "title": "HPC Command Documentation Schema",
+  "description": "JSON Schema for documenting HPC cluster CLI commands for simulator context building",
+  "type": "object",
+  "required": ["command", "category", "description", "synopsis"],
+  "properties": {
+    "command": {
+      "type": "string",
+      "description": "The command name"
+    },
+    "category": {
+      "type": "string",
+      "description": "Category of the command",
+      "enum": [
+        "gpu_management",
+        "diagnostics",
+        "system_info",
+        "cluster_management",
+        "networking",
+        "containers",
+        "firmware",
+        "storage",
+        "mpi",
+        "gpu_fabric",
+        "cuda_tools",
+        "nccl_tests",
+        "monitoring",
+        "general",
+        "rdma_perf",
+        "parallel_shell",
+        "modules"
+      ]
+    },
+    "version_documented": {
+      "type": "string",
+      "description": "Version of the command that was documented"
+    },
+    "source_urls": {
+      "type": "array",
+      "description": "URLs to official documentation or source references",
+      "items": {
+        "type": "string",
+        "format": "uri"
+      }
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of what the command does"
+    },
+    "synopsis": {
+      "type": "string",
+      "description": "Usage syntax for the command"
+    },
+    "installation": {
+      "type": "object",
+      "description": "Installation information for the command",
+      "properties": {
+        "package": {
+          "type": "string",
+          "description": "Package name that provides this command"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional installation notes"
+        }
+      },
+      "additionalProperties": false
+    },
+    "global_options": {
+      "type": "array",
+      "description": "Global options available for the command",
+      "items": {
+        "$ref": "#/definitions/option"
+      }
+    },
+    "subcommands": {
+      "type": "array",
+      "description": "Subcommands available for this command",
+      "items": {
+        "type": "object",
+        "required": ["name", "description"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the subcommand"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of what the subcommand does"
+          },
+          "synopsis": {
+            "type": "string",
+            "description": "Usage syntax for the subcommand"
+          },
+          "options": {
+            "type": "array",
+            "description": "Options specific to this subcommand",
+            "items": {
+              "$ref": "#/definitions/option"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "output_formats": {
+      "type": "object",
+      "description": "Description of available output formats",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "environment_variables": {
+      "type": "array",
+      "description": "Environment variables that affect the command",
+      "items": {
+        "type": "object",
+        "required": ["name", "description"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the environment variable"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of what the variable does"
+          },
+          "example": {
+            "type": "string",
+            "description": "Example value for the variable"
+          },
+          "affects_command": {
+            "type": "string",
+            "description": "How the variable affects the command behavior"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "exit_codes": {
+      "type": "array",
+      "description": "Exit codes returned by the command",
+      "items": {
+        "type": "object",
+        "required": ["code", "meaning"],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "The exit code value"
+          },
+          "meaning": {
+            "type": "string",
+            "description": "What this exit code indicates"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "common_usage_patterns": {
+      "type": "array",
+      "description": "Common usage examples and patterns",
+      "items": {
+        "type": "object",
+        "required": ["description", "command"],
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Description of the usage pattern"
+          },
+          "command": {
+            "type": "string",
+            "description": "The command example"
+          },
+          "output_example": {
+            "type": "string",
+            "description": "Example output from the command"
+          },
+          "requires_root": {
+            "type": "boolean",
+            "description": "Whether this usage requires root privileges"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "error_messages": {
+      "type": "array",
+      "description": "Common error messages and their resolutions",
+      "items": {
+        "type": "object",
+        "required": ["message", "meaning"],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "The error message text"
+          },
+          "meaning": {
+            "type": "string",
+            "description": "What this error indicates"
+          },
+          "resolution": {
+            "type": "string",
+            "description": "How to resolve the error"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "interoperability": {
+      "type": "object",
+      "description": "Information about how this command interoperates with other commands and libraries",
+      "properties": {
+        "related_commands": {
+          "type": "array",
+          "description": "Commands that are related to this one",
+          "items": {
+            "type": "string"
+          }
+        },
+        "uses_library": {
+          "type": "array",
+          "description": "Libraries that this command uses",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional interoperability notes"
+        }
+      },
+      "additionalProperties": false
+    },
+    "permissions": {
+      "type": "object",
+      "description": "Permission requirements for the command",
+      "properties": {
+        "read_operations": {
+          "type": "string",
+          "description": "Permissions needed for read operations"
+        },
+        "write_operations": {
+          "type": "string",
+          "description": "Permissions needed for write operations"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional permission notes"
+        }
+      },
+      "additionalProperties": false
+    },
+    "limitations": {
+      "type": "array",
+      "description": "Known limitations of the command",
+      "items": {
+        "type": "string"
+      }
+    },
+    "state_interactions": {
+      "type": "object",
+      "description": "How the command interacts with system state",
+      "properties": {
+        "reads_from": {
+          "type": "array",
+          "description": "State domains that this command reads from",
+          "items": {
+            "type": "object",
+            "required": ["state_domain"],
+            "properties": {
+              "state_domain": {
+                "$ref": "#/definitions/state_domain"
+              },
+              "fields": {
+                "type": "array",
+                "description": "Specific fields read from this domain",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "description": {
+                "type": "string",
+                "description": "Description of what is read"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "writes_to": {
+          "type": "array",
+          "description": "State domains that this command writes to",
+          "items": {
+            "type": "object",
+            "required": ["state_domain"],
+            "properties": {
+              "state_domain": {
+                "$ref": "#/definitions/state_domain"
+              },
+              "fields": {
+                "type": "array",
+                "description": "Specific fields written to this domain",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "description": {
+                "type": "string",
+                "description": "Description of what is written"
+              },
+              "requires_flags": {
+                "type": "array",
+                "description": "Flags required to trigger this write",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "requires_privilege": {
+                "type": "string",
+                "description": "Privilege level required for this write"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "triggered_by": {
+          "type": "array",
+          "description": "State changes that trigger behavior in this command",
+          "items": {
+            "type": "object",
+            "required": ["state_change", "effect"],
+            "properties": {
+              "state_change": {
+                "type": "string",
+                "description": "The state change that triggers behavior"
+              },
+              "effect": {
+                "type": "string",
+                "description": "The effect on the command"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "consistent_with": {
+          "type": "array",
+          "description": "Commands with which this command shares state",
+          "items": {
+            "type": "object",
+            "required": ["command", "shared_state"],
+            "properties": {
+              "command": {
+                "type": "string",
+                "description": "The related command"
+              },
+              "shared_state": {
+                "type": "string",
+                "description": "The state that is shared"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "definitions": {
+    "option": {
+      "type": "object",
+      "description": "A command-line option",
+      "properties": {
+        "flag": {
+          "type": "string",
+          "description": "The option flag (can be short or long form)"
+        },
+        "short": {
+          "type": "string",
+          "description": "Short form of the option (e.g., -h)"
+        },
+        "long": {
+          "type": "string",
+          "description": "Long form of the option (e.g., --help)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of what the option does"
+        },
+        "arguments": {
+          "type": "string",
+          "description": "Arguments that the option takes"
+        },
+        "argument_type": {
+          "type": "string",
+          "description": "Type of the argument (e.g., string, integer, path)"
+        },
+        "default": {
+          "type": "string",
+          "description": "Default value for the option"
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Whether this option is required"
+        },
+        "example": {
+          "type": "string",
+          "description": "Example usage of this option"
+        }
+      },
+      "additionalProperties": false
+    },
+    "state_domain": {
+      "type": "string",
+      "description": "Domain of system state",
+      "enum": [
+        "gpu_state",
+        "gpu_process_state",
+        "job_state",
+        "node_state",
+        "partition_state",
+        "network_ib_state",
+        "network_eth_state",
+        "storage_lustre_state",
+        "storage_local_state",
+        "system_state",
+        "container_state",
+        "firmware_state",
+        "fabric_state"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

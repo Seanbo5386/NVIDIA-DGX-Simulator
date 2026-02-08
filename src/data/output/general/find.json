@@ -1,0 +1,179 @@
+{
+  "command": "find",
+  "category": "general",
+  "description": "Search for files in directory hierarchy. Locates files by name, type, time, size, and more. Critical for managing HPC data and cleaning scratch space.",
+  "synopsis": "find [path...] [expression]",
+  "version_documented": "GNU findutils 4.8+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/find.1.html"],
+  "installation": {
+    "package": "findutils",
+    "notes": "Part of findutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-name",
+      "description": "Match filename pattern",
+      "arguments": "<pattern>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-iname",
+      "description": "Case insensitive name match",
+      "arguments": "<pattern>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-type",
+      "description": "File type (f=file, d=dir, l=link)",
+      "arguments": "<type>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-size",
+      "description": "File size (+/- for gt/lt)",
+      "arguments": "<n>[cwbkMG]",
+      "argument_type": "string"
+    },
+    {
+      "short": "-mtime",
+      "description": "Modification time in days",
+      "arguments": "<n>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-mmin",
+      "description": "Modification time in minutes",
+      "arguments": "<n>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-user",
+      "description": "File owner",
+      "arguments": "<name>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-exec",
+      "description": "Execute command on matches",
+      "arguments": "<cmd> {} \\;",
+      "argument_type": "string"
+    },
+    {
+      "short": "-delete",
+      "description": "Delete matching files"
+    },
+    {
+      "short": "-maxdepth",
+      "description": "Maximum directory depth",
+      "arguments": "<n>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-mindepth",
+      "description": "Minimum directory depth",
+      "arguments": "<n>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-print0",
+      "description": "Null-terminated output"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Find by name",
+      "command": "find /scratch -name '*.log'",
+      "requires_root": false
+    },
+    {
+      "description": "Find large files",
+      "command": "find /data -size +1G -type f",
+      "requires_root": false
+    },
+    {
+      "description": "Find old files",
+      "command": "find /scratch -mtime +30 -type f",
+      "requires_root": false
+    },
+    {
+      "description": "Find and delete",
+      "command": "find /tmp -name '*.tmp' -mtime +7 -delete",
+      "requires_root": false
+    },
+    {
+      "description": "Find and execute",
+      "command": "find . -name '*.py' -exec grep 'import torch' {} +",
+      "requires_root": false
+    },
+    {
+      "description": "Find user's files",
+      "command": "find /scratch -user $USER -size +100M",
+      "requires_root": false
+    },
+    {
+      "description": "Find empty directories",
+      "command": "find /project -type d -empty",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Permission denied",
+      "meaning": "Cannot access directory",
+      "resolution": "Use 2>/dev/null to suppress or check permissions"
+    },
+    {
+      "message": "missing argument to -exec",
+      "meaning": "Incomplete -exec clause",
+      "resolution": "End with \\; or +"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["locate", "xargs", "ls"],
+    "notes": "Use -print0 | xargs -0 for safe handling of special characters. locate is faster but uses database."
+  },
+  "permissions": {
+    "read_operations": "Read and execute on directories",
+    "write_operations": "-delete requires write",
+    "notes": "Cannot search directories without execute permission"
+  },
+  "limitations": [
+    "Traverses entire tree (can be slow)",
+    "No index (use locate for speed)",
+    "Complex expression syntax"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Searches directory tree"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Can delete files with -delete",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ls",
+        "shared_state": "Found files exist in listing"
+      }
+    ]
+  }
+}

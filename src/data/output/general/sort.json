@@ -1,0 +1,125 @@
+{
+  "command": "sort",
+  "category": "general",
+  "description": "Sort lines of text files. Provides various sorting options including numeric and reverse. Essential for processing HPC log and data files.",
+  "synopsis": "sort [options] [file...]",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/sort.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-n",
+      "long": "--numeric-sort",
+      "description": "Numeric sort"
+    },
+    {
+      "short": "-r",
+      "long": "--reverse",
+      "description": "Reverse sort order"
+    },
+    {
+      "short": "-k",
+      "long": "--key",
+      "description": "Sort by key field",
+      "arguments": "<key>",
+      "argument_type": "string",
+      "example": "-k2,2n"
+    },
+    {
+      "short": "-t",
+      "long": "--field-separator",
+      "description": "Field separator",
+      "arguments": "<sep>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-u",
+      "long": "--unique",
+      "description": "Output unique lines only"
+    },
+    {
+      "short": "-h",
+      "long": "--human-numeric-sort",
+      "description": "Sort human-readable numbers (2K, 1G)"
+    },
+    {
+      "short": "-o",
+      "long": "--output",
+      "description": "Output file",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "long": "--parallel",
+      "description": "Parallel threads",
+      "arguments": "<N>",
+      "argument_type": "integer"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Sort by size (human-readable)",
+      "command": "du -h /home | sort -hr",
+      "requires_root": false
+    },
+    {
+      "description": "Numeric sort",
+      "command": "sort -n numbers.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Sort by field",
+      "command": "sort -t, -k3 -n data.csv",
+      "requires_root": false
+    },
+    {
+      "description": "Unique sorted lines",
+      "command": "sort -u file.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Parallel sort for large files",
+      "command": "sort --parallel=8 large_file.txt",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [],
+  "interoperability": {
+    "related_commands": ["uniq", "awk", "cut"],
+    "notes": "Use -h for human-readable sizes from du. --parallel for large files. Combine with uniq for unique counts."
+  },
+  "permissions": {
+    "read_operations": "Read access to files",
+    "write_operations": "With -o option",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Memory usage for large files",
+    "Use external sort for huge files"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads files to sort"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

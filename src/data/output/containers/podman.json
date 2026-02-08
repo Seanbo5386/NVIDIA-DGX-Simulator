@@ -1,0 +1,1382 @@
+{
+  "command": "podman",
+  "category": "containers",
+  "description": "Podman is a daemonless, rootless-capable container engine for developing, managing, and running OCI containers on Linux systems. Unlike Docker, Podman does not require a daemon process and can run containers as a non-root user, making it ideal for HPC environments where users typically do not have root privileges. Podman provides a Docker-compatible CLI interface, allowing most Docker commands to work with Podman by simply aliasing docker to podman. For GPU-accelerated HPC workloads, Podman supports NVIDIA GPUs through the Container Device Interface (CDI) with nvidia-container-toolkit, enabling rootless GPU containers for deep learning, scientific computing, and data analytics applications.",
+  "synopsis": "podman [options] command [arg...]",
+  "version_documented": "Podman 5.0+",
+  "source_urls": [
+    "https://docs.podman.io/en/stable/Commands.html",
+    "https://docs.podman.io/en/stable/markdown/podman.1.html",
+    "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/cdi-support.html"
+  ],
+  "installation": {
+    "package": "podman, nvidia-container-toolkit",
+    "notes": "Podman is available in most Linux distribution repositories (apt install podman, dnf install podman). For GPU support, install nvidia-container-toolkit and generate CDI specifications with 'nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml'. Podman 4.1.0+ is required for CDI support."
+  },
+  "global_options": [
+    {
+      "long": "--cdi-spec-dir",
+      "description": "CDI spec directory path for GPU and other device specifications (may be set multiple times)",
+      "arguments": "PATH",
+      "argument_type": "path",
+      "default": "/etc/cdi"
+    },
+    {
+      "long": "--cgroup-manager",
+      "description": "CGroup manager to use for container cgroups",
+      "arguments": "MANAGER",
+      "argument_type": "string",
+      "default": "systemd"
+    },
+    {
+      "short": "-c",
+      "long": "--connection",
+      "description": "Connection to use for remote Podman service",
+      "arguments": "NAME",
+      "argument_type": "string"
+    },
+    {
+      "long": "--events-backend",
+      "description": "Backend for storing container events",
+      "arguments": "TYPE",
+      "argument_type": "string",
+      "example": "podman --events-backend=journald ps"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Print usage statement"
+    },
+    {
+      "long": "--hooks-dir",
+      "description": "Directory containing OCI hook JSON files for container hooks",
+      "arguments": "PATH",
+      "argument_type": "path",
+      "default": "/usr/share/containers/oci/hooks.d"
+    },
+    {
+      "long": "--identity",
+      "description": "Path to SSH identity file for remote connections",
+      "arguments": "PATH",
+      "argument_type": "path"
+    },
+    {
+      "long": "--log-level",
+      "description": "Log messages at and above specified level (debug, info, warn, error, fatal, panic)",
+      "arguments": "LEVEL",
+      "argument_type": "string",
+      "default": "warn"
+    },
+    {
+      "short": "-r",
+      "long": "--remote",
+      "description": "Access Podman service remotely instead of local socket",
+      "default": "false"
+    },
+    {
+      "long": "--root",
+      "description": "Storage root directory for container data and images",
+      "arguments": "PATH",
+      "argument_type": "path",
+      "default": "/var/lib/containers/storage (root) or $HOME/.local/share/containers/storage (rootless)"
+    },
+    {
+      "long": "--runroot",
+      "description": "Storage state directory for runtime state information",
+      "arguments": "PATH",
+      "argument_type": "path",
+      "default": "/run/containers/storage (root) or /run/user/$UID/run (rootless)"
+    },
+    {
+      "long": "--runtime",
+      "description": "Name of the OCI runtime or absolute path to runtime binary",
+      "arguments": "RUNTIME",
+      "argument_type": "string",
+      "example": "podman --runtime=crun run myimage"
+    },
+    {
+      "long": "--storage-driver",
+      "description": "Storage driver to use (overlay, vfs, etc.)",
+      "arguments": "DRIVER",
+      "argument_type": "string"
+    },
+    {
+      "long": "--syslog",
+      "description": "Output logging information to syslog as well as the console",
+      "default": "false"
+    },
+    {
+      "long": "--tmpdir",
+      "description": "Path to tmp directory for libpod runtime content",
+      "arguments": "PATH",
+      "argument_type": "path"
+    },
+    {
+      "long": "--url",
+      "description": "URL to access Podman service for remote connections",
+      "arguments": "URL",
+      "argument_type": "string",
+      "example": "podman --url=ssh://user@host/run/podman/podman.sock ps"
+    },
+    {
+      "short": "-v",
+      "long": "--version",
+      "description": "Print the version and exit"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "run",
+      "description": "Run a command in a new container. This is the primary command for starting containers with GPU support in HPC environments using CDI device specification.",
+      "synopsis": "podman run [options] IMAGE [COMMAND] [ARG...]",
+      "options": [
+        {
+          "long": "--device",
+          "description": "Add a host device to the container. For NVIDIA GPUs with CDI, use nvidia.com/gpu=all or nvidia.com/gpu=N for specific GPUs.",
+          "arguments": "DEVICE",
+          "argument_type": "string",
+          "example": "podman run --device nvidia.com/gpu=all --security-opt=label=disable myimage nvidia-smi"
+        },
+        {
+          "long": "--gpus",
+          "description": "GPU devices to add to the container (use 'all' to pass all GPUs). Currently only NVIDIA devices supported.",
+          "arguments": "GPU_REQUEST",
+          "argument_type": "string",
+          "example": "podman run --gpus all myimage nvidia-smi"
+        },
+        {
+          "long": "--security-opt",
+          "description": "Security options. Use label=disable to bypass SELinux when using CDI GPU devices.",
+          "arguments": "OPTION",
+          "argument_type": "string",
+          "example": "podman run --device nvidia.com/gpu=all --security-opt=label=disable myimage"
+        },
+        {
+          "short": "-d",
+          "long": "--detach",
+          "description": "Run container in background and print container ID"
+        },
+        {
+          "short": "-i",
+          "long": "--interactive",
+          "description": "Keep STDIN open even if not attached"
+        },
+        {
+          "short": "-t",
+          "long": "--tty",
+          "description": "Allocate a pseudo-TTY"
+        },
+        {
+          "long": "--rm",
+          "description": "Automatically remove the container when it exits"
+        },
+        {
+          "long": "--name",
+          "description": "Assign a name to the container",
+          "arguments": "NAME",
+          "argument_type": "string"
+        },
+        {
+          "short": "-v",
+          "long": "--volume",
+          "description": "Bind mount a volume. Essential for accessing datasets and models in HPC workloads.",
+          "arguments": "HOST_PATH:CONTAINER_PATH[:OPTIONS]",
+          "argument_type": "string",
+          "example": "podman run --device nvidia.com/gpu=all -v /data:/data myimage"
+        },
+        {
+          "long": "--mount",
+          "description": "Attach a filesystem mount to the container with explicit options",
+          "arguments": "type=TYPE,source=SRC,destination=DST[,OPTIONS]",
+          "argument_type": "string"
+        },
+        {
+          "long": "--network",
+          "description": "Connect a container to a network. Use 'host' for full network access in HPC.",
+          "arguments": "MODE",
+          "argument_type": "string",
+          "example": "podman run --device nvidia.com/gpu=all --network=host myimage"
+        },
+        {
+          "long": "--ipc",
+          "description": "IPC namespace mode. Use 'host' for shared memory access required by multi-process GPU training.",
+          "arguments": "MODE",
+          "argument_type": "string",
+          "example": "podman run --device nvidia.com/gpu=all --ipc=host myimage python train.py"
+        },
+        {
+          "long": "--shm-size",
+          "description": "Size of /dev/shm (shared memory). Important for PyTorch DataLoader workers and multi-GPU training.",
+          "arguments": "SIZE",
+          "argument_type": "string",
+          "default": "64m",
+          "example": "podman run --device nvidia.com/gpu=all --shm-size=16g myimage"
+        },
+        {
+          "long": "--ulimit",
+          "description": "Set ulimit options. Use 'memlock=-1' to unlock memory for RDMA/GPUDirect operations.",
+          "arguments": "ULIMIT",
+          "argument_type": "string",
+          "example": "podman run --device nvidia.com/gpu=all --ulimit memlock=-1 myimage"
+        },
+        {
+          "short": "-e",
+          "long": "--env",
+          "description": "Set environment variables in the container",
+          "arguments": "KEY=VALUE",
+          "argument_type": "string",
+          "example": "podman run --device nvidia.com/gpu=all -e CUDA_VISIBLE_DEVICES=0,1 myimage"
+        },
+        {
+          "long": "--env-file",
+          "description": "Read environment variables from a file",
+          "arguments": "FILE",
+          "argument_type": "path"
+        },
+        {
+          "short": "-w",
+          "long": "--workdir",
+          "description": "Working directory inside the container",
+          "arguments": "DIR",
+          "argument_type": "path"
+        },
+        {
+          "short": "-u",
+          "long": "--user",
+          "description": "Username or UID (format: <name|uid>[:<group|gid>])",
+          "arguments": "USER",
+          "argument_type": "string"
+        },
+        {
+          "short": "-p",
+          "long": "--publish",
+          "description": "Publish a container's port(s) to the host",
+          "arguments": "HOST_PORT:CONTAINER_PORT",
+          "argument_type": "string"
+        },
+        {
+          "long": "--cpus",
+          "description": "Number of CPUs to allocate (0.0 = no limit)",
+          "arguments": "NUMBER",
+          "argument_type": "string"
+        },
+        {
+          "long": "--cpuset-cpus",
+          "description": "CPUs in which to allow execution (comma-separated list or hyphen-separated range)",
+          "arguments": "CPUS",
+          "argument_type": "string"
+        },
+        {
+          "short": "-m",
+          "long": "--memory",
+          "description": "Memory limit with optional unit (b, k, m, g)",
+          "arguments": "LIMIT",
+          "argument_type": "string",
+          "example": "podman run --device nvidia.com/gpu=all -m 64g myimage"
+        },
+        {
+          "long": "--pids-limit",
+          "description": "Tune container pids limit (-1 for unlimited)",
+          "arguments": "LIMIT",
+          "argument_type": "integer"
+        },
+        {
+          "long": "--privileged",
+          "description": "Give extended privileges to this container"
+        },
+        {
+          "long": "--userns",
+          "description": "User namespace mode for the container",
+          "arguments": "MODE",
+          "argument_type": "string"
+        },
+        {
+          "long": "--hostname",
+          "description": "Container host name",
+          "arguments": "HOSTNAME",
+          "argument_type": "string"
+        },
+        {
+          "long": "--pull",
+          "description": "Pull image before running (always, missing, never, newer)",
+          "arguments": "POLICY",
+          "argument_type": "string",
+          "default": "missing"
+        }
+      ]
+    },
+    {
+      "name": "exec",
+      "description": "Execute a command in a running container. Useful for debugging GPU containers and running additional processes.",
+      "synopsis": "podman exec [options] CONTAINER COMMAND [ARG...]",
+      "options": [
+        {
+          "short": "-d",
+          "long": "--detach",
+          "description": "Run the command in the background"
+        },
+        {
+          "short": "-i",
+          "long": "--interactive",
+          "description": "Make stdin available to the contained process"
+        },
+        {
+          "short": "-t",
+          "long": "--tty",
+          "description": "Allocate a pseudo-TTY"
+        },
+        {
+          "short": "-e",
+          "long": "--env",
+          "description": "Set environment variables for the executed command",
+          "arguments": "KEY=VALUE",
+          "argument_type": "string"
+        },
+        {
+          "long": "--env-file",
+          "description": "Read environment variables from file",
+          "arguments": "FILE",
+          "argument_type": "path"
+        },
+        {
+          "short": "-u",
+          "long": "--user",
+          "description": "Username or UID for execution",
+          "arguments": "USER[:GROUP]",
+          "argument_type": "string"
+        },
+        {
+          "short": "-w",
+          "long": "--workdir",
+          "description": "Working directory inside the container",
+          "arguments": "DIR",
+          "argument_type": "path"
+        },
+        {
+          "long": "--privileged",
+          "description": "Give extended privileges to the process"
+        },
+        {
+          "short": "-l",
+          "long": "--latest",
+          "description": "Act on the latest created container"
+        }
+      ]
+    },
+    {
+      "name": "ps",
+      "description": "List containers. Shows running containers by default.",
+      "synopsis": "podman ps [options]",
+      "options": [
+        {
+          "short": "-a",
+          "long": "--all",
+          "description": "Show all containers (default shows just running)"
+        },
+        {
+          "long": "--external",
+          "description": "Display external containers from shared storage (e.g., created by Buildah or CRI-O)"
+        },
+        {
+          "short": "-f",
+          "long": "--filter",
+          "description": "Filter output based on conditions (id, name, label, status, ancestor, volume, pod, network)",
+          "arguments": "FILTER",
+          "argument_type": "string",
+          "example": "podman ps -f status=running"
+        },
+        {
+          "long": "--format",
+          "description": "Format output using Go template or JSON",
+          "arguments": "FORMAT",
+          "argument_type": "string",
+          "example": "podman ps --format '{{.Names}}\\t{{.Status}}'"
+        },
+        {
+          "short": "-n",
+          "long": "--last",
+          "description": "Show n last created containers",
+          "arguments": "N",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-l",
+          "long": "--latest",
+          "description": "Show the latest created container"
+        },
+        {
+          "long": "--no-trunc",
+          "description": "Don't truncate output"
+        },
+        {
+          "short": "-p",
+          "long": "--pod",
+          "description": "Display the pods the containers are associated with"
+        },
+        {
+          "short": "-q",
+          "long": "--quiet",
+          "description": "Only display container IDs"
+        },
+        {
+          "short": "-s",
+          "long": "--size",
+          "description": "Display total file sizes"
+        },
+        {
+          "long": "--sort",
+          "description": "Sort by command, created, id, image, names, runningfor, size, or status",
+          "arguments": "FIELD",
+          "argument_type": "string"
+        },
+        {
+          "short": "-w",
+          "long": "--watch",
+          "description": "Refresh display at specified intervals",
+          "arguments": "SECONDS",
+          "argument_type": "integer"
+        }
+      ]
+    },
+    {
+      "name": "images",
+      "description": "List images in local storage.",
+      "synopsis": "podman images [options] [IMAGE]",
+      "options": [
+        {
+          "short": "-a",
+          "long": "--all",
+          "description": "Show all images (default hides intermediate images)"
+        },
+        {
+          "short": "-f",
+          "long": "--filter",
+          "description": "Filter output based on conditions",
+          "arguments": "FILTER",
+          "argument_type": "string"
+        },
+        {
+          "long": "--format",
+          "description": "Format output using Go template or JSON",
+          "arguments": "FORMAT",
+          "argument_type": "string"
+        },
+        {
+          "long": "--no-trunc",
+          "description": "Don't truncate output"
+        },
+        {
+          "short": "-q",
+          "long": "--quiet",
+          "description": "Only show image IDs"
+        },
+        {
+          "long": "--digests",
+          "description": "Show digests"
+        },
+        {
+          "long": "--history",
+          "description": "Display image history (parent layers)"
+        }
+      ]
+    },
+    {
+      "name": "pull",
+      "description": "Pull an image from a registry. Essential for pulling NGC containers and GPU-optimized images for HPC workloads.",
+      "synopsis": "podman pull [options] IMAGE",
+      "options": [
+        {
+          "short": "-a",
+          "long": "--all-tags",
+          "description": "Download all tagged images in the repository"
+        },
+        {
+          "long": "--arch",
+          "description": "Override the architecture of the image to pull",
+          "arguments": "ARCH",
+          "argument_type": "string"
+        },
+        {
+          "long": "--authfile",
+          "description": "Path to authentication file for registry login",
+          "arguments": "PATH",
+          "argument_type": "path"
+        },
+        {
+          "long": "--creds",
+          "description": "Credentials for registry authentication",
+          "arguments": "USERNAME[:PASSWORD]",
+          "argument_type": "string"
+        },
+        {
+          "long": "--platform",
+          "description": "Specify platform to select the image (os/arch)",
+          "arguments": "PLATFORM",
+          "argument_type": "string"
+        },
+        {
+          "short": "-q",
+          "long": "--quiet",
+          "description": "Suppress output information"
+        },
+        {
+          "long": "--retry",
+          "description": "Number of times to retry in case of failure",
+          "arguments": "N",
+          "argument_type": "integer",
+          "default": "3"
+        },
+        {
+          "long": "--tls-verify",
+          "description": "Require HTTPS and verify certificates",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "name": "build",
+      "description": "Build an image using instructions from Containerfiles or Dockerfiles.",
+      "synopsis": "podman build [options] PATH | URL",
+      "options": [
+        {
+          "short": "-t",
+          "long": "--tag",
+          "description": "Name and optionally tag in name:tag format",
+          "arguments": "NAME:TAG",
+          "argument_type": "string",
+          "example": "podman build -t myimage:latest ."
+        },
+        {
+          "short": "-f",
+          "long": "--file",
+          "description": "Pathname or URL of Dockerfile/Containerfile",
+          "arguments": "FILE",
+          "argument_type": "path",
+          "default": "Containerfile or Dockerfile"
+        },
+        {
+          "long": "--build-arg",
+          "description": "Set build-time variables",
+          "arguments": "VAR=VALUE",
+          "argument_type": "string"
+        },
+        {
+          "long": "--no-cache",
+          "description": "Do not use cache when building"
+        },
+        {
+          "long": "--pull",
+          "description": "Pull image policy (always, missing, never, newer)",
+          "arguments": "POLICY",
+          "argument_type": "string"
+        },
+        {
+          "long": "--target",
+          "description": "Set the target build stage",
+          "arguments": "STAGE",
+          "argument_type": "string"
+        },
+        {
+          "long": "--format",
+          "description": "Format of built image manifest/config (oci, docker)",
+          "arguments": "FORMAT",
+          "argument_type": "string"
+        },
+        {
+          "long": "--layers",
+          "description": "Cache intermediate layers during build",
+          "default": "true"
+        },
+        {
+          "short": "-q",
+          "long": "--quiet",
+          "description": "Suppress build output and print image ID on success"
+        }
+      ]
+    },
+    {
+      "name": "stop",
+      "description": "Stop one or more running containers.",
+      "synopsis": "podman stop [options] CONTAINER [CONTAINER...]",
+      "options": [
+        {
+          "short": "-a",
+          "long": "--all",
+          "description": "Stop all running containers"
+        },
+        {
+          "long": "--cidfile",
+          "description": "Read container ID from file",
+          "arguments": "FILE",
+          "argument_type": "path"
+        },
+        {
+          "short": "-t",
+          "long": "--time",
+          "description": "Seconds to wait for stop before killing container",
+          "arguments": "SECONDS",
+          "argument_type": "integer",
+          "default": "10"
+        },
+        {
+          "short": "-l",
+          "long": "--latest",
+          "description": "Act on the latest created container"
+        }
+      ]
+    },
+    {
+      "name": "start",
+      "description": "Start one or more stopped containers.",
+      "synopsis": "podman start [options] CONTAINER [CONTAINER...]",
+      "options": [
+        {
+          "short": "-a",
+          "long": "--attach",
+          "description": "Attach container's STDOUT and STDERR"
+        },
+        {
+          "short": "-i",
+          "long": "--interactive",
+          "description": "Keep STDIN open even if not attached"
+        },
+        {
+          "short": "-l",
+          "long": "--latest",
+          "description": "Act on the latest created container"
+        },
+        {
+          "long": "--all",
+          "description": "Start all containers"
+        }
+      ]
+    },
+    {
+      "name": "restart",
+      "description": "Restart one or more containers.",
+      "synopsis": "podman restart [options] CONTAINER [CONTAINER...]",
+      "options": [
+        {
+          "short": "-a",
+          "long": "--all",
+          "description": "Restart all containers"
+        },
+        {
+          "short": "-l",
+          "long": "--latest",
+          "description": "Act on the latest created container"
+        },
+        {
+          "short": "-t",
+          "long": "--time",
+          "description": "Seconds to wait for stop before killing container",
+          "arguments": "SECONDS",
+          "argument_type": "integer",
+          "default": "10"
+        }
+      ]
+    },
+    {
+      "name": "rm",
+      "description": "Remove one or more containers.",
+      "synopsis": "podman rm [options] CONTAINER [CONTAINER...]",
+      "options": [
+        {
+          "short": "-a",
+          "long": "--all",
+          "description": "Remove all containers"
+        },
+        {
+          "long": "--cidfile",
+          "description": "Read container ID from file",
+          "arguments": "FILE",
+          "argument_type": "path"
+        },
+        {
+          "short": "-f",
+          "long": "--force",
+          "description": "Force removal of running containers"
+        },
+        {
+          "short": "-l",
+          "long": "--latest",
+          "description": "Act on the latest created container"
+        },
+        {
+          "short": "-v",
+          "long": "--volumes",
+          "description": "Remove anonymous volumes associated with the container"
+        },
+        {
+          "long": "--depend",
+          "description": "Remove container and all containers that depend on it"
+        }
+      ]
+    },
+    {
+      "name": "rmi",
+      "description": "Remove one or more images from local storage.",
+      "synopsis": "podman rmi [options] IMAGE [IMAGE...]",
+      "options": [
+        {
+          "short": "-a",
+          "long": "--all",
+          "description": "Remove all images"
+        },
+        {
+          "short": "-f",
+          "long": "--force",
+          "description": "Force removal of the image"
+        },
+        {
+          "long": "--no-prune",
+          "description": "Do not remove untagged parent images"
+        }
+      ]
+    },
+    {
+      "name": "logs",
+      "description": "Fetch the logs of one or more containers. Essential for debugging GPU training jobs.",
+      "synopsis": "podman logs [options] CONTAINER [CONTAINER...]",
+      "options": [
+        {
+          "short": "-f",
+          "long": "--follow",
+          "description": "Follow log output"
+        },
+        {
+          "short": "-l",
+          "long": "--latest",
+          "description": "Act on the latest created container"
+        },
+        {
+          "short": "-n",
+          "long": "--tail",
+          "description": "Number of lines to show from the end of the logs",
+          "arguments": "N",
+          "argument_type": "string",
+          "default": "all"
+        },
+        {
+          "long": "--since",
+          "description": "Show logs since timestamp or relative duration",
+          "arguments": "TIMESTAMP",
+          "argument_type": "string",
+          "example": "podman logs --since 10m mycontainer"
+        },
+        {
+          "long": "--until",
+          "description": "Show logs before timestamp or relative duration",
+          "arguments": "TIMESTAMP",
+          "argument_type": "string"
+        },
+        {
+          "short": "-t",
+          "long": "--timestamps",
+          "description": "Show timestamps"
+        }
+      ]
+    },
+    {
+      "name": "inspect",
+      "description": "Display low-level information on containers, images, or pods including GPU device configuration.",
+      "synopsis": "podman inspect [options] NAME|ID [NAME|ID...]",
+      "options": [
+        {
+          "short": "-f",
+          "long": "--format",
+          "description": "Format output using Go template",
+          "arguments": "FORMAT",
+          "argument_type": "string",
+          "example": "podman inspect --format '{{.HostConfig.Devices}}' mycontainer"
+        },
+        {
+          "short": "-l",
+          "long": "--latest",
+          "description": "Act on the latest created container"
+        },
+        {
+          "short": "-s",
+          "long": "--size",
+          "description": "Display total file sizes"
+        },
+        {
+          "short": "-t",
+          "long": "--type",
+          "description": "Return JSON for specified type (container, image)",
+          "arguments": "TYPE",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "login",
+      "description": "Log in to a container registry. Required for NGC and private registries.",
+      "synopsis": "podman login [options] [REGISTRY]",
+      "options": [
+        {
+          "short": "-u",
+          "long": "--username",
+          "description": "Username for registry login",
+          "arguments": "USERNAME",
+          "argument_type": "string"
+        },
+        {
+          "short": "-p",
+          "long": "--password",
+          "description": "Password for registry login",
+          "arguments": "PASSWORD",
+          "argument_type": "string"
+        },
+        {
+          "long": "--password-stdin",
+          "description": "Take password from stdin"
+        },
+        {
+          "long": "--authfile",
+          "description": "Path to authentication file",
+          "arguments": "PATH",
+          "argument_type": "path"
+        },
+        {
+          "long": "--tls-verify",
+          "description": "Require HTTPS and verify certificates",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "name": "push",
+      "description": "Push an image to a specified destination registry.",
+      "synopsis": "podman push [options] IMAGE [DESTINATION]",
+      "options": [
+        {
+          "long": "--authfile",
+          "description": "Path to authentication file",
+          "arguments": "PATH",
+          "argument_type": "path"
+        },
+        {
+          "long": "--creds",
+          "description": "Credentials for registry",
+          "arguments": "USERNAME[:PASSWORD]",
+          "argument_type": "string"
+        },
+        {
+          "short": "-q",
+          "long": "--quiet",
+          "description": "Suppress output"
+        },
+        {
+          "long": "--tls-verify",
+          "description": "Require HTTPS and verify certificates",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "name": "pod",
+      "description": "Manage pods (groups of containers that share resources).",
+      "synopsis": "podman pod COMMAND",
+      "options": [
+        {
+          "flag": "create",
+          "description": "Create a new pod"
+        },
+        {
+          "flag": "inspect",
+          "description": "Display information about one or more pods"
+        },
+        {
+          "flag": "kill",
+          "description": "Kill containers in one or more pods"
+        },
+        {
+          "flag": "ps",
+          "description": "List pods"
+        },
+        {
+          "flag": "rm",
+          "description": "Remove one or more pods"
+        },
+        {
+          "flag": "start",
+          "description": "Start one or more pods"
+        },
+        {
+          "flag": "stop",
+          "description": "Stop one or more pods"
+        }
+      ]
+    },
+    {
+      "name": "volume",
+      "description": "Manage volumes for persistent data storage.",
+      "synopsis": "podman volume COMMAND",
+      "options": [
+        {
+          "flag": "create",
+          "description": "Create a new volume"
+        },
+        {
+          "flag": "inspect",
+          "description": "Display detailed information on one or more volumes"
+        },
+        {
+          "flag": "ls",
+          "description": "List volumes"
+        },
+        {
+          "flag": "rm",
+          "description": "Remove one or more volumes"
+        },
+        {
+          "flag": "prune",
+          "description": "Remove all unused volumes"
+        }
+      ]
+    },
+    {
+      "name": "network",
+      "description": "Manage container networks.",
+      "synopsis": "podman network COMMAND",
+      "options": [
+        {
+          "flag": "create",
+          "description": "Create a new network"
+        },
+        {
+          "flag": "connect",
+          "description": "Connect a container to a network"
+        },
+        {
+          "flag": "disconnect",
+          "description": "Disconnect a container from a network"
+        },
+        {
+          "flag": "inspect",
+          "description": "Display detailed information on one or more networks"
+        },
+        {
+          "flag": "ls",
+          "description": "List networks"
+        },
+        {
+          "flag": "rm",
+          "description": "Remove one or more networks"
+        },
+        {
+          "flag": "prune",
+          "description": "Remove all unused networks"
+        }
+      ]
+    },
+    {
+      "name": "system",
+      "description": "Manage Podman system resources.",
+      "synopsis": "podman system COMMAND",
+      "options": [
+        {
+          "flag": "df",
+          "description": "Show Podman disk usage"
+        },
+        {
+          "flag": "info",
+          "description": "Display Podman system information"
+        },
+        {
+          "flag": "prune",
+          "description": "Remove unused data (containers, images, volumes)"
+        },
+        {
+          "flag": "connection",
+          "description": "Manage remote SSH destinations"
+        }
+      ]
+    }
+  ],
+  "output_formats": {
+    "default": "Human-readable tabular format for list commands; JSON for inspect commands",
+    "json": "JSON output available via --format json or 'podman inspect'",
+    "go_template": "Custom output using Go templates with --format flag"
+  },
+  "environment_variables": [
+    {
+      "name": "CONTAINERS_CONF",
+      "description": "Set default location of containers.conf configuration file",
+      "example": "CONTAINERS_CONF=/etc/containers/containers.conf",
+      "affects_command": "Changes Podman's primary configuration source"
+    },
+    {
+      "name": "CONTAINERS_REGISTRIES_CONF",
+      "description": "Set default location of registries.conf file",
+      "example": "CONTAINERS_REGISTRIES_CONF=/etc/containers/registries.conf",
+      "affects_command": "Changes registry configuration for pull/push operations"
+    },
+    {
+      "name": "CONTAINERS_STORAGE_CONF",
+      "description": "Set default location of storage.conf file",
+      "example": "CONTAINERS_STORAGE_CONF=/etc/containers/storage.conf",
+      "affects_command": "Changes storage driver and path configuration"
+    },
+    {
+      "name": "CONTAINER_HOST",
+      "description": "Set default URL for remote Podman service",
+      "example": "CONTAINER_HOST=ssh://user@host/run/podman/podman.sock",
+      "affects_command": "Automatically enables --remote option when set"
+    },
+    {
+      "name": "CONTAINER_CONNECTION",
+      "description": "Override default --connection value for remote access",
+      "example": "CONTAINER_CONNECTION=my-server",
+      "affects_command": "Sets which named connection to use from podman-connections.json"
+    },
+    {
+      "name": "CONTAINER_SSHKEY",
+      "description": "Set default SSH identity file path for remote connections",
+      "example": "CONTAINER_SSHKEY=~/.ssh/id_ed25519",
+      "affects_command": "Specifies SSH key for authentication to remote Podman service"
+    },
+    {
+      "name": "STORAGE_DRIVER",
+      "description": "Set default storage driver",
+      "example": "STORAGE_DRIVER=overlay",
+      "affects_command": "Changes the storage driver used for image and container storage"
+    },
+    {
+      "name": "STORAGE_OPTS",
+      "description": "Set default storage driver options",
+      "example": "STORAGE_OPTS=overlay.mount_program=/usr/bin/fuse-overlayfs",
+      "affects_command": "Passes options to the storage driver"
+    },
+    {
+      "name": "TMPDIR",
+      "description": "Set temporary storage location for downloaded container images",
+      "example": "TMPDIR=/scratch/tmp",
+      "affects_command": "Changes location for temporary files during image operations"
+    },
+    {
+      "name": "XDG_RUNTIME_DIR",
+      "description": "Rootless runtime directory for temporary configuration",
+      "example": "XDG_RUNTIME_DIR=/run/user/1000",
+      "affects_command": "Required for rootless Podman; contains socket and state files"
+    },
+    {
+      "name": "XDG_CONFIG_HOME",
+      "description": "User configuration directory for rootless mode",
+      "example": "XDG_CONFIG_HOME=$HOME/.config",
+      "affects_command": "Location of containers.conf and other config files"
+    },
+    {
+      "name": "XDG_DATA_HOME",
+      "description": "User data directory for images in rootless mode",
+      "example": "XDG_DATA_HOME=$HOME/.local/share",
+      "affects_command": "Location of container images and layers"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "General error or operation failed"
+    },
+    {
+      "code": 125,
+      "meaning": "Error with Podman itself (not the container command)"
+    },
+    {
+      "code": 126,
+      "meaning": "Container command cannot be invoked (permission denied or not executable)"
+    },
+    {
+      "code": 127,
+      "meaning": "Container command not found"
+    },
+    {
+      "code": 137,
+      "meaning": "Container was killed (128 + SIGKILL signal 9)"
+    },
+    {
+      "code": 143,
+      "meaning": "Container was terminated (128 + SIGTERM signal 15)"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run container with all NVIDIA GPUs using CDI",
+      "command": "podman run --rm --device nvidia.com/gpu=all --security-opt=label=disable nvidia/cuda:12.0-base nvidia-smi",
+      "output_example": "+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 535.104.12   Driver Version: 535.104.12   CUDA Version: 12.2     |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|===============================+======================+======================|\n|   0  NVIDIA A100-SXM4...  On  | 00000000:07:00.0 Off |                    0 |\n| N/A   32C    P0    62W / 400W |      0MiB / 81920MiB |      0%      Default |\n+-------------------------------+----------------------+----------------------+",
+      "requires_root": false
+    },
+    {
+      "description": "Run container with specific GPU (GPU index 0)",
+      "command": "podman run --rm --device nvidia.com/gpu=0 --security-opt=label=disable nvidia/cuda:12.0-base nvidia-smi -L",
+      "output_example": "GPU 0: NVIDIA A100-SXM4-80GB (UUID: GPU-12345678-1234-1234-1234-123456789abc)",
+      "requires_root": false
+    },
+    {
+      "description": "Interactive GPU shell with PyTorch NGC container (rootless)",
+      "command": "podman run --device nvidia.com/gpu=all --security-opt=label=disable -it --rm nvcr.io/nvidia/pytorch:23.10-py3 bash",
+      "requires_root": false
+    },
+    {
+      "description": "Multi-GPU training with shared memory and data volume",
+      "command": "podman run --device nvidia.com/gpu=all --security-opt=label=disable --ipc=host --shm-size=16g -v /data:/data:Z myimage python train.py",
+      "requires_root": false
+    },
+    {
+      "description": "GPU container with host networking for distributed training",
+      "command": "podman run --device nvidia.com/gpu=all --security-opt=label=disable --network=host --ipc=host myimage torchrun --nproc_per_node=8 train.py",
+      "requires_root": false
+    },
+    {
+      "description": "Container with unlimited memory lock for RDMA/GPUDirect",
+      "command": "podman run --device nvidia.com/gpu=all --security-opt=label=disable --ulimit memlock=-1 --ulimit stack=67108864 --ipc=host myimage",
+      "requires_root": false
+    },
+    {
+      "description": "List all containers including stopped ones",
+      "command": "podman ps -a",
+      "output_example": "CONTAINER ID  IMAGE                                 COMMAND      CREATED        STATUS                    PORTS  NAMES\na1b2c3d4e5f6  nvcr.io/nvidia/pytorch:23.10-py3     bash         2 hours ago    Up 2 hours                       gpu_trainer\nb2c3d4e5f6a7  nvidia/cuda:12.0-base                nvidia-smi   3 hours ago    Exited (0) 3 hours ago           test_gpu",
+      "requires_root": false
+    },
+    {
+      "description": "Pull NGC container for GPU deep learning",
+      "command": "podman pull nvcr.io/nvidia/pytorch:23.10-py3",
+      "requires_root": false
+    },
+    {
+      "description": "Login to NGC registry",
+      "command": "podman login nvcr.io -u '$oauthtoken' --password-stdin < ~/ngc_api_key.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Execute nvidia-smi inside running container",
+      "command": "podman exec mycontainer nvidia-smi",
+      "requires_root": false
+    },
+    {
+      "description": "View container logs with timestamps",
+      "command": "podman logs -t --tail 100 mycontainer",
+      "requires_root": false
+    },
+    {
+      "description": "Inspect device configuration of a container",
+      "command": "podman inspect --format '{{json .HostConfig.Devices}}' mycontainer",
+      "requires_root": false
+    },
+    {
+      "description": "Build custom GPU image from Containerfile",
+      "command": "podman build -t my-gpu-app:latest -f Containerfile.gpu .",
+      "requires_root": false
+    },
+    {
+      "description": "Show Podman disk usage",
+      "command": "podman system df",
+      "output_example": "TYPE           TOTAL       ACTIVE      SIZE        RECLAIMABLE\nImages         10          3           45.23GB     32.15GB (71%)\nContainers     5           2           1.234GB     500MB (40%)\nLocal Volumes  3           2           10.5GB      2GB (19%)",
+      "requires_root": false
+    },
+    {
+      "description": "Remove all stopped containers and unused images",
+      "command": "podman system prune -a -f",
+      "requires_root": false
+    },
+    {
+      "description": "Run container with MIG (Multi-Instance GPU) device",
+      "command": "podman run --rm --device nvidia.com/gpu=0:0 --security-opt=label=disable nvidia/cuda:12.0-base nvidia-smi",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Error: error setting up CDI devices: unresolvable CDI devices nvidia.com/gpu=all",
+      "meaning": "CDI specification for NVIDIA GPUs has not been generated or is not found",
+      "resolution": "Generate CDI specification with 'nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml' or enable the nvidia-cdi-refresh service with 'systemctl enable --now nvidia-cdi-refresh.service'"
+    },
+    {
+      "message": "Error: cannot find a default OCI runtime on this system",
+      "meaning": "No OCI runtime (runc, crun) is installed or accessible",
+      "resolution": "Install crun (dnf install crun) or runc, and ensure it is in PATH or configured in containers.conf"
+    },
+    {
+      "message": "Error: running container create option: operation not permitted",
+      "meaning": "User namespace or cgroup restrictions prevent container creation",
+      "resolution": "For rootless Podman, ensure user namespaces are enabled (sysctl user.max_user_namespaces=15000) and XDG_RUNTIME_DIR is set"
+    },
+    {
+      "message": "Error: statfs /run/user/1000: no such file or directory",
+      "meaning": "XDG_RUNTIME_DIR does not exist, required for rootless mode",
+      "resolution": "Ensure systemd-logind is running or manually create the directory and set XDG_RUNTIME_DIR=/run/user/$UID"
+    },
+    {
+      "message": "Error: cannot clone: Operation not permitted",
+      "meaning": "User namespaces are disabled in the kernel",
+      "resolution": "Enable user namespaces: 'sysctl -w kernel.unprivileged_userns_clone=1' or 'sysctl -w user.max_user_namespaces=15000'"
+    },
+    {
+      "message": "Error: error creating container storage: the container name is already in use",
+      "meaning": "A container with the same name already exists",
+      "resolution": "Remove the existing container with 'podman rm containername' or use a different name"
+    },
+    {
+      "message": "Error: authenticating creds for registry: error getting credentials",
+      "meaning": "Registry authentication failed or credentials not found",
+      "resolution": "Login to registry with 'podman login REGISTRY' and ensure credentials are stored in authfile"
+    },
+    {
+      "message": "Error: short-name resolution enforced but cannot prompt without a TTY",
+      "meaning": "Image short name requires interactive selection but no TTY is available",
+      "resolution": "Use fully-qualified image name (e.g., docker.io/library/ubuntu) or configure short-name aliases in /etc/containers/registries.conf.d/"
+    },
+    {
+      "message": "Error: creating overlay mount to /home/user/.local/share/containers: permission denied",
+      "meaning": "Storage driver overlay cannot write to storage location",
+      "resolution": "Check permissions on storage directory or use fuse-overlayfs for rootless mode: set mount_program=/usr/bin/fuse-overlayfs in storage.conf"
+    },
+    {
+      "message": "Error: network slirp4netns: slirp4netns failed: failed to send request",
+      "meaning": "Network helper slirp4netns failed for rootless networking",
+      "resolution": "Install slirp4netns package or use pasta as network mode (--network=pasta)"
+    },
+    {
+      "message": "ERRO[0000] cannot find UID/GID for user",
+      "meaning": "Container user mapping failed in user namespace",
+      "resolution": "Configure subuid/subgid mappings in /etc/subuid and /etc/subgid for the user, then run 'podman system migrate'"
+    },
+    {
+      "message": "Error: no space left on device",
+      "meaning": "Container storage or system disk is full",
+      "resolution": "Clean up Podman resources with 'podman system prune -a' and check disk space with 'df -h'"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "docker",
+      "buildah",
+      "skopeo",
+      "nvidia-smi",
+      "nvidia-ctk",
+      "nvidia-container-cli",
+      "enroot",
+      "singularity",
+      "crun",
+      "runc"
+    ],
+    "uses_library": [
+      "nvidia-container-toolkit (via CDI)",
+      "containers/image",
+      "containers/storage",
+      "containers/common",
+      "conmon (container monitor)"
+    ],
+    "notes": "Podman provides a Docker-compatible CLI interface, allowing 'alias docker=podman' for most use cases. Unlike Docker, Podman is daemonless and supports rootless containers natively, making it well-suited for HPC environments with Slurm. For GPU support, Podman uses CDI (Container Device Interface) with nvidia-container-toolkit instead of Docker's --gpus flag. CDI specifications must be generated with 'nvidia-ctk cdi generate'. Podman can also run Docker Compose files using 'podman-compose' or 'podman compose'. Images are compatible between Podman, Docker, and Buildah."
+  },
+  "permissions": {
+    "read_operations": "Listing containers and images typically works for any user who owns the containers (rootless) or has access to the system storage (rootful). No special permissions required for user's own containers.",
+    "write_operations": "Running and managing containers works rootless for unprivileged users with proper user namespace configuration. Rootful Podman requires root privileges. GPU containers with CDI require readable CDI specifications in /etc/cdi/ or /var/run/cdi/.",
+    "notes": "Podman's primary advantage in HPC is native rootless support. Users can run GPU containers without root privileges using CDI. Rootless mode requires: user namespaces enabled in kernel, subuid/subgid mappings configured, XDG_RUNTIME_DIR set. For SELinux systems, --security-opt=label=disable may be needed for GPU device access."
+  },
+  "limitations": [
+    "GPU support via CDI requires nvidia-container-toolkit and generated CDI specifications",
+    "Rootless GPU containers require CDI; traditional --runtime=nvidia does not work rootless",
+    "Must use --security-opt=label=disable on SELinux systems for GPU device access",
+    "Slirp4netns or pasta required for rootless networking; may have performance overhead",
+    "No daemon means no automatic container restart on system boot without systemd units",
+    "Docker Compose compatibility requires podman-compose or podman compose plugin",
+    "Image sizes for GPU containers (especially NGC) are very large (10-30GB+)",
+    "MIG (Multi-Instance GPU) support requires specific CDI device names",
+    "Some advanced Docker features may not have exact equivalents",
+    "Rootless mode may have I/O performance overhead due to fuse-overlayfs",
+    "Remote Podman service requires explicit setup for Mac/Windows clients"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "container_state",
+        "fields": [
+          "container_id",
+          "name",
+          "image",
+          "status",
+          "ports",
+          "mounts",
+          "devices"
+        ],
+        "description": "Podman reads container state for ps, inspect, logs, and other query commands from local storage"
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["gpu_id", "uuid", "name", "mig_devices"],
+        "description": "When using --device nvidia.com/gpu=*, Podman reads GPU information from CDI specifications to map devices into containers"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "container_state",
+        "fields": [
+          "container_id",
+          "name",
+          "image",
+          "status",
+          "created",
+          "started",
+          "ports",
+          "mounts",
+          "devices",
+          "pid"
+        ],
+        "description": "Creates new container records in local storage, updates status on start/stop/restart, removes on rm",
+        "requires_flags": ["run", "create", "start", "stop", "restart", "rm"]
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["memory_used"],
+        "description": "GPU containers allocate GPU memory which is reflected in GPU state",
+        "requires_flags": ["--device nvidia.com/gpu=*"]
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Container created with --device nvidia.com/gpu=*",
+        "effect": "CDI injects GPU devices and driver libraries into container namespace"
+      },
+      {
+        "state_change": "Container stopped or removed",
+        "effect": "GPU resources are released, GPU memory is freed"
+      },
+      {
+        "state_change": "Image pulled from registry",
+        "effect": "New image available in local container storage"
+      },
+      {
+        "state_change": "CDI specification regenerated",
+        "effect": "Updated GPU device mappings available for new containers"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU processes list shows container processes; GPU memory usage reflects container allocations"
+      },
+      {
+        "command": "podman ps",
+        "shared_state": "Container list and status consistent across podman ps invocations"
+      },
+      {
+        "command": "nvidia-ctk",
+        "shared_state": "CDI specifications generated by nvidia-ctk determine which GPU devices are available to containers"
+      },
+      {
+        "command": "docker",
+        "shared_state": "Images stored in containers/storage are accessible by both Podman and Buildah; Docker images can be pulled and run"
+      },
+      {
+        "command": "buildah",
+        "shared_state": "Shares containers/storage with Podman; images built with Buildah are available to Podman"
+      }
+    ]
+  }
+}

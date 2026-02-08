@@ -1,0 +1,185 @@
+{
+  "command": "timedatectl",
+  "category": "system_info",
+  "description": "Query and change system time and date settings. Part of systemd, controls system clock, timezone, and NTP synchronization. Important in HPC clusters for ensuring consistent timestamps across nodes for job scheduling and log correlation.",
+  "synopsis": "timedatectl [OPTIONS...] COMMAND",
+  "version_documented": "systemd 250+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/timedatectl.1.html"],
+  "installation": {
+    "package": "systemd",
+    "notes": "Part of systemd, installed by default on modern Linux distributions."
+  },
+  "global_options": [
+    {
+      "long": "--no-ask-password",
+      "description": "Do not query user for authentication"
+    },
+    {
+      "short": "-H",
+      "long": "--host",
+      "description": "Execute operation on remote host",
+      "arguments": "<user@host>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-M",
+      "long": "--machine",
+      "description": "Execute operation on local container",
+      "arguments": "<container>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--adjust-system-clock",
+      "description": "Adjust system clock when setting local RTC"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    },
+    {
+      "long": "--version",
+      "description": "Display version"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "status",
+      "description": "Show current time settings (default)",
+      "synopsis": "timedatectl status"
+    },
+    {
+      "name": "set-time",
+      "description": "Set system time",
+      "synopsis": "timedatectl set-time TIME"
+    },
+    {
+      "name": "set-timezone",
+      "description": "Set system timezone",
+      "synopsis": "timedatectl set-timezone ZONE"
+    },
+    {
+      "name": "list-timezones",
+      "description": "List available timezones",
+      "synopsis": "timedatectl list-timezones"
+    },
+    {
+      "name": "set-ntp",
+      "description": "Enable or disable NTP synchronization",
+      "synopsis": "timedatectl set-ntp BOOL"
+    },
+    {
+      "name": "timesync-status",
+      "description": "Show status of systemd-timesyncd",
+      "synopsis": "timedatectl timesync-status"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show current time and date settings",
+      "command": "timedatectl",
+      "output_example": "               Local time: Mon 2024-01-15 14:30:00 UTC\n           Universal time: Mon 2024-01-15 14:30:00 UTC\n                 RTC time: Mon 2024-01-15 14:30:00\n                Time zone: UTC (UTC, +0000)\nSystem clock synchronized: yes\n              NTP service: active\n          RTC in local TZ: no",
+      "requires_root": false
+    },
+    {
+      "description": "Set timezone to UTC (recommended for HPC)",
+      "command": "timedatectl set-timezone UTC",
+      "requires_root": true
+    },
+    {
+      "description": "Enable NTP synchronization",
+      "command": "timedatectl set-ntp true",
+      "requires_root": true
+    },
+    {
+      "description": "List available timezones",
+      "command": "timedatectl list-timezones | grep America",
+      "requires_root": false
+    },
+    {
+      "description": "Check NTP sync status",
+      "command": "timedatectl timesync-status",
+      "requires_root": false
+    },
+    {
+      "description": "Check time across cluster nodes",
+      "command": "pdsh -w node[001-100] 'timedatectl | grep synchronized'",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Failed to set time: NTP unit is active",
+      "meaning": "Cannot manually set time while NTP is enabled",
+      "resolution": "Disable NTP first with 'timedatectl set-ntp false'"
+    },
+    {
+      "message": "Failed to connect to bus",
+      "meaning": "D-Bus system bus not available",
+      "resolution": "Ensure systemd is running properly"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "date",
+      "hwclock",
+      "chronyc",
+      "ntpq",
+      "systemctl status systemd-timesyncd"
+    ],
+    "notes": "In HPC clusters, time synchronization is critical for Slurm job scheduling, log correlation, and distributed filesystem timestamps. UTC timezone is recommended for consistency."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "Root or polkit authorization required",
+    "notes": "Uses D-Bus interface to systemd-timedated"
+  },
+  "limitations": [
+    "Requires systemd (not available on non-systemd systems)",
+    "NTP control depends on systemd-timesyncd or chronyd",
+    "Cannot set time while NTP is active"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["timezone", "ntp_synchronized"],
+        "description": "Reads system time configuration"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "system_state",
+        "fields": ["timezone", "ntp_synchronized"],
+        "description": "Can modify timezone and NTP settings",
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "NTP synchronization",
+        "effect": "System clock adjusted automatically"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "date",
+        "shared_state": "System time matches"
+      },
+      {
+        "command": "hwclock",
+        "shared_state": "RTC time visible in both"
+      }
+    ]
+  }
+}

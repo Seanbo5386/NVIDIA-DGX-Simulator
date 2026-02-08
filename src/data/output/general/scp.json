@@ -1,0 +1,146 @@
+{
+  "command": "scp",
+  "category": "general",
+  "description": "Secure copy over SSH. Transfers files between hosts using SSH encryption. Essential for moving data to/from HPC compute nodes.",
+  "synopsis": "scp [options] <source> <destination>",
+  "version_documented": "OpenSSH 8.0+",
+  "source_urls": ["https://man.openbsd.org/scp"],
+  "installation": {
+    "package": "openssh-client",
+    "notes": "Part of OpenSSH client package."
+  },
+  "global_options": [
+    {
+      "short": "-r",
+      "description": "Recursive copy"
+    },
+    {
+      "short": "-P",
+      "description": "Port number",
+      "arguments": "<port>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-i",
+      "description": "Identity file",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-p",
+      "description": "Preserve times and modes"
+    },
+    {
+      "short": "-C",
+      "description": "Enable compression"
+    },
+    {
+      "short": "-l",
+      "description": "Limit bandwidth (Kbit/s)",
+      "arguments": "<limit>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-J",
+      "description": "Jump host",
+      "arguments": "<host>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-v",
+      "description": "Verbose mode"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Copy to remote",
+      "command": "scp file.txt user@node:/scratch/",
+      "requires_root": false
+    },
+    {
+      "description": "Copy from remote",
+      "command": "scp user@node:/scratch/results.tar.gz ./",
+      "requires_root": false
+    },
+    {
+      "description": "Recursive copy",
+      "command": "scp -r /local/data user@node:/scratch/",
+      "requires_root": false
+    },
+    {
+      "description": "Through jump host",
+      "command": "scp -J login.cluster data.bin user@compute:/scratch/",
+      "requires_root": false
+    },
+    {
+      "description": "With compression",
+      "command": "scp -C large_file.bin user@remote:/data/",
+      "requires_root": false
+    },
+    {
+      "description": "Bandwidth limit",
+      "command": "scp -l 100000 huge_file.bin user@remote:/data/",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Permission denied",
+      "meaning": "Authentication failed",
+      "resolution": "Check SSH keys and permissions"
+    },
+    {
+      "message": "No such file or directory",
+      "meaning": "Source or destination path invalid",
+      "resolution": "Verify paths exist"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["rsync", "sftp", "ssh", "tar"],
+    "notes": "rsync is often better for large transfers (resume, delta). scp uses SFTP protocol by default in newer versions. For many files, tar+ssh may be faster."
+  },
+  "permissions": {
+    "read_operations": "Need read on source",
+    "write_operations": "Need write on destination",
+    "notes": "SSH credentials required"
+  },
+  "limitations": [
+    "No resume for interrupted transfers",
+    "No delta sync (use rsync)",
+    "Can be slow for many small files"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads source files"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Writes to destination",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "rsync",
+        "shared_state": "Files transferred identically"
+      }
+    ]
+  }
+}

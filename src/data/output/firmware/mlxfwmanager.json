@@ -1,0 +1,346 @@
+{
+  "command": "mlxfwmanager",
+  "category": "firmware",
+  "description": "Mellanox/NVIDIA firmware management tool for InfiniBand and Ethernet network adapters. mlxfwmanager provides comprehensive firmware lifecycle management including querying current firmware versions, updating firmware from local images or online sources, and activating firmware updates. It supports ConnectX-series adapters, BlueField DPUs, and other NVIDIA networking hardware. The tool can perform batch operations across multiple devices and supports both interactive and scripted automation workflows.",
+  "synopsis": "mlxfwmanager [options] [-d <device>] [-i <image>]",
+  "version_documented": "MFT 4.25.0+",
+  "source_urls": [
+    "https://network.nvidia.com/products/adapter-software/firmware-tools/",
+    "https://docs.nvidia.com/networking/display/maboraclien/mlxfwmanager"
+  ],
+  "installation": {
+    "package": "mft",
+    "notes": "Included in NVIDIA Mellanox Firmware Tools (MFT) package. Download from NVIDIA website or install via MLNX_OFED: yum install mft (RHEL/CentOS) or apt install mft (Ubuntu/Debian). Requires mst (Mellanox Software Tools) service to be running for device access."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--device",
+      "description": "Specify the MST device to operate on. Device names follow the mst naming convention (e.g., /dev/mst/mt4125_pciconf0).",
+      "arguments": "<device>",
+      "argument_type": "string",
+      "required": false,
+      "example": "-d /dev/mst/mt4125_pciconf0"
+    },
+    {
+      "short": "-u",
+      "long": "--update",
+      "description": "Update firmware on the specified device(s). Uses the image specified with -i or attempts to find a matching image automatically.",
+      "required": false
+    },
+    {
+      "long": "--query",
+      "description": "Query and display firmware information for detected devices. Shows current installed firmware version, available firmware version, and device status.",
+      "required": false
+    },
+    {
+      "short": "-i",
+      "long": "--image",
+      "description": "Specify the firmware image file (binary .bin) to use for update operations.",
+      "arguments": "<image_path>",
+      "argument_type": "path",
+      "required": false,
+      "example": "-i fw-ConnectX7-rel-28_39_1002-MCX713106AS-VEA_Ax-UEFI-14.32.12-FlexBoot-3.7.201.bin"
+    },
+    {
+      "long": "--online-activate",
+      "description": "Activate firmware online without requiring a system reboot. Performs a firmware reset on the adapter to load the new firmware immediately. Not all firmware updates support online activation.",
+      "required": false
+    },
+    {
+      "short": "-y",
+      "long": "--yes",
+      "description": "Assume yes to all prompts. Enables non-interactive mode for scripted operations.",
+      "required": false
+    },
+    {
+      "long": "--force",
+      "description": "Force firmware update even if the new version matches or is older than the current version. Use with caution.",
+      "required": false
+    },
+    {
+      "short": "-l",
+      "long": "--list-content",
+      "description": "List the devices and firmware versions contained within a firmware image file.",
+      "required": false
+    },
+    {
+      "long": "--log",
+      "description": "Enable logging to a file. Useful for troubleshooting and audit trails.",
+      "arguments": "<log_file>",
+      "argument_type": "path",
+      "required": false,
+      "example": "--log /var/log/mlxfwmanager.log"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help information and available options.",
+      "required": false
+    },
+    {
+      "short": "-v",
+      "long": "--version",
+      "description": "Display the mlxfwmanager version information.",
+      "required": false
+    },
+    {
+      "long": "--online-query-psid",
+      "description": "Query available firmware versions online for the specified PSID (Part SubID). Requires internet connectivity.",
+      "arguments": "<psid>",
+      "argument_type": "string",
+      "required": false,
+      "example": "--online-query-psid MT_0000000228"
+    },
+    {
+      "long": "--download",
+      "description": "Download firmware from NVIDIA servers for the detected devices or specified PSID. Requires internet connectivity.",
+      "required": false
+    },
+    {
+      "long": "--download-dir",
+      "description": "Specify the directory where downloaded firmware images should be saved.",
+      "arguments": "<directory>",
+      "argument_type": "path",
+      "default": "current directory",
+      "required": false,
+      "example": "--download-dir /opt/firmware"
+    },
+    {
+      "long": "--clear-semaphore",
+      "description": "Clear the firmware flash semaphore. Use when a previous firmware operation was interrupted and left a stale lock.",
+      "required": false
+    },
+    {
+      "long": "--no-progress",
+      "description": "Disable progress bar during firmware operations. Useful for scripted environments.",
+      "required": false
+    }
+  ],
+  "output_formats": {
+    "query": "Tabular format showing Device, Type, PSID, Part Number, Description, FW Current, FW Available, and Status columns for each detected device.",
+    "list-content": "Details about the firmware image including supported PSIDs, product names, and firmware versions contained in the image file."
+  },
+  "environment_variables": [
+    {
+      "name": "MST_DEVICE_PATH",
+      "description": "Override the default path for MST devices.",
+      "example": "MST_DEVICE_PATH=/dev/mst",
+      "affects_command": "Changes where mlxfwmanager looks for MST device nodes."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - operation completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "General error - operation failed"
+    },
+    {
+      "code": 2,
+      "meaning": "Device not found or MST service not running"
+    },
+    {
+      "code": 3,
+      "meaning": "Firmware image not found or incompatible with device"
+    },
+    {
+      "code": 4,
+      "meaning": "Firmware update failed during flash operation"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Query firmware versions on all detected devices",
+      "command": "mlxfwmanager --query",
+      "output_example": "Querying Mellanox devices firmware ...\n\nDevice #1:\n----------\n\n  Device Type:      ConnectX7\n  Part Number:      MCX713106AS-VEA_Ax\n  Description:      NVIDIA ConnectX-7 Single Port QSFP112 400Gb/s\n  PSID:             MT_0000000884\n  PCI Device Name:  /dev/mst/mt4129_pciconf0\n  Base GUID:        0x506b4b0300ab1234\n  Versions:         Current        Available     \n     FW             28.39.1002     28.39.2006\n     PXE            3.7.0201       3.7.0301\n     UEFI           14.32.12       14.33.15\n\n  Status:           Update available",
+      "requires_root": true
+    },
+    {
+      "description": "Query firmware on a specific device",
+      "command": "mlxfwmanager -d /dev/mst/mt4125_pciconf0 --query",
+      "requires_root": true
+    },
+    {
+      "description": "Update firmware on all devices using automatic image matching",
+      "command": "mlxfwmanager --update -y",
+      "requires_root": true
+    },
+    {
+      "description": "Update firmware using a specific firmware image file",
+      "command": "mlxfwmanager -d /dev/mst/mt4125_pciconf0 -u -i /path/to/firmware.bin -y",
+      "requires_root": true
+    },
+    {
+      "description": "Update firmware and activate immediately without reboot",
+      "command": "mlxfwmanager -d /dev/mst/mt4125_pciconf0 -u --online-activate -y",
+      "requires_root": true
+    },
+    {
+      "description": "Check available online firmware for a specific PSID",
+      "command": "mlxfwmanager --online-query-psid MT_0000000884",
+      "output_example": "Querying online firmware for PSID: MT_0000000884\n\nPSID:             MT_0000000884\nProduct:          MCX713106AS-VEA_Ax\nDescription:      NVIDIA ConnectX-7 Single Port QSFP112 400Gb/s\n\nAvailable Versions:\n  28.39.2006 (latest)\n  28.39.1002\n  28.38.1000",
+      "requires_root": false
+    },
+    {
+      "description": "Download firmware for all detected devices",
+      "command": "mlxfwmanager --download --download-dir /opt/firmware",
+      "requires_root": true
+    },
+    {
+      "description": "List contents of a firmware image file",
+      "command": "mlxfwmanager -l -i /path/to/firmware.bin",
+      "output_example": "Image file: /path/to/firmware.bin\n\nContained devices:\n  PSID: MT_0000000884\n  Product: MCX713106AS-VEA_Ax\n  FW Version: 28.39.2006\n  PXE Version: 3.7.0301\n  UEFI Version: 14.33.15",
+      "requires_root": false
+    },
+    {
+      "description": "Force firmware update even if versions match",
+      "command": "mlxfwmanager -d /dev/mst/mt4125_pciconf0 -u --force -y",
+      "requires_root": true
+    },
+    {
+      "description": "Clear stale firmware flash semaphore after interrupted update",
+      "command": "mlxfwmanager -d /dev/mst/mt4125_pciconf0 --clear-semaphore",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No devices found",
+      "meaning": "No Mellanox/NVIDIA devices were detected or MST service is not running",
+      "resolution": "Run 'mst start' to initialize the MST service. Verify hardware presence with 'lspci | grep -i mellanox'. Check that kernel modules are loaded with 'lsmod | grep mlx'."
+    },
+    {
+      "message": "Device /dev/mst/xxx not found",
+      "meaning": "The specified MST device path does not exist",
+      "resolution": "Run 'mst status' to list available devices. The device name format is typically /dev/mst/mt<device_id>_pciconf<n>. Restart MST service with 'mst restart' if devices are missing."
+    },
+    {
+      "message": "PSID mismatch - firmware image not suitable for this device",
+      "meaning": "The firmware image PSID does not match the device's PSID",
+      "resolution": "Ensure you have the correct firmware image for your device. Use 'mlxfwmanager --query' to get your device's PSID, then download the matching firmware from NVIDIA."
+    },
+    {
+      "message": "Flash semaphore is locked",
+      "meaning": "A previous firmware operation did not complete cleanly and left a lock",
+      "resolution": "Use 'mlxfwmanager -d <device> --clear-semaphore' to clear the lock. Ensure no other firmware tools are running."
+    },
+    {
+      "message": "Online activate is not supported for this device/FW",
+      "meaning": "The device or firmware version does not support live firmware activation",
+      "resolution": "A full system reboot or at minimum a PCI hot-reset is required. Schedule maintenance window and reboot after firmware update."
+    },
+    {
+      "message": "Cannot open device for writing. Are you running as root?",
+      "meaning": "Insufficient permissions to access device for firmware operations",
+      "resolution": "Run mlxfwmanager with sudo or as root user. Firmware write operations require elevated privileges."
+    },
+    {
+      "message": "Firmware update failed: device reported error",
+      "meaning": "The device reported an error during the firmware flash operation",
+      "resolution": "Do not power off the system. Retry the firmware update. If the error persists, contact NVIDIA support. In some cases, the device may need recovery using flint tool."
+    },
+    {
+      "message": "Internet connection required for online operations",
+      "meaning": "Online query or download operations require network connectivity to NVIDIA servers",
+      "resolution": "Ensure the system has internet access. If behind a proxy, configure HTTP_PROXY environment variable. Alternatively, download firmware manually from NVIDIA website."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "mst",
+      "flint",
+      "ibstat",
+      "mlxlink",
+      "mlxconfig",
+      "mstflint",
+      "mstconfig",
+      "ibdev2netdev",
+      "nvidia-smi"
+    ],
+    "uses_library": ["mft_core", "mtcr"],
+    "notes": "mlxfwmanager requires the MST (Mellanox Software Tools) service to be running. Start it with 'mst start'. For low-level firmware operations, flint provides additional capabilities. mlxconfig is used to configure adapter parameters after firmware updates. After firmware updates, use ibstat or mlxlink to verify device status. On systems with GPUs, coordinate firmware updates with nvidia-smi -pm settings."
+  },
+  "permissions": {
+    "read_operations": "Query operations (--query) require root or mst device access permissions.",
+    "write_operations": "Firmware update and modification operations require root privileges.",
+    "notes": "Most operations require sudo or root access. The mst service must be started before mlxfwmanager can detect devices. On some systems, membership in specific groups (e.g., 'mst') may provide access."
+  },
+  "limitations": [
+    "Requires MST service to be running (mst start)",
+    "Online activation not supported on all devices or firmware versions",
+    "Firmware images are device-specific; PSID must match",
+    "Some firmware updates require system reboot to take effect",
+    "Cannot downgrade firmware without --force flag in most cases",
+    "Online operations require internet connectivity to NVIDIA servers",
+    "Does not support updating firmware on devices in use by virtual machines without first unbinding from hypervisor"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "firmware_state",
+        "fields": [
+          "current_fw_version",
+          "psid",
+          "part_number",
+          "device_type",
+          "pxe_version",
+          "uefi_version",
+          "base_guid"
+        ],
+        "description": "Reads current firmware version and device identification information"
+      },
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["device", "port_state", "link_state"],
+        "description": "Checks device availability and link state before firmware operations"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "firmware_state",
+        "fields": ["current_fw_version", "pxe_version", "uefi_version"],
+        "description": "Updates device firmware, potentially changing version numbers",
+        "requires_flags": ["-u", "--update"],
+        "requires_privilege": "root"
+      },
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["device_state", "link_state"],
+        "description": "Online activation causes temporary device reset affecting link state",
+        "requires_flags": ["--online-activate"],
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "MST service started (mst start)",
+        "effect": "Device nodes become available in /dev/mst/ for mlxfwmanager to access"
+      },
+      {
+        "state_change": "New firmware image available online",
+        "effect": "Query operations will show 'Update available' status"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "flint",
+        "shared_state": "Firmware version, PSID, device identification (flint provides low-level access to same firmware data)"
+      },
+      {
+        "command": "mst",
+        "shared_state": "Device enumeration and MST device paths"
+      },
+      {
+        "command": "ibstat",
+        "shared_state": "Firmware version displayed by ibstat matches mlxfwmanager after updates"
+      },
+      {
+        "command": "mlxlink",
+        "shared_state": "Device identification and link state"
+      }
+    ]
+  }
+}

@@ -2,9 +2,10 @@
  * Learning Paths Component - Interactive guided learning for NCP-AII certification
  *
  * Provides structured curricula with modules, lessons, and step-by-step tutorials.
+ * Now organized with Learn/Practice/Test tabs for the Labs & Scenarios revamp.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   LEARNING_PATHS,
   getNextLesson,
@@ -17,10 +18,15 @@ import {
   type Module,
   type Lesson,
   type PathProgress,
-} from '../utils/learningPathEngine';
-import { DOMAINS, type DomainId } from '@/types/scenarios';
-import { useLearningStore } from '@/store/learningStore';
-import { useDebouncedStorage } from '@/hooks/useDebouncedStorage';
+} from "../utils/learningPathEngine";
+import { DOMAINS, type DomainId } from "@/types/scenarios";
+import { useLearningStore } from "@/store/learningStore";
+import { useDebouncedStorage } from "@/hooks/useDebouncedStorage";
+import { CommandFamilyCards } from "./CommandFamilyCards";
+import { WhichToolQuiz } from "./WhichToolQuiz";
+import { ExamGauntlet } from "./ExamGauntlet";
+import { DomainProgressCards } from "./DomainProgressCards";
+import { OverallProgressDashboard } from "./OverallProgressDashboard";
 
 interface LearningPathsProps {
   onClose?: () => void;
@@ -28,40 +34,62 @@ interface LearningPathsProps {
   onStartScenario?: (scenarioId: string) => void;
 }
 
-type ViewState = 'paths' | 'modules' | 'lessons' | 'tutorial';
+type ViewState = "paths" | "modules" | "lessons" | "tutorial";
+type TabId = "learn" | "practice" | "test";
 
 export const LearningPaths: React.FC<LearningPathsProps> = ({
   onClose,
   onExecuteCommand,
+  onStartScenario,
 }) => {
+  // Tab state for Learn/Practice/Test navigation
+  const [activeTab, setActiveTab] = useState<TabId>("learn");
+
   // Navigation state
-  const [viewState, setViewState] = useState<ViewState>('paths');
+  const [viewState, setViewState] = useState<ViewState>("paths");
   const [selectedPath, setSelectedPath] = useState<LearningPath | null>(null);
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
 
   // Tutorial state
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [commandInput, setCommandInput] = useState('');
-  const [commandOutput, setCommandOutput] = useState('');
-  const [stepFeedback, setStepFeedback] = useState<{ message: string; success: boolean } | null>(null);
+  const [commandInput, setCommandInput] = useState("");
+  const [commandOutput, setCommandOutput] = useState("");
+  const [stepFeedback, setStepFeedback] = useState<{
+    message: string;
+    success: boolean;
+  } | null>(null);
   const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
   const [showQuizResult, setShowQuizResult] = useState(false);
 
   // Progress state
-  const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
-  const [completedModules, setCompletedModules] = useState<Set<string>>(new Set());
-  const [lessonProgress, setLessonProgress] = useState<Map<string, Record<string, unknown>>>(new Map());
-  const [pathsProgress, setPathsProgress] = useState<Map<string, PathProgress>>(new Map());
+  const [completedLessons, setCompletedLessons] = useState<Set<string>>(
+    new Set(),
+  );
+  const [completedModules, setCompletedModules] = useState<Set<string>>(
+    new Set(),
+  );
+  const [lessonProgress, setLessonProgress] = useState<
+    Map<string, Record<string, unknown>>
+  >(new Map());
+  const [pathsProgress, setPathsProgress] = useState<Map<string, PathProgress>>(
+    new Map(),
+  );
+
+  // Test tab state
+  const [activeQuizFamilyId, setActiveQuizFamilyId] = useState<string | null>(
+    null,
+  );
+  const [showExamGauntlet, setShowExamGauntlet] = useState(false);
 
   // Learning store integration
   const { trackCommand } = useLearningStore();
 
   // Load progress from localStorage on mount
   useEffect(() => {
-    const savedLessons = localStorage.getItem('ncp-aii-completed-lessons');
-    const savedModules = localStorage.getItem('ncp-aii-completed-modules');
-    const savedLessonProgress = localStorage.getItem('ncp-aii-lesson-progress');
+    const savedLessons = localStorage.getItem("ncp-aii-completed-lessons");
+    const savedModules = localStorage.getItem("ncp-aii-completed-modules");
+    const savedLessonProgress = localStorage.getItem("ncp-aii-lesson-progress");
 
     if (savedLessons) {
       setCompletedLessons(new Set(JSON.parse(savedLessons)));
@@ -77,55 +105,74 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
 
   // Save progress to localStorage with debouncing to prevent UI blocking
   // Memoize values to ensure stable references for the debounced storage hook
-  const completedLessonsArray = useMemo(() => [...completedLessons], [completedLessons]);
-  const completedModulesArray = useMemo(() => [...completedModules], [completedModules]);
-  const lessonProgressObject = useMemo(() => Object.fromEntries(lessonProgress), [lessonProgress]);
+  const completedLessonsArray = useMemo(
+    () => [...completedLessons],
+    [completedLessons],
+  );
+  const completedModulesArray = useMemo(
+    () => [...completedModules],
+    [completedModules],
+  );
+  const lessonProgressObject = useMemo(
+    () => Object.fromEntries(lessonProgress),
+    [lessonProgress],
+  );
 
-  useDebouncedStorage('ncp-aii-completed-lessons', completedLessonsArray, 500);
-  useDebouncedStorage('ncp-aii-completed-modules', completedModulesArray, 500);
-  useDebouncedStorage('ncp-aii-lesson-progress', lessonProgressObject, 500);
+  useDebouncedStorage("ncp-aii-completed-lessons", completedLessonsArray, 500);
+  useDebouncedStorage("ncp-aii-completed-modules", completedModulesArray, 500);
+  useDebouncedStorage("ncp-aii-lesson-progress", lessonProgressObject, 500);
 
   // Calculate path progress when completed lessons change
   useEffect(() => {
     const newPathsProgress = new Map<string, PathProgress>();
-    Object.values(LEARNING_PATHS).forEach(path => {
-      newPathsProgress.set(path.id, calculatePathProgress(path.id, completedLessons));
+    Object.values(LEARNING_PATHS).forEach((path) => {
+      newPathsProgress.set(
+        path.id,
+        calculatePathProgress(path.id, completedLessons),
+      );
     });
     setPathsProgress(newPathsProgress);
   }, [completedLessons]);
 
   // Mark lesson as complete
-  const completeLesson = useCallback((lessonId: string, moduleId: string) => {
-    setCompletedLessons(prev => {
-      const updated = new Set(prev);
-      updated.add(lessonId);
-      return updated;
-    });
+  const completeLesson = useCallback(
+    (lessonId: string, moduleId: string) => {
+      setCompletedLessons((prev) => {
+        const updated = new Set(prev);
+        updated.add(lessonId);
+        return updated;
+      });
 
-    // Check if module is complete
-    if (selectedModule) {
-      const allLessonsComplete = selectedModule.lessons.every(
-        l => completedLessons.has(l.id) || l.id === lessonId
-      );
-      if (allLessonsComplete) {
-        setCompletedModules(prev => {
-          const updated = new Set(prev);
-          updated.add(moduleId);
-          return updated;
-        });
+      // Check if module is complete
+      if (selectedModule) {
+        const allLessonsComplete = selectedModule.lessons.every(
+          (l) => completedLessons.has(l.id) || l.id === lessonId,
+        );
+        if (allLessonsComplete) {
+          setCompletedModules((prev) => {
+            const updated = new Set(prev);
+            updated.add(moduleId);
+            return updated;
+          });
+        }
       }
-    }
-  }, [selectedModule, completedLessons]);
+    },
+    [selectedModule, completedLessons],
+  );
 
   // Reset all progress
   const resetProgress = useCallback(() => {
-    if (window.confirm('Are you sure you want to reset all progress? This cannot be undone.')) {
+    if (
+      window.confirm(
+        "Are you sure you want to reset all progress? This cannot be undone.",
+      )
+    ) {
       setCompletedLessons(new Set());
       setCompletedModules(new Set());
       setLessonProgress(new Map());
-      localStorage.removeItem('ncp-aii-completed-lessons');
-      localStorage.removeItem('ncp-aii-completed-modules');
-      localStorage.removeItem('ncp-aii-lesson-progress');
+      localStorage.removeItem("ncp-aii-completed-lessons");
+      localStorage.removeItem("ncp-aii-completed-modules");
+      localStorage.removeItem("ncp-aii-lesson-progress");
     }
   }, []);
 
@@ -134,7 +181,7 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
     if (!selectedLesson || !commandInput.trim()) return;
 
     const currentStep = selectedLesson.steps[currentStepIndex];
-    if (currentStep.type !== 'command') return;
+    if (currentStep.type !== "command") return;
 
     // Validate command
     const result = validateCommand(commandInput, currentStep);
@@ -145,7 +192,7 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
       try {
         const output = await onExecuteCommand(commandInput);
         setCommandOutput(output);
-        trackCommand(commandInput.split(' ')[0], result.valid);
+        trackCommand(commandInput.split(" ")[0], result.valid);
       } catch (error) {
         setCommandOutput(`Error: ${error}`);
       }
@@ -158,7 +205,7 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
           advanceStep();
         } else {
           // Lesson complete
-          completeLesson(selectedLesson.id, selectedModule?.id || '');
+          completeLesson(selectedLesson.id, selectedModule?.id || "");
         }
       }, 2000);
     }
@@ -169,7 +216,11 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
     if (!selectedLesson || quizAnswer === null) return;
 
     const currentStep = selectedLesson.steps[currentStepIndex];
-    if (currentStep.type !== 'quiz' || currentStep.quizCorrectIndex === undefined) return;
+    if (
+      currentStep.type !== "quiz" ||
+      currentStep.quizCorrectIndex === undefined
+    )
+      return;
 
     setShowQuizResult(true);
 
@@ -178,16 +229,16 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
       if (currentStepIndex < selectedLesson.steps.length - 1) {
         advanceStep();
       } else {
-        completeLesson(selectedLesson.id, selectedModule?.id || '');
+        completeLesson(selectedLesson.id, selectedModule?.id || "");
       }
     }, 3000);
   };
 
   // Advance to next step
   const advanceStep = () => {
-    setCurrentStepIndex(prev => prev + 1);
-    setCommandInput('');
-    setCommandOutput('');
+    setCurrentStepIndex((prev) => prev + 1);
+    setCommandInput("");
+    setCommandOutput("");
     setStepFeedback(null);
     setQuizAnswer(null);
     setShowQuizResult(false);
@@ -196,9 +247,9 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
   // Go back to previous step
   const goBackStep = () => {
     if (currentStepIndex > 0) {
-      setCurrentStepIndex(prev => prev - 1);
-      setCommandInput('');
-      setCommandOutput('');
+      setCurrentStepIndex((prev) => prev - 1);
+      setCommandInput("");
+      setCommandOutput("");
       setStepFeedback(null);
       setQuizAnswer(null);
       setShowQuizResult(false);
@@ -208,46 +259,46 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
   // Navigate to a specific path
   const selectPath = (path: LearningPath) => {
     setSelectedPath(path);
-    setViewState('modules');
+    setViewState("modules");
   };
 
   // Navigate to a specific module
   const selectModule = (module: Module) => {
     if (!areModulePrerequisitesMet(module.id, completedModules)) {
-      alert('Please complete the prerequisite modules first.');
+      alert("Please complete the prerequisite modules first.");
       return;
     }
     setSelectedModule(module);
-    setViewState('lessons');
+    setViewState("lessons");
   };
 
   // Start a lesson
   const startLesson = (lesson: Lesson) => {
     if (!areLessonPrerequisitesMet(lesson.id, completedLessons)) {
-      alert('Please complete the prerequisite lessons first.');
+      alert("Please complete the prerequisite lessons first.");
       return;
     }
     setSelectedLesson(lesson);
     setCurrentStepIndex(0);
-    setViewState('tutorial');
-    setCommandInput('');
-    setCommandOutput('');
+    setViewState("tutorial");
+    setCommandInput("");
+    setCommandOutput("");
     setStepFeedback(null);
   };
 
   // Go back navigation
   const goBack = () => {
     switch (viewState) {
-      case 'tutorial':
-        setViewState('lessons');
+      case "tutorial":
+        setViewState("lessons");
         setSelectedLesson(null);
         break;
-      case 'lessons':
-        setViewState('modules');
+      case "lessons":
+        setViewState("modules");
         setSelectedModule(null);
         break;
-      case 'modules':
-        setViewState('paths');
+      case "modules":
+        setViewState("paths");
         setSelectedPath(null);
         break;
       default:
@@ -266,7 +317,9 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
     if (!selectedLesson) return null;
 
     const step = selectedLesson.steps[currentStepIndex];
-    const progress = Math.round(((currentStepIndex + 1) / selectedLesson.steps.length) * 100);
+    const progress = Math.round(
+      ((currentStepIndex + 1) / selectedLesson.steps.length) * 100,
+    );
 
     return (
       <div className="flex flex-col h-full min-h-[500px]">
@@ -276,7 +329,9 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
             <span className="text-nvidia-green font-bold text-sm">
               Step {currentStepIndex + 1} of {selectedLesson.steps.length}
             </span>
-            <span className="text-gray-500 text-sm">{selectedLesson.title}</span>
+            <span className="text-gray-500 text-sm">
+              {selectedLesson.title}
+            </span>
           </div>
           <div className="h-2 bg-gray-700 rounded overflow-hidden">
             <div
@@ -292,17 +347,19 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
 
           {/* Step type badge */}
           <div className="inline-block px-3 py-1 bg-gray-700 rounded text-xs text-gray-400 mb-5">
-            {step.type === 'concept' && '📖 Concept'}
-            {step.type === 'command' && '💻 Hands-On'}
-            {step.type === 'quiz' && '❓ Quiz'}
-            {step.type === 'observe' && '👁️ Observe'}
-            {step.type === 'practice' && '🔧 Practice'}
+            {step.type === "concept" && "📖 Concept"}
+            {step.type === "command" && "💻 Hands-On"}
+            {step.type === "quiz" && "❓ Quiz"}
+            {step.type === "observe" && "👁️ Observe"}
+            {step.type === "practice" && "🔧 Practice"}
           </div>
 
           {/* Main content */}
           <div className="text-gray-300 text-base leading-7 mb-5">
-            {step.content.split('\n').map((line, i) => (
-              <p key={i} className="my-2">{line}</p>
+            {step.content.split("\n").map((line, i) => (
+              <p key={i} className="my-2">
+                {line}
+              </p>
             ))}
           </div>
 
@@ -319,20 +376,25 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
           )}
 
           {/* Command input for 'command' type */}
-          {step.type === 'command' && (
+          {step.type === "command" && (
             <div className="mt-5">
               <div className="flex items-center bg-black rounded-md p-1 mb-2.5">
-                <span className="text-nvidia-green font-mono text-base px-2.5 font-bold">$</span>
+                <span className="text-nvidia-green font-mono text-base px-2.5 font-bold">
+                  $
+                </span>
                 <input
                   type="text"
                   value={commandInput}
                   onChange={(e) => setCommandInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleCommandSubmit()}
+                  onKeyDown={(e) => e.key === "Enter" && handleCommandSubmit()}
                   placeholder="Type your command here..."
                   className="flex-1 bg-transparent border-none text-white font-mono text-sm p-2.5 outline-none"
                   autoFocus
                 />
-                <button onClick={handleCommandSubmit} className="px-5 py-2.5 bg-nvidia-green border-none rounded text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors">
+                <button
+                  onClick={handleCommandSubmit}
+                  className="px-5 py-2.5 bg-nvidia-green border-none rounded text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors"
+                >
                   Execute
                 </button>
               </div>
@@ -346,34 +408,46 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
               {/* Command output */}
               {commandOutput && (
                 <div className="bg-black rounded-md p-4 mb-4 max-h-52 overflow-auto">
-                  <pre className="m-0 text-gray-300 font-mono text-sm whitespace-pre-wrap">{commandOutput}</pre>
+                  <pre className="m-0 text-gray-300 font-mono text-sm whitespace-pre-wrap">
+                    {commandOutput}
+                  </pre>
                 </div>
               )}
 
               {/* Feedback */}
               {stepFeedback && (
-                <div className={`p-4 rounded-md border text-sm ${stepFeedback.success ? 'bg-green-900/50 border-green-500' : 'bg-red-900/50 border-red-500'}`}>
-                  {stepFeedback.success ? '✅' : '❌'} {stepFeedback.message}
+                <div
+                  className={`p-4 rounded-md border text-sm ${stepFeedback.success ? "bg-green-900/50 border-green-500" : "bg-red-900/50 border-red-500"}`}
+                >
+                  {stepFeedback.success ? "✅" : "❌"} {stepFeedback.message}
                 </div>
               )}
             </div>
           )}
 
           {/* Quiz for 'quiz' type */}
-          {step.type === 'quiz' && step.quizChoices && (
+          {step.type === "quiz" && step.quizChoices && (
             <div className="mt-5">
               <p className="text-white text-base mb-5">{step.quizQuestion}</p>
               <div className="flex flex-col gap-2.5">
                 {step.quizChoices.map((choice, i) => {
-                  let choiceClasses = "p-4 bg-gray-700 border-2 border-gray-600 rounded-md text-white text-left cursor-pointer text-sm transition-all hover:border-gray-500";
+                  let choiceClasses =
+                    "p-4 bg-gray-700 border-2 border-gray-600 rounded-md text-white text-left cursor-pointer text-sm transition-all hover:border-gray-500";
                   if (quizAnswer === i && !showQuizResult) {
-                    choiceClasses = "p-4 bg-gray-700 border-2 border-nvidia-green rounded-md text-white text-left cursor-pointer text-sm";
+                    choiceClasses =
+                      "p-4 bg-gray-700 border-2 border-nvidia-green rounded-md text-white text-left cursor-pointer text-sm";
                   }
                   if (showQuizResult && i === step.quizCorrectIndex) {
-                    choiceClasses = "p-4 bg-green-900/50 border-2 border-green-500 rounded-md text-white text-left text-sm";
+                    choiceClasses =
+                      "p-4 bg-green-900/50 border-2 border-green-500 rounded-md text-white text-left text-sm";
                   }
-                  if (showQuizResult && quizAnswer === i && i !== step.quizCorrectIndex) {
-                    choiceClasses = "p-4 bg-red-900/50 border-2 border-red-500 rounded-md text-white text-left text-sm";
+                  if (
+                    showQuizResult &&
+                    quizAnswer === i &&
+                    i !== step.quizCorrectIndex
+                  ) {
+                    choiceClasses =
+                      "p-4 bg-red-900/50 border-2 border-red-500 rounded-md text-white text-left text-sm";
                   }
                   return (
                     <button
@@ -389,14 +463,21 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
               </div>
 
               {!showQuizResult && quizAnswer !== null && (
-                <button onClick={handleQuizSubmit} className="mt-5 px-8 py-3 bg-nvidia-green border-none rounded-md text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors">
+                <button
+                  onClick={handleQuizSubmit}
+                  className="mt-5 px-8 py-3 bg-nvidia-green border-none rounded-md text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors"
+                >
                   Submit Answer
                 </button>
               )}
 
               {showQuizResult && (
-                <div className={`mt-5 p-4 rounded-md border bg-gray-800 ${quizAnswer === step.quizCorrectIndex ? 'border-green-500' : 'border-red-500'}`}>
-                  {quizAnswer === step.quizCorrectIndex ? '✅ Correct!' : '❌ Incorrect'}
+                <div
+                  className={`mt-5 p-4 rounded-md border bg-gray-800 ${quizAnswer === step.quizCorrectIndex ? "border-green-500" : "border-red-500"}`}
+                >
+                  {quizAnswer === step.quizCorrectIndex
+                    ? "✅ Correct!"
+                    : "❌ Incorrect"}
                   <p>{step.quizExplanation}</p>
                 </div>
               )}
@@ -404,24 +485,32 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
           )}
 
           {/* Observe type - auto-execute and show output */}
-          {step.type === 'observe' && (
+          {step.type === "observe" && (
             <div className="mt-5">
-              <div className="text-nvidia-green text-sm font-bold mb-4">👁️ Observe the following command output:</div>
+              <div className="text-nvidia-green text-sm font-bold mb-4">
+                👁️ Observe the following command output:
+              </div>
               <div className="bg-black rounded-md p-4 mb-4">
-                <code className="text-nvidia-green font-mono text-sm">{step.expectedCommand}</code>
+                <code className="text-nvidia-green font-mono text-sm">
+                  {step.expectedCommand}
+                </code>
               </div>
               {commandOutput ? (
                 <div className="bg-black rounded-md p-4 mb-4 max-h-52 overflow-auto">
-                  <pre className="m-0 text-gray-300 font-mono text-sm whitespace-pre-wrap">{commandOutput}</pre>
+                  <pre className="m-0 text-gray-300 font-mono text-sm whitespace-pre-wrap">
+                    {commandOutput}
+                  </pre>
                 </div>
               ) : (
                 <button
                   onClick={async () => {
                     if (onExecuteCommand && step.expectedCommand) {
                       try {
-                        const output = await onExecuteCommand(step.expectedCommand);
+                        const output = await onExecuteCommand(
+                          step.expectedCommand,
+                        );
                         setCommandOutput(output);
-                        trackCommand(step.expectedCommand.split(' ')[0], true);
+                        trackCommand(step.expectedCommand.split(" ")[0], true);
                       } catch (error) {
                         setCommandOutput(`Error: ${error}`);
                       }
@@ -433,7 +522,10 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
                 </button>
               )}
               {commandOutput && (
-                <button onClick={advanceStep} className="mt-5 px-8 py-3 bg-nvidia-green border-none rounded-md text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors">
+                <button
+                  onClick={advanceStep}
+                  className="mt-5 px-8 py-3 bg-nvidia-green border-none rounded-md text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors"
+                >
                   Continue →
                 </button>
               )}
@@ -441,22 +533,26 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
           )}
 
           {/* Practice type - free-form practice */}
-          {step.type === 'practice' && (
+          {step.type === "practice" && (
             <div className="mt-5">
-              <div className="text-orange-500 text-sm font-bold mb-4">🔧 Practice on your own:</div>
+              <div className="text-orange-500 text-sm font-bold mb-4">
+                🔧 Practice on your own:
+              </div>
               <div className="flex items-center bg-black rounded-md p-1 mb-2.5">
-                <span className="text-nvidia-green font-mono text-base px-2.5 font-bold">$</span>
+                <span className="text-nvidia-green font-mono text-base px-2.5 font-bold">
+                  $
+                </span>
                 <input
                   type="text"
                   value={commandInput}
                   onChange={(e) => setCommandInput(e.target.value)}
                   onKeyDown={async (e) => {
-                    if (e.key === 'Enter' && commandInput.trim()) {
+                    if (e.key === "Enter" && commandInput.trim()) {
                       if (onExecuteCommand) {
                         try {
                           const output = await onExecuteCommand(commandInput);
                           setCommandOutput(output);
-                          trackCommand(commandInput.split(' ')[0], true);
+                          trackCommand(commandInput.split(" ")[0], true);
                         } catch (error) {
                           setCommandOutput(`Error: ${error}`);
                         }
@@ -473,7 +569,7 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
                       try {
                         const output = await onExecuteCommand(commandInput);
                         setCommandOutput(output);
-                        trackCommand(commandInput.split(' ')[0], true);
+                        trackCommand(commandInput.split(" ")[0], true);
                       } catch (error) {
                         setCommandOutput(`Error: ${error}`);
                       }
@@ -488,19 +584,27 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
               {/* Command output */}
               {commandOutput && (
                 <div className="bg-black rounded-md p-4 mb-4 max-h-52 overflow-auto">
-                  <pre className="m-0 text-gray-300 font-mono text-sm whitespace-pre-wrap">{commandOutput}</pre>
+                  <pre className="m-0 text-gray-300 font-mono text-sm whitespace-pre-wrap">
+                    {commandOutput}
+                  </pre>
                 </div>
               )}
 
-              <button onClick={advanceStep} className="mt-5 px-8 py-3 bg-nvidia-green border-none rounded-md text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors">
+              <button
+                onClick={advanceStep}
+                className="mt-5 px-8 py-3 bg-nvidia-green border-none rounded-md text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors"
+              >
                 Continue →
               </button>
             </div>
           )}
 
           {/* Concept type - just show continue button */}
-          {step.type === 'concept' && (
-            <button onClick={advanceStep} className="mt-5 px-8 py-3 bg-nvidia-green border-none rounded-md text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors">
+          {step.type === "concept" && (
+            <button
+              onClick={advanceStep}
+              className="mt-5 px-8 py-3 bg-nvidia-green border-none rounded-md text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors"
+            >
               Continue →
             </button>
           )}
@@ -511,32 +615,70 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
           <button
             onClick={goBackStep}
             disabled={currentStepIndex === 0}
-            className={`px-6 py-3 bg-gray-700 border-none rounded-md text-white cursor-pointer text-sm hover:bg-gray-600 transition-colors ${currentStepIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`px-6 py-3 bg-gray-700 border-none rounded-md text-white cursor-pointer text-sm hover:bg-gray-600 transition-colors ${currentStepIndex === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             ← Previous
           </button>
-          <button onClick={goBack} className="px-6 py-3 bg-gray-600 border-none rounded-md text-gray-400 cursor-pointer text-sm hover:bg-gray-500 transition-colors">
+          <button
+            onClick={goBack}
+            className="px-6 py-3 bg-gray-600 border-none rounded-md text-gray-400 cursor-pointer text-sm hover:bg-gray-500 transition-colors"
+          >
             Exit Lesson
           </button>
-          {step.type !== 'command' && step.type !== 'quiz' && currentStepIndex < selectedLesson.steps.length - 1 && (
-            <button onClick={advanceStep} className="px-6 py-3 bg-gray-700 border-none rounded-md text-white cursor-pointer text-sm hover:bg-gray-600 transition-colors">
-              Next →
-            </button>
-          )}
-          {currentStepIndex === selectedLesson.steps.length - 1 && step.type !== 'command' && step.type !== 'quiz' && (
-            <button
-              onClick={() => {
-                completeLesson(selectedLesson.id, selectedModule?.id || '');
-                goBack();
-              }}
-              className="px-6 py-3 bg-green-600 border-none rounded-md text-white font-bold cursor-pointer text-sm hover:bg-green-500 transition-colors"
-            >
-              Complete Lesson ✓
-            </button>
-          )}
+          {step.type !== "command" &&
+            step.type !== "quiz" &&
+            currentStepIndex < selectedLesson.steps.length - 1 && (
+              <button
+                onClick={advanceStep}
+                className="px-6 py-3 bg-gray-700 border-none rounded-md text-white cursor-pointer text-sm hover:bg-gray-600 transition-colors"
+              >
+                Next →
+              </button>
+            )}
+          {currentStepIndex === selectedLesson.steps.length - 1 &&
+            step.type !== "command" &&
+            step.type !== "quiz" && (
+              <button
+                onClick={() => {
+                  completeLesson(selectedLesson.id, selectedModule?.id || "");
+                  goBack();
+                }}
+                className="px-6 py-3 bg-green-600 border-none rounded-md text-white font-bold cursor-pointer text-sm hover:bg-green-500 transition-colors"
+              >
+                Complete Lesson ✓
+              </button>
+            )}
         </div>
       </div>
     );
+  };
+
+  // Tab definitions
+  const tabs: { id: TabId; label: string; icon: string }[] = [
+    { id: "learn", label: "Learn", icon: "📚" },
+    { id: "practice", label: "Practice", icon: "🔧" },
+    { id: "test", label: "Test", icon: "📝" },
+  ];
+
+  // Handler for quiz completion
+  const handleQuizComplete = (passed: boolean, score: number) => {
+    console.log(`Quiz completed: passed=${passed}, score=${score}`);
+    setActiveQuizFamilyId(null);
+  };
+
+  // Handler for quiz close
+  const handleQuizClose = () => {
+    setActiveQuizFamilyId(null);
+  };
+
+  // Handler for starting a quiz from CommandFamilyCards
+  const handleStartQuiz = (familyId: string) => {
+    setActiveQuizFamilyId(familyId);
+  };
+
+  // Handler for ExamGauntlet exit
+  const handleExamGauntletExit = () => {
+    setShowExamGauntlet(false);
   };
 
   return (
@@ -544,270 +686,553 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
       {/* Header */}
       <div className="flex justify-between items-center p-5 border-b border-gray-700">
         <div className="flex items-center gap-4">
-          {viewState !== 'paths' && (
-            <button onClick={goBack} className="px-4 py-2 bg-gray-700 border-none rounded text-gray-500 cursor-pointer text-sm hover:bg-gray-600 transition-colors">
+          {activeTab === "learn" && viewState !== "paths" && (
+            <button
+              onClick={goBack}
+              className="px-4 py-2 bg-gray-700 border-none rounded text-gray-500 cursor-pointer text-sm hover:bg-gray-600 transition-colors"
+            >
               ← Back
             </button>
           )}
           <div>
             <h2 className="m-0 text-nvidia-green text-2xl font-semibold">
-              {viewState === 'paths' && 'Learning Paths'}
-              {viewState === 'modules' && selectedPath?.title}
-              {viewState === 'lessons' && selectedModule?.title}
-              {viewState === 'tutorial' && selectedLesson?.title}
+              {activeTab === "learn" &&
+                viewState === "paths" &&
+                "Learning Center"}
+              {activeTab === "learn" &&
+                viewState === "modules" &&
+                selectedPath?.title}
+              {activeTab === "learn" &&
+                viewState === "lessons" &&
+                selectedModule?.title}
+              {activeTab === "learn" &&
+                viewState === "tutorial" &&
+                selectedLesson?.title}
+              {activeTab === "practice" && "Practice Labs"}
+              {activeTab === "test" && "Test Your Knowledge"}
             </h2>
             <p className="mt-1 mb-0 text-gray-500 text-sm">
-              {viewState === 'paths' && 'Structured learning for NCP-AII certification'}
-              {viewState === 'modules' && `${selectedPath?.modules.length} modules • ${selectedPath?.examWeight}% of exam`}
-              {viewState === 'lessons' && `${selectedModule?.lessons.length} lessons`}
-              {viewState === 'tutorial' && `${selectedLesson?.commands.join(', ')}`}
+              {activeTab === "learn" &&
+                viewState === "paths" &&
+                "Structured learning for NCP-AII certification"}
+              {activeTab === "learn" &&
+                viewState === "modules" &&
+                `${selectedPath?.modules.length} modules • ${selectedPath?.examWeight}% of exam`}
+              {activeTab === "learn" &&
+                viewState === "lessons" &&
+                `${selectedModule?.lessons.length} lessons`}
+              {activeTab === "learn" &&
+                viewState === "tutorial" &&
+                `${selectedLesson?.commands.join(", ")}`}
+              {activeTab === "practice" &&
+                "Hands-on scenarios, labs, and exercises"}
+              {activeTab === "test" && "Quizzes and exam simulations"}
             </p>
           </div>
         </div>
         {onClose && (
-          <button onClick={onClose} className="bg-transparent border-none text-gray-500 text-3xl cursor-pointer leading-none px-2.5 hover:text-gray-300 transition-colors">
+          <button
+            onClick={onClose}
+            className="bg-transparent border-none text-gray-500 text-3xl cursor-pointer leading-none px-2.5 hover:text-gray-300 transition-colors"
+          >
             ×
           </button>
         )}
       </div>
 
+      {/* Tab Navigation */}
+      <div className="bg-gray-800 border-b border-gray-700">
+        <div className="flex">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-all border-b-2 ${
+                activeTab === tab.id
+                  ? "bg-gray-700 text-white border-nvidia-green"
+                  : "text-gray-400 border-transparent hover:text-white hover:bg-gray-750"
+              }`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Content */}
       <div className="p-5 flex-1 overflow-auto">
-        {/* Paths Overview */}
-        {viewState === 'paths' && (
+        {/* ==================== LEARN TAB ==================== */}
+        {activeTab === "learn" && (
           <>
-            {/* Stats overview */}
-            <div className="grid grid-cols-4 gap-4 mb-6">
-              <div className="bg-gray-800/50 rounded-lg p-5 text-center">
-                <div className="text-3xl font-bold text-nvidia-green">{totalStats.totalPaths}</div>
-                <div className="text-xs text-gray-500 mt-1">Learning Paths</div>
-              </div>
-              <div className="bg-gray-800/50 rounded-lg p-5 text-center">
-                <div className="text-3xl font-bold text-nvidia-green">{totalStats.totalLessons}</div>
-                <div className="text-xs text-gray-500 mt-1">Total Lessons</div>
-              </div>
-              <div className="bg-gray-800/50 rounded-lg p-5 text-center">
-                <div className="text-3xl font-bold text-nvidia-green">{completedLessons.size}</div>
-                <div className="text-xs text-gray-500 mt-1">Completed</div>
-              </div>
-              <div className="bg-gray-800/50 rounded-lg p-5 text-center">
-                <div className="text-3xl font-bold text-nvidia-green">{totalStats.totalEstimatedMinutes}m</div>
-                <div className="text-xs text-gray-500 mt-1">Est. Time</div>
-              </div>
-            </div>
+            {/* Overall Progress Dashboard */}
+            {viewState === "paths" && <OverallProgressDashboard />}
 
-            {/* Reset progress button - only show if there's progress to reset */}
-            {completedLessons.size > 0 && (
-              <div className="flex justify-end mb-4">
-                <button onClick={resetProgress} className="px-4 py-2 bg-transparent border border-gray-600 rounded text-gray-500 cursor-pointer text-xs hover:border-gray-500 hover:text-gray-400 transition-all">
-                  Reset Progress
-                </button>
-              </div>
-            )}
-
-            {/* Recommended next lesson */}
-            {recommendedNext && (
-              <div className="bg-green-900/30 border border-nvidia-green rounded-lg p-5 mb-6">
-                <div className="text-nvidia-green text-xs font-bold mb-2.5">📌 Continue Learning</div>
-                <h3 className="m-0 mb-2 text-white text-lg">{recommendedNext.lesson.title}</h3>
-                <p className="text-gray-500 text-sm m-0 mb-4">
-                  {recommendedNext.path.title} → {recommendedNext.module.title}
+            {/* Command Family Cards - Reference Material */}
+            {viewState === "paths" && (
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  Command Families Reference
+                </h3>
+                <p className="text-gray-400 text-sm mb-4">
+                  Explore the tool landscape. Click on a command family to see
+                  available tools and their usage.
                 </p>
-                <button
-                  onClick={() => {
-                    setSelectedPath(recommendedNext.path);
-                    setSelectedModule(recommendedNext.module);
-                    startLesson(recommendedNext.lesson);
-                  }}
-                  className="px-5 py-2.5 bg-nvidia-green border-none rounded text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors"
-                >
-                  Resume Learning
-                </button>
+                <CommandFamilyCards
+                  mode="reference"
+                  onStartQuiz={handleStartQuiz}
+                />
               </div>
             )}
 
-            {/* Learning paths grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {Object.values(LEARNING_PATHS).map(path => {
-                const progress = pathsProgress.get(path.id);
-                const domain = DOMAINS[path.domainId];
-
-                return (
-                  <div
-                    key={path.id}
-                    className="bg-gray-800 rounded-lg p-5 cursor-pointer border border-gray-700 hover:border-nvidia-green hover:shadow-lg transition-all"
-                    onClick={() => selectPath(path)}
-                  >
-                    <div className="flex justify-between items-center mb-3">
-                      <div
-                        className="px-2.5 py-1 rounded text-xs font-bold text-white"
-                        style={{ backgroundColor: getDomainColor(path.domainId) }}
-                      >
-                        {domain.title.split(':')[0]}
-                      </div>
-                      <span className="text-gray-500 text-sm font-bold">{path.examWeight}%</span>
+            {/* Existing Learning Paths content */}
+            {/* Paths Overview */}
+            {viewState === "paths" && (
+              <>
+                <h3 className="text-lg font-semibold text-white mb-4 mt-8">
+                  Learning Paths
+                </h3>
+                {/* Stats overview */}
+                <div className="grid grid-cols-4 gap-4 mb-6">
+                  <div className="bg-gray-800/50 rounded-lg p-5 text-center">
+                    <div className="text-3xl font-bold text-nvidia-green">
+                      {totalStats.totalPaths}
                     </div>
-                    <h3 className="m-0 mb-2.5 text-white text-lg">{path.title}</h3>
-                    <p className="text-gray-500 text-sm m-0 mb-4 leading-relaxed">{path.description}</p>
-
-                    <div className="flex gap-4 text-sm text-gray-600 mb-3">
-                      <span>{path.modules.length} modules</span>
-                      <span>{path.totalEstimatedMinutes} min</span>
-                    </div>
-
-                    {/* Progress bar */}
-                    <div className="mb-3">
-                      <div className="h-1.5 bg-gray-700 rounded-sm overflow-hidden mb-1.5">
-                        <div
-                          className="h-full bg-nvidia-green transition-all duration-300"
-                          style={{ width: `${progress?.overallPercentage || 0}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-gray-500">
-                        {progress?.completedLessons || 0}/{progress?.totalLessons || 0} lessons
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1.5">
-                      {path.skills.slice(0, 3).map((skill, i) => (
-                        <span key={i} className="px-2 py-0.5 bg-gray-700 rounded-sm text-xs text-gray-400">{skill}</span>
-                      ))}
+                    <div className="text-xs text-gray-500 mt-1">
+                      Learning Paths
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                  <div className="bg-gray-800/50 rounded-lg p-5 text-center">
+                    <div className="text-3xl font-bold text-nvidia-green">
+                      {totalStats.totalLessons}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Total Lessons
+                    </div>
+                  </div>
+                  <div className="bg-gray-800/50 rounded-lg p-5 text-center">
+                    <div className="text-3xl font-bold text-nvidia-green">
+                      {completedLessons.size}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">Completed</div>
+                  </div>
+                  <div className="bg-gray-800/50 rounded-lg p-5 text-center">
+                    <div className="text-3xl font-bold text-nvidia-green">
+                      {totalStats.totalEstimatedMinutes}m
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">Est. Time</div>
+                  </div>
+                </div>
+
+                {/* Reset progress button - only show if there's progress to reset */}
+                {completedLessons.size > 0 && (
+                  <div className="flex justify-end mb-4">
+                    <button
+                      onClick={resetProgress}
+                      className="px-4 py-2 bg-transparent border border-gray-600 rounded text-gray-500 cursor-pointer text-xs hover:border-gray-500 hover:text-gray-400 transition-all"
+                    >
+                      Reset Progress
+                    </button>
+                  </div>
+                )}
+
+                {/* Recommended next lesson */}
+                {recommendedNext && (
+                  <div className="bg-green-900/30 border border-nvidia-green rounded-lg p-5 mb-6">
+                    <div className="text-nvidia-green text-xs font-bold mb-2.5">
+                      📌 Continue Learning
+                    </div>
+                    <h3 className="m-0 mb-2 text-white text-lg">
+                      {recommendedNext.lesson.title}
+                    </h3>
+                    <p className="text-gray-500 text-sm m-0 mb-4">
+                      {recommendedNext.path.title} →{" "}
+                      {recommendedNext.module.title}
+                    </p>
+                    <button
+                      onClick={() => {
+                        setSelectedPath(recommendedNext.path);
+                        setSelectedModule(recommendedNext.module);
+                        startLesson(recommendedNext.lesson);
+                      }}
+                      className="px-5 py-2.5 bg-nvidia-green border-none rounded text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors"
+                    >
+                      Resume Learning
+                    </button>
+                  </div>
+                )}
+
+                {/* Learning paths grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {Object.values(LEARNING_PATHS).map((path) => {
+                    const progress = pathsProgress.get(path.id);
+                    const domain = DOMAINS[path.domainId];
+
+                    return (
+                      <div
+                        key={path.id}
+                        className="bg-gray-800 rounded-lg p-5 cursor-pointer border border-gray-700 hover:border-nvidia-green hover:shadow-lg transition-all"
+                        onClick={() => selectPath(path)}
+                      >
+                        <div className="flex justify-between items-center mb-3">
+                          <div
+                            className="px-2.5 py-1 rounded text-xs font-bold text-white"
+                            style={{
+                              backgroundColor: getDomainColor(path.domainId),
+                            }}
+                          >
+                            {domain.title.split(":")[0]}
+                          </div>
+                          <span className="text-gray-500 text-sm font-bold">
+                            {path.examWeight}%
+                          </span>
+                        </div>
+                        <h3 className="m-0 mb-2.5 text-white text-lg">
+                          {path.title}
+                        </h3>
+                        <p className="text-gray-500 text-sm m-0 mb-4 leading-relaxed">
+                          {path.description}
+                        </p>
+
+                        <div className="flex gap-4 text-sm text-gray-600 mb-3">
+                          <span>{path.modules.length} modules</span>
+                          <span>{path.totalEstimatedMinutes} min</span>
+                        </div>
+
+                        {/* Progress bar */}
+                        <div className="mb-3">
+                          <div className="h-1.5 bg-gray-700 rounded-sm overflow-hidden mb-1.5">
+                            <div
+                              className="h-full bg-nvidia-green transition-all duration-300"
+                              style={{
+                                width: `${progress?.overallPercentage || 0}%`,
+                              }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            {progress?.completedLessons || 0}/
+                            {progress?.totalLessons || 0} lessons
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5">
+                          {path.skills.slice(0, 3).map((skill, i) => (
+                            <span
+                              key={i}
+                              className="px-2 py-0.5 bg-gray-700 rounded-sm text-xs text-gray-400"
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* Modules view */}
+            {viewState === "modules" && selectedPath && (
+              <div className="flex flex-col gap-4">
+                {selectedPath.modules.map((module, idx) => {
+                  const isLocked = !areModulePrerequisitesMet(
+                    module.id,
+                    completedModules,
+                  );
+                  const isComplete = completedModules.has(module.id);
+                  const lessonsComplete = module.lessons.filter((l) =>
+                    completedLessons.has(l.id),
+                  ).length;
+
+                  return (
+                    <div
+                      key={module.id}
+                      className={`flex items-center bg-gray-800 rounded-lg p-5 gap-5 ${isLocked ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:border-nvidia-green"} border border-gray-700 transition-colors`}
+                      onClick={() => selectModule(module)}
+                    >
+                      <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center font-bold text-base text-nvidia-green shrink-0">
+                        {isComplete ? "✓" : isLocked ? "🔒" : idx + 1}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="m-0 mb-2 text-white text-base">
+                          {module.icon} {module.title}
+                        </h3>
+                        <p className="m-0 mb-2.5 text-gray-500 text-sm">
+                          {module.description}
+                        </p>
+                        <div className="text-sm text-gray-600 flex gap-4">
+                          <span>
+                            {lessonsComplete}/{module.lessons.length} lessons
+                          </span>
+                          {module.prerequisites &&
+                            module.prerequisites.length > 0 && (
+                              <span className="text-orange-500 text-xs">
+                                Requires: {module.prerequisites.join(", ")}
+                              </span>
+                            )}
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <div className="relative flex items-center justify-center">
+                          <svg width="50" height="50" viewBox="0 0 50 50">
+                            <circle
+                              cx="25"
+                              cy="25"
+                              r="20"
+                              fill="none"
+                              stroke="#374151"
+                              strokeWidth="4"
+                            />
+                            <circle
+                              cx="25"
+                              cy="25"
+                              r="20"
+                              fill="none"
+                              className="stroke-nvidia-green"
+                              strokeWidth="4"
+                              strokeDasharray={`${(lessonsComplete / module.lessons.length) * 125.6} 125.6`}
+                              transform="rotate(-90 25 25)"
+                            />
+                          </svg>
+                          <span className="absolute text-xs font-bold text-nvidia-green">
+                            {Math.round(
+                              (lessonsComplete / module.lessons.length) * 100,
+                            )}
+                            %
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Lessons view */}
+            {viewState === "lessons" && selectedModule && (
+              <div className="flex flex-col gap-4">
+                {selectedModule.lessons.map((lesson, idx) => {
+                  const isLocked = !areLessonPrerequisitesMet(
+                    lesson.id,
+                    completedLessons,
+                  );
+                  const isComplete = completedLessons.has(lesson.id);
+
+                  return (
+                    <div
+                      key={lesson.id}
+                      className={`bg-gray-800 rounded-lg p-5 border-l-4 ${isComplete ? "border-l-green-500" : isLocked ? "border-l-gray-600" : "border-l-nvidia-green"} ${isLocked ? "opacity-60" : "cursor-pointer hover:bg-gray-750"} transition-colors`}
+                      onClick={() => !isLocked && startLesson(lesson)}
+                    >
+                      <div className="flex items-start gap-4 mb-4">
+                        <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center font-bold text-sm text-nvidia-green shrink-0">
+                          {isComplete ? "✓" : isLocked ? "🔒" : idx + 1}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="m-0 mb-1 text-white text-base">
+                            {lesson.title}
+                          </h4>
+                          <p className="m-0 text-gray-500 text-sm">
+                            {lesson.description}
+                          </p>
+                        </div>
+                        <div className="flex gap-2.5">
+                          <span className="px-2 py-0.5 rounded-sm text-xs bg-gray-700 text-gray-400 capitalize">
+                            {lesson.difficulty}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-sm text-xs bg-gray-700 text-nvidia-green">
+                            {lesson.estimatedMinutes} min
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-sm text-gray-500 mb-2.5">
+                        <strong>Objectives:</strong>
+                        <ul className="mt-1 mb-0 pl-5">
+                          {lesson.objectives.map((obj, i) => (
+                            <li key={i}>{obj}</li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="text-sm text-gray-500 mb-4 flex items-center gap-2 flex-wrap">
+                        <strong>Commands:</strong>
+                        {lesson.commands.map((cmd, i) => (
+                          <code
+                            key={i}
+                            className="px-2 py-0.5 bg-black rounded-sm font-mono text-xs text-nvidia-green"
+                          >
+                            {cmd}
+                          </code>
+                        ))}
+                      </div>
+
+                      {!isLocked && !isComplete && (
+                        <button
+                          className="px-5 py-2.5 bg-nvidia-green border-none rounded text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startLesson(lesson);
+                          }}
+                        >
+                          Start Lesson →
+                        </button>
+                      )}
+                      {isComplete && (
+                        <button
+                          className="px-5 py-2.5 bg-gray-600 border-none rounded text-white font-bold cursor-pointer text-sm hover:bg-gray-500 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startLesson(lesson);
+                          }}
+                        >
+                          Review Lesson
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Tutorial view */}
+            {viewState === "tutorial" && renderTutorialStep()}
           </>
         )}
 
-        {/* Modules view */}
-        {viewState === 'modules' && selectedPath && (
-          <div className="flex flex-col gap-4">
-            {selectedPath.modules.map((module, idx) => {
-              const isLocked = !areModulePrerequisitesMet(module.id, completedModules);
-              const isComplete = completedModules.has(module.id);
-              const lessonsComplete = module.lessons.filter(l => completedLessons.has(l.id)).length;
+        {/* ==================== PRACTICE TAB ==================== */}
+        {activeTab === "practice" && (
+          <div>
+            {/* Practice Introduction */}
+            <div className="bg-gray-800/50 rounded-lg p-5 mb-6 border border-gray-700">
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Hands-On Practice
+              </h3>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                Put your knowledge into action with interactive scenarios and
+                labs. Each exercise provides real-world situations you might
+                encounter working with NVIDIA AI infrastructure.
+              </p>
+            </div>
 
-              return (
-                <div
-                  key={module.id}
-                  className={`flex items-center bg-gray-800 rounded-lg p-5 gap-5 ${isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-nvidia-green'} border border-gray-700 transition-colors`}
-                  onClick={() => selectModule(module)}
-                >
-                  <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center font-bold text-base text-nvidia-green shrink-0">
-                    {isComplete ? '✓' : isLocked ? '🔒' : idx + 1}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="m-0 mb-2 text-white text-base">
-                      {module.icon} {module.title}
+            {/* Domain-based Scenario Cards */}
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Practice Scenarios by Domain
+            </h3>
+            <DomainProgressCards onStartScenario={onStartScenario} />
+          </div>
+        )}
+
+        {/* ==================== TEST TAB ==================== */}
+        {activeTab === "test" && (
+          <div>
+            {/* Test Introduction */}
+            <div className="bg-gray-800/50 rounded-lg p-5 mb-6 border border-gray-700">
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Assess Your Knowledge
+              </h3>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                Test yourself with quizzes and full exam simulations. Track your
+                progress and identify areas for improvement.
+              </p>
+            </div>
+
+            {/* Exam Gauntlet - Full Practice Exam */}
+            <div className="bg-gradient-to-br from-nvidia-green/20 to-nvidia-darkgreen/20 rounded-lg p-6 mb-8 border border-nvidia-green">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-3xl">🎯</span>
+                    <h3 className="text-xl font-bold text-white m-0">
+                      Exam Gauntlet
                     </h3>
-                    <p className="m-0 mb-2.5 text-gray-500 text-sm">{module.description}</p>
-                    <div className="text-sm text-gray-600 flex gap-4">
-                      <span>{lessonsComplete}/{module.lessons.length} lessons</span>
-                      {module.prerequisites && module.prerequisites.length > 0 && (
-                        <span className="text-orange-500 text-xs">
-                          Requires: {module.prerequisites.join(', ')}
-                        </span>
-                      )}
-                    </div>
                   </div>
-                  <div className="relative">
-                    <div className="relative flex items-center justify-center">
-                      <svg width="50" height="50" viewBox="0 0 50 50">
-                        <circle cx="25" cy="25" r="20" fill="none" stroke="#374151" strokeWidth="4" />
-                        <circle
-                          cx="25" cy="25" r="20" fill="none"
-                          className="stroke-nvidia-green"
-                          strokeWidth="4"
-                          strokeDasharray={`${(lessonsComplete / module.lessons.length) * 125.6} 125.6`}
-                          transform="rotate(-90 25 25)"
-                        />
-                      </svg>
-                      <span className="absolute text-xs font-bold text-nvidia-green">
-                        {Math.round((lessonsComplete / module.lessons.length) * 100)}%
-                      </span>
-                    </div>
+                  <p className="text-gray-300 text-sm mb-4 max-w-lg">
+                    Take a timed practice exam simulating the NCP-AII
+                    certification. 10 weighted scenarios across all domains with
+                    detailed results breakdown.
+                  </p>
+                  <div className="flex gap-4 text-sm text-gray-400 mb-4">
+                    <span>10 scenarios</span>
+                    <span>30-90 min</span>
+                    <span>70% passing</span>
                   </div>
+                  <button
+                    onClick={() => setShowExamGauntlet(true)}
+                    className="px-6 py-3 bg-nvidia-green text-black rounded-lg font-bold hover:bg-nvidia-darkgreen transition-colors"
+                  >
+                    Start Exam Gauntlet
+                  </button>
                 </div>
-              );
-            })}
+                <div className="hidden md:block text-6xl opacity-30">📝</div>
+              </div>
+            </div>
+
+            {/* Tool Selection Quizzes */}
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Tool Selection Quizzes
+            </h3>
+            <p className="text-gray-400 text-sm mb-4">
+              Test your knowledge of which tool to use for different scenarios.
+              Pass with 75% to unlock tiered scenarios.
+            </p>
+
+            <div className="mb-8">
+              <CommandFamilyCards mode="full" onStartQuiz={handleStartQuiz} />
+            </div>
+
+            {/* Quick Stats */}
+            <div className="bg-gray-800 rounded-lg p-5 border border-gray-700">
+              <h4 className="text-white font-semibold mb-4">Your Progress</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-nvidia-green">
+                    {completedLessons.size}
+                  </div>
+                  <div className="text-xs text-gray-500">Lessons Complete</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-nvidia-green">
+                    {completedModules.size}
+                  </div>
+                  <div className="text-xs text-gray-500">Modules Complete</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-nvidia-green">
+                    {totalStats.totalLessons}
+                  </div>
+                  <div className="text-xs text-gray-500">Total Lessons</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-nvidia-green">
+                    {totalStats.totalLessons > 0
+                      ? Math.round(
+                          (completedLessons.size / totalStats.totalLessons) *
+                            100,
+                        )
+                      : 0}
+                    %
+                  </div>
+                  <div className="text-xs text-gray-500">Overall Progress</div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
-
-        {/* Lessons view */}
-        {viewState === 'lessons' && selectedModule && (
-          <div className="flex flex-col gap-4">
-            {selectedModule.lessons.map((lesson, idx) => {
-              const isLocked = !areLessonPrerequisitesMet(lesson.id, completedLessons);
-              const isComplete = completedLessons.has(lesson.id);
-
-              return (
-                <div
-                  key={lesson.id}
-                  className={`bg-gray-800 rounded-lg p-5 border-l-4 ${isComplete ? 'border-l-green-500' : isLocked ? 'border-l-gray-600' : 'border-l-nvidia-green'} ${isLocked ? 'opacity-60' : 'cursor-pointer hover:bg-gray-750'} transition-colors`}
-                  onClick={() => !isLocked && startLesson(lesson)}
-                >
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center font-bold text-sm text-nvidia-green shrink-0">
-                      {isComplete ? '✓' : isLocked ? '🔒' : idx + 1}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="m-0 mb-1 text-white text-base">{lesson.title}</h4>
-                      <p className="m-0 text-gray-500 text-sm">{lesson.description}</p>
-                    </div>
-                    <div className="flex gap-2.5">
-                      <span className="px-2 py-0.5 rounded-sm text-xs bg-gray-700 text-gray-400 capitalize">{lesson.difficulty}</span>
-                      <span className="px-2 py-0.5 rounded-sm text-xs bg-gray-700 text-nvidia-green">{lesson.estimatedMinutes} min</span>
-                    </div>
-                  </div>
-
-                  <div className="text-sm text-gray-500 mb-2.5">
-                    <strong>Objectives:</strong>
-                    <ul className="mt-1 mb-0 pl-5">
-                      {lesson.objectives.map((obj, i) => (
-                        <li key={i}>{obj}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="text-sm text-gray-500 mb-4 flex items-center gap-2 flex-wrap">
-                    <strong>Commands:</strong>
-                    {lesson.commands.map((cmd, i) => (
-                      <code key={i} className="px-2 py-0.5 bg-black rounded-sm font-mono text-xs text-nvidia-green">{cmd}</code>
-                    ))}
-                  </div>
-
-                  {!isLocked && !isComplete && (
-                    <button
-                      className="px-5 py-2.5 bg-nvidia-green border-none rounded text-black font-bold cursor-pointer text-sm hover:bg-nvidia-darkgreen transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        startLesson(lesson);
-                      }}
-                    >
-                      Start Lesson →
-                    </button>
-                  )}
-                  {isComplete && (
-                    <button
-                      className="px-5 py-2.5 bg-gray-600 border-none rounded text-white font-bold cursor-pointer text-sm hover:bg-gray-500 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        startLesson(lesson);
-                      }}
-                    >
-                      Review Lesson
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Tutorial view */}
-        {viewState === 'tutorial' && renderTutorialStep()}
       </div>
+
+      {/* Quiz Modal */}
+      {activeQuizFamilyId && (
+        <WhichToolQuiz
+          familyId={activeQuizFamilyId}
+          onComplete={handleQuizComplete}
+          onClose={handleQuizClose}
+        />
+      )}
+
+      {/* Exam Gauntlet Modal */}
+      {showExamGauntlet && <ExamGauntlet onExit={handleExamGauntletExit} />}
     </div>
   );
 };
@@ -815,11 +1240,11 @@ export const LearningPaths: React.FC<LearningPathsProps> = ({
 // Helper function to get domain color
 function getDomainColor(domainId: DomainId): string {
   const colors: Record<DomainId, string> = {
-    domain1: '#3b82f6', // blue
-    domain2: '#22c55e', // green
-    domain3: '#a855f7', // purple
-    domain4: '#f97316', // orange
-    domain5: '#ef4444', // red
+    domain1: "#3b82f6", // blue
+    domain2: "#22c55e", // green
+    domain3: "#a855f7", // purple
+    domain4: "#f97316", // orange
+    domain5: "#ef4444", // red
   };
   return colors[domainId];
 }

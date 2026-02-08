@@ -1,0 +1,146 @@
+{
+  "command": "ib_send_lat",
+  "category": "rdma_perf",
+  "description": "RDMA send latency benchmark for InfiniBand and RoCE networks. Measures round-trip latency for RDMA send/receive operations between two nodes. Part of the perftest suite.",
+  "synopsis": "ib_send_lat [options] [server_ip]",
+  "version_documented": "perftest 4.5+",
+  "source_urls": ["https://github.com/linux-rdma/perftest"],
+  "installation": {
+    "package": "perftest",
+    "notes": "Install via: apt install perftest or yum install perftest"
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--ib-dev",
+      "description": "Use specified IB device",
+      "arguments": "<dev>",
+      "argument_type": "string",
+      "example": "-d mlx5_0"
+    },
+    {
+      "short": "-i",
+      "long": "--ib-port",
+      "description": "Use specified port of IB device",
+      "arguments": "<port>",
+      "argument_type": "integer",
+      "default": "1"
+    },
+    {
+      "short": "-s",
+      "long": "--size",
+      "description": "Message size in bytes",
+      "arguments": "<size>",
+      "argument_type": "integer",
+      "default": "2"
+    },
+    {
+      "short": "-n",
+      "long": "--iters",
+      "description": "Number of iterations",
+      "arguments": "<iters>",
+      "argument_type": "integer",
+      "default": "1000"
+    },
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Run all message sizes"
+    },
+    {
+      "short": "-p",
+      "long": "--port",
+      "description": "TCP port for connection setup",
+      "arguments": "<port>",
+      "argument_type": "integer",
+      "default": "18515"
+    },
+    {
+      "short": "-F",
+      "long": "--CPU-freq",
+      "description": "Show CPU frequency in output"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run as server",
+      "command": "ib_send_lat",
+      "requires_root": false
+    },
+    {
+      "description": "Run as client",
+      "command": "ib_send_lat 192.168.1.100",
+      "output_example": "#bytes #iterations    t_min[usec]    t_max[usec]  t_typical[usec]    t_avg[usec]    t_stdev[usec]\n    2     1000           1.25           4.12           1.32            1.35         0.18",
+      "requires_root": false
+    },
+    {
+      "description": "Test all message sizes",
+      "command": "ib_send_lat -a 192.168.1.100",
+      "requires_root": false
+    },
+    {
+      "description": "Test specific size with more iterations",
+      "command": "ib_send_lat -s 64 -n 10000 192.168.1.100",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Unable to find any IB devices",
+      "meaning": "No InfiniBand devices detected",
+      "resolution": "Verify IB drivers and device presence"
+    },
+    {
+      "message": "Couldn't connect to server",
+      "meaning": "TCP connection failed",
+      "resolution": "Check server is running and network connectivity"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["ib_write_lat", "ib_read_lat", "ib_send_bw", "ibstat"],
+    "notes": "Send/receive latency is typically slightly higher than RDMA write latency due to the two-sided nature of the operation. Typical HDR IB latency is ~1-2 microseconds."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for basic operation",
+    "write_operations": "N/A - benchmark tool",
+    "notes": "Requires access to IB device"
+  },
+  "limitations": [
+    "Synthetic benchmark",
+    "Single connection test",
+    "Requires coordinated execution",
+    "Results sensitive to CPU frequency scaling"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["device", "port", "state"],
+        "description": "Reads IB port state for benchmark"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Link down",
+        "effect": "Test fails"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ib_write_lat",
+        "shared_state": "Latency should be similar for same message sizes"
+      }
+    ]
+  }
+}

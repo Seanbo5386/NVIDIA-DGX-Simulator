@@ -1,0 +1,104 @@
+{
+  "command": "head",
+  "category": "general",
+  "description": "Output the first part of files. Shows beginning of files without reading entirely. Essential for previewing large HPC data files.",
+  "synopsis": "head [options] [file...]",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/head.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-n",
+      "long": "--lines",
+      "description": "Number of lines",
+      "arguments": "<N>",
+      "argument_type": "integer",
+      "example": "-n 20"
+    },
+    {
+      "short": "-c",
+      "long": "--bytes",
+      "description": "Number of bytes",
+      "arguments": "<N>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-q",
+      "long": "--quiet",
+      "description": "No headers for multiple files"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Always show headers"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "First 10 lines (default)",
+      "command": "head file.txt",
+      "requires_root": false
+    },
+    {
+      "description": "First 20 lines",
+      "command": "head -n 20 large_log.txt",
+      "requires_root": false
+    },
+    {
+      "description": "First 1KB",
+      "command": "head -c 1024 binary_file",
+      "requires_root": false
+    },
+    {
+      "description": "Preview multiple files",
+      "command": "head -n 5 *.log",
+      "requires_root": false
+    },
+    {
+      "description": "With pipeline",
+      "command": "sort -nr sizes.txt | head -20",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [],
+  "interoperability": {
+    "related_commands": ["tail", "cat", "less"],
+    "notes": "Use negative number to exclude last N lines. Fast for large files since it only reads beginning."
+  },
+  "permissions": {
+    "read_operations": "Read access to file",
+    "write_operations": "N/A",
+    "notes": "Standard user"
+  },
+  "limitations": ["No search capability", "Cannot seek to middle"],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads beginning of files"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "tail",
+        "shared_state": "Opposite ends of file"
+      }
+    ]
+  }
+}

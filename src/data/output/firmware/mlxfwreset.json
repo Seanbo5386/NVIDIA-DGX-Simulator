@@ -1,0 +1,176 @@
+{
+  "command": "mlxfwreset",
+  "category": "firmware",
+  "description": "Reset or query Mellanox/NVIDIA network adapter firmware without system reboot. Used to apply firmware configuration changes (from mlxconfig) or recover from certain error conditions without full system restart.",
+  "synopsis": "mlxfwreset [options] -d <device> <command>",
+  "version_documented": "MFT 4.30.0+",
+  "source_urls": [
+    "https://docs.nvidia.com/networking/display/mftv4300/mlxfwreset"
+  ],
+  "installation": {
+    "package": "mft",
+    "notes": "Part of Mellanox Firmware Tools (MFT). Install via MLNX_OFED or download from NVIDIA."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--device",
+      "description": "Target MST device name (required)",
+      "arguments": "<device>",
+      "argument_type": "string",
+      "required": true,
+      "example": "-d /dev/mst/mt4123_pciconf0"
+    },
+    {
+      "short": "-y",
+      "long": "--yes",
+      "description": "Answer yes to all questions"
+    },
+    {
+      "long": "--level",
+      "description": "Reset level (0-5), higher levels are more thorough",
+      "arguments": "<level>",
+      "argument_type": "integer",
+      "default": "3"
+    },
+    {
+      "long": "--sync",
+      "description": "Wait for reset to complete before returning",
+      "arguments": "<0|1>",
+      "argument_type": "integer",
+      "default": "1"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "query",
+      "description": "Query reset capabilities and requirements",
+      "synopsis": "mlxfwreset -d <device> query"
+    },
+    {
+      "name": "reset",
+      "description": "Perform firmware reset",
+      "synopsis": "mlxfwreset -d <device> reset"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error or reset failed"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Query reset requirements for device",
+      "command": "mlxfwreset -d /dev/mst/mt4123_pciconf0 query",
+      "output_example": "Device #1:\n----------\nDevice Type:      ConnectX6\nDescription:      ConnectX-6 VPI adapter card\n\nSupported reset levels:\n0: PCIe link toggle (minimal)\n3: Driver restart (default)\n5: Full power cycle",
+      "requires_root": true
+    },
+    {
+      "description": "Reset device after mlxconfig change",
+      "command": "mlxfwreset -d /dev/mst/mt4123_pciconf0 -y reset",
+      "requires_root": true
+    },
+    {
+      "description": "Reset with specific level",
+      "command": "mlxfwreset -d /dev/mst/mt4123_pciconf0 --level 5 -y reset",
+      "requires_root": true
+    },
+    {
+      "description": "Reset all Mellanox devices",
+      "command": "for dev in $(mst status -v | grep mt | awk '{print $1}'); do mlxfwreset -d $dev -y reset; done",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Device in use, cannot reset",
+      "meaning": "Network interface is active with traffic or processes using RDMA",
+      "resolution": "Stop network traffic, unload rdma_ucm module, or use higher reset level"
+    },
+    {
+      "message": "Failed to open device",
+      "meaning": "MST driver not loaded or device path incorrect",
+      "resolution": "Run 'mst start' to load MST driver"
+    },
+    {
+      "message": "Reset not supported on this device",
+      "meaning": "Device firmware or hardware doesn't support reset",
+      "resolution": "Full system reboot required"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "mlxconfig",
+      "mlxfwmanager",
+      "mlxlink",
+      "mst",
+      "ibstat"
+    ],
+    "notes": "Use after mlxconfig changes to apply without reboot. Higher reset levels may cause brief network outage. In HPC clusters, coordinate resets to avoid job failures."
+  },
+  "permissions": {
+    "read_operations": "Root required for query",
+    "write_operations": "Root required for reset",
+    "notes": "Reset affects all processes using the device"
+  },
+  "limitations": [
+    "May cause brief network disruption",
+    "Some changes still require full reboot",
+    "Active RDMA connections will be dropped",
+    "Not all reset levels supported on all devices"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "firmware_state",
+        "fields": ["device_type", "current_version"],
+        "description": "Queries device reset capabilities"
+      },
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["device", "state"],
+        "description": "Checks current device state"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["state", "physical_state"],
+        "description": "Reset causes temporary port state change",
+        "requires_privilege": "root"
+      },
+      {
+        "state_domain": "firmware_state",
+        "fields": ["device_state"],
+        "description": "Reloads firmware configuration",
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "mlxconfig parameter change",
+        "effect": "Reset required to apply changes"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "mlxconfig query",
+        "shared_state": "New configuration visible after reset"
+      },
+      {
+        "command": "ibstat",
+        "shared_state": "Port state reflects post-reset status"
+      }
+    ]
+  }
+}

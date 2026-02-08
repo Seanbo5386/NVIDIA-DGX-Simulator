@@ -1,0 +1,139 @@
+{
+  "command": "smpquery",
+  "category": "networking",
+  "description": "Query InfiniBand Subnet Management packets directly from nodes. Retrieves node info, port info, and switch forwarding tables. Essential for low-level fabric debugging.",
+  "synopsis": "smpquery [options] <query_type> <lid> [port]",
+  "version_documented": "OFED/rdma-core 30+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/smpquery.8.html"],
+  "installation": {
+    "package": "infiniband-diags",
+    "notes": "Install via: apt install infiniband-diags or yum install infiniband-diags"
+  },
+  "global_options": [
+    {
+      "short": "-C",
+      "long": "--Ca",
+      "description": "Use specified CA name",
+      "arguments": "<ca_name>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-P",
+      "long": "--Port",
+      "description": "Use specified CA port",
+      "arguments": "<port>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-D",
+      "long": "--Direct",
+      "description": "Use directed route (DR) addressing"
+    },
+    {
+      "short": "-G",
+      "long": "--Guid",
+      "description": "Use GUID instead of LID"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Query node information",
+      "command": "smpquery nodeinfo 1",
+      "output_example": "NodeInfo:\n   BaseVersion:............1\n   ClassVersion:...........1\n   NodeType:...............Channel Adapter\n   NumPorts:...............2\n   SystemImageGUID:........0x0002c903001f8c30\n   NodeGUID:...............0x0002c903001f8c30\n   PortGUID:...............0x0002c903001f8c31",
+      "requires_root": false
+    },
+    {
+      "description": "Query port information",
+      "command": "smpquery portinfo 1 1",
+      "output_example": "PortInfo:\n   LID:....................1\n   state:..................Active\n   physical state:.........LinkUp\n   link width:.............4X\n   link speed:.............HDR",
+      "requires_root": false
+    },
+    {
+      "description": "Query switch forwarding table",
+      "command": "smpquery fdb 5",
+      "requires_root": false
+    },
+    {
+      "description": "Query node description",
+      "command": "smpquery nodedesc 1",
+      "requires_root": false
+    },
+    {
+      "description": "Query using GUID",
+      "command": "smpquery -G nodeinfo 0x0002c903001f8c30",
+      "requires_root": false
+    },
+    {
+      "description": "Query switch linear forwarding table",
+      "command": "smpquery -D lft 0",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "smpquery: iberror",
+      "meaning": "Cannot communicate with target node",
+      "resolution": "Verify LID is correct and node is reachable"
+    },
+    {
+      "message": "MAD status: invalid",
+      "meaning": "Invalid query type or parameters",
+      "resolution": "Check query type and port number"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["saquery", "sminfo", "ibstat", "ibnetdiscover"],
+    "notes": "SMP (Subnet Management Packets) provide direct access to node attributes. Query types: nodeinfo, nodedesc, portinfo, switchinfo, pkeytbl, sl2vl, vlarb, fdb, mfdb, guidinfo."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for basic queries",
+    "write_operations": "N/A - read-only command",
+    "notes": "Some queries may require SM access"
+  },
+  "limitations": [
+    "Requires target LID or GUID",
+    "Some queries only valid for switches",
+    "Direct route requires path knowledge"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["lid", "guid", "port_state", "link_speed", "link_width"],
+        "description": "Queries node and port attributes directly"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Fabric topology change",
+        "effect": "Query results reflect new state"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ibstat",
+        "shared_state": "Port info matches local ibstat output"
+      },
+      {
+        "command": "saquery",
+        "shared_state": "Node and port records match SA database"
+      }
+    ]
+  }
+}

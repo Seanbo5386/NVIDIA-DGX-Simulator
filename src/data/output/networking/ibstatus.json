@@ -1,0 +1,214 @@
+{
+  "command": "ibstatus",
+  "category": "networking",
+  "description": "Query InfiniBand device port status including link state, physical state, rate, and LID (Local Identifier). ibstatus provides a quick overview of InfiniBand port conditions, displaying each port's current state, negotiated link rate, and assigned LID. It is commonly used for rapid health checks of InfiniBand adapters and ports in HPC cluster environments.",
+  "synopsis": "ibstatus [-h] [-v] [-V] [device[:port]]...",
+  "version_documented": "rdma-core 44.0+",
+  "source_urls": ["https://github.com/linux-rdma/rdma-core"],
+  "installation": {
+    "package": "rdma-core or infiniband-diags",
+    "notes": "On RHEL/CentOS: yum install rdma-core infiniband-diags. On Ubuntu/Debian: apt install rdma-core infiniband-diags. Part of the standard RDMA userspace utilities."
+  },
+  "global_options": [
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display usage information and available options."
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Enable verbose output. Shows additional information about each port."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display the ibstatus version information."
+    },
+    {
+      "flag": "[device[:port]]",
+      "description": "Specify device and optional port to query. Device names are typically mlx5_0, mlx5_1, etc. Port numbers start from 1. Multiple device:port pairs can be specified.",
+      "argument_type": "string",
+      "example": "ibstatus mlx5_0:1"
+    }
+  ],
+  "output_formats": {
+    "default": "Human-readable multi-line format showing InfiniBand port status. Each port section includes device/port identifier, state, physical state, rate (Gb/sec), and base LID. The rate is shown as combined speed (e.g., 4X HDR for 200 Gb/s)."
+  },
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - query completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - failed to query device or invalid arguments"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show status of all InfiniBand ports on the system",
+      "command": "ibstatus",
+      "output_example": "Infiniband device 'mlx5_0' port 1 status:\n\tdefault gid:\t fe80:0000:0000:0000:506b:4b03:00ab:1234\n\tbase lid:\t 0x7b\n\tsm lid:\t\t 0x1\n\tstate:\t\t 4: ACTIVE\n\tphys state:\t 5: LinkUp\n\trate:\t\t 200 Gb/sec (4X HDR)",
+      "requires_root": false
+    },
+    {
+      "description": "Query a specific InfiniBand device",
+      "command": "ibstatus mlx5_0",
+      "output_example": "Infiniband device 'mlx5_0' port 1 status:\n\tdefault gid:\t fe80:0000:0000:0000:506b:4b03:00ab:1234\n\tbase lid:\t 0x7b\n\tsm lid:\t\t 0x1\n\tstate:\t\t 4: ACTIVE\n\tphys state:\t 5: LinkUp\n\trate:\t\t 200 Gb/sec (4X HDR)",
+      "requires_root": false
+    },
+    {
+      "description": "Query a specific port on a specific device",
+      "command": "ibstatus mlx5_0:1",
+      "output_example": "Infiniband device 'mlx5_0' port 1 status:\n\tdefault gid:\t fe80:0000:0000:0000:506b:4b03:00ab:1234\n\tbase lid:\t 0x7b\n\tsm lid:\t\t 0x1\n\tstate:\t\t 4: ACTIVE\n\tphys state:\t 5: LinkUp\n\trate:\t\t 200 Gb/sec (4X HDR)",
+      "requires_root": false
+    },
+    {
+      "description": "Query multiple devices or ports at once",
+      "command": "ibstatus mlx5_0:1 mlx5_1:1",
+      "output_example": "Infiniband device 'mlx5_0' port 1 status:\n\tdefault gid:\t fe80:0000:0000:0000:506b:4b03:00ab:1234\n\tbase lid:\t 0x7b\n\tsm lid:\t\t 0x1\n\tstate:\t\t 4: ACTIVE\n\tphys state:\t 5: LinkUp\n\trate:\t\t 200 Gb/sec (4X HDR)\n\nInfiniband device 'mlx5_1' port 1 status:\n\tdefault gid:\t fe80:0000:0000:0000:506b:4b03:00ab:5678\n\tbase lid:\t 0x7c\n\tsm lid:\t\t 0x1\n\tstate:\t\t 4: ACTIVE\n\tphys state:\t 5: LinkUp\n\trate:\t\t 200 Gb/sec (4X HDR)",
+      "requires_root": false
+    },
+    {
+      "description": "Check link rates across all ports (scripting pattern)",
+      "command": "ibstatus | grep rate",
+      "output_example": "\trate:\t\t 200 Gb/sec (4X HDR)\n\trate:\t\t 200 Gb/sec (4X HDR)",
+      "requires_root": false
+    },
+    {
+      "description": "Check port states to identify down links",
+      "command": "ibstatus | grep -E 'state:|phys state:'",
+      "output_example": "\tstate:\t\t 4: ACTIVE\n\tphys state:\t 5: LinkUp",
+      "requires_root": false
+    },
+    {
+      "description": "Identify ports that are not active (scripting pattern)",
+      "command": "ibstatus | grep -v ACTIVE | grep state",
+      "output_example": "\tstate:\t\t 1: DOWN\n\tphys state:\t 2: Polling",
+      "requires_root": false
+    },
+    {
+      "description": "Show port status with verbose output",
+      "command": "ibstatus -v mlx5_0:1",
+      "output_example": "Infiniband device 'mlx5_0' port 1 status:\n\tdefault gid:\t fe80:0000:0000:0000:506b:4b03:00ab:1234\n\tbase lid:\t 0x7b\n\tsm lid:\t\t 0x1\n\tstate:\t\t 4: ACTIVE\n\tphys state:\t 5: LinkUp\n\trate:\t\t 200 Gb/sec (4X HDR)",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No IB devices found",
+      "meaning": "No InfiniBand HCAs were detected in the system",
+      "resolution": "Verify InfiniBand hardware is installed with 'lspci | grep -i mellanox' or 'lspci | grep -i infiniband'. Check if RDMA kernel modules are loaded with 'lsmod | grep mlx' or 'lsmod | grep ib'. Load modules with 'modprobe mlx5_core mlx5_ib' if needed."
+    },
+    {
+      "message": "Invalid device name",
+      "meaning": "The specified HCA device name does not exist",
+      "resolution": "Use 'ibstatus' without arguments to see available devices. Device names are typically mlx5_0, mlx5_1, etc. for Mellanox/NVIDIA ConnectX adapters."
+    },
+    {
+      "message": "Invalid port number",
+      "meaning": "The specified port number does not exist on the device",
+      "resolution": "Check the number of ports on the device with 'ibstatus <device>'. Port numbers typically start from 1. Most HCAs have 1 or 2 ports."
+    },
+    {
+      "message": "state: 1: DOWN / phys state: 2: Polling",
+      "meaning": "The port is attempting to establish a link but no active connection exists",
+      "resolution": "Check physical cable connections. Verify the remote port is up and configured. Check for cable damage or connector issues. Ensure the subnet manager is running on the fabric."
+    },
+    {
+      "message": "state: 1: DOWN / phys state: 3: Disabled",
+      "meaning": "The port has been administratively disabled",
+      "resolution": "The port may be disabled intentionally. To re-enable, use ibportstate or appropriate fabric management tools."
+    },
+    {
+      "message": "phys state: 1: Sleep",
+      "meaning": "The port is in a low-power sleep state",
+      "resolution": "The port may enter sleep mode for power saving. Check power management settings or wake the port by initiating traffic."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "ibstat",
+      "ibhosts",
+      "iblinkinfo",
+      "ibv_devinfo",
+      "mlxlink",
+      "ibportstate",
+      "perfquery",
+      "smpquery",
+      "ibnetdiscover"
+    ],
+    "uses_library": ["libibverbs", "libibmad", "libibumad"],
+    "notes": "ibstatus provides a condensed view of port status compared to ibstat. For detailed HCA attributes (firmware, node GUID, etc.), use ibstat. For vendor-specific diagnostics on NVIDIA/Mellanox adapters, use mlxlink. ibv_devinfo provides similar information through the verbs API. For fabric-wide topology, use iblinkinfo or ibnetdiscover."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required for basic queries. Any user can query port status information.",
+    "write_operations": "ibstatus is read-only and does not modify any settings.",
+    "notes": "Some related commands (like ibportstate for modifying port state) require root privileges. ibstatus itself is purely diagnostic and read-only."
+  },
+  "limitations": [
+    "Only shows local HCA port information, not fabric-wide topology",
+    "Does not show detailed HCA attributes like firmware version or node GUID (use ibstat for those)",
+    "Does not show error counters or performance statistics (use perfquery for that)",
+    "Does not show cable information or signal quality (use mlxlink for that)",
+    "Cannot modify port settings (read-only tool)",
+    "Shows rate as combined speed, not detailed width x speed breakdown",
+    "Does not provide historical or trending data"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": [
+          "device",
+          "port",
+          "state",
+          "physical_state",
+          "rate",
+          "lid",
+          "sm_lid",
+          "gid"
+        ],
+        "description": "ibstatus reads InfiniBand port state and link information from the kernel's RDMA subsystem"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "IB port state changes (ACTIVE, DOWN, INIT, ARMED)",
+        "effect": "State field reflects the new logical port state with numeric code"
+      },
+      {
+        "state_change": "Physical link state changes (LinkUp, Polling, Disabled, Sleep)",
+        "effect": "Physical state field reflects the new physical link condition with numeric code"
+      },
+      {
+        "state_change": "Link speed or width negotiation completes",
+        "effect": "Rate field shows the newly negotiated link rate (e.g., 200 Gb/sec 4X HDR)"
+      },
+      {
+        "state_change": "Subnet Manager assigns new LIDs",
+        "effect": "Base lid and SM lid fields are updated with new values"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ibstat",
+        "shared_state": "Port state, physical state, rate, LID information (ibstat shows more detailed HCA attributes)"
+      },
+      {
+        "command": "ibv_devinfo",
+        "shared_state": "Port state, physical state, and link information through verbs API"
+      },
+      {
+        "command": "iblinkinfo",
+        "shared_state": "Port state and link connectivity (iblinkinfo shows fabric-wide view)"
+      },
+      {
+        "command": "mlxlink",
+        "shared_state": "Link state, speed, and width (mlxlink provides vendor-specific diagnostics)"
+      }
+    ]
+  }
+}

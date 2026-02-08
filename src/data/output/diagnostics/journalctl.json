@@ -1,0 +1,662 @@
+{
+  "command": "journalctl",
+  "category": "diagnostics",
+  "description": "Query the systemd journal - view logs from systemd, kernel, and services with powerful filtering. journalctl is the primary tool for querying and displaying messages from the systemd journal, which collects and stores logging data from the kernel, system services, and applications. It provides powerful filtering capabilities by time, service, priority, and custom fields, making it essential for diagnosing system issues, monitoring HPC services like Slurm and NVIDIA daemons, and tracking cluster-wide events.",
+  "synopsis": "journalctl [OPTIONS] [MATCHES]",
+  "version_documented": "systemd 252+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/journalctl.1.html"],
+  "installation": {
+    "package": "systemd",
+    "notes": "Part of the systemd package which is the init system and service manager on most modern Linux distributions. The journalctl command requires access to the journal files typically stored in /var/log/journal/ or /run/log/journal/."
+  },
+  "global_options": [
+    {
+      "short": "-f",
+      "long": "--follow",
+      "description": "Show only the most recent journal entries, and continuously print new entries as they are appended to the journal. Similar to tail -f for log files.",
+      "example": "journalctl -f"
+    },
+    {
+      "short": "-n",
+      "long": "--lines=",
+      "description": "Show the most recent N journal entries. If the argument is omitted, defaults to 10.",
+      "arguments": "<number>",
+      "argument_type": "integer",
+      "default": "10",
+      "example": "journalctl -n 50"
+    },
+    {
+      "short": "-r",
+      "long": "--reverse",
+      "description": "Reverse output so that the newest entries are displayed first. Useful for quickly seeing the most recent events.",
+      "example": "journalctl -r"
+    },
+    {
+      "short": "-o",
+      "long": "--output=",
+      "description": "Controls the formatting of journal entries. Available formats: short, short-precise, short-iso, short-iso-precise, short-full, short-monotonic, short-unix, verbose, export, json, json-pretty, json-sse, json-seq, cat, with-unit.",
+      "arguments": "<format>",
+      "argument_type": "string",
+      "default": "short",
+      "example": "journalctl -o json-pretty"
+    },
+    {
+      "short": "-u",
+      "long": "--unit=",
+      "description": "Show messages for the specified systemd unit UNIT (such as a service unit), or for any of the units matched by PATTERN. Can be specified multiple times.",
+      "arguments": "<UNIT|PATTERN>",
+      "argument_type": "string",
+      "example": "journalctl -u slurmctld"
+    },
+    {
+      "short": "-t",
+      "long": "--identifier=",
+      "description": "Show messages for the specified syslog identifier SYSLOG_IDENTIFIER. Can be specified multiple times.",
+      "arguments": "<SYSLOG_IDENTIFIER>",
+      "argument_type": "string",
+      "example": "journalctl -t kernel"
+    },
+    {
+      "short": "-p",
+      "long": "--priority=",
+      "description": "Filter output by message priorities or priority ranges. Takes either a single log level (0-7 or emerg, alert, crit, err, warning, notice, info, debug) or a range like crit..warning. Using a single level shows all messages up to and including that level.",
+      "arguments": "<priority>",
+      "argument_type": "string",
+      "example": "journalctl -p err"
+    },
+    {
+      "short": "-b",
+      "long": "--boot=",
+      "description": "Show messages from a specific boot. 0 is the current boot, -1 is the previous boot, -2 is two boots ago, etc. Without argument shows messages from the current boot. Can also use boot ID.",
+      "arguments": "[ID][+/-offset]",
+      "argument_type": "string",
+      "default": "current boot",
+      "example": "journalctl -b -1"
+    },
+    {
+      "short": "-S",
+      "long": "--since=",
+      "description": "Start showing entries on or newer than the specified date. Date format: YYYY-MM-DD HH:MM:SS or relative times like 'yesterday', '1 hour ago', 'today'.",
+      "arguments": "<date>",
+      "argument_type": "string",
+      "example": "journalctl --since '2024-01-01 10:00:00'"
+    },
+    {
+      "short": "-U",
+      "long": "--until=",
+      "description": "Start showing entries on or older than the specified date. Same date format as --since.",
+      "arguments": "<date>",
+      "argument_type": "string",
+      "example": "journalctl --until '2024-01-01 12:00:00'"
+    },
+    {
+      "short": "-k",
+      "long": "--dmesg",
+      "description": "Show only kernel messages. This implies -b and adds the match _TRANSPORT=kernel.",
+      "example": "journalctl -k"
+    },
+    {
+      "long": "--disk-usage",
+      "description": "Show the current disk usage of all journal files. Shows the total space used by archived and active journal files.",
+      "example": "journalctl --disk-usage"
+    },
+    {
+      "long": "--vacuum-size=",
+      "description": "Remove the oldest archived journal files until the disk space they use falls below the specified size. Accepts K, M, G, T suffixes.",
+      "arguments": "<size>",
+      "argument_type": "string",
+      "example": "journalctl --vacuum-size=1G"
+    },
+    {
+      "long": "--vacuum-time=",
+      "description": "Remove archived journal files older than the specified timespan. Accepts s, m, h, days, weeks, months, years suffixes.",
+      "arguments": "<time>",
+      "argument_type": "string",
+      "example": "journalctl --vacuum-time=2weeks"
+    },
+    {
+      "long": "--vacuum-files=",
+      "description": "Remove archived journal files until only the specified number of journal files remain.",
+      "arguments": "<number>",
+      "argument_type": "integer",
+      "example": "journalctl --vacuum-files=10"
+    },
+    {
+      "short": "-g",
+      "long": "--grep=",
+      "description": "Filter output to entries where the MESSAGE= field matches the specified regular expression. Uses PCRE2 pattern matching.",
+      "arguments": "<pattern>",
+      "argument_type": "string",
+      "example": "journalctl -g 'error|fail'"
+    },
+    {
+      "long": "--case-sensitive",
+      "description": "Make pattern matching case sensitive or insensitive. Takes boolean argument.",
+      "arguments": "[BOOLEAN]",
+      "argument_type": "string",
+      "default": "true",
+      "example": "journalctl -g nvidia --case-sensitive=false"
+    },
+    {
+      "long": "--no-pager",
+      "description": "Do not pipe output into a pager. Useful for scripting or when piping to other commands.",
+      "example": "journalctl --no-pager -n 100"
+    },
+    {
+      "long": "--output-fields=",
+      "description": "Comma-separated list of fields to include in the output. Only valid with verbose, export, json, json-pretty, json-sse, json-seq output modes.",
+      "arguments": "<fields>",
+      "argument_type": "string",
+      "example": "journalctl -o verbose --output-fields=MESSAGE,_PID,_SYSTEMD_UNIT"
+    },
+    {
+      "short": "-x",
+      "long": "--catalog",
+      "description": "Augment log lines with explanation texts from the message catalog. This adds human-readable context to known message types.",
+      "example": "journalctl -x"
+    },
+    {
+      "long": "--no-hostname",
+      "description": "Do not show the hostname field in log output. Useful when reviewing logs from a single machine.",
+      "example": "journalctl --no-hostname"
+    },
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Show all fields in full, even if they include unprintable characters or are very long.",
+      "example": "journalctl -a"
+    },
+    {
+      "short": "-e",
+      "long": "--pager-end",
+      "description": "Jump to the end of the journal within the pager. Implies -n1000 to ensure the end of the journal is buffered.",
+      "example": "journalctl -e"
+    },
+    {
+      "short": "-q",
+      "long": "--quiet",
+      "description": "Suppress all informational messages, warning messages about inaccessible journal files, and similar.",
+      "example": "journalctl -q -u nginx"
+    },
+    {
+      "long": "--user-unit=",
+      "description": "Show messages for the specified user session unit. Similar to --unit but for user services.",
+      "arguments": "<UNIT>",
+      "argument_type": "string",
+      "example": "journalctl --user-unit=pipewire"
+    },
+    {
+      "long": "--system",
+      "description": "Show messages from system services and the kernel. This is the default when running as root.",
+      "example": "journalctl --system"
+    },
+    {
+      "long": "--user",
+      "description": "Show messages from service of the current user. This is the default when running as a regular user.",
+      "example": "journalctl --user"
+    },
+    {
+      "short": "-D",
+      "long": "--directory=",
+      "description": "Takes a directory path as argument. Show journal files from the specified directory instead of the default runtime and system journal paths.",
+      "arguments": "<DIR>",
+      "argument_type": "path",
+      "example": "journalctl -D /var/log/journal/remote/"
+    },
+    {
+      "long": "--file=",
+      "description": "Read journal entries from a specific journal file. Can be specified multiple times.",
+      "arguments": "<GLOB>",
+      "argument_type": "path",
+      "example": "journalctl --file=/var/log/journal/*/system.journal"
+    },
+    {
+      "long": "--merge",
+      "description": "Show entries interleaved from all available journals, including remote ones.",
+      "example": "journalctl --merge"
+    },
+    {
+      "long": "--cursor=",
+      "description": "Start showing entries from the location in the journal specified by the cursor string.",
+      "arguments": "<cursor>",
+      "argument_type": "string",
+      "example": "journalctl --cursor='s=...' --after-cursor"
+    },
+    {
+      "long": "--after-cursor=",
+      "description": "Start showing entries after the location specified by the cursor string.",
+      "arguments": "<cursor>",
+      "argument_type": "string",
+      "example": "journalctl --after-cursor='s=...'"
+    },
+    {
+      "long": "--show-cursor",
+      "description": "Show the cursor string after the last entry. The cursor can be used to resume reading at the same position.",
+      "example": "journalctl --show-cursor -n 1"
+    },
+    {
+      "long": "--list-boots",
+      "description": "Show a tabular list of boot IDs, their first and last message timestamps and relative offset to current boot.",
+      "example": "journalctl --list-boots"
+    },
+    {
+      "long": "--utc",
+      "description": "Express timestamps in Coordinated Universal Time (UTC) instead of local time.",
+      "example": "journalctl --utc"
+    },
+    {
+      "long": "--sync",
+      "description": "Ask the journal daemon to write all unwritten journal data to disk and synchronize all journals.",
+      "example": "journalctl --sync"
+    },
+    {
+      "long": "--flush",
+      "description": "Ask the journal daemon to flush all journal data from /run/log/journal/ into /var/log/journal/.",
+      "example": "journalctl --flush"
+    },
+    {
+      "long": "--rotate",
+      "description": "Ask the journal daemon to rotate journal files. Journal file rotation moves all currently active journal files into archived journal files.",
+      "example": "journalctl --rotate"
+    },
+    {
+      "long": "--verify",
+      "description": "Check the journal file for internal consistency. Verifies that journal files are not corrupted.",
+      "example": "journalctl --verify"
+    },
+    {
+      "short": "-N",
+      "long": "--fields",
+      "description": "Print all field names currently used in all entries of the journal.",
+      "example": "journalctl --fields"
+    },
+    {
+      "short": "-F",
+      "long": "--field=",
+      "description": "Print all possible data values the specified field can take in all entries of the journal.",
+      "arguments": "<FIELD>",
+      "argument_type": "string",
+      "example": "journalctl -F _SYSTEMD_UNIT"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Print a short help text and exit.",
+      "example": "journalctl --help"
+    },
+    {
+      "long": "--version",
+      "description": "Print a short version string and exit.",
+      "example": "journalctl --version"
+    }
+  ],
+  "output_formats": {
+    "short": "Default format. Shows one line per journal entry with timestamp, hostname, syslog identifier, and message. Similar to classic syslog format.",
+    "short-precise": "Like short but with microsecond precision timestamps.",
+    "short-iso": "Like short but timestamps are in ISO 8601 wallclock format.",
+    "short-iso-precise": "Like short-iso but with microsecond precision.",
+    "short-full": "Like short but shows timestamps with full weekday, date, and timezone information.",
+    "short-monotonic": "Like short but shows monotonic timestamps (time since boot).",
+    "short-unix": "Like short but shows Unix epoch timestamps.",
+    "verbose": "Shows full data structure of entries with all fields. Most complete output format for debugging.",
+    "export": "Binary format suitable for backup and transfer. Can be imported with systemd-journal-remote.",
+    "json": "Single-line JSON format. Each entry is a JSON object on a single line.",
+    "json-pretty": "Multi-line JSON format with pretty-printing for human readability.",
+    "json-sse": "JSON format wrapped for Server-Sent Events.",
+    "json-seq": "JSON format with RFC 7464 JSON Sequence framing.",
+    "cat": "Show only the message field itself without any metadata. Pure message content.",
+    "with-unit": "Like short but prefixes the unit name before each message."
+  },
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - general failure or no journal entries matched the query"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "View all journal entries",
+      "command": "journalctl",
+      "output_example": "-- Journal begins at Mon 2024-01-01 00:00:00 UTC, ends at Mon 2024-01-15 10:30:00 UTC. --\nJan 15 10:29:55 hpc-node01 systemd[1]: Started NVIDIA Persistence Daemon.\nJan 15 10:29:56 hpc-node01 nvidia-persistenced[1234]: Started (1234)",
+      "requires_root": false
+    },
+    {
+      "description": "Follow new log entries in real-time",
+      "command": "journalctl -f",
+      "output_example": "Jan 15 10:30:00 hpc-node01 slurmctld[2345]: sched: Allocating nodes to JobId=12345\nJan 15 10:30:01 hpc-node01 slurmd[3456]: Launch task request from uid 1000",
+      "requires_root": false
+    },
+    {
+      "description": "Show kernel messages only (like dmesg)",
+      "command": "journalctl -k",
+      "output_example": "Jan 15 10:00:00 hpc-node01 kernel: nvidia: loading out-of-tree module taints kernel.\nJan 15 10:00:00 hpc-node01 kernel: NVRM: loading NVIDIA UNIX x86_64 Kernel Module  535.154.05",
+      "requires_root": false
+    },
+    {
+      "description": "View logs for a specific systemd service",
+      "command": "journalctl -u slurmctld",
+      "output_example": "Jan 15 10:00:00 hpc-mgmt01 systemd[1]: Starting Slurm controller daemon...\nJan 15 10:00:01 hpc-mgmt01 slurmctld[1234]: slurmctld version 23.11.1 started on cluster mycluster\nJan 15 10:00:01 hpc-mgmt01 slurmctld[1234]: Running as primary controller",
+      "requires_root": false
+    },
+    {
+      "description": "Show logs since a specific time",
+      "command": "journalctl --since '2024-01-01 10:00:00'",
+      "output_example": "-- Journal begins at Mon 2024-01-01 10:00:00 UTC. --\nJan 01 10:00:00 hpc-node01 systemd[1]: Started Session 1 of user admin.",
+      "requires_root": false
+    },
+    {
+      "description": "Show logs for a specific time range",
+      "command": "journalctl --since '1 hour ago' --until 'now'",
+      "output_example": "-- Journal begins at Mon 2024-01-15 09:30:00 UTC, ends at Mon 2024-01-15 10:30:00 UTC. --",
+      "requires_root": false
+    },
+    {
+      "description": "Show only error and higher priority messages",
+      "command": "journalctl -p err",
+      "output_example": "Jan 15 09:45:00 hpc-node01 kernel: NVRM: Xid (PCI:0000:3b:00.0): 79, GPU has fallen off the bus.\nJan 15 09:45:01 hpc-node01 slurmd[1234]: error: GPU 0 unavailable",
+      "requires_root": false
+    },
+    {
+      "description": "Filter NVIDIA driver messages from kernel",
+      "command": "journalctl -t kernel | grep -i nvidia",
+      "output_example": "Jan 15 10:00:00 hpc-node01 kernel: nvidia: loading out-of-tree module taints kernel.\nJan 15 10:00:01 hpc-node01 kernel: NVRM: loading NVIDIA UNIX x86_64 Kernel Module  535.154.05\nJan 15 10:00:02 hpc-node01 kernel: nvidia 0000:3b:00.0: enabling device (0000 -> 0003)",
+      "requires_root": false
+    },
+    {
+      "description": "Show logs from the current boot only",
+      "command": "journalctl -b 0",
+      "output_example": "-- Journal begins at Mon 2024-01-15 10:00:00 UTC. --\nJan 15 10:00:00 hpc-node01 kernel: Linux version 5.15.0-generic...",
+      "requires_root": false
+    },
+    {
+      "description": "Show logs from the previous boot",
+      "command": "journalctl -b -1",
+      "output_example": "-- Journal begins at Sun 2024-01-14 08:00:00 UTC, ends at Sun 2024-01-14 23:59:59 UTC. --",
+      "requires_root": false
+    },
+    {
+      "description": "Output in pretty-printed JSON format",
+      "command": "journalctl -o json-pretty -n 1",
+      "output_example": "{\n  \"_HOSTNAME\" : \"hpc-node01\",\n  \"_SYSTEMD_UNIT\" : \"slurmctld.service\",\n  \"MESSAGE\" : \"sched: Allocating nodes to JobId=12345\",\n  \"PRIORITY\" : \"6\"\n}",
+      "requires_root": false
+    },
+    {
+      "description": "View NVIDIA persistence daemon logs",
+      "command": "journalctl -u nvidia-persistenced",
+      "output_example": "Jan 15 10:00:00 hpc-node01 systemd[1]: Starting NVIDIA Persistence Daemon...\nJan 15 10:00:01 hpc-node01 nvidia-persistenced[1234]: Started (1234)\nJan 15 10:00:01 hpc-node01 nvidia-persistenced[1234]: Device 0000:3b:00.0 - ready",
+      "requires_root": false
+    },
+    {
+      "description": "View NVIDIA Fabric Manager logs",
+      "command": "journalctl -u nv-fabricmanager",
+      "output_example": "Jan 15 10:00:00 hpc-node01 systemd[1]: Starting NVIDIA Fabric Manager...\nJan 15 10:00:02 hpc-node01 nv-fabricmanager[1234]: Fabric Manager started\nJan 15 10:00:03 hpc-node01 nv-fabricmanager[1234]: NVSwitch 0 initialized",
+      "requires_root": false
+    },
+    {
+      "description": "View DCGM (Data Center GPU Manager) logs",
+      "command": "journalctl -u dcgm",
+      "output_example": "Jan 15 10:00:00 hpc-node01 systemd[1]: Starting NVIDIA DCGM...\nJan 15 10:00:01 hpc-node01 nv-hostengine[1234]: Host Engine started\nJan 15 10:00:02 hpc-node01 nv-hostengine[1234]: 8 GPUs detected",
+      "requires_root": false
+    },
+    {
+      "description": "View Slurm daemon logs across all daemons",
+      "command": "journalctl -u 'slurm*'",
+      "output_example": "Jan 15 10:00:00 hpc-mgmt01 slurmctld[1234]: slurmctld version 23.11.1 started\nJan 15 10:00:00 hpc-node01 slurmd[2345]: slurmd version 23.11.1 started\nJan 15 10:00:01 hpc-mgmt01 slurmdbd[3456]: slurmdbd version 23.11.1 started",
+      "requires_root": false
+    },
+    {
+      "description": "View InfiniBand subnet manager logs",
+      "command": "journalctl -u opensm",
+      "output_example": "Jan 15 10:00:00 hpc-mgmt01 systemd[1]: Starting InfiniBand Subnet Manager...\nJan 15 10:00:01 hpc-mgmt01 opensm[1234]: OpenSM 3.3.24\nJan 15 10:00:02 hpc-mgmt01 opensm[1234]: SM port is GUID 0x0002c9030012ab00",
+      "requires_root": false
+    },
+    {
+      "description": "View Docker/container runtime logs",
+      "command": "journalctl -u docker -u containerd",
+      "output_example": "Jan 15 10:00:00 hpc-node01 systemd[1]: Starting Docker Application Container Engine...\nJan 15 10:00:01 hpc-node01 dockerd[1234]: Starting up\nJan 15 10:00:02 hpc-node01 containerd[2345]: containerd successfully booted",
+      "requires_root": false
+    },
+    {
+      "description": "Show journal disk usage",
+      "command": "journalctl --disk-usage",
+      "output_example": "Archived and active journals take up 2.4G in the file system.",
+      "requires_root": false
+    },
+    {
+      "description": "Clean up old journal files by size",
+      "command": "journalctl --vacuum-size=500M",
+      "output_example": "Vacuuming done, freed 1.9G of archived journals from /var/log/journal.",
+      "requires_root": true
+    },
+    {
+      "description": "Clean up journal files older than 2 weeks",
+      "command": "journalctl --vacuum-time=2weeks",
+      "output_example": "Vacuuming done, freed 1.2G of archived journals from /var/log/journal.",
+      "requires_root": true
+    },
+    {
+      "description": "Search for specific pattern in messages",
+      "command": "journalctl -g 'GPU|Xid|NVRM'",
+      "output_example": "Jan 15 10:00:00 hpc-node01 kernel: NVRM: loading NVIDIA UNIX x86_64 Kernel Module\nJan 15 10:30:00 hpc-node01 kernel: NVRM: Xid (PCI:0000:3b:00.0): 79, GPU has fallen off the bus",
+      "requires_root": false
+    },
+    {
+      "description": "List all available boots",
+      "command": "journalctl --list-boots",
+      "output_example": "-2 abc123def456 Mon 2024-01-13 10:00:00 UTC-Mon 2024-01-13 23:59:59 UTC\n-1 def456abc789 Sun 2024-01-14 08:00:00 UTC-Sun 2024-01-14 23:59:59 UTC\n 0 789abcdef123 Mon 2024-01-15 10:00:00 UTC-Mon 2024-01-15 10:30:00 UTC",
+      "requires_root": false
+    },
+    {
+      "description": "Filter by process ID",
+      "command": "journalctl _PID=1234",
+      "output_example": "Jan 15 10:00:00 hpc-node01 slurmctld[1234]: slurmctld version 23.11.1 started\nJan 15 10:00:01 hpc-node01 slurmctld[1234]: Running as primary controller",
+      "requires_root": false
+    },
+    {
+      "description": "Filter by user ID",
+      "command": "journalctl _UID=1000",
+      "output_example": "Jan 15 10:00:00 hpc-node01 bash[5678]: User admin logged in\nJan 15 10:00:05 hpc-node01 srun[5679]: Submitted job 12345",
+      "requires_root": false
+    },
+    {
+      "description": "Show most recent entries first (newest first)",
+      "command": "journalctl -r -n 20",
+      "output_example": "Jan 15 10:30:00 hpc-node01 slurmd[1234]: Launch task for JobId=12345 complete\nJan 15 10:29:59 hpc-node01 slurmd[1234]: task 0 started",
+      "requires_root": false
+    },
+    {
+      "description": "Show message content only (no metadata)",
+      "command": "journalctl -o cat -u slurmctld -n 5",
+      "output_example": "slurmctld version 23.11.1 started on cluster mycluster\nRunning as primary controller\nsched: Allocating nodes to JobId=12345\nNode hpc-node01 now idle\nsched: job_submit/lua: job 12346 queued",
+      "requires_root": false
+    },
+    {
+      "description": "Show verbose output with all fields",
+      "command": "journalctl -o verbose -n 1",
+      "output_example": "Mon 2024-01-15 10:30:00.123456 UTC [s=abc123;i=1234;b=xyz789;m=12345;t=...;x=...]\n    _TRANSPORT=journal\n    _PID=1234\n    _UID=0\n    _GID=0\n    _SYSTEMD_UNIT=slurmctld.service\n    MESSAGE=sched: Allocating nodes to JobId=12345",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No journal files were found.",
+      "meaning": "The journal directory is empty or inaccessible. Journal files may not be persisted or the path is incorrect.",
+      "resolution": "Ensure systemd-journald is running and configured to persist logs. Check /var/log/journal/ exists and has correct permissions. Verify Storage= in /etc/systemd/journald.conf is set to 'persistent' or 'auto'."
+    },
+    {
+      "message": "Failed to open journal directory /var/log/journal: Permission denied",
+      "meaning": "The current user lacks permissions to read journal files.",
+      "resolution": "Run as root or add the user to the 'systemd-journal' group: sudo usermod -aG systemd-journal $USER"
+    },
+    {
+      "message": "No entries",
+      "meaning": "No journal entries matched the specified filters.",
+      "resolution": "Broaden the search criteria. Check if the time range is correct, the unit name is spelled correctly, or if the priority filter is too restrictive."
+    },
+    {
+      "message": "Journal file corrupted, ignoring file",
+      "meaning": "A journal file is damaged and cannot be read.",
+      "resolution": "Run 'journalctl --verify' to check journal integrity. Corrupted files may need to be removed from /var/log/journal/. Consider rotating logs with 'journalctl --rotate'."
+    },
+    {
+      "message": "Vacuuming done, freed 0B of archived journals",
+      "meaning": "No journal files met the criteria for deletion during vacuum operation.",
+      "resolution": "This is informational. The journal may already be smaller than the vacuum threshold or all files are still within the time limit."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "dmesg",
+      "systemctl",
+      "systemd-cat",
+      "logger",
+      "systemd-journald",
+      "rsyslog",
+      "syslog",
+      "cat /var/log/messages",
+      "cat /var/log/syslog"
+    ],
+    "uses_library": ["libsystemd"],
+    "notes": "journalctl is the primary interface to the systemd journal. On systemd-based systems, it provides access to logs from all system components. The journal stores structured data with metadata fields, enabling powerful filtering beyond what traditional syslog provides. For compatibility, rsyslog or syslog-ng can be configured to forward journal entries to traditional log files. Remote journal collection is possible with systemd-journal-remote and systemd-journal-upload."
+  },
+  "permissions": {
+    "read_operations": "Regular users can read their own session logs. System logs require membership in the 'systemd-journal' group or root privileges. The journal may be configured to allow broader access.",
+    "write_operations": "Vacuum operations (--vacuum-size, --vacuum-time, --vacuum-files), flush, rotate, and sync operations require root privileges. User applications can write to the journal using sd_journal_print() or the logger command.",
+    "notes": "Access to the journal is controlled by file permissions on /var/log/journal/ and ACLs. By default, users can read logs from their own sessions. System administrators should ensure HPC operators have appropriate access to system logs for troubleshooting."
+  },
+  "limitations": [
+    "Journal size is limited by configuration; old entries are automatically deleted when limits are reached",
+    "Journal files are stored in a binary format and require journalctl to read",
+    "Remote journal collection requires additional configuration (systemd-journal-remote)",
+    "Boot logs are only available if journal persistence is enabled (Storage=persistent in journald.conf)",
+    "Field-based filtering requires knowledge of internal field names (use -N to list available fields)",
+    "Very high log volume can impact system performance; rate limiting may drop messages",
+    "Journal corruption can occur after unclean shutdowns; verify periodically with --verify"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "service_logs",
+          "system_events",
+          "boot_messages",
+          "authentication_logs",
+          "cron_logs"
+        ],
+        "description": "Reads systemd journal which aggregates logs from all system services, kernel messages, authentication events, and scheduled tasks."
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "driver_logs",
+          "persistenced_logs",
+          "fabricmanager_logs",
+          "dcgm_logs",
+          "xid_errors"
+        ],
+        "description": "Accesses logs from NVIDIA-related services including nvidia-persistenced, nv-fabricmanager, and DCGM, as well as kernel messages about GPU driver loading and errors."
+      },
+      {
+        "state_domain": "job_state",
+        "fields": [
+          "slurmctld_logs",
+          "slurmd_logs",
+          "slurmdbd_logs",
+          "job_events",
+          "scheduler_decisions"
+        ],
+        "description": "Reads Slurm daemon logs that record job submissions, scheduling decisions, node state changes, and accounting events."
+      },
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["opensm_logs", "ib_driver_events", "rdma_events"],
+        "description": "Accesses InfiniBand subnet manager (opensm) logs and kernel messages about IB driver initialization, link state changes, and RDMA events."
+      },
+      {
+        "state_domain": "container_state",
+        "fields": ["docker_logs", "containerd_logs", "container_events"],
+        "description": "Reads container runtime logs from Docker, containerd, and related services that manage container lifecycle on HPC nodes."
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "system_state",
+        "fields": ["journal_storage"],
+        "description": "Vacuum operations clean old journal files, reducing disk usage. Flush and rotate operations manage journal file lifecycle.",
+        "requires_flags": [
+          "--vacuum-size",
+          "--vacuum-time",
+          "--vacuum-files",
+          "--flush",
+          "--rotate"
+        ],
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Service starts or stops",
+        "effect": "Journal entries are created for service lifecycle events including start, stop, restart, and failure"
+      },
+      {
+        "state_change": "GPU driver loads or unloads",
+        "effect": "Kernel messages logged for NVIDIA driver initialization, device detection, and any errors"
+      },
+      {
+        "state_change": "GPU error occurs (Xid error)",
+        "effect": "NVRM Xid error messages logged through the kernel journal transport with error details"
+      },
+      {
+        "state_change": "Slurm job submitted or completed",
+        "effect": "slurmctld and slurmd log job events including submission, allocation, launch, and completion"
+      },
+      {
+        "state_change": "Authentication event occurs",
+        "effect": "PAM and sshd log authentication attempts, successes, and failures"
+      },
+      {
+        "state_change": "Container started or stopped",
+        "effect": "Docker/containerd log container lifecycle events including creation, start, stop, and removal"
+      },
+      {
+        "state_change": "InfiniBand link state changes",
+        "effect": "opensm and kernel IB driver log link up/down events and fabric topology changes"
+      },
+      {
+        "state_change": "System boot or shutdown",
+        "effect": "Complete boot sequence logged from early kernel initialization through service startup"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "dmesg",
+        "shared_state": "Both provide access to kernel messages; journalctl -k shows same kernel messages as dmesg but may include additional journal metadata"
+      },
+      {
+        "command": "systemctl",
+        "shared_state": "Service status from systemctl corresponds to service events in journal; systemctl status shows recent journal entries"
+      },
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU errors visible in nvidia-smi (Xid errors, ECC errors) are also logged in the kernel journal"
+      },
+      {
+        "command": "scontrol",
+        "shared_state": "Slurm job and node state changes shown by scontrol correspond to events logged by slurmctld/slurmd"
+      },
+      {
+        "command": "docker logs",
+        "shared_state": "Container logs available through 'docker logs' are also captured in the journal when using journald logging driver"
+      },
+      {
+        "command": "ibstat",
+        "shared_state": "InfiniBand port state changes visible in dmesg/journal correspond to states reported by ibstat"
+      }
+    ]
+  }
+}

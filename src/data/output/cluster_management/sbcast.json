@@ -1,0 +1,178 @@
+{
+  "command": "sbcast",
+  "category": "cluster_management",
+  "description": "Broadcast files to compute nodes within a Slurm job allocation. Efficiently distributes executable or data files to all allocated nodes. Essential for jobs not using shared filesystem.",
+  "synopsis": "sbcast [options] <source> <destination>",
+  "version_documented": "Slurm 21.08+",
+  "source_urls": ["https://slurm.schedmd.com/sbcast.html"],
+  "installation": {
+    "package": "slurm-client",
+    "notes": "Part of Slurm workload manager."
+  },
+  "global_options": [
+    {
+      "short": "-C",
+      "long": "--compress",
+      "description": "Compress file during transfer",
+      "arguments": "[type]",
+      "argument_type": "string",
+      "example": "--compress=lz4"
+    },
+    {
+      "short": "-f",
+      "long": "--force",
+      "description": "Overwrite existing destination"
+    },
+    {
+      "short": "-F",
+      "long": "--fanout",
+      "description": "Fanout for tree broadcast",
+      "arguments": "<count>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-j",
+      "long": "--jobid",
+      "description": "Job ID for broadcast",
+      "arguments": "<jobid>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-p",
+      "long": "--preserve",
+      "description": "Preserve file permissions"
+    },
+    {
+      "short": "-s",
+      "long": "--size",
+      "description": "Block size for transfer",
+      "arguments": "<size>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-t",
+      "long": "--timeout",
+      "description": "Transfer timeout seconds",
+      "arguments": "<seconds>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Verbose output"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Broadcast executable to nodes",
+      "command": "sbcast ./myapp /tmp/myapp",
+      "requires_root": false
+    },
+    {
+      "description": "Broadcast with compression",
+      "command": "sbcast -C lz4 ./large_data.bin /local/data.bin",
+      "requires_root": false
+    },
+    {
+      "description": "Broadcast preserving permissions",
+      "command": "sbcast -p ./script.sh /tmp/script.sh",
+      "requires_root": false
+    },
+    {
+      "description": "Broadcast to specific job",
+      "command": "sbcast -j 12345 ./config.json /scratch/config.json",
+      "requires_root": false
+    },
+    {
+      "description": "Force overwrite",
+      "command": "sbcast -f ./updated_app /tmp/myapp",
+      "requires_root": false
+    },
+    {
+      "description": "Verbose transfer",
+      "command": "sbcast -v ./model.bin /local/model.bin",
+      "output_example": "sbcast: broadcasting './model.bin' to 128 nodes\nsbcast: transfer complete: 2.5 GB in 3.2 seconds (800 MB/s)",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No job allocation",
+      "meaning": "Not running within a Slurm job",
+      "resolution": "Run sbcast within srun/sbatch job or specify --jobid"
+    },
+    {
+      "message": "File exists",
+      "meaning": "Destination file already exists",
+      "resolution": "Use -f/--force to overwrite"
+    },
+    {
+      "message": "Timeout",
+      "meaning": "Transfer exceeded timeout",
+      "resolution": "Increase --timeout or check network"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["srun", "sbatch", "sgather", "pdcp"],
+    "notes": "Uses hierarchical tree broadcast for efficiency. Useful when compute nodes have local scratch but no shared filesystem. Alternative to NFS for large file distribution."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "Must have valid job allocation",
+    "notes": "Runs as job user on compute nodes"
+  },
+  "limitations": [
+    "Requires active Slurm job allocation",
+    "Destination must be writable on all nodes",
+    "Large files may need increased timeout",
+    "Not for returning files (use sgather)"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "job_state",
+        "fields": ["job_id", "node_list"],
+        "description": "Uses job allocation to determine target nodes"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Creates files on compute node local storage",
+        "requires_privilege": "job allocation"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Job starts",
+        "effect": "sbcast can be used to stage files"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "srun",
+        "shared_state": "Uses same job allocation"
+      },
+      {
+        "command": "sgather",
+        "shared_state": "Reverse operation for collecting files"
+      }
+    ]
+  }
+}

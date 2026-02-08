@@ -1,14 +1,19 @@
-import type { ExamQuestion, ExamBreakdown, DomainPerformance, DomainId } from '@/types/scenarios';
+import type {
+  ExamQuestion,
+  ExamBreakdown,
+  DomainPerformance,
+  DomainId,
+} from "@/types/scenarios";
 
 /**
  * Exam modes for different study scenarios
  */
 export type ExamMode =
-  | 'full-practice'    // 90 min, 60 questions, domain-weighted
-  | 'quick-quiz'       // 15 min, 15 questions
-  | 'domain-test'      // All questions from one domain
-  | 'weak-area-focus'  // Auto-generated from performance history
-  | 'review-mode';     // Review previous attempt's wrong answers
+  | "full-practice" // 90 min, 60 questions, domain-weighted
+  | "quick-quiz" // 15 min, 15 questions
+  | "domain-test" // All questions from one domain
+  | "weak-area-focus" // Auto-generated from performance history
+  | "review-mode"; // Review previous attempt's wrong answers
 
 /**
  * Configuration for each exam mode
@@ -20,91 +25,99 @@ export interface ExamModeConfig {
   questionCount: number;
   timeLimitMinutes: number;
   shuffleQuestions: boolean;
-  showExplanations: 'never' | 'after-answer' | 'after-exam';
-  domain?: DomainId;  // For domain-test mode
-  weakDomains?: DomainId[];  // For weak-area-focus mode
-  reviewQuestionIds?: string[];  // For review mode
+  showExplanations: "never" | "after-answer" | "after-exam";
+  domain?: DomainId; // For domain-test mode
+  weakDomains?: DomainId[]; // For weak-area-focus mode
+  reviewQuestionIds?: string[]; // For review mode
 }
 
 /**
  * Predefined exam mode configurations
  */
-export const EXAM_MODE_CONFIGS: Record<ExamMode, Omit<ExamModeConfig, 'domain' | 'weakDomains' | 'reviewQuestionIds'>> = {
-  'full-practice': {
-    mode: 'full-practice',
-    name: 'Full Practice Exam',
-    description: 'Complete 60-question exam with domain weighting (90 minutes)',
+export const EXAM_MODE_CONFIGS: Record<
+  ExamMode,
+  Omit<ExamModeConfig, "domain" | "weakDomains" | "reviewQuestionIds">
+> = {
+  "full-practice": {
+    mode: "full-practice",
+    name: "Full Practice Exam",
+    description: "Complete 60-question exam with domain weighting (90 minutes)",
     questionCount: 60,
     timeLimitMinutes: 90,
     shuffleQuestions: true,
-    showExplanations: 'after-exam',
+    showExplanations: "after-exam",
   },
-  'quick-quiz': {
-    mode: 'quick-quiz',
-    name: 'Quick Quiz',
-    description: 'Fast 15-question review across all domains (15 minutes)',
+  "quick-quiz": {
+    mode: "quick-quiz",
+    name: "Quick Quiz",
+    description: "Fast 15-question review across all domains (15 minutes)",
     questionCount: 15,
     timeLimitMinutes: 15,
     shuffleQuestions: true,
-    showExplanations: 'after-answer',
+    showExplanations: "after-answer",
   },
-  'domain-test': {
-    mode: 'domain-test',
-    name: 'Domain Focus',
-    description: 'All questions from a single domain (no time limit)',
-    questionCount: -1,  // Will be set based on domain
-    timeLimitMinutes: 0,  // No limit
+  "domain-test": {
+    mode: "domain-test",
+    name: "Domain Focus",
+    description: "All questions from a single domain (no time limit)",
+    questionCount: -1, // Will be set based on domain
+    timeLimitMinutes: 0, // No limit
     shuffleQuestions: true,
-    showExplanations: 'after-answer',
+    showExplanations: "after-answer",
   },
-  'weak-area-focus': {
-    mode: 'weak-area-focus',
-    name: 'Weak Area Focus',
-    description: 'Questions from domains where you scored below 70%',
+  "weak-area-focus": {
+    mode: "weak-area-focus",
+    name: "Weak Area Focus",
+    description: "Questions from domains where you scored below 70%",
     questionCount: 20,
     timeLimitMinutes: 30,
     shuffleQuestions: true,
-    showExplanations: 'after-answer',
+    showExplanations: "after-answer",
   },
-  'review-mode': {
-    mode: 'review-mode',
-    name: 'Review Mistakes',
-    description: 'Review questions you answered incorrectly',
-    questionCount: -1,  // Will be set based on mistakes
-    timeLimitMinutes: 0,  // No limit
+  "review-mode": {
+    mode: "review-mode",
+    name: "Review Mistakes",
+    description: "Review questions you answered incorrectly",
+    questionCount: -1, // Will be set based on mistakes
+    timeLimitMinutes: 0, // No limit
     shuffleQuestions: false,
-    showExplanations: 'after-answer',
+    showExplanations: "after-answer",
   },
 };
 
 /**
  * Domain names and their descriptions
  */
-export const DOMAIN_INFO: Record<DomainId, { name: string; weight: number; description: string }> = {
+export const DOMAIN_INFO: Record<
+  DomainId,
+  { name: string; weight: number; description: string }
+> = {
   domain1: {
-    name: 'Platform Bring-Up',
+    name: "Platform Bring-Up",
     weight: 31,
-    description: 'Hardware verification, BIOS, BMC, drivers, and POST procedures',
+    description:
+      "Hardware verification, BIOS, BMC, drivers, and POST procedures",
   },
   domain2: {
-    name: 'Accelerator Configuration',
+    name: "Accelerator Configuration",
     weight: 5,
-    description: 'GPU configuration, MIG, NVLink, and accelerator setup',
+    description: "GPU configuration, MIG, NVLink, and accelerator setup",
   },
   domain3: {
-    name: 'Base Infrastructure',
+    name: "Base Infrastructure",
     weight: 19,
-    description: 'Slurm, containers, storage, and network configuration',
+    description: "Slurm, containers, storage, and network configuration",
   },
   domain4: {
-    name: 'Validation & Testing',
+    name: "Validation & Testing",
     weight: 33,
-    description: 'DCGM, benchmarks, health checks, and performance validation',
+    description: "DCGM, benchmarks, health checks, and performance validation",
   },
   domain5: {
-    name: 'Troubleshooting',
+    name: "Troubleshooting",
     weight: 12,
-    description: 'Error diagnosis, XID codes, thermal issues, and problem resolution',
+    description:
+      "Error diagnosis, XID codes, thermal issues, and problem resolution",
   },
 };
 
@@ -113,48 +126,59 @@ export const DOMAIN_INFO: Record<DomainId, { name: string; weight: number; descr
  */
 export function selectQuestionsForMode(
   allQuestions: ExamQuestion[],
-  config: ExamModeConfig
+  config: ExamModeConfig,
 ): ExamQuestion[] {
   let selectedQuestions: ExamQuestion[];
 
   switch (config.mode) {
-    case 'full-practice':
-      selectedQuestions = selectExamQuestions(allQuestions, config.questionCount);
+    case "full-practice":
+      selectedQuestions = selectExamQuestions(
+        allQuestions,
+        config.questionCount,
+      );
       break;
 
-    case 'quick-quiz':
+    case "quick-quiz":
       // Quick quiz: proportional sampling from all domains
-      selectedQuestions = selectExamQuestions(allQuestions, config.questionCount);
+      selectedQuestions = selectExamQuestions(
+        allQuestions,
+        config.questionCount,
+      );
       break;
 
-    case 'domain-test':
+    case "domain-test":
       // All questions from the specified domain
       if (!config.domain) {
-        throw new Error('Domain must be specified for domain-test mode');
+        throw new Error("Domain must be specified for domain-test mode");
       }
-      selectedQuestions = allQuestions.filter(q => q.domain === config.domain);
+      selectedQuestions = allQuestions.filter(
+        (q) => q.domain === config.domain,
+      );
       break;
 
-    case 'weak-area-focus': {
+    case "weak-area-focus": {
       // Questions from weak domains
       if (!config.weakDomains || config.weakDomains.length === 0) {
         // Default to domain4 and domain5 if no weak areas specified
-        config.weakDomains = ['domain4', 'domain5'];
+        config.weakDomains = ["domain4", "domain5"];
       }
-      const weakQuestions = allQuestions.filter(q =>
-        config.weakDomains!.includes(q.domain)
+      const weakQuestions = allQuestions.filter((q) =>
+        config.weakDomains!.includes(q.domain),
       );
-      selectedQuestions = shuffleArray(weakQuestions).slice(0, config.questionCount);
+      selectedQuestions = shuffleArray(weakQuestions).slice(
+        0,
+        config.questionCount,
+      );
       break;
     }
 
-    case 'review-mode': {
+    case "review-mode": {
       // Questions that were answered incorrectly
       if (!config.reviewQuestionIds || config.reviewQuestionIds.length === 0) {
         return [];
       }
       const reviewSet = new Set(config.reviewQuestionIds);
-      selectedQuestions = allQuestions.filter(q => reviewSet.has(q.id));
+      selectedQuestions = allQuestions.filter((q) => reviewSet.has(q.id));
       break;
     }
 
@@ -163,7 +187,7 @@ export function selectQuestionsForMode(
   }
 
   // Shuffle if configured
-  if (config.shuffleQuestions && config.mode !== 'review-mode') {
+  if (config.shuffleQuestions && config.mode !== "review-mode") {
     selectedQuestions = shuffleArray(selectedQuestions);
   }
 
@@ -179,7 +203,7 @@ export function createExamConfig(
     domain?: DomainId;
     weakDomains?: DomainId[];
     reviewQuestionIds?: string[];
-  }
+  },
 ): ExamModeConfig {
   const baseConfig = EXAM_MODE_CONFIGS[mode];
 
@@ -196,8 +220,8 @@ export function createExamConfig(
  */
 export function getIncorrectQuestionIds(breakdown: ExamBreakdown): string[] {
   return breakdown.questionResults
-    .filter(r => !r.correct)
-    .map(r => r.questionId);
+    .filter((r) => !r.correct)
+    .map((r) => r.questionId);
 }
 
 /**
@@ -205,7 +229,7 @@ export function getIncorrectQuestionIds(breakdown: ExamBreakdown): string[] {
  */
 export function getWeakDomainsFromHistory(
   breakdowns: ExamBreakdown[],
-  threshold: number = 70
+  threshold: number = 70,
 ): DomainId[] {
   // Aggregate scores across all exams
   const domainScores: Record<DomainId, { total: number; correct: number }> = {
@@ -216,8 +240,8 @@ export function getWeakDomainsFromHistory(
     domain5: { total: 0, correct: 0 },
   };
 
-  breakdowns.forEach(breakdown => {
-    (Object.keys(breakdown.byDomain) as DomainId[]).forEach(domain => {
+  breakdowns.forEach((breakdown) => {
+    (Object.keys(breakdown.byDomain) as DomainId[]).forEach((domain) => {
       const perf = breakdown.byDomain[domain];
       domainScores[domain].total += perf.questionsTotal;
       domainScores[domain].correct += perf.questionsCorrect;
@@ -226,7 +250,7 @@ export function getWeakDomainsFromHistory(
 
   // Find domains below threshold
   const weakDomains: DomainId[] = [];
-  (Object.keys(domainScores) as DomainId[]).forEach(domain => {
+  (Object.keys(domainScores) as DomainId[]).forEach((domain) => {
     const stats = domainScores[domain];
     if (stats.total > 0) {
       const percentage = (stats.correct / stats.total) * 100;
@@ -243,16 +267,19 @@ export function getWeakDomainsFromHistory(
  * Format time remaining for display
  */
 export function formatTime(seconds: number): string {
-  if (seconds <= 0) return '0:00';
+  if (seconds <= 0) return "0:00";
   const minutes = Math.floor(seconds / 60);
   const secs = seconds % 60;
-  return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  return `${minutes}:${secs.toString().padStart(2, "0")}`;
 }
 
 /**
  * Calculate estimated time per question
  */
-export function getEstimatedTimePerQuestion(totalQuestions: number, timeLimitMinutes: number): number {
+export function getEstimatedTimePerQuestion(
+  totalQuestions: number,
+  timeLimitMinutes: number,
+): number {
   if (timeLimitMinutes <= 0) return 0;
   return Math.floor((timeLimitMinutes * 60) / totalQuestions);
 }
@@ -262,16 +289,16 @@ export function getEstimatedTimePerQuestion(totalQuestions: number, timeLimitMin
  */
 export async function loadExamQuestions(): Promise<ExamQuestion[]> {
   try {
-    const response = await fetch('/src/data/examQuestions.json');
+    const response = await fetch("/src/data/examQuestions.json");
     if (!response.ok) {
-      console.error('Failed to load exam questions:', response.statusText);
+      console.error("Failed to load exam questions:", response.statusText);
       return [];
     }
 
     const data = await response.json();
     return data.questions || [];
   } catch (error) {
-    console.error('Error loading exam questions:', error);
+    console.error("Error loading exam questions:", error);
     return [];
   }
 }
@@ -293,7 +320,7 @@ function shuffleArray<T>(array: T[]): T[] {
  */
 export function selectExamQuestions(
   allQuestions: ExamQuestion[],
-  totalQuestions: number = 35
+  totalQuestions: number = 35,
 ): ExamQuestion[] {
   // Group questions by domain
   const questionsByDomain: Record<DomainId, ExamQuestion[]> = {
@@ -304,7 +331,7 @@ export function selectExamQuestions(
     domain5: [],
   };
 
-  allQuestions.forEach(q => {
+  allQuestions.forEach((q) => {
     questionsByDomain[q.domain].push(q);
   });
 
@@ -327,7 +354,10 @@ export function selectExamQuestions(
   };
 
   // Adjust to ensure total is exactly the target
-  const currentTotal = Object.values(questionsPerDomain).reduce((a, b) => a + b, 0);
+  const currentTotal = Object.values(questionsPerDomain).reduce(
+    (a, b) => a + b,
+    0,
+  );
   const diff = totalQuestions - currentTotal;
   if (diff !== 0) {
     // Add/remove from domain4 (largest domain)
@@ -337,12 +367,14 @@ export function selectExamQuestions(
   // Select and shuffle questions from each domain
   const selectedQuestions: ExamQuestion[] = [];
 
-  (Object.keys(questionsPerDomain) as DomainId[]).forEach(domain => {
+  (Object.keys(questionsPerDomain) as DomainId[]).forEach((domain) => {
     const available = questionsByDomain[domain];
     const needed = questionsPerDomain[domain];
 
     if (available.length < needed) {
-      console.warn(`Not enough questions for ${domain}: have ${available.length}, need ${needed}`);
+      console.warn(
+        `Not enough questions for ${domain}: have ${available.length}, need ${needed}`,
+      );
     }
 
     const shuffled = shuffleArray(available);
@@ -359,11 +391,11 @@ export function selectExamQuestions(
  */
 function isAnswerCorrect(
   question: ExamQuestion,
-  userAnswer: number | number[] | string
+  userAnswer: number | number[] | string,
 ): boolean {
   const correctAnswer = question.correctAnswer;
 
-  if (question.type === 'multiple-select') {
+  if (question.type === "multiple-select") {
     // Both should be arrays
     if (!Array.isArray(userAnswer) || !Array.isArray(correctAnswer)) {
       return false;
@@ -389,12 +421,15 @@ function isAnswerCorrect(
  */
 export function calculateExamScore(
   questions: ExamQuestion[],
-  answers: Map<string, number | number[] | string>
+  answers: Record<string, number | number[] | string>,
 ): ExamBreakdown {
   let totalPoints = 0;
   let earnedPoints = 0;
 
-  const domainStats: Record<DomainId, { total: number; correct: number; weight: number }> = {
+  const domainStats: Record<
+    DomainId,
+    { total: number; correct: number; weight: number }
+  > = {
     domain1: { total: 0, correct: 0, weight: 31 },
     domain2: { total: 0, correct: 0, weight: 5 },
     domain3: { total: 0, correct: 0, weight: 19 },
@@ -403,21 +438,22 @@ export function calculateExamScore(
   };
 
   const domainNames: Record<DomainId, string> = {
-    domain1: 'Platform Bring-Up',
-    domain2: 'Accelerator Configuration',
-    domain3: 'Base Infrastructure',
-    domain4: 'Validation & Testing',
-    domain5: 'Troubleshooting',
+    domain1: "Platform Bring-Up",
+    domain2: "Accelerator Configuration",
+    domain3: "Base Infrastructure",
+    domain4: "Validation & Testing",
+    domain5: "Troubleshooting",
   };
 
-  const questionResults: ExamBreakdown['questionResults'] = [];
+  const questionResults: ExamBreakdown["questionResults"] = [];
 
-  questions.forEach(question => {
+  questions.forEach((question) => {
     totalPoints += question.points;
     domainStats[question.domain].total++;
 
-    const userAnswer = answers.get(question.id);
-    const correct = userAnswer !== undefined && isAnswerCorrect(question, userAnswer);
+    const userAnswer = answers[question.id];
+    const correct =
+      userAnswer !== undefined && isAnswerCorrect(question, userAnswer);
 
     if (correct) {
       earnedPoints += question.points;
@@ -427,21 +463,22 @@ export function calculateExamScore(
     questionResults.push({
       questionId: question.id,
       correct,
-      userAnswer: userAnswer || '',
+      userAnswer: userAnswer || "",
       correctAnswer: question.correctAnswer,
       points: question.points,
     });
   });
 
-  const percentage = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
+  const percentage =
+    totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
 
   // Build domain performance breakdown
-  const byDomain: ExamBreakdown['byDomain'] = {
-    domain1: createDomainPerformance('domain1', domainNames, domainStats),
-    domain2: createDomainPerformance('domain2', domainNames, domainStats),
-    domain3: createDomainPerformance('domain3', domainNames, domainStats),
-    domain4: createDomainPerformance('domain4', domainNames, domainStats),
-    domain5: createDomainPerformance('domain5', domainNames, domainStats),
+  const byDomain: ExamBreakdown["byDomain"] = {
+    domain1: createDomainPerformance("domain1", domainNames, domainStats),
+    domain2: createDomainPerformance("domain2", domainNames, domainStats),
+    domain3: createDomainPerformance("domain3", domainNames, domainStats),
+    domain4: createDomainPerformance("domain4", domainNames, domainStats),
+    domain5: createDomainPerformance("domain5", domainNames, domainStats),
   };
 
   return {
@@ -457,10 +494,14 @@ export function calculateExamScore(
 function createDomainPerformance(
   domainId: DomainId,
   domainNames: Record<DomainId, string>,
-  domainStats: Record<DomainId, { total: number; correct: number; weight: number }>
+  domainStats: Record<
+    DomainId,
+    { total: number; correct: number; weight: number }
+  >,
 ): DomainPerformance {
   const stats = domainStats[domainId];
-  const percentage = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
+  const percentage =
+    stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
 
   return {
     domainName: domainNames[domainId],
@@ -474,14 +515,20 @@ function createDomainPerformance(
 /**
  * Determines if exam is passed based on score
  */
-export function isExamPassed(breakdown: ExamBreakdown, passingScore: number = 70): boolean {
+export function isExamPassed(
+  breakdown: ExamBreakdown,
+  passingScore: number = 70,
+): boolean {
   return breakdown.percentage >= passingScore;
 }
 
 /**
  * Generates a summary message for exam results
  */
-export function getExamResultSummary(breakdown: ExamBreakdown, passed: boolean): string {
+export function getExamResultSummary(
+  breakdown: ExamBreakdown,
+  passed: boolean,
+): string {
   const { percentage, totalPoints, earnedPoints, timeSpent } = breakdown;
 
   const timeMinutes = Math.floor(timeSpent / 60);
@@ -496,8 +543,8 @@ export function getExamResultSummary(breakdown: ExamBreakdown, passed: boolean):
   summary += `Time: ${timeMinutes}m ${timeSeconds}s\n\n`;
 
   summary += `Performance by Domain:\n`;
-  Object.values(breakdown.byDomain).forEach(domain => {
-    const icon = domain.percentage >= 70 ? '✓' : '✗';
+  Object.values(breakdown.byDomain).forEach((domain) => {
+    const icon = domain.percentage >= 70 ? "✓" : "✗";
     summary += `  ${icon} ${domain.domainName}: ${domain.questionsCorrect}/${domain.questionsTotal} (${domain.percentage}%)\n`;
   });
 
@@ -507,9 +554,12 @@ export function getExamResultSummary(breakdown: ExamBreakdown, passed: boolean):
 /**
  * Gets weak domains that need improvement
  */
-export function getWeakDomains(breakdown: ExamBreakdown, threshold: number = 70): DomainPerformance[] {
+export function getWeakDomains(
+  breakdown: ExamBreakdown,
+  threshold: number = 70,
+): DomainPerformance[] {
   return Object.values(breakdown.byDomain)
-    .filter(domain => domain.percentage < threshold)
+    .filter((domain) => domain.percentage < threshold)
     .sort((a, b) => a.percentage - b.percentage);
 }
 
@@ -566,6 +616,6 @@ export class ExamTimer {
     const remaining = this.getTimeRemaining();
     const minutes = Math.floor(remaining / 60);
     const seconds = remaining % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   }
 }

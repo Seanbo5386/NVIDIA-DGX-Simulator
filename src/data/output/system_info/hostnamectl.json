@@ -1,0 +1,211 @@
+{
+  "command": "hostnamectl",
+  "category": "system_info",
+  "description": "Query and change system hostname and related settings. Part of systemd, provides detailed information about host identity including static hostname, transient hostname, pretty hostname, machine ID, boot ID, virtualization status, and OS information.",
+  "synopsis": "hostnamectl [OPTIONS...] COMMAND [NAME]",
+  "version_documented": "systemd 250+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/hostnamectl.1.html"],
+  "installation": {
+    "package": "systemd",
+    "notes": "Part of systemd, installed by default on modern Linux distributions."
+  },
+  "global_options": [
+    {
+      "long": "--no-ask-password",
+      "description": "Do not query user for authentication"
+    },
+    {
+      "short": "-H",
+      "long": "--host",
+      "description": "Execute operation on remote host",
+      "arguments": "<user@host>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-M",
+      "long": "--machine",
+      "description": "Execute operation on local container",
+      "arguments": "<container>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--transient",
+      "description": "Only set transient hostname"
+    },
+    {
+      "long": "--static",
+      "description": "Only set static hostname"
+    },
+    {
+      "long": "--pretty",
+      "description": "Only set pretty hostname"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    },
+    {
+      "long": "--version",
+      "description": "Display version"
+    },
+    {
+      "long": "--json",
+      "description": "Output in JSON format",
+      "arguments": "<pretty|short|off>",
+      "argument_type": "string"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "status",
+      "description": "Show current hostname and related information (default)",
+      "synopsis": "hostnamectl status"
+    },
+    {
+      "name": "hostname",
+      "description": "Get or set system hostname",
+      "synopsis": "hostnamectl hostname [NAME]"
+    },
+    {
+      "name": "icon-name",
+      "description": "Get or set icon name for host",
+      "synopsis": "hostnamectl icon-name [NAME]"
+    },
+    {
+      "name": "chassis",
+      "description": "Get or set chassis type",
+      "synopsis": "hostnamectl chassis [TYPE]"
+    },
+    {
+      "name": "deployment",
+      "description": "Get or set deployment environment",
+      "synopsis": "hostnamectl deployment [ENV]"
+    },
+    {
+      "name": "location",
+      "description": "Get or set location string",
+      "synopsis": "hostnamectl location [LOCATION]"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show system hostname and identity information",
+      "command": "hostnamectl",
+      "output_example": " Static hostname: dgx-node-01\n       Icon name: computer-server\n         Chassis: server\n      Machine ID: a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4\n         Boot ID: 12345678-1234-1234-1234-123456789abc\n  Virtualization: none\nOperating System: Ubuntu 22.04.3 LTS\n          Kernel: Linux 5.15.0-88-generic\n    Architecture: x86-64\n Hardware Vendor: NVIDIA\n  Hardware Model: DGX A100",
+      "requires_root": false
+    },
+    {
+      "description": "Set system hostname",
+      "command": "hostnamectl set-hostname dgx-node-02",
+      "requires_root": true
+    },
+    {
+      "description": "Get only the hostname",
+      "command": "hostnamectl hostname",
+      "output_example": "dgx-node-01",
+      "requires_root": false
+    },
+    {
+      "description": "Output status in JSON format",
+      "command": "hostnamectl --json=pretty",
+      "requires_root": false
+    },
+    {
+      "description": "Set chassis type for server",
+      "command": "hostnamectl chassis server",
+      "requires_root": true
+    },
+    {
+      "description": "Check hostname across cluster nodes",
+      "command": "pdsh -w node[001-100] hostnamectl hostname | dshbak -c",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Access denied",
+      "meaning": "Insufficient permissions to modify hostname",
+      "resolution": "Run with sudo or appropriate polkit authorization"
+    },
+    {
+      "message": "Failed to connect to bus",
+      "meaning": "D-Bus system bus not available",
+      "resolution": "Ensure systemd is running properly"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "hostname",
+      "uname",
+      "timedatectl",
+      "cat /etc/hostname",
+      "nmcli general hostname"
+    ],
+    "notes": "Changes made with hostnamectl persist across reboots. Static hostname is stored in /etc/hostname. In HPC clusters, hostnames often follow naming conventions like node001, dgx-01, etc."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "Root or polkit authorization required",
+    "notes": "Uses D-Bus interface to systemd-hostnamed"
+  },
+  "limitations": [
+    "Requires systemd (not available on non-systemd systems)",
+    "Hostname changes may require updating DNS, /etc/hosts, and Slurm configuration",
+    "Some services may cache hostname and need restart"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "hostname",
+          "fqdn",
+          "kernel_version",
+          "os_name",
+          "os_version",
+          "architecture"
+        ],
+        "description": "Reads system identity information"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "system_state",
+        "fields": ["hostname"],
+        "description": "Can modify system hostname",
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "System boot",
+        "effect": "Hostname loaded from /etc/hostname"
+      },
+      {
+        "state_change": "DHCP lease renewal",
+        "effect": "Transient hostname may change if DHCP provides hostname"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "hostname",
+        "shared_state": "System hostname values must match"
+      },
+      {
+        "command": "uname -n",
+        "shared_state": "Node name consistent with hostname"
+      }
+    ]
+  }
+}

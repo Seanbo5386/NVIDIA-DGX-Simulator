@@ -1,0 +1,191 @@
+{
+  "command": "lstopo",
+  "category": "system_info",
+  "description": "Display hardware topology including CPUs, caches, memory, and devices. Part of hwloc (Hardware Locality), provides detailed view of system architecture essential for understanding NUMA topology and optimizing GPU/CPU affinity in HPC workloads.",
+  "synopsis": "lstopo [options] [output_file]",
+  "version_documented": "hwloc 2.9+",
+  "source_urls": [
+    "https://man7.org/linux/man-pages/man1/lstopo.1.html",
+    "https://www.open-mpi.org/projects/hwloc/"
+  ],
+  "installation": {
+    "package": "hwloc",
+    "notes": "Install via: apt install hwloc or yum install hwloc. Also includes lstopo-no-graphics for text-only output."
+  },
+  "global_options": [
+    {
+      "long": "--of",
+      "description": "Output format",
+      "arguments": "<format>",
+      "argument_type": "string",
+      "example": "--of txt"
+    },
+    {
+      "long": "--only",
+      "description": "Only show objects of given type",
+      "arguments": "<type>",
+      "argument_type": "string",
+      "example": "--only core"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Include additional details"
+    },
+    {
+      "short": "-c",
+      "long": "--cpuset",
+      "description": "Show cpuset of each object"
+    },
+    {
+      "short": "-p",
+      "long": "--physical",
+      "description": "Use physical/OS indexes instead of logical"
+    },
+    {
+      "long": "--no-io",
+      "description": "Do not show I/O devices"
+    },
+    {
+      "long": "--no-bridges",
+      "description": "Do not show bridges"
+    },
+    {
+      "long": "--whole-io",
+      "description": "Show all I/O devices including those without relevant info"
+    },
+    {
+      "long": "--merge",
+      "description": "Merge objects with single children"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    },
+    {
+      "long": "--version",
+      "description": "Display version"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display topology in text format",
+      "command": "lstopo --of txt",
+      "output_example": "Machine (503GB total)\n  Package L#0\n    NUMANode L#0 (P#0 251GB)\n    L3 L#0 (45MB)\n      L2 L#0 (1280KB) + L1d L#0 (48KB) + L1i L#0 (32KB) + Core L#0\n        PU L#0 (P#0)\n        PU L#1 (P#64)\n  Package L#1\n    NUMANode L#1 (P#1 252GB)\n    ...",
+      "requires_root": false
+    },
+    {
+      "description": "Show topology with GPU devices",
+      "command": "lstopo --whole-io",
+      "requires_root": false
+    },
+    {
+      "description": "Export topology to PNG image",
+      "command": "lstopo topology.png",
+      "requires_root": false
+    },
+    {
+      "description": "Show only NUMA nodes",
+      "command": "lstopo --only numanode",
+      "requires_root": false
+    },
+    {
+      "description": "Show CPU topology with physical IDs",
+      "command": "lstopo -p --only pu",
+      "requires_root": false
+    },
+    {
+      "description": "Export topology to XML for analysis",
+      "command": "lstopo topology.xml",
+      "requires_root": false
+    },
+    {
+      "description": "Show topology with cpusets",
+      "command": "lstopo -c --of txt",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "lstopo: command not found",
+      "meaning": "hwloc package not installed",
+      "resolution": "Install hwloc package"
+    },
+    {
+      "message": "Couldn't find a usable graphical output",
+      "meaning": "No display available for graphical output",
+      "resolution": "Use lstopo-no-graphics or --of txt"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "hwloc-ls",
+      "hwloc-info",
+      "hwloc-bind",
+      "numactl",
+      "lscpu"
+    ],
+    "notes": "lstopo provides more detailed topology than lscpu, including cache hierarchy and I/O devices. Essential for understanding GPU locality relative to CPU sockets for optimal process placement."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for basic topology",
+    "write_operations": "N/A - read-only command",
+    "notes": "Some I/O device details may require root"
+  },
+  "limitations": [
+    "Graphical output requires X11 or compatible display",
+    "May not detect all devices without root",
+    "Virtual machines may show limited topology"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "cpu_count",
+          "cpu_sockets",
+          "cpu_cores_per_socket",
+          "memory_total"
+        ],
+        "description": "Reads CPU and memory topology from sysfs"
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["pci_bus_id"],
+        "description": "Shows GPU PCI location in topology"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Device hot-plug",
+        "effect": "Topology may change"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "lscpu",
+        "shared_state": "CPU counts and socket information match"
+      },
+      {
+        "command": "numactl -H",
+        "shared_state": "NUMA node configuration matches"
+      },
+      {
+        "command": "nvidia-smi topo -m",
+        "shared_state": "GPU NUMA affinity consistent"
+      }
+    ]
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "command": "sacctmgr",
+  "category": "cluster_management",
+  "description": "Slurm account manager. Administers accounts, users, clusters, and QOS definitions. Essential for HPC cluster administration and resource allocation.",
+  "synopsis": "sacctmgr [options] <command>",
+  "version_documented": "Slurm 21.08+",
+  "source_urls": ["https://slurm.schedmd.com/sacctmgr.html"],
+  "installation": {
+    "package": "slurm-slurmctld",
+    "notes": "Part of Slurm workload manager. Requires slurmdbd."
+  },
+  "subcommands": [
+    {
+      "name": "add",
+      "description": "Add accounts, users, clusters"
+    },
+    {
+      "name": "delete",
+      "description": "Delete entries"
+    },
+    {
+      "name": "modify",
+      "description": "Modify existing entries"
+    },
+    {
+      "name": "list",
+      "description": "List entries"
+    },
+    {
+      "name": "show",
+      "description": "Show configuration"
+    }
+  ],
+  "global_options": [
+    {
+      "short": "-i",
+      "long": "--immediate",
+      "description": "Commit changes immediately"
+    },
+    {
+      "short": "-n",
+      "long": "--noheader",
+      "description": "No header in output"
+    },
+    {
+      "short": "-P",
+      "long": "--parsable",
+      "description": "Parsable output"
+    },
+    {
+      "short": "-r",
+      "long": "--readonly",
+      "description": "Read-only mode"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "List accounts",
+      "command": "sacctmgr list account",
+      "output_example": "Account    Descr           Org\n---------- --------------- ---------------\nroot       default root    root\nresearch   Research Dept   University\ngpu_users  GPU Users       HPC Center",
+      "requires_root": false
+    },
+    {
+      "description": "List users",
+      "command": "sacctmgr list user",
+      "requires_root": false
+    },
+    {
+      "description": "Add account",
+      "command": "sacctmgr add account research Description='Research' Organization='University'",
+      "requires_root": true
+    },
+    {
+      "description": "Add user to account",
+      "command": "sacctmgr add user jsmith Account=research",
+      "requires_root": true
+    },
+    {
+      "description": "Show QOS",
+      "command": "sacctmgr show qos",
+      "requires_root": false
+    },
+    {
+      "description": "Modify account limits",
+      "command": "sacctmgr modify account research set GrpTRES=cpu=1000,gres/gpu=100",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Problem talking to database",
+      "meaning": "Cannot connect to slurmdbd",
+      "resolution": "Check slurmdbd is running"
+    },
+    {
+      "message": "Access denied",
+      "meaning": "Insufficient privileges",
+      "resolution": "Run as Slurm admin"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["sacct", "sshare", "sprio", "scontrol"],
+    "notes": "Requires slurmdbd for accounting. Changes affect fairshare and job scheduling. Use with caution - affects all users on cluster."
+  },
+  "permissions": {
+    "read_operations": "Users can view their associations",
+    "write_operations": "Admin/operator required for changes",
+    "notes": "Slurm admin permissions needed"
+  },
+  "limitations": [
+    "Requires slurmdbd",
+    "Complex syntax for modifications",
+    "Changes may take time to propagate"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "job_state",
+        "fields": ["account"],
+        "description": "Reads account associations"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "job_state",
+        "fields": ["account"],
+        "description": "Modifies account definitions and limits",
+        "requires_privilege": "Slurm admin"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "User added to cluster",
+        "effect": "User association needed for job submission"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "sshare",
+        "shared_state": "Account shares visible in sshare"
+      },
+      {
+        "command": "sacct",
+        "shared_state": "Account usage tracked by sacct"
+      }
+    ]
+  }
+}

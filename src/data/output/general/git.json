@@ -1,0 +1,195 @@
+{
+  "command": "git",
+  "category": "general",
+  "description": "Distributed version control system. Tracks changes in source code and enables collaboration. Essential for managing HPC scripts, configurations, and research code.",
+  "synopsis": "git [--version] [--help] <command> [<args>]",
+  "version_documented": "git 2.30+",
+  "source_urls": ["https://git-scm.com/docs"],
+  "installation": {
+    "package": "git",
+    "notes": "Usually installed by default or via package manager."
+  },
+  "subcommands": [
+    {
+      "name": "clone",
+      "description": "Clone repository",
+      "synopsis": "git clone <repo> [<dir>]"
+    },
+    {
+      "name": "pull",
+      "description": "Fetch and merge changes",
+      "synopsis": "git pull [<remote>] [<branch>]"
+    },
+    {
+      "name": "push",
+      "description": "Push changes to remote",
+      "synopsis": "git push [<remote>] [<branch>]"
+    },
+    {
+      "name": "add",
+      "description": "Stage files",
+      "synopsis": "git add <file>..."
+    },
+    {
+      "name": "commit",
+      "description": "Record changes",
+      "synopsis": "git commit [-m <msg>]"
+    },
+    {
+      "name": "status",
+      "description": "Show working tree status",
+      "synopsis": "git status"
+    },
+    {
+      "name": "diff",
+      "description": "Show changes",
+      "synopsis": "git diff [<commit>] [<path>...]"
+    },
+    {
+      "name": "log",
+      "description": "Show commit history",
+      "synopsis": "git log [<options>]"
+    },
+    {
+      "name": "branch",
+      "description": "List or create branches",
+      "synopsis": "git branch [<name>]"
+    },
+    {
+      "name": "checkout",
+      "description": "Switch branches or restore files",
+      "synopsis": "git checkout <branch|file>"
+    },
+    {
+      "name": "merge",
+      "description": "Merge branches",
+      "synopsis": "git merge <branch>"
+    },
+    {
+      "name": "stash",
+      "description": "Stash changes",
+      "synopsis": "git stash [push|pop|list]"
+    }
+  ],
+  "global_options": [
+    {
+      "short": "-C",
+      "description": "Run as if in directory",
+      "arguments": "<path>",
+      "argument_type": "path"
+    },
+    {
+      "long": "--git-dir",
+      "description": "Set path to repository",
+      "arguments": "<path>",
+      "argument_type": "path"
+    },
+    {
+      "long": "--work-tree",
+      "description": "Set working tree",
+      "arguments": "<path>",
+      "argument_type": "path"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    },
+    {
+      "code": 128,
+      "meaning": "Fatal error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Clone repository",
+      "command": "git clone https://github.com/user/project.git",
+      "requires_root": false
+    },
+    {
+      "description": "Stage and commit",
+      "command": "git add . && git commit -m 'Update training script'",
+      "requires_root": false
+    },
+    {
+      "description": "Pull latest changes",
+      "command": "git pull origin main",
+      "requires_root": false
+    },
+    {
+      "description": "Create feature branch",
+      "command": "git checkout -b feature/new-model",
+      "requires_root": false
+    },
+    {
+      "description": "View history",
+      "command": "git log --oneline -20",
+      "requires_root": false
+    },
+    {
+      "description": "Clone specific branch",
+      "command": "git clone -b develop --single-branch https://github.com/user/project.git",
+      "requires_root": false
+    },
+    {
+      "description": "Shallow clone for large repos",
+      "command": "git clone --depth 1 https://github.com/large/repo.git",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "fatal: not a git repository",
+      "meaning": "Not inside a git repo",
+      "resolution": "Run git init or cd to repo"
+    },
+    {
+      "message": "CONFLICT",
+      "meaning": "Merge conflict",
+      "resolution": "Resolve conflicts and commit"
+    },
+    {
+      "message": "Permission denied (publickey)",
+      "meaning": "SSH key not configured",
+      "resolution": "Add SSH key to account"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["gh", "git-lfs"],
+    "notes": "Use git-lfs for large files in HPC. Shallow clones save bandwidth. SSH preferred over HTTPS for authentication."
+  },
+  "permissions": {
+    "read_operations": "Read repository files",
+    "write_operations": "Write to repository",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Not designed for large binary files (use git-lfs)",
+    "Full history can be large",
+    "SSH key setup required for private repos"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads repository files"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Writes repository files",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

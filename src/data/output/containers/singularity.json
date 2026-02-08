@@ -1,0 +1,1008 @@
+{
+  "command": "singularity",
+  "category": "containers",
+  "description": "Container platform designed for high-performance computing (HPC) environments. SingularityCE (now known as Apptainer after joining the Linux Foundation) enables running containers without requiring root privileges or a daemon. Unlike Docker, Singularity containers integrate seamlessly with HPC job schedulers like Slurm, support direct MPI integration, and provide native GPU acceleration through NVIDIA's container toolkit. Singularity uses a single-file container format (SIF) that simplifies image management on shared filesystems. It is the de facto standard for containerized HPC workloads, supporting reproducible science by encapsulating entire software environments.",
+  "synopsis": "singularity [global options] <command> [command options] [arguments]",
+  "version_documented": "4.1.0 (SingularityCE) / 1.3.0 (Apptainer)",
+  "source_urls": [
+    "https://sylabs.io/singularity/",
+    "https://apptainer.org/",
+    "https://docs.sylabs.io/guides/latest/user-guide/",
+    "https://apptainer.org/docs/user/main/"
+  ],
+  "installation": {
+    "package": "singularity-ce or apptainer",
+    "notes": "Available as RPM/DEB packages or built from source. SingularityCE is maintained by Sylabs, while Apptainer is the Linux Foundation fork. Both are largely compatible. Requires Go 1.19+ to build from source. GPU support requires nvidia-container-cli (libnvidia-container). Many HPC centers provide Singularity via environment modules. Apptainer supports SINGULARITY_* environment variables for backward compatibility."
+  },
+  "global_options": [
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help information for the command or subcommand"
+    },
+    {
+      "short": "-d",
+      "long": "--debug",
+      "description": "Print debug output (verbose logging)"
+    },
+    {
+      "short": "-q",
+      "long": "--quiet",
+      "description": "Suppress normal output, only show errors"
+    },
+    {
+      "short": "-s",
+      "long": "--silent",
+      "description": "Suppress all output including errors"
+    },
+    {
+      "long": "--version",
+      "description": "Show application version"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Increase verbosity level (+1 for each flag)"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "exec",
+      "description": "Execute a command within a container. The container image can be a local SIF file, OCI archive, Docker image, or library reference. Supports GPU passthrough, bind mounts, and overlay filesystems. Unlike 'run', exec does not invoke the container's runscript but executes the specified command directly.",
+      "synopsis": "singularity exec [options] <image> <command> [args...]",
+      "options": [
+        {
+          "short": "-B",
+          "long": "--bind",
+          "description": "Bind mount a host path into the container. Can be specified multiple times.",
+          "arguments": "src[:dest[:opts]]",
+          "argument_type": "string",
+          "example": "singularity exec --bind /data:/mnt/data:ro image.sif ls /mnt/data"
+        },
+        {
+          "long": "--nv",
+          "description": "Enable NVIDIA GPU support inside the container. Automatically binds NVIDIA drivers and libraries.",
+          "example": "singularity exec --nv pytorch.sif python train.py"
+        },
+        {
+          "long": "--nvccli",
+          "description": "Use nvidia-container-cli for GPU setup (alternative to --nv)",
+          "example": "singularity exec --nvccli pytorch.sif nvidia-smi"
+        },
+        {
+          "long": "--rocm",
+          "description": "Enable AMD ROCm GPU support inside the container"
+        },
+        {
+          "short": "-C",
+          "long": "--containall",
+          "description": "Use minimal /dev and empty other directories (isolate from host)"
+        },
+        {
+          "short": "-c",
+          "long": "--contain",
+          "description": "Use minimal /dev and bind home directory (partial isolation)"
+        },
+        {
+          "short": "-e",
+          "long": "--cleanenv",
+          "description": "Clean environment before running container (do not pass host environment)"
+        },
+        {
+          "long": "--env",
+          "description": "Set an environment variable inside the container",
+          "arguments": "KEY=VALUE",
+          "argument_type": "string",
+          "example": "singularity exec --env CUDA_VISIBLE_DEVICES=0 image.sif nvidia-smi"
+        },
+        {
+          "long": "--env-file",
+          "description": "Read environment variables from a file",
+          "arguments": "FILE",
+          "argument_type": "path"
+        },
+        {
+          "short": "-H",
+          "long": "--home",
+          "description": "Bind a custom home directory into the container",
+          "arguments": "src[:dest]",
+          "argument_type": "path",
+          "example": "singularity exec --home /scratch/$USER:/home/$USER image.sif bash"
+        },
+        {
+          "short": "-W",
+          "long": "--workdir",
+          "description": "Working directory inside the container",
+          "arguments": "DIR",
+          "argument_type": "path"
+        },
+        {
+          "long": "--pwd",
+          "description": "Initial working directory in the container",
+          "arguments": "DIR",
+          "argument_type": "path"
+        },
+        {
+          "short": "-f",
+          "long": "--fakeroot",
+          "description": "Run container in a new user namespace as uid 0 (fakeroot mode)"
+        },
+        {
+          "short": "-w",
+          "long": "--writable",
+          "description": "Make the container filesystem writable (requires sandbox format)"
+        },
+        {
+          "long": "--writable-tmpfs",
+          "description": "Use a writable tmpfs overlay on top of read-only container"
+        },
+        {
+          "short": "-o",
+          "long": "--overlay",
+          "description": "Use an overlay image for persistent writable layer",
+          "arguments": "IMAGE",
+          "argument_type": "path"
+        },
+        {
+          "short": "-S",
+          "long": "--scratch",
+          "description": "Create a scratch directory in the container (tmpfs)",
+          "arguments": "DIR",
+          "argument_type": "path"
+        },
+        {
+          "long": "--no-home",
+          "description": "Do not mount user's home directory"
+        },
+        {
+          "long": "--no-mount",
+          "description": "Disable automatic mount of specified filesystem types",
+          "arguments": "TYPE",
+          "argument_type": "string"
+        },
+        {
+          "long": "--no-init",
+          "description": "Do not start a minimal init process (PID 1)"
+        },
+        {
+          "long": "--compat",
+          "description": "Apply settings for maximum OCI/Docker compatibility"
+        }
+      ]
+    },
+    {
+      "name": "run",
+      "description": "Run the container's default runscript. The runscript is defined when the container was built and typically starts the container's primary application. Most options are shared with 'exec' command.",
+      "synopsis": "singularity run [options] <image> [args...]",
+      "options": [
+        {
+          "short": "-B",
+          "long": "--bind",
+          "description": "Bind mount a host path into the container",
+          "arguments": "src[:dest[:opts]]",
+          "argument_type": "string"
+        },
+        {
+          "long": "--nv",
+          "description": "Enable NVIDIA GPU support inside the container"
+        },
+        {
+          "long": "--nvccli",
+          "description": "Use nvidia-container-cli for GPU setup"
+        },
+        {
+          "short": "-C",
+          "long": "--containall",
+          "description": "Use minimal /dev and empty other directories"
+        },
+        {
+          "short": "-e",
+          "long": "--cleanenv",
+          "description": "Clean environment before running container"
+        },
+        {
+          "long": "--env",
+          "description": "Set an environment variable inside the container",
+          "arguments": "KEY=VALUE",
+          "argument_type": "string"
+        },
+        {
+          "short": "-f",
+          "long": "--fakeroot",
+          "description": "Run container as uid 0 in user namespace"
+        },
+        {
+          "short": "-w",
+          "long": "--writable",
+          "description": "Make the container filesystem writable"
+        },
+        {
+          "long": "--writable-tmpfs",
+          "description": "Use a writable tmpfs overlay"
+        },
+        {
+          "long": "--app",
+          "description": "Run a specific SCIF (Scientific Container Infrastructure Format) app",
+          "arguments": "APPNAME",
+          "argument_type": "string"
+        },
+        {
+          "long": "--vm",
+          "description": "Enable VM mode (run container in a VM for additional isolation)"
+        }
+      ]
+    },
+    {
+      "name": "shell",
+      "description": "Start an interactive shell within the container. By default starts /bin/sh, but can be configured with SINGULARITY_SHELL environment variable or --shell option. Supports all mount and environment options from exec.",
+      "synopsis": "singularity shell [options] <image>",
+      "options": [
+        {
+          "short": "-B",
+          "long": "--bind",
+          "description": "Bind mount a host path into the container",
+          "arguments": "src[:dest[:opts]]",
+          "argument_type": "string"
+        },
+        {
+          "long": "--nv",
+          "description": "Enable NVIDIA GPU support inside the container",
+          "example": "singularity shell --nv pytorch.sif"
+        },
+        {
+          "long": "--nvccli",
+          "description": "Use nvidia-container-cli for GPU setup"
+        },
+        {
+          "short": "-C",
+          "long": "--containall",
+          "description": "Use minimal /dev and empty other directories"
+        },
+        {
+          "short": "-e",
+          "long": "--cleanenv",
+          "description": "Clean environment before running container"
+        },
+        {
+          "short": "-s",
+          "long": "--shell",
+          "description": "Use specified shell instead of default",
+          "arguments": "SHELL",
+          "argument_type": "path",
+          "example": "singularity shell --shell /bin/bash image.sif"
+        },
+        {
+          "short": "-f",
+          "long": "--fakeroot",
+          "description": "Run container as uid 0 in user namespace"
+        },
+        {
+          "short": "-w",
+          "long": "--writable",
+          "description": "Make the container filesystem writable"
+        },
+        {
+          "long": "--writable-tmpfs",
+          "description": "Use a writable tmpfs overlay"
+        }
+      ]
+    },
+    {
+      "name": "build",
+      "description": "Build a Singularity Image File (SIF) from a definition file, sandbox directory, or existing container. Supports building from Docker images, Singularity Library, OCI registries, and local archives. Definition files allow scripted, reproducible builds with sections for package installation, file copying, and runscript definition.",
+      "synopsis": "singularity build [options] <output> <source>",
+      "options": [
+        {
+          "short": "-B",
+          "long": "--bind",
+          "description": "Bind mount during build process",
+          "arguments": "src[:dest[:opts]]",
+          "argument_type": "string"
+        },
+        {
+          "long": "--build-arg",
+          "description": "Set build-time variable (available in definition file)",
+          "arguments": "KEY=VALUE",
+          "argument_type": "string"
+        },
+        {
+          "long": "--build-arg-file",
+          "description": "Read build arguments from file",
+          "arguments": "FILE",
+          "argument_type": "path"
+        },
+        {
+          "short": "-f",
+          "long": "--fakeroot",
+          "description": "Build container in a user namespace as uid 0 (unprivileged build)"
+        },
+        {
+          "short": "-F",
+          "long": "--force",
+          "description": "Overwrite existing image file"
+        },
+        {
+          "long": "--json",
+          "description": "Output build progress as JSON (machine-readable)"
+        },
+        {
+          "long": "--notest",
+          "description": "Skip the %test section of the definition file"
+        },
+        {
+          "long": "--nv",
+          "description": "Enable NVIDIA GPU support during build"
+        },
+        {
+          "short": "-s",
+          "long": "--sandbox",
+          "description": "Build into a sandbox directory instead of SIF",
+          "example": "singularity build --sandbox ./pytorch_sandbox/ docker://nvcr.io/nvidia/pytorch:23.10-py3"
+        },
+        {
+          "short": "-u",
+          "long": "--update",
+          "description": "Run the %post section on an existing container (update mode)"
+        },
+        {
+          "long": "--section",
+          "description": "Only run specified section(s) of definition file",
+          "arguments": "SECTION",
+          "argument_type": "string"
+        },
+        {
+          "long": "--fix-perms",
+          "description": "Fix file permissions in the container"
+        },
+        {
+          "long": "--remote",
+          "description": "Build container on a remote build service"
+        },
+        {
+          "long": "--docker-login",
+          "description": "Interactively prompt for Docker credentials"
+        }
+      ]
+    },
+    {
+      "name": "pull",
+      "description": "Pull and convert container images from external registries to SIF format. Supports Docker Hub, NVIDIA NGC, Singularity Library, OCI registries, and other sources. Downloaded images are converted to Singularity's native SIF format for efficient execution.",
+      "synopsis": "singularity pull [options] [output] <source>",
+      "options": [
+        {
+          "long": "--arch",
+          "description": "Architecture to pull (for multi-arch images)",
+          "arguments": "ARCH",
+          "argument_type": "string",
+          "default": "host architecture"
+        },
+        {
+          "long": "--dir",
+          "description": "Download to specified directory",
+          "arguments": "DIR",
+          "argument_type": "path"
+        },
+        {
+          "short": "-F",
+          "long": "--force",
+          "description": "Overwrite existing image file"
+        },
+        {
+          "long": "--name",
+          "description": "Specify output filename",
+          "arguments": "NAME",
+          "argument_type": "string"
+        },
+        {
+          "long": "--no-cleanup",
+          "description": "Do not clean up temporary files after pull"
+        },
+        {
+          "long": "--no-https",
+          "description": "Use HTTP instead of HTTPS for registries"
+        },
+        {
+          "long": "--disable-cache",
+          "description": "Do not use or create cache"
+        },
+        {
+          "long": "--docker-login",
+          "description": "Interactively prompt for Docker credentials"
+        }
+      ]
+    },
+    {
+      "name": "push",
+      "description": "Push container images to remote registries. Supports pushing to Singularity Library, OCI registries, and other compatible endpoints. Requires authentication for most registries.",
+      "synopsis": "singularity push [options] <image> <target>",
+      "options": [
+        {
+          "short": "-D",
+          "long": "--description",
+          "description": "Set description for the image in the registry",
+          "arguments": "TEXT",
+          "argument_type": "string"
+        },
+        {
+          "short": "-U",
+          "long": "--allow-unsigned",
+          "description": "Allow pushing unsigned images"
+        },
+        {
+          "long": "--library",
+          "description": "Specify library endpoint URL",
+          "arguments": "URL",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "inspect",
+      "description": "Display metadata and information about a container image. Can show labels, runscript, test script, environment variables, definition file, and other embedded metadata.",
+      "synopsis": "singularity inspect [options] <image>",
+      "options": [
+        {
+          "short": "-d",
+          "long": "--deffile",
+          "description": "Show the definition file used to build the container"
+        },
+        {
+          "short": "-e",
+          "long": "--environment",
+          "description": "Show the container's environment settings"
+        },
+        {
+          "short": "-j",
+          "long": "--json",
+          "description": "Output metadata as JSON"
+        },
+        {
+          "short": "-l",
+          "long": "--labels",
+          "description": "Show the container's labels"
+        },
+        {
+          "short": "-r",
+          "long": "--runscript",
+          "description": "Show the container's runscript"
+        },
+        {
+          "short": "-s",
+          "long": "--startscript",
+          "description": "Show the container's startscript"
+        },
+        {
+          "short": "-t",
+          "long": "--test",
+          "description": "Show the container's test script"
+        },
+        {
+          "short": "-H",
+          "long": "--helpfile",
+          "description": "Show the container's help file"
+        },
+        {
+          "long": "--all",
+          "description": "Show all available metadata"
+        },
+        {
+          "long": "--app",
+          "description": "Inspect a specific SCIF app",
+          "arguments": "APPNAME",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "instance",
+      "description": "Manage container instances (daemon processes). Allows starting containers as persistent background services that can be connected to later. Useful for services, databases, and long-running applications.",
+      "synopsis": "singularity instance <subcommand> [options]",
+      "options": [
+        {
+          "flag": "start",
+          "description": "Start a named instance of a container",
+          "example": "singularity instance start --nv pytorch.sif myinstance"
+        },
+        {
+          "flag": "stop",
+          "description": "Stop a running instance",
+          "example": "singularity instance stop myinstance"
+        },
+        {
+          "flag": "list",
+          "description": "List running instances",
+          "example": "singularity instance list"
+        },
+        {
+          "long": "--nv",
+          "description": "Enable NVIDIA GPU support for the instance"
+        },
+        {
+          "long": "--nvccli",
+          "description": "Use nvidia-container-cli for GPU setup"
+        },
+        {
+          "short": "-B",
+          "long": "--bind",
+          "description": "Bind mount paths for the instance",
+          "arguments": "src[:dest[:opts]]",
+          "argument_type": "string"
+        },
+        {
+          "short": "-e",
+          "long": "--cleanenv",
+          "description": "Clean environment for the instance"
+        },
+        {
+          "long": "--env",
+          "description": "Set environment variable for the instance",
+          "arguments": "KEY=VALUE",
+          "argument_type": "string"
+        },
+        {
+          "short": "-f",
+          "long": "--fakeroot",
+          "description": "Run instance as uid 0 in user namespace"
+        },
+        {
+          "long": "--net",
+          "description": "Run instance with a dedicated network namespace"
+        },
+        {
+          "long": "--network",
+          "description": "Configure network for the instance",
+          "arguments": "NETWORK",
+          "argument_type": "string"
+        },
+        {
+          "long": "--pid",
+          "description": "Run instance in a new PID namespace"
+        },
+        {
+          "long": "--boot",
+          "description": "Execute startscript on boot"
+        },
+        {
+          "short": "-u",
+          "long": "--user",
+          "description": "Filter instances by user",
+          "arguments": "USER",
+          "argument_type": "string"
+        },
+        {
+          "short": "-j",
+          "long": "--json",
+          "description": "Output instance list as JSON"
+        }
+      ]
+    }
+  ],
+  "output_formats": {
+    "default": "Human-readable text output for most commands",
+    "json": "JSON output available with --json flag for inspect and instance list commands"
+  },
+  "environment_variables": [
+    {
+      "name": "SINGULARITY_CACHEDIR",
+      "description": "Directory for caching downloaded images and layers",
+      "example": "SINGULARITY_CACHEDIR=/scratch/.singularity/cache",
+      "affects_command": "Location where pulled images and OCI layers are cached"
+    },
+    {
+      "name": "SINGULARITY_TMPDIR",
+      "description": "Directory for temporary files during build and execution",
+      "example": "SINGULARITY_TMPDIR=/scratch/tmp",
+      "affects_command": "Temporary storage for builds and container operations"
+    },
+    {
+      "name": "SINGULARITY_BIND",
+      "description": "Default bind mounts (comma-separated paths)",
+      "example": "SINGULARITY_BIND=/data,/scratch:/scratch:ro",
+      "affects_command": "Paths automatically mounted into every container"
+    },
+    {
+      "name": "SINGULARITY_NV",
+      "description": "Enable NVIDIA GPU support by default",
+      "example": "SINGULARITY_NV=1",
+      "affects_command": "When set, all containers have GPU access via --nv"
+    },
+    {
+      "name": "SINGULARITY_NVCCLI",
+      "description": "Use nvidia-container-cli for GPU setup by default",
+      "example": "SINGULARITY_NVCCLI=1",
+      "affects_command": "When set, uses nvidia-container-cli instead of legacy GPU setup"
+    },
+    {
+      "name": "SINGULARITY_SHELL",
+      "description": "Default shell for 'singularity shell' command",
+      "example": "SINGULARITY_SHELL=/bin/bash",
+      "affects_command": "Shell used when entering interactive container shell"
+    },
+    {
+      "name": "SINGULARITY_CONTAINLIBS",
+      "description": "Libraries to bind into the container",
+      "example": "SINGULARITY_CONTAINLIBS=/usr/lib64/libcuda.so",
+      "affects_command": "Additional libraries made available in container"
+    },
+    {
+      "name": "SINGULARITY_NO_HOME",
+      "description": "Do not mount home directory by default",
+      "example": "SINGULARITY_NO_HOME=1",
+      "affects_command": "When set, home directory is not automatically mounted"
+    },
+    {
+      "name": "SINGULARITY_CLEANENV",
+      "description": "Use clean environment by default",
+      "example": "SINGULARITY_CLEANENV=1",
+      "affects_command": "When set, container starts with clean environment"
+    },
+    {
+      "name": "SINGULARITY_DOCKER_USERNAME",
+      "description": "Username for Docker registry authentication",
+      "example": "SINGULARITY_DOCKER_USERNAME=myuser",
+      "affects_command": "Credentials used when pulling from Docker registries"
+    },
+    {
+      "name": "SINGULARITY_DOCKER_PASSWORD",
+      "description": "Password/token for Docker registry authentication",
+      "example": "SINGULARITY_DOCKER_PASSWORD=$NGC_API_KEY",
+      "affects_command": "Credentials used when pulling from Docker registries"
+    },
+    {
+      "name": "APPTAINER_CACHEDIR",
+      "description": "Apptainer equivalent of SINGULARITY_CACHEDIR",
+      "example": "APPTAINER_CACHEDIR=/scratch/.apptainer/cache",
+      "affects_command": "Same as SINGULARITY_CACHEDIR for Apptainer installations"
+    },
+    {
+      "name": "APPTAINER_TMPDIR",
+      "description": "Apptainer equivalent of SINGULARITY_TMPDIR",
+      "example": "APPTAINER_TMPDIR=/scratch/tmp",
+      "affects_command": "Same as SINGULARITY_TMPDIR for Apptainer installations"
+    },
+    {
+      "name": "APPTAINER_BIND",
+      "description": "Apptainer equivalent of SINGULARITY_BIND",
+      "example": "APPTAINER_BIND=/data,/scratch",
+      "affects_command": "Same as SINGULARITY_BIND for Apptainer installations"
+    },
+    {
+      "name": "APPTAINER_NV",
+      "description": "Apptainer equivalent of SINGULARITY_NV",
+      "example": "APPTAINER_NV=1",
+      "affects_command": "Same as SINGULARITY_NV for Apptainer installations"
+    },
+    {
+      "name": "NVIDIA_VISIBLE_DEVICES",
+      "description": "GPUs visible to the container when using --nv or --nvccli",
+      "example": "NVIDIA_VISIBLE_DEVICES=0,1",
+      "affects_command": "Controls which GPUs are exposed inside the container"
+    },
+    {
+      "name": "CUDA_VISIBLE_DEVICES",
+      "description": "CUDA-specific GPU visibility (may be passed through)",
+      "example": "CUDA_VISIBLE_DEVICES=0,1",
+      "affects_command": "Standard CUDA environment variable for GPU selection"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "General error - command failed"
+    },
+    {
+      "code": 2,
+      "meaning": "Usage error - invalid arguments or options"
+    },
+    {
+      "code": 125,
+      "meaning": "Container configuration error"
+    },
+    {
+      "code": 126,
+      "meaning": "Command cannot be invoked - permission denied or not executable"
+    },
+    {
+      "code": 127,
+      "meaning": "Command not found inside the container"
+    },
+    {
+      "code": 137,
+      "meaning": "Container killed (SIGKILL, typically OOM)"
+    },
+    {
+      "code": 255,
+      "meaning": "Build or runtime error during container execution"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Pull NGC PyTorch container and convert to SIF",
+      "command": "singularity pull docker://nvcr.io/nvidia/pytorch:23.10-py3",
+      "requires_root": false
+    },
+    {
+      "description": "Run GPU-accelerated training inside container",
+      "command": "singularity exec --nv pytorch_23.10-py3.sif python train.py",
+      "requires_root": false
+    },
+    {
+      "description": "Interactive shell with GPU support and data bind mount",
+      "command": "singularity shell --nv --bind /data:/data pytorch_23.10-py3.sif",
+      "requires_root": false
+    },
+    {
+      "description": "Run container with multiple bind mounts",
+      "command": "singularity exec --nv --bind /datasets:/data:ro --bind /scratch:/scratch pytorch.sif python train.py --data /data",
+      "requires_root": false
+    },
+    {
+      "description": "Build container from definition file (fakeroot mode)",
+      "command": "singularity build --fakeroot mycontainer.sif mycontainer.def",
+      "requires_root": false
+    },
+    {
+      "description": "Build sandbox directory from Docker image",
+      "command": "singularity build --sandbox ./pytorch_sandbox/ docker://nvcr.io/nvidia/pytorch:23.10-py3",
+      "requires_root": false
+    },
+    {
+      "description": "Run NGC container in Slurm job",
+      "command": "srun singularity exec --nv /containers/pytorch_23.10.sif python train.py",
+      "requires_root": false
+    },
+    {
+      "description": "Start persistent container instance with GPU",
+      "command": "singularity instance start --nv pytorch.sif jupyter_server",
+      "requires_root": false
+    },
+    {
+      "description": "Connect to running instance",
+      "command": "singularity shell instance://jupyter_server",
+      "requires_root": false
+    },
+    {
+      "description": "List running instances",
+      "command": "singularity instance list",
+      "output_example": "INSTANCE NAME    PID        IP              IMAGE\njupyter_server   123456                         /home/user/pytorch.sif",
+      "requires_root": false
+    },
+    {
+      "description": "Stop a running instance",
+      "command": "singularity instance stop jupyter_server",
+      "requires_root": false
+    },
+    {
+      "description": "Inspect container metadata",
+      "command": "singularity inspect --labels pytorch.sif",
+      "requires_root": false
+    },
+    {
+      "description": "Show container definition file",
+      "command": "singularity inspect --deffile pytorch.sif",
+      "requires_root": false
+    },
+    {
+      "description": "Run with clean environment (no host variables)",
+      "command": "singularity exec --cleanenv --nv pytorch.sif python train.py",
+      "requires_root": false
+    },
+    {
+      "description": "Run with writable tmpfs overlay",
+      "command": "singularity exec --nv --writable-tmpfs pytorch.sif pip install additional-package && python train.py",
+      "requires_root": false
+    },
+    {
+      "description": "Multi-node MPI job with Singularity",
+      "command": "mpirun -np 16 singularity exec --nv mpi_container.sif ./my_mpi_application",
+      "requires_root": false
+    },
+    {
+      "description": "Pull from private Docker registry with authentication",
+      "command": "SINGULARITY_DOCKER_USERNAME=$USER SINGULARITY_DOCKER_PASSWORD=$TOKEN singularity pull docker://private.registry.io/myimage:latest",
+      "requires_root": false
+    },
+    {
+      "description": "Run container with custom home directory",
+      "command": "singularity exec --nv --home /scratch/$USER:/home/$USER pytorch.sif python train.py",
+      "requires_root": false
+    },
+    {
+      "description": "Execute nvidia-smi inside GPU container",
+      "command": "singularity exec --nv pytorch.sif nvidia-smi",
+      "output_example": "+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 535.104.12   Driver Version: 535.104.12   CUDA Version: 12.2     |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|===============================+======================+======================|\n|   0  NVIDIA A100-SXM4    On   | 00000000:07:00.0 Off |                    0 |\n| N/A   32C    P0    62W / 400W |      0MiB / 81920MiB |      0%      Default |\n+-------------------------------+----------------------+----------------------+",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "FATAL: container creation failed: mount /proc/self/fd/3->/usr/local/cuda: no such file or directory",
+      "meaning": "NVIDIA GPU support enabled but driver files not found",
+      "resolution": "Ensure NVIDIA drivers are installed on the host and nvidia-container-cli is available. Check that --nv is used on a node with GPUs."
+    },
+    {
+      "message": "FATAL: While making image from oci registry: error fetching image to cache: while building SIF from layers: conveyor failed to get: reading manifest latest in docker.io/library/image: unauthorized",
+      "meaning": "Authentication required for Docker registry",
+      "resolution": "Set SINGULARITY_DOCKER_USERNAME and SINGULARITY_DOCKER_PASSWORD environment variables, or use --docker-login for interactive authentication."
+    },
+    {
+      "message": "FATAL: Unable to open squashfs image: no such file or directory",
+      "meaning": "Specified container image file does not exist",
+      "resolution": "Verify the path to the .sif file is correct. Use 'singularity pull' to download the image first if needed."
+    },
+    {
+      "message": "WARNING: Skipping mount /etc/localtime: no such file or directory",
+      "meaning": "Host file for timezone configuration not found",
+      "resolution": "This warning is usually harmless. Set TZ environment variable in container if timezone is needed."
+    },
+    {
+      "message": "FATAL: could not open image: no space left on device",
+      "meaning": "Insufficient disk space for pull/build operation",
+      "resolution": "Free disk space or set SINGULARITY_CACHEDIR and SINGULARITY_TMPDIR to paths with more space. Large images (NGC) can require 20-50GB+."
+    },
+    {
+      "message": "FATAL: While performing build: packer failed to pack: while unpacking tmpfs: error extracting: Error extracting",
+      "meaning": "Build failed due to extraction error, often disk space or permissions",
+      "resolution": "Check available space in SINGULARITY_TMPDIR. If using fakeroot, ensure user namespaces are enabled."
+    },
+    {
+      "message": "FATAL: nvidia-container-cli not found",
+      "meaning": "nvidia-container-cli binary is not installed or not in PATH",
+      "resolution": "Install libnvidia-container-tools package. Required when using --nvccli flag."
+    },
+    {
+      "message": "FATAL: container creation failed: unabled to set user namespace: operation not permitted",
+      "meaning": "User namespaces are not enabled on the system",
+      "resolution": "Ask system administrator to enable user namespaces: 'sysctl -w kernel.unprivileged_userns_clone=1' or configure in /etc/sysctl.conf."
+    },
+    {
+      "message": "FATAL: instance start requires a writable image",
+      "meaning": "Trying to start instance from read-only SIF without overlay",
+      "resolution": "Use --writable-tmpfs for temporary writable layer, or convert image to sandbox format for persistent writes."
+    },
+    {
+      "message": "ERROR: Failed to detect GPU devices",
+      "meaning": "No NVIDIA GPUs detected or driver not loaded",
+      "resolution": "Verify GPUs are present with 'nvidia-smi' on the host. Ensure NVIDIA driver is loaded. Check NVIDIA_VISIBLE_DEVICES is set correctly."
+    },
+    {
+      "message": "FATAL: configuration is no longer supported",
+      "meaning": "Old Singularity configuration format incompatible with current version",
+      "resolution": "Update configuration file format or rebuild container with current Singularity/Apptainer version."
+    },
+    {
+      "message": "FATAL: permission denied",
+      "meaning": "Insufficient permissions for the requested operation",
+      "resolution": "Check file permissions. For builds, try --fakeroot mode. Ensure SINGULARITY_CACHEDIR and SINGULARITY_TMPDIR are writable."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "docker",
+      "enroot",
+      "nvidia-container-cli",
+      "nvidia-smi",
+      "podman",
+      "srun",
+      "sbatch",
+      "mpirun"
+    ],
+    "uses_library": [
+      "libnvidia-container",
+      "nvidia-container-cli",
+      "squashfuse",
+      "libseccomp",
+      "NVML (NVIDIA Management Library)"
+    ],
+    "notes": "Singularity/Apptainer is the most widely used container runtime in HPC. It integrates seamlessly with MPI, allowing hybrid MPI jobs where the MPI launcher runs on the host while processes execute inside containers. GPU support via --nv uses bind mounts for driver libraries, while --nvccli uses nvidia-container-cli for more sophisticated GPU isolation. Compatible with Docker images through automatic conversion. SIF format provides a single immutable file that can be easily shared on parallel filesystems like Lustre or GPFS. Often used with Slurm for batch job container workloads. Apptainer is the Linux Foundation fork of Singularity and is backward compatible, supporting both SINGULARITY_* and APPTAINER_* environment variables."
+  },
+  "permissions": {
+    "read_operations": "All read operations (exec, run, shell, pull, inspect) can be performed by unprivileged users",
+    "write_operations": "Building containers traditionally required root, but fakeroot mode (--fakeroot) allows unprivileged builds using user namespaces. Sandbox directories require write permissions to the destination.",
+    "notes": "Singularity was designed for HPC environments where users do not have root access. The SIF format uses SquashFS which is read-only by default, enhancing security. Users can create writable overlays for temporary changes. System administrators control which features are enabled (user namespaces, network, fakeroot) via singularity.conf."
+  },
+  "limitations": [
+    "SIF images are read-only; modifications require sandbox format or overlay",
+    "User namespace support required for fakeroot builds (must be enabled by admin)",
+    "Network namespace isolation limited compared to Docker by default",
+    "GPU support requires host NVIDIA drivers to match container CUDA version",
+    "Large NGC containers can require significant disk space during pull/build (20-50GB+)",
+    "Some Docker features (compose, swarm, native orchestration) not supported",
+    "Instance networking is limited compared to Docker networking model",
+    "Definition file syntax differs from Dockerfile, requiring migration effort",
+    "Cannot run truly privileged containers in unprivileged mode",
+    "Older SIF format versions may not be compatible with newer Singularity versions"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "container_state",
+        "fields": [
+          "image_path",
+          "instance_name",
+          "instance_pid",
+          "container_metadata"
+        ],
+        "description": "Reads SIF images, container metadata, and instance state from filesystem and runtime"
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "gpu_id",
+          "uuid",
+          "driver_version",
+          "memory_total",
+          "cuda_version"
+        ],
+        "description": "When using --nv or --nvccli, queries GPU state to configure driver bindings and device access"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "container_state",
+        "fields": [
+          "image_path",
+          "container_pid",
+          "instance_name",
+          "instance_state",
+          "cache_layers"
+        ],
+        "description": "Creates SIF images, caches layers, and manages instance state",
+        "requires_flags": ["build", "pull", "instance start", "instance stop"]
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["memory_used", "compute_processes"],
+        "description": "GPU containers allocate GPU memory and create processes visible in nvidia-smi"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Container started with --nv flag",
+        "effect": "NVIDIA driver libraries and devices are bind-mounted into container"
+      },
+      {
+        "state_change": "Container started with --nvccli flag",
+        "effect": "nvidia-container-cli configures GPU visibility and driver mounting"
+      },
+      {
+        "state_change": "Instance started",
+        "effect": "Background container process created and tracked in instance state"
+      },
+      {
+        "state_change": "Instance stopped",
+        "effect": "Container process terminated and instance state cleaned up"
+      },
+      {
+        "state_change": "Image pulled from registry",
+        "effect": "SIF file created in current directory or specified location"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU processes from Singularity containers visible in nvidia-smi output"
+      },
+      {
+        "command": "nvidia-container-cli",
+        "shared_state": "GPU device visibility and driver capabilities when using --nvccli"
+      },
+      {
+        "command": "docker",
+        "shared_state": "Can pull and convert Docker images; containers share host kernel"
+      },
+      {
+        "command": "enroot",
+        "shared_state": "Both use unprivileged containers with GPU support; can share images via conversion"
+      },
+      {
+        "command": "srun",
+        "shared_state": "Slurm integration - singularity commands run within srun job context"
+      }
+    ]
+  }
+}

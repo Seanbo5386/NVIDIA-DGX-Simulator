@@ -1,0 +1,175 @@
+{
+  "command": "rdma",
+  "category": "networking",
+  "description": "RDMA device and resource management tool. Part of iproute2, provides interface to query and configure RDMA devices, links, and resources. Modern replacement for some ibstat functionality.",
+  "synopsis": "rdma [OPTIONS] OBJECT { COMMAND | help }",
+  "version_documented": "iproute2 5.10+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/rdma.8.html"],
+  "installation": {
+    "package": "iproute2",
+    "notes": "Part of iproute2 package. Install via: apt install iproute2 or yum install iproute"
+  },
+  "global_options": [
+    {
+      "short": "-V",
+      "long": "--Version",
+      "description": "Display version"
+    },
+    {
+      "short": "-d",
+      "long": "--details",
+      "description": "Show detailed information"
+    },
+    {
+      "short": "-j",
+      "long": "--json",
+      "description": "Output in JSON format"
+    },
+    {
+      "short": "-p",
+      "long": "--pretty",
+      "description": "Pretty-print JSON output"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "dev",
+      "description": "RDMA device management",
+      "synopsis": "rdma dev { show | set | help }"
+    },
+    {
+      "name": "link",
+      "description": "RDMA link (port) management",
+      "synopsis": "rdma link { show | add | delete | help }"
+    },
+    {
+      "name": "resource",
+      "description": "RDMA resource management",
+      "synopsis": "rdma resource { show | help }"
+    },
+    {
+      "name": "system",
+      "description": "RDMA system configuration",
+      "synopsis": "rdma system { show | set | help }"
+    },
+    {
+      "name": "statistic",
+      "description": "RDMA statistics",
+      "synopsis": "rdma statistic { show | help }"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "List all RDMA devices",
+      "command": "rdma dev",
+      "output_example": "1: mlx5_0: node_type ca fw 20.35.1012 node_guid 0c42:a103:00ab:cdef sys_image_guid 0c42:a103:00ab:cdef\n2: mlx5_1: node_type ca fw 20.35.1012 node_guid 0c42:a103:00ab:cdf0 sys_image_guid 0c42:a103:00ab:cdf0",
+      "requires_root": false
+    },
+    {
+      "description": "Show RDMA link (port) status",
+      "command": "rdma link",
+      "output_example": "link mlx5_0/1 state ACTIVE physical_state LINK_UP netdev ib0\nlink mlx5_0/2 state ACTIVE physical_state LINK_UP netdev ib1\nlink mlx5_1/1 state ACTIVE physical_state LINK_UP netdev ib2",
+      "requires_root": false
+    },
+    {
+      "description": "Show detailed device info",
+      "command": "rdma dev show mlx5_0 -d",
+      "requires_root": false
+    },
+    {
+      "description": "Show RDMA resources",
+      "command": "rdma resource show",
+      "output_example": "0: mlx5_0: pd 5 cq 12 qp 8 mr 15 ctx 4",
+      "requires_root": false
+    },
+    {
+      "description": "Show statistics",
+      "command": "rdma statistic show",
+      "requires_root": false
+    },
+    {
+      "description": "JSON output for scripting",
+      "command": "rdma -j -p dev",
+      "requires_root": false
+    },
+    {
+      "description": "Show system-wide RDMA settings",
+      "command": "rdma system show",
+      "output_example": "netns shared copy-on-fork on",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Error: Unknown command",
+      "meaning": "Invalid subcommand or syntax",
+      "resolution": "Check 'rdma help' for valid commands"
+    },
+    {
+      "message": "Error: Operation not supported",
+      "meaning": "Kernel or device doesn't support operation",
+      "resolution": "Check kernel version and driver support"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["ibstat", "ibstatus", "ibv_devinfo", "ip link"],
+    "notes": "rdma is the modern iproute2 tool for RDMA management. Provides similar information to ibstat but with consistent syntax matching ip command. Supports JSON output for scripting."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for show commands",
+    "write_operations": "Root required for configuration changes",
+    "notes": "Resource show may require root for some details"
+  },
+  "limitations": [
+    "Some features require recent kernel versions",
+    "Not all ibtools functionality is available",
+    "Statistics support varies by driver"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["device", "port", "state", "physical_state", "guid"],
+        "description": "Reads RDMA device and link state"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["state"],
+        "description": "Can configure RDMA device parameters",
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Link state change",
+        "effect": "rdma link show reflects new state"
+      },
+      {
+        "state_change": "RDMA connection established",
+        "effect": "Resource count increases"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ibstat",
+        "shared_state": "Device and port state should match"
+      },
+      {
+        "command": "ip link",
+        "shared_state": "Associated netdev shown by rdma link"
+      }
+    ]
+  }
+}

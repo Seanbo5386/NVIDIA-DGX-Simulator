@@ -1,0 +1,129 @@
+{
+  "command": "which",
+  "category": "general",
+  "description": "Locate a command executable in the user's PATH. Essential in HPC environments for verifying which version of tools like nvcc, mpirun, or python is being used, especially after loading environment modules.",
+  "synopsis": "which [options] [--] programname [...]",
+  "version_documented": "which 2.21+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/which.1.html"],
+  "installation": {
+    "package": "which",
+    "notes": "Typically installed by default. Some systems use shell built-in or alias instead."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Print all matching executables in PATH, not just the first"
+    },
+    {
+      "short": "-s",
+      "long": "--skip-functions",
+      "description": "Skip shell functions (GNU which)"
+    },
+    {
+      "long": "--version",
+      "description": "Display version information"
+    },
+    {
+      "long": "--help",
+      "description": "Display help information"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - all commands found"
+    },
+    {
+      "code": 1,
+      "meaning": "One or more commands not found"
+    },
+    {
+      "code": 2,
+      "meaning": "Invalid option or error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Find nvcc compiler location",
+      "command": "which nvcc",
+      "output_example": "/usr/local/cuda/bin/nvcc",
+      "requires_root": false
+    },
+    {
+      "description": "Find all python executables in PATH",
+      "command": "which -a python",
+      "output_example": "/usr/bin/python\n/usr/local/bin/python",
+      "requires_root": false
+    },
+    {
+      "description": "Verify mpirun location after module load",
+      "command": "module load openmpi && which mpirun",
+      "output_example": "/opt/openmpi/bin/mpirun",
+      "requires_root": false
+    },
+    {
+      "description": "Check nvidia-smi location",
+      "command": "which nvidia-smi",
+      "output_example": "/usr/bin/nvidia-smi",
+      "requires_root": false
+    },
+    {
+      "description": "Find multiple commands at once",
+      "command": "which nvcc cuda-gdb nsys",
+      "requires_root": false
+    },
+    {
+      "description": "Check if command exists (scripting)",
+      "command": "which nvidia-smi > /dev/null 2>&1 && echo 'NVIDIA driver installed'",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "which: no nvcc in (/usr/bin:/bin)",
+      "meaning": "Command not found in any PATH directory",
+      "resolution": "Load appropriate module or add directory to PATH"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["whereis", "type", "command -v", "module"],
+    "notes": "In bash, 'type' or 'command -v' are often preferred for scripting as they handle aliases and functions. 'which' specifically searches PATH directories."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "N/A - read-only command",
+    "notes": "Results depend on user's PATH environment variable"
+  },
+  "limitations": [
+    "Only searches PATH, not shell built-ins or functions by default",
+    "Does not verify if executable will actually run successfully",
+    "Does not show shell aliases (use 'type' for that)"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["path"],
+        "description": "Searches directories listed in PATH environment variable"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Module load/unload",
+        "effect": "PATH changes may cause different executable to be found"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "type",
+        "shared_state": "Shows same executable when not an alias/function"
+      },
+      {
+        "command": "whereis",
+        "shared_state": "Executable location (though whereis searches more paths)"
+      }
+    ]
+  }
+}

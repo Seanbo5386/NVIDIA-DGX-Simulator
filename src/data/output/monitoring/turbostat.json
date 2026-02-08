@@ -1,0 +1,186 @@
+{
+  "command": "turbostat",
+  "category": "monitoring",
+  "description": "Report processor frequency, power, and idle statistics. Shows C-states, P-states, temperature, and power consumption per CPU. Essential for monitoring CPU power efficiency and thermal behavior in HPC nodes.",
+  "synopsis": "turbostat [options] [command ...]",
+  "version_documented": "linux-tools (kernel version)",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/turbostat.8.html"],
+  "installation": {
+    "package": "linux-tools-common",
+    "notes": "Install via: apt install linux-tools-common linux-tools-$(uname -r) or yum install kernel-tools"
+  },
+  "global_options": [
+    {
+      "short": "-S",
+      "long": "--Summary",
+      "description": "Show summary line only"
+    },
+    {
+      "short": "-c",
+      "long": "--cpu",
+      "description": "Limit output to specified CPUs",
+      "arguments": "<cpu_list>",
+      "argument_type": "string",
+      "example": "-c 0-7"
+    },
+    {
+      "short": "-i",
+      "long": "--interval",
+      "description": "Sample interval in seconds",
+      "arguments": "<seconds>",
+      "argument_type": "number",
+      "default": "5.0"
+    },
+    {
+      "short": "-n",
+      "long": "--num_iterations",
+      "description": "Number of iterations",
+      "arguments": "<num>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-q",
+      "long": "--quiet",
+      "description": "Suppress header on each iteration"
+    },
+    {
+      "short": "-J",
+      "long": "--Joules",
+      "description": "Show energy in Joules instead of Watts"
+    },
+    {
+      "short": "-s",
+      "long": "--show",
+      "description": "Show only specified columns",
+      "arguments": "<column_list>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--hide",
+      "description": "Hide specified columns",
+      "arguments": "<column_list>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-v",
+      "long": "--version",
+      "description": "Display version"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show CPU frequency and power stats",
+      "command": "turbostat",
+      "output_example": "Package Core    CPU     Avg_MHz Busy%   Bzy_MHz TSC_MHz IRQ     SMI     POLL    C1      C1E     C6      POLL%   C1%     C1E%    C6%     CPU%c1  CPU%c6  CoreTmp PkgTmp  PkgWatt CorWatt\n-       -       -       1500    25.00   3000    2400    5000    0       0       1000    2000    1500    0.00    10.00   15.00   50.00   25.00   50.00   45      48      125.5   95.2\n0       0       0       2800    45.00   3100    2400    1234    0       0       100     200     300     0.00    5.00    10.00   40.00   15.00   40.00   42      -       -       -",
+      "requires_root": true
+    },
+    {
+      "description": "Show summary line only",
+      "command": "turbostat -S -i 1 -n 5",
+      "requires_root": true
+    },
+    {
+      "description": "Run command and show stats",
+      "command": "turbostat ./benchmark",
+      "requires_root": true
+    },
+    {
+      "description": "Monitor specific CPUs",
+      "command": "turbostat -c 0-15 -i 2",
+      "requires_root": true
+    },
+    {
+      "description": "Show only frequency and power",
+      "command": "turbostat -s Avg_MHz,Busy%,PkgWatt -i 1",
+      "requires_root": true
+    },
+    {
+      "description": "Show energy consumption",
+      "command": "turbostat -J -i 10 -n 6",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "turbostat: must be root",
+      "meaning": "Requires root privileges",
+      "resolution": "Run with sudo or as root"
+    },
+    {
+      "message": "turbostat: MSR access failed",
+      "meaning": "Cannot access CPU model-specific registers",
+      "resolution": "Ensure msr module is loaded: modprobe msr"
+    },
+    {
+      "message": "No valid topology available",
+      "meaning": "Cannot determine CPU topology",
+      "resolution": "Check kernel support for your CPU"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "mpstat",
+      "sensors",
+      "powertop",
+      "cpupower",
+      "perf stat"
+    ],
+    "notes": "turbostat provides detailed power and frequency information from CPU MSRs. Useful for understanding thermal throttling and power limits. In HPC, high Busy% with low Avg_MHz may indicate throttling."
+  },
+  "permissions": {
+    "read_operations": "Root required for MSR access",
+    "write_operations": "N/A - read-only command",
+    "notes": "Requires msr kernel module and CAP_SYS_RAWIO"
+  },
+  "limitations": [
+    "Requires root privileges",
+    "Intel-specific features may not work on AMD",
+    "Requires msr kernel module",
+    "Output format varies by CPU model"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["cpu_count", "cpu_model"],
+        "description": "Reads CPU frequency, power, and C-state data from MSRs"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "CPU frequency change",
+        "effect": "Avg_MHz and Bzy_MHz values change"
+      },
+      {
+        "state_change": "Thermal throttling",
+        "effect": "Frequency decreases, temperature visible"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "sensors",
+        "shared_state": "CPU temperature readings should be similar"
+      },
+      {
+        "command": "cat /proc/cpuinfo",
+        "shared_state": "CPU model and nominal frequency"
+      }
+    ]
+  }
+}

@@ -1,0 +1,381 @@
+{
+  "command": "cuda-gdb",
+  "category": "cuda_tools",
+  "description": "NVIDIA CUDA Debugger (cuda-gdb) is an extension of GDB (GNU Debugger) specifically designed for debugging CUDA applications. It enables developers to debug both host (CPU) and device (GPU) code simultaneously, allowing inspection of GPU threads, warps, blocks, and grids. cuda-gdb supports setting breakpoints in CUDA kernels, examining GPU memory, stepping through device code, and inspecting CUDA-specific constructs like shared memory and registers. It integrates seamlessly with standard GDB workflows while adding CUDA-aware debugging capabilities.",
+  "synopsis": "cuda-gdb [options] [executable-file [core-file or process-id]]",
+  "version_documented": "CUDA 12.0+",
+  "source_urls": [
+    "https://docs.nvidia.com/cuda/cuda-gdb/index.html",
+    "https://developer.nvidia.com/cuda-toolkit"
+  ],
+  "installation": {
+    "package": "cuda-toolkit",
+    "notes": "Installed as part of the CUDA Toolkit. Requires the application to be compiled with debug information using nvcc -G (device debug) and -g (host debug) flags. Works on Linux systems with NVIDIA GPU drivers installed."
+  },
+  "global_options": [
+    {
+      "long": "--args",
+      "description": "Pass arguments to the inferior (debugged program). All arguments after this flag are passed to the executable.",
+      "arguments": "ARGS",
+      "argument_type": "string",
+      "example": "cuda-gdb --args ./my_cuda_app arg1 arg2"
+    },
+    {
+      "short": "-x",
+      "long": "--command",
+      "description": "Execute GDB commands from a script file. Useful for automating debugging sessions.",
+      "arguments": "FILE",
+      "argument_type": "path",
+      "example": "cuda-gdb -x debug_script.gdb ./my_cuda_app"
+    },
+    {
+      "long": "--batch",
+      "description": "Run in batch mode. GDB will exit with status 0 after processing all commands. Useful for automated testing and CI pipelines.",
+      "example": "cuda-gdb --batch -x test_script.gdb ./my_cuda_app"
+    },
+    {
+      "long": "--cuda-use-lockfile",
+      "description": "Control whether cuda-gdb uses a lock file to prevent multiple debuggers from attaching to the same GPU. Use =on or =off.",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "default": "on",
+      "example": "cuda-gdb --cuda-use-lockfile=off ./my_cuda_app"
+    },
+    {
+      "short": "-q",
+      "long": "--quiet",
+      "description": "Suppress the introductory and copyright messages (quiet mode).",
+      "example": "cuda-gdb -q ./my_cuda_app"
+    },
+    {
+      "short": "-p",
+      "long": "--pid",
+      "description": "Attach to a running process with the specified process ID.",
+      "arguments": "PID",
+      "argument_type": "integer",
+      "example": "cuda-gdb -p 12345"
+    },
+    {
+      "short": "-c",
+      "long": "--core",
+      "description": "Analyze a core dump file for post-mortem debugging.",
+      "arguments": "FILE",
+      "argument_type": "path",
+      "example": "cuda-gdb ./my_cuda_app -c core.12345"
+    },
+    {
+      "short": "-d",
+      "long": "--directory",
+      "description": "Add directory to the search path for source files.",
+      "arguments": "DIR",
+      "argument_type": "path",
+      "example": "cuda-gdb -d /path/to/sources ./my_cuda_app"
+    },
+    {
+      "short": "-s",
+      "long": "--symbols",
+      "description": "Read symbol table from the specified file.",
+      "arguments": "FILE",
+      "argument_type": "path",
+      "example": "cuda-gdb -s symbols.dbg ./my_cuda_app"
+    },
+    {
+      "long": "--tui",
+      "description": "Start with the Text User Interface (TUI) enabled, providing a split-screen view with source code.",
+      "example": "cuda-gdb --tui ./my_cuda_app"
+    },
+    {
+      "short": "-ex",
+      "description": "Execute a single GDB command after loading the executable. Can be used multiple times.",
+      "arguments": "COMMAND",
+      "argument_type": "string",
+      "example": "cuda-gdb -ex 'break main' -ex 'run' ./my_cuda_app"
+    },
+    {
+      "long": "--cuda-software-preemption",
+      "description": "Enable software preemption mode for debugging. Allows debugging without hardware preemption support.",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "example": "cuda-gdb --cuda-software-preemption=on ./my_cuda_app"
+    },
+    {
+      "long": "--cuda-gpu-events",
+      "description": "Control GPU event notification behavior. Use =all, =none, or =filtered.",
+      "arguments": "MODE",
+      "argument_type": "string",
+      "default": "filtered",
+      "example": "cuda-gdb --cuda-gpu-events=all ./my_cuda_app"
+    },
+    {
+      "short": "-n",
+      "long": "--nx",
+      "description": "Do not execute commands from initialization files (.gdbinit).",
+      "example": "cuda-gdb -n ./my_cuda_app"
+    },
+    {
+      "long": "--version",
+      "description": "Display cuda-gdb version information and exit.",
+      "example": "cuda-gdb --version"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help information and exit.",
+      "example": "cuda-gdb --help"
+    }
+  ],
+  "environment_variables": [
+    {
+      "name": "CUDA_VISIBLE_DEVICES",
+      "description": "Limits which GPUs are visible to CUDA applications and cuda-gdb.",
+      "example": "CUDA_VISIBLE_DEVICES=0,1",
+      "affects_command": "Restricts debugging to specific GPUs. Useful when debugging on multi-GPU systems."
+    },
+    {
+      "name": "CUDA_DEBUGGER_SOFTWARE_PREEMPTION",
+      "description": "Enables software preemption mode for the debugger.",
+      "example": "CUDA_DEBUGGER_SOFTWARE_PREEMPTION=1",
+      "affects_command": "Allows debugging on GPUs without hardware preemption support. May impact performance."
+    },
+    {
+      "name": "DISPLAY",
+      "description": "X11 display for GUI elements if using graphical frontends.",
+      "example": "DISPLAY=:0",
+      "affects_command": "Required for TUI mode and some graphical debugging interfaces."
+    },
+    {
+      "name": "CUDA_PATH",
+      "description": "Specifies the root directory of the CUDA Toolkit installation.",
+      "example": "CUDA_PATH=/usr/local/cuda-12.0",
+      "affects_command": "cuda-gdb uses this to locate CUDA libraries and debug symbols."
+    },
+    {
+      "name": "CUDA_GDB_PATH",
+      "description": "Override the default path for cuda-gdb executable.",
+      "example": "CUDA_GDB_PATH=/opt/cuda/bin/cuda-gdb",
+      "affects_command": "Allows using a specific version of cuda-gdb."
+    },
+    {
+      "name": "LD_LIBRARY_PATH",
+      "description": "Library search path on Linux systems.",
+      "example": "LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH",
+      "affects_command": "Required for cuda-gdb to find CUDA runtime libraries."
+    },
+    {
+      "name": "CUDA_ENABLE_COREDUMP_ON_EXCEPTION",
+      "description": "Enable GPU core dump generation on CUDA exceptions.",
+      "example": "CUDA_ENABLE_COREDUMP_ON_EXCEPTION=1",
+      "affects_command": "When enabled, cuda-gdb can analyze GPU core dumps for post-mortem debugging."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - debugger exited normally"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - debugger encountered an error or the debugged program crashed"
+    },
+    {
+      "code": 127,
+      "meaning": "Error - cuda-gdb executable not found or CUDA Toolkit not properly installed"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Debug a CUDA application interactively",
+      "command": "cuda-gdb ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Debug with command-line arguments",
+      "command": "cuda-gdb --args ./my_cuda_app --input data.bin --output result.bin",
+      "requires_root": false
+    },
+    {
+      "description": "Set a breakpoint in a CUDA kernel and run",
+      "command": "cuda-gdb -ex 'break myKernel' -ex 'run' ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Attach to a running CUDA process",
+      "command": "cuda-gdb -p $(pgrep my_cuda_app)",
+      "requires_root": false
+    },
+    {
+      "description": "Analyze a core dump from a crashed CUDA application",
+      "command": "cuda-gdb ./my_cuda_app -c core.12345",
+      "requires_root": false
+    },
+    {
+      "description": "Run automated debugging script in batch mode",
+      "command": "cuda-gdb --batch -x debug_commands.gdb ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Debug with TUI (Text User Interface) for source view",
+      "command": "cuda-gdb --tui ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Debug specific GPU in multi-GPU system",
+      "command": "CUDA_VISIBLE_DEVICES=0 cuda-gdb ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Set conditional breakpoint in kernel based on thread index",
+      "command": "cuda-gdb -ex 'break myKernel if threadIdx.x == 0 && blockIdx.x == 0' -ex 'run' ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Debug with software preemption mode enabled",
+      "command": "CUDA_DEBUGGER_SOFTWARE_PREEMPTION=1 cuda-gdb ./my_cuda_app",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "error: CUDA driver version is insufficient for CUDA runtime version",
+      "meaning": "The installed NVIDIA driver is older than required by the CUDA runtime",
+      "resolution": "Update the NVIDIA driver to a version compatible with the CUDA Toolkit version."
+    },
+    {
+      "message": "error: no CUDA capable device is detected",
+      "meaning": "cuda-gdb cannot find any NVIDIA GPU on the system",
+      "resolution": "Verify GPU is installed and NVIDIA drivers are loaded. Check 'nvidia-smi' output."
+    },
+    {
+      "message": "error: GPU must be in compute mode for debugging",
+      "meaning": "The GPU is not in a mode that allows debugging",
+      "resolution": "Set GPU compute mode to Default or Exclusive Process using nvidia-smi -c."
+    },
+    {
+      "message": "error: application was not compiled with debug information",
+      "meaning": "The CUDA application lacks device debug symbols",
+      "resolution": "Recompile the application with 'nvcc -G -g' flags to include debug information."
+    },
+    {
+      "message": "error: another debugger is attached to this process",
+      "meaning": "The target process or GPU is already being debugged",
+      "resolution": "Detach the existing debugger or use --cuda-use-lockfile=off if appropriate."
+    },
+    {
+      "message": "error: CUDA Exception: Warp Illegal Address",
+      "meaning": "A GPU thread accessed an invalid memory address",
+      "resolution": "Use 'info cuda threads' to identify the faulting thread and examine memory access patterns."
+    },
+    {
+      "message": "error: CUDA Exception: Warp Out of Range Address",
+      "meaning": "A GPU thread accessed memory outside allocated bounds",
+      "resolution": "Check array bounds and pointer arithmetic in the kernel. Use cuda-memcheck for additional analysis."
+    },
+    {
+      "message": "warning: Can not parse XML target description; debugging will be degraded",
+      "meaning": "cuda-gdb cannot fully parse the target architecture information",
+      "resolution": "Ensure CUDA Toolkit version matches the driver version. Update both if necessary."
+    },
+    {
+      "message": "error: ptrace: Operation not permitted",
+      "meaning": "Insufficient permissions to attach to the target process",
+      "resolution": "Run as root or adjust ptrace_scope: echo 0 > /proc/sys/kernel/yama/ptrace_scope"
+    },
+    {
+      "message": "error: GPU core dump incomplete",
+      "meaning": "The GPU core dump file is corrupted or incomplete",
+      "resolution": "Enable full GPU core dumps with CUDA_ENABLE_COREDUMP_ON_EXCEPTION=1 and ensure sufficient disk space."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "nvcc",
+      "nsys",
+      "ncu",
+      "compute-sanitizer",
+      "cuda-memcheck",
+      "nvidia-smi",
+      "gdb"
+    ],
+    "uses_library": [
+      "CUDA Driver API",
+      "CUDA Runtime API",
+      "libcudart",
+      "libnvidia-ml"
+    ],
+    "notes": "cuda-gdb requires applications compiled with nvcc -G flag for device debugging and -g for host debugging. Works alongside nsys and ncu for combined debugging and profiling workflows. compute-sanitizer can be used for memory error detection before detailed debugging. cuda-gdb shares GPU state visibility with nvidia-smi."
+  },
+  "permissions": {
+    "read_operations": "Standard user permissions sufficient for debugging own processes.",
+    "write_operations": "May require elevated permissions to attach to processes owned by other users.",
+    "notes": "Debugging may require adjusting ptrace_scope on some Linux distributions. GPU access requires membership in video or render group on some systems."
+  },
+  "limitations": [
+    "Application must be compiled with -G flag for device code debugging (disables optimizations)",
+    "Cannot debug optimized device code - debug builds only",
+    "Single debugger instance per GPU by default (lockfile mechanism)",
+    "Performance significantly reduced during debugging sessions",
+    "Some CUDA features like dynamic parallelism have limited debugging support",
+    "Warp-level debugging may not show all threads simultaneously",
+    "Unified memory debugging has some limitations on older architectures",
+    "Cannot modify GPU registers during debugging on all architectures",
+    "Remote debugging requires matching cuda-gdb versions on host and target",
+    "Core dump analysis limited to GPUs with same architecture as dump source"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "compute_capability",
+          "memory_state",
+          "register_state",
+          "warp_state",
+          "block_state",
+          "grid_state"
+        ],
+        "description": "cuda-gdb reads GPU execution state including thread registers, shared memory, local memory, and kernel execution context"
+      },
+      {
+        "state_domain": "gpu_process_state",
+        "fields": [
+          "active_kernels",
+          "memory_allocations",
+          "stream_state",
+          "context_state"
+        ],
+        "description": "cuda-gdb inspects active CUDA contexts, kernel launches, memory allocations, and stream synchronization state"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "gpu_process_state",
+        "fields": ["execution_state", "breakpoint_state"],
+        "description": "cuda-gdb can pause, resume, and step through GPU execution, as well as set breakpoints",
+        "requires_flags": ["-G"],
+        "requires_privilege": "user"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvcc",
+        "shared_state": "Debug symbols and line information when compiled with -G and -g flags"
+      },
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU device visibility and compute mode settings"
+      },
+      {
+        "command": "nsys",
+        "shared_state": "CUDA context and kernel execution state for combined debugging and profiling"
+      },
+      {
+        "command": "ncu",
+        "shared_state": "Kernel execution state and performance counters for detailed analysis"
+      },
+      {
+        "command": "compute-sanitizer",
+        "shared_state": "Memory access tracking and error detection state"
+      }
+    ]
+  }
+}

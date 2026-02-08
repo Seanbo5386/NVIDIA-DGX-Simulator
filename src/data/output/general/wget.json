@@ -1,0 +1,170 @@
+{
+  "command": "wget",
+  "category": "general",
+  "description": "Network downloader. Retrieves files from web servers via HTTP/HTTPS/FTP. Used in HPC for downloading datasets, models, and software.",
+  "synopsis": "wget [options] <url>...",
+  "version_documented": "GNU wget 1.21+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/wget.1.html"],
+  "installation": {
+    "package": "wget",
+    "notes": "Usually installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-O",
+      "long": "--output-document",
+      "description": "Output filename",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-c",
+      "long": "--continue",
+      "description": "Resume partial download"
+    },
+    {
+      "short": "-q",
+      "long": "--quiet",
+      "description": "Quiet mode"
+    },
+    {
+      "short": "-r",
+      "long": "--recursive",
+      "description": "Recursive download"
+    },
+    {
+      "short": "-P",
+      "long": "--directory-prefix",
+      "description": "Save to directory",
+      "arguments": "<prefix>",
+      "argument_type": "path"
+    },
+    {
+      "long": "--limit-rate",
+      "description": "Limit download speed",
+      "arguments": "<rate>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--no-check-certificate",
+      "description": "Skip HTTPS cert validation"
+    },
+    {
+      "long": "--user",
+      "description": "Username for auth",
+      "arguments": "<user>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--password",
+      "description": "Password for auth",
+      "arguments": "<pass>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--retry-connrefused",
+      "description": "Retry on connection refused"
+    },
+    {
+      "short": "-t",
+      "long": "--tries",
+      "description": "Number of retries",
+      "arguments": "<n>",
+      "argument_type": "integer"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Generic error"
+    },
+    {
+      "code": 4,
+      "meaning": "Network failure"
+    },
+    {
+      "code": 8,
+      "meaning": "Server error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Download file",
+      "command": "wget https://example.com/dataset.tar.gz",
+      "requires_root": false
+    },
+    {
+      "description": "Resume download",
+      "command": "wget -c https://example.com/large_model.pt",
+      "requires_root": false
+    },
+    {
+      "description": "Save with custom name",
+      "command": "wget -O data.zip https://example.com/archive",
+      "requires_root": false
+    },
+    {
+      "description": "Download to directory",
+      "command": "wget -P /scratch/datasets/ https://example.com/data.tar",
+      "requires_root": false
+    },
+    {
+      "description": "Quiet download in job",
+      "command": "wget -q https://example.com/checkpoint.pt",
+      "requires_root": false
+    },
+    {
+      "description": "Download with rate limit",
+      "command": "wget --limit-rate=10M https://example.com/huge_file.tar",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Connection refused",
+      "meaning": "Server not accepting connections",
+      "resolution": "Check URL and network access"
+    },
+    {
+      "message": "404 Not Found",
+      "meaning": "URL does not exist",
+      "resolution": "Verify URL is correct"
+    },
+    {
+      "message": "Certificate verification error",
+      "meaning": "HTTPS certificate invalid",
+      "resolution": "Use --no-check-certificate if trusted"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["curl", "aria2c", "rsync"],
+    "notes": "-c is crucial for large downloads. Use aria2c for parallel downloads. Rate limiting helps avoid network issues."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "Write to download location",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Single connection per file",
+    "No parallel downloads (use aria2c)",
+    "Can be blocked by firewalls"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Downloads and saves files",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

@@ -1,0 +1,139 @@
+{
+  "command": "ibping",
+  "category": "networking",
+  "description": "InfiniBand ping utility. Tests connectivity and latency over InfiniBand network. Essential for verifying IB fabric connectivity in HPC clusters.",
+  "synopsis": "ibping [options] <-G guid | -L lid>",
+  "version_documented": "infiniband-diags 2.1+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/ibping.8.html"],
+  "installation": {
+    "package": "infiniband-diags",
+    "notes": "Part of InfiniBand diagnostics package."
+  },
+  "global_options": [
+    {
+      "short": "-G",
+      "long": "--guid",
+      "description": "Target GUID",
+      "arguments": "<guid>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-L",
+      "long": "--lid",
+      "description": "Target LID",
+      "arguments": "<lid>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-c",
+      "long": "--count",
+      "description": "Number of pings",
+      "arguments": "<count>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-f",
+      "long": "--flood",
+      "description": "Flood ping"
+    },
+    {
+      "short": "-S",
+      "long": "--server",
+      "description": "Run as server"
+    },
+    {
+      "short": "-C",
+      "long": "--Ca",
+      "description": "CA name",
+      "arguments": "<ca>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-P",
+      "long": "--Port",
+      "description": "CA port",
+      "arguments": "<port>",
+      "argument_type": "integer"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error or no response"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Start server on target",
+      "command": "ibping -S",
+      "requires_root": false
+    },
+    {
+      "description": "Ping by LID",
+      "command": "ibping -c 10 -L 15",
+      "requires_root": false
+    },
+    {
+      "description": "Ping by GUID",
+      "command": "ibping -c 5 -G 0x0002c9030012abcd",
+      "requires_root": false
+    },
+    {
+      "description": "Flood ping (performance)",
+      "command": "ibping -f -L 15",
+      "requires_root": false
+    },
+    {
+      "description": "Specific HCA port",
+      "command": "ibping -C mlx5_0 -P 1 -L 20",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "ibping: no response from",
+      "meaning": "Target not responding",
+      "resolution": "Verify server is running and LID/GUID correct"
+    },
+    {
+      "message": "ibwarn: couldn't open IB device",
+      "meaning": "IB device not available",
+      "resolution": "Check if IB modules loaded"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["ibtracert", "ibstat", "ibdiagnet"],
+    "notes": "Requires server mode (-S) on target. Tests MAD-level connectivity. Use ib_send_lat for RDMA latency."
+  },
+  "permissions": {
+    "read_operations": "Read IB device",
+    "write_operations": "N/A",
+    "notes": "May need IB group membership"
+  },
+  "limitations": [
+    "Requires server on target",
+    "Tests management path, not RDMA",
+    "LID changes after SM restart"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["connectivity"],
+        "description": "Tests IB fabric connectivity"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ibstat",
+        "shared_state": "Uses LID from ibstat"
+      }
+    ]
+  }
+}

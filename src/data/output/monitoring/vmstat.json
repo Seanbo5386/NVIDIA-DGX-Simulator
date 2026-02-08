@@ -1,0 +1,316 @@
+{
+  "command": "vmstat",
+  "category": "monitoring",
+  "description": "Report virtual memory statistics including processes, memory, paging, block I/O, traps, disks, and CPU activity. vmstat provides a snapshot or continuous report of system performance, making it essential for diagnosing memory pressure, swap activity, and I/O bottlenecks on HPC nodes. The first report gives averages since last reboot, while subsequent reports show activity during the sampling interval.",
+  "synopsis": "vmstat [options] [delay [count]]",
+  "version_documented": "vmstat from procps-ng 3.3.x",
+  "source_urls": [
+    "https://man7.org/linux/man-pages/man8/vmstat.8.html",
+    "https://gitlab.com/procps-ng/procps",
+    "https://www.kernel.org/doc/Documentation/filesystems/proc.txt"
+  ],
+  "installation": {
+    "package": "procps-ng",
+    "notes": "vmstat is part of the procps-ng package, which is installed by default on most Linux distributions. Install via 'apt install procps' (Debian/Ubuntu), 'yum install procps-ng' (RHEL/CentOS), 'dnf install procps-ng' (Fedora), or 'zypper install procps' (SUSE)."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--active",
+      "description": "Display active and inactive memory instead of buffer and cache memory. Shows memory that is actively being used versus memory that could be reclaimed."
+    },
+    {
+      "short": "-d",
+      "long": "--disk",
+      "description": "Report disk statistics including reads, writes, and I/O operations per device. Shows total reads/writes completed, sectors read/written, and time spent on I/O."
+    },
+    {
+      "short": "-D",
+      "long": "--disk-sum",
+      "description": "Report summary statistics for all disks combined, showing aggregate disk activity across the system."
+    },
+    {
+      "short": "-f",
+      "long": "--forks",
+      "description": "Display the number of forks since system boot. Forks are system calls that create new processes. This is a one-time statistic, not affected by delay/count."
+    },
+    {
+      "short": "-m",
+      "long": "--slabs",
+      "description": "Display slab allocator statistics from /proc/slabinfo. Shows kernel memory cache information for debugging memory issues."
+    },
+    {
+      "short": "-n",
+      "long": "--one-header",
+      "description": "Display the header only once rather than periodically. Useful for parsing output or when running for extended periods."
+    },
+    {
+      "short": "-p",
+      "long": "--partition",
+      "description": "Report detailed statistics for a specific disk partition.",
+      "arguments": "<partition>",
+      "argument_type": "string",
+      "example": "vmstat -p sda1"
+    },
+    {
+      "short": "-s",
+      "long": "--stats",
+      "description": "Display a table of various event counters and memory statistics. Provides a comprehensive one-time snapshot of system statistics since boot."
+    },
+    {
+      "short": "-S",
+      "long": "--unit",
+      "description": "Specify the unit for memory output. Valid units: k (1000), K (1024), m (1000000), M (1048576).",
+      "arguments": "<k|K|m|M>",
+      "argument_type": "string",
+      "default": "K",
+      "example": "vmstat -S M"
+    },
+    {
+      "short": "-t",
+      "long": "--timestamp",
+      "description": "Append a timestamp to each line of output. Useful for correlating vmstat output with other logs and events."
+    },
+    {
+      "short": "-w",
+      "long": "--wide",
+      "description": "Wide output mode. Does not truncate output and provides wider columns for memory values on systems with large amounts of RAM."
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help message and exit."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version information and exit."
+    }
+  ],
+  "output_formats": {
+    "default": "Tabular text output with columns for procs (r, b), memory (swpd, free, buff, cache), swap (si, so), io (bi, bo), system (in, cs), and cpu (us, sy, id, wa, st)",
+    "wide": "Extended column widths to prevent truncation on systems with large memory values",
+    "disk": "Per-disk statistics with columns for total, merged, sectors, and milliseconds for reads and writes",
+    "stats": "Two-column format showing statistic name and value"
+  },
+  "environment_variables": [
+    {
+      "name": "POSIXLY_CORRECT",
+      "description": "When set, vmstat follows strict POSIX behavior.",
+      "affects_command": "May affect option parsing and output format to conform to POSIX standards."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - vmstat completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - invalid option, cannot access /proc, or other failure"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display a single snapshot of system statistics",
+      "command": "vmstat",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor system every 2 seconds continuously",
+      "command": "vmstat 2",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor system every 1 second for 10 samples",
+      "command": "vmstat 1 10",
+      "requires_root": false
+    },
+    {
+      "description": "Display active/inactive memory instead of buffer/cache",
+      "command": "vmstat -a 1 5",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor disk I/O statistics",
+      "command": "vmstat -d",
+      "requires_root": false
+    },
+    {
+      "description": "Display comprehensive memory and event statistics",
+      "command": "vmstat -s",
+      "requires_root": false
+    },
+    {
+      "description": "Wide output with timestamps for logging",
+      "command": "vmstat -w -t 1",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor memory pressure and swap activity",
+      "command": "vmstat -w 1 | awk '{print $7, $8}'",
+      "requires_root": false
+    },
+    {
+      "description": "Detect high I/O wait indicating storage bottleneck",
+      "command": "vmstat 1 5",
+      "requires_root": false
+    },
+    {
+      "description": "Display memory in megabytes",
+      "command": "vmstat -S M",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor specific partition activity",
+      "command": "vmstat -p sda1",
+      "requires_root": false
+    },
+    {
+      "description": "Check fork count since boot",
+      "command": "vmstat -f",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "vmstat: cannot open /proc/meminfo",
+      "meaning": "The /proc filesystem is not mounted or accessible",
+      "resolution": "Ensure /proc is mounted with 'mount -t proc proc /proc'. This should be done automatically at boot."
+    },
+    {
+      "message": "vmstat: cannot open /proc/stat",
+      "meaning": "Cannot access CPU statistics from /proc/stat",
+      "resolution": "Verify /proc is mounted and accessible. Check for permission issues or container restrictions."
+    },
+    {
+      "message": "vmstat: invalid option",
+      "meaning": "An unrecognized option was specified",
+      "resolution": "Check the option syntax with 'vmstat --help' and verify the option is supported by your version of procps-ng."
+    },
+    {
+      "message": "vmstat: illegal count",
+      "meaning": "The count argument is not a valid positive integer",
+      "resolution": "Provide a valid positive integer for the count argument, e.g., 'vmstat 1 10'."
+    },
+    {
+      "message": "vmstat: illegal delay",
+      "meaning": "The delay argument is not a valid positive integer",
+      "resolution": "Provide a valid positive integer for the delay in seconds, e.g., 'vmstat 2'."
+    },
+    {
+      "message": "vmstat: partition was not found",
+      "meaning": "The specified partition for -p option does not exist",
+      "resolution": "Check available partitions with 'lsblk' or 'cat /proc/partitions' and use a valid partition name."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "free",
+      "iostat",
+      "sar",
+      "top",
+      "htop",
+      "mpstat",
+      "pidstat",
+      "ps",
+      "dstat"
+    ],
+    "uses_library": ["procps-ng"],
+    "notes": "vmstat reads from /proc/meminfo, /proc/stat, /proc/vmstat, and /proc/diskstats to gather system statistics. For more detailed I/O analysis, use iostat. For historical data collection and analysis, use sar from the sysstat package. On HPC systems, vmstat is commonly used to identify memory pressure before job failures and to verify that swap is not being used during compute-intensive workloads."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required. All statistics are read from /proc which is accessible to all users.",
+    "write_operations": "vmstat is a read-only monitoring tool and does not perform write operations.",
+    "notes": "On some systems with restricted /proc access (certain containers or security configurations), vmstat may fail or show incomplete data."
+  },
+  "limitations": [
+    "The first line of output shows averages since system boot, not current activity - subsequent lines show interval data",
+    "Memory values may be truncated in default mode on systems with large RAM - use -w for wide output",
+    "Does not provide per-process breakdown - use top, htop, or ps for process-level details",
+    "Disk statistics with -d show cumulative values, not per-interval rates",
+    "Cannot monitor remote systems - must be run locally on the target node",
+    "Timestamp (-t) resolution is one second, not milliseconds",
+    "Does not distinguish between different types of I/O (sequential vs random, read vs write latency)",
+    "Slab statistics (-m) require read access to /proc/slabinfo which may be restricted"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "memory_total",
+          "memory_free",
+          "memory_used",
+          "memory_cached",
+          "memory_buffers",
+          "memory_active",
+          "memory_inactive",
+          "swap_total",
+          "swap_used",
+          "swap_free",
+          "swap_in_rate",
+          "swap_out_rate",
+          "cpu_user",
+          "cpu_system",
+          "cpu_idle",
+          "cpu_iowait",
+          "cpu_steal",
+          "context_switches",
+          "interrupts",
+          "forks",
+          "processes_running",
+          "processes_blocked"
+        ],
+        "description": "Reads comprehensive system statistics from /proc/meminfo, /proc/stat, /proc/vmstat, and /proc/diskstats to report memory, CPU, I/O, and process activity."
+      },
+      {
+        "state_domain": "storage_local_state",
+        "fields": [
+          "disk_reads",
+          "disk_writes",
+          "disk_read_sectors",
+          "disk_write_sectors",
+          "disk_io_time"
+        ],
+        "description": "When using -d or -p options, reads disk and partition I/O statistics from /proc/diskstats."
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Memory pressure increase",
+        "effect": "Shows increased swap activity (si/so columns) and decreased free memory."
+      },
+      {
+        "state_change": "High I/O activity",
+        "effect": "Shows elevated bi/bo (blocks in/out) values and increased wa (I/O wait) CPU percentage."
+      },
+      {
+        "state_change": "CPU contention",
+        "effect": "Shows increased processes in run queue (r column) and higher context switch rate (cs column)."
+      },
+      {
+        "state_change": "Process blocking on I/O",
+        "effect": "Shows increased blocked processes (b column) and elevated I/O wait percentage."
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "free",
+        "shared_state": "Memory statistics (total, free, used, buffers, cache, swap) should match between vmstat and free output."
+      },
+      {
+        "command": "iostat",
+        "shared_state": "Disk I/O statistics should be consistent, though iostat provides more detailed per-device breakdown."
+      },
+      {
+        "command": "sar",
+        "shared_state": "CPU, memory, and I/O statistics collected by sar -r, sar -u, and sar -b should align with vmstat output."
+      },
+      {
+        "command": "top",
+        "shared_state": "CPU utilization percentages and memory statistics displayed in top header should match vmstat values."
+      }
+    ]
+  }
+}

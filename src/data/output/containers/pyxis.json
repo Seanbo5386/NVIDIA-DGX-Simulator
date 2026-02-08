@@ -1,0 +1,169 @@
+{
+  "command": "pyxis",
+  "category": "containers",
+  "description": "Slurm SPANK plugin for running containers. Enables seamless container execution within Slurm jobs using enroot backend. Provides container integration through srun --container-* options.",
+  "synopsis": "srun --container-image=<image> [--container-*] <command>",
+  "version_documented": "Pyxis 0.15+",
+  "source_urls": ["https://github.com/NVIDIA/pyxis"],
+  "installation": {
+    "package": "pyxis",
+    "notes": "Install as Slurm SPANK plugin. Requires enroot as container runtime. Configure in plugstack.conf."
+  },
+  "global_options": [
+    {
+      "long": "--container-image",
+      "description": "Container image to use (required)",
+      "arguments": "<image>",
+      "argument_type": "string",
+      "example": "--container-image=nvcr.io/nvidia/pytorch:23.10-py3"
+    },
+    {
+      "long": "--container-name",
+      "description": "Name for the container",
+      "arguments": "<name>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--container-mounts",
+      "description": "Bind mounts for container",
+      "arguments": "<src:dst[:flags],...>",
+      "argument_type": "string",
+      "example": "--container-mounts=/data:/data,/scratch:/scratch"
+    },
+    {
+      "long": "--container-workdir",
+      "description": "Working directory inside container",
+      "arguments": "<path>",
+      "argument_type": "path"
+    },
+    {
+      "long": "--container-env",
+      "description": "Environment variables for container",
+      "arguments": "<VAR=value,...>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--container-remap-root",
+      "description": "Remap root user inside container"
+    },
+    {
+      "long": "--no-container-mount-home",
+      "description": "Do not mount home directory"
+    },
+    {
+      "long": "--no-container-entrypoint",
+      "description": "Do not run container entrypoint"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Container or Slurm error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run Python script in PyTorch container",
+      "command": "srun --container-image=nvcr.io/nvidia/pytorch:23.10-py3 python train.py",
+      "requires_root": false
+    },
+    {
+      "description": "Run with data mounts",
+      "command": "srun --container-image=nvcr.io/nvidia/pytorch:23.10-py3 --container-mounts=/data:/data python train.py",
+      "requires_root": false
+    },
+    {
+      "description": "Multi-node container job in sbatch",
+      "command": "srun --nodes=4 --ntasks-per-node=8 --gpus-per-node=8 --container-image=nvcr.io/nvidia/pytorch:23.10-py3 torchrun --nproc_per_node=8 train.py",
+      "requires_root": false
+    },
+    {
+      "description": "Interactive container session",
+      "command": "srun --pty --container-image=nvcr.io/nvidia/pytorch:23.10-py3 bash",
+      "requires_root": false
+    },
+    {
+      "description": "Use local squashfs image",
+      "command": "srun --container-image=/scratch/containers/pytorch.sqsh python train.py",
+      "requires_root": false
+    },
+    {
+      "description": "Set container working directory",
+      "command": "srun --container-image=myimage --container-workdir=/app ./run.sh",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "pyxis: failed to import container image",
+      "meaning": "Cannot pull or access container image",
+      "resolution": "Verify image name and registry access, check enroot credentials"
+    },
+    {
+      "message": "pyxis: container not found",
+      "meaning": "Named container does not exist",
+      "resolution": "Check container-name or let pyxis create new container"
+    },
+    {
+      "message": "pyxis: enroot failed",
+      "meaning": "enroot runtime error",
+      "resolution": "Check enroot configuration and storage space"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["enroot", "srun", "sbatch", "docker", "singularity"],
+    "notes": "Pyxis uses enroot as the container runtime. Containers are automatically imported on first use and cached. Supports NGC, Docker Hub, and local squashfs images."
+  },
+  "permissions": {
+    "read_operations": "Standard Slurm user permissions",
+    "write_operations": "May need write access to enroot cache directory",
+    "notes": "Container runtime uses unprivileged user namespaces"
+  },
+  "limitations": [
+    "Requires enroot to be installed and configured",
+    "First container pull may be slow",
+    "Container cache can consume significant disk space",
+    "Some Docker features not supported"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "job_state",
+        "fields": ["job_id", "nodes"],
+        "description": "Uses Slurm job context for container execution"
+      },
+      {
+        "state_domain": "container_state",
+        "fields": ["image"],
+        "description": "Pulls and caches container images"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "container_state",
+        "fields": ["container_id", "status"],
+        "description": "Creates container processes for job execution"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "srun with --container-image",
+        "effect": "Container started for job step"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "enroot list",
+        "shared_state": "Cached containers visible in enroot"
+      },
+      {
+        "command": "squeue",
+        "shared_state": "Container jobs shown in queue"
+      }
+    ]
+  }
+}

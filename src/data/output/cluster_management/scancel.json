@@ -1,0 +1,538 @@
+{
+  "command": "scancel",
+  "category": "cluster_management",
+  "description": "scancel is used to signal or cancel jobs, job arrays, or job steps that are under the control of Slurm. An arbitrary number of jobs or job steps may be signaled using job specification filters or a space-separated list of specific job and/or job step IDs. The command supports canceling entire jobs, individual job array elements, specific job steps, or groups of jobs matching various criteria such as user, partition, account, or state. A job or job step can only be signaled by the owner of that job or user root.",
+  "synopsis": "scancel [OPTIONS...] [job_id[_array_id][.step_id]] [job_id[_array_id][.step_id]...]",
+  "version_documented": "Slurm 25.x",
+  "source_urls": ["https://slurm.schedmd.com/scancel.html"],
+  "installation": {
+    "package": "slurm-client or slurm",
+    "notes": "Part of the Slurm workload manager. Requires access to a Slurm cluster with slurmctld running."
+  },
+  "global_options": [
+    {
+      "short": "-A",
+      "long": "--account",
+      "description": "Restrict the scancel operation to jobs under this charge account",
+      "arguments": "account",
+      "argument_type": "string",
+      "example": "scancel -A research"
+    },
+    {
+      "long": "--admin-comment",
+      "description": "Set the AdminComment on the job while canceling jobs. User must have Administrator privileges on the system.",
+      "arguments": "comment",
+      "argument_type": "string",
+      "example": "scancel --admin-comment=\"Cancelled for maintenance\" 12345"
+    },
+    {
+      "short": "-b",
+      "long": "--batch",
+      "description": "By default, signals other than SIGKILL are not sent to the batch step (the shell script). With this option scancel signals only the batch step, but not any other steps. This is useful when the shell script has to trap the signal and take some application defined action. Children of the batch step are not signaled with this option. If used with --full, this option is ignored. Not applicable if step_id is specified.",
+      "example": "scancel --signal=USR1 --batch 12345"
+    },
+    {
+      "short": "-M",
+      "long": "--clusters",
+      "description": "Cluster to issue commands to. Implies --ctld. Note that the slurmdbd must be up for this option to work properly, unless running in a federation with FederationParameters=fed_display configured.",
+      "arguments": "string",
+      "argument_type": "string",
+      "example": "scancel -M cluster1 12345"
+    },
+    {
+      "long": "--ctld",
+      "description": "If this option is not used with --interactive, --sibling, federated job ids, or specific step ids, then this issues a single request to the slurmctld to signal all jobs matching the specified filters. This greatly improves the performance of slurmctld and scancel. Otherwise, this option causes scancel to send each job signal request to the slurmctld daemon rather than directly to the slurmd daemons, which increases overhead, but offers better fault tolerance.",
+      "example": "scancel --ctld -u $USER"
+    },
+    {
+      "short": "-c",
+      "long": "--cron",
+      "description": "Confirm request to cancel a job submitted by scrontab. This option only has effect with the \"explicit_scancel\" option set in ScronParameters.",
+      "example": "scancel --cron 12345"
+    },
+    {
+      "short": "-f",
+      "long": "--full",
+      "description": "By default, signals other than SIGKILL are not sent to the batch step (the shell script). With this option scancel also signals the batch script and its children processes. Most shells cannot handle signals while a command is running, so the shell needs to wait until the command ends to then handle the signal. Unlike --batch, children of the batch step are also signaled with this option. Note: srun steps are also children of the batch step, so steps are also signaled with this option.",
+      "example": "scancel --signal=TERM --full 12345"
+    },
+    {
+      "long": "--help",
+      "description": "Print a help message describing all scancel options"
+    },
+    {
+      "short": "-H",
+      "long": "--hurry",
+      "description": "Do not stage out any burst buffer data. Skip job cleanup steps that would normally occur.",
+      "example": "scancel --hurry 12345"
+    },
+    {
+      "short": "-i",
+      "long": "--interactive",
+      "description": "Interactive mode. Confirm each job_id.step_id before performing the cancel operation.",
+      "example": "scancel -i -u $USER"
+    },
+    {
+      "short": "-n",
+      "long": "--name",
+      "description": "Restrict the scancel operation to jobs with this job name",
+      "arguments": "job_name",
+      "argument_type": "string",
+      "example": "scancel -n my_simulation"
+    },
+    {
+      "long": "--me",
+      "description": "Restrict the scancel operation to jobs owned by the current user",
+      "example": "scancel --me"
+    },
+    {
+      "short": "-w",
+      "long": "--nodelist",
+      "description": "Cancel any jobs using any of the given hosts. The list may be specified as a comma-separated list of hosts, a range of hosts (host[1-5,7,...] for example), or a filename. The host list will be assumed to be a filename only if it contains a \"/\" character.",
+      "arguments": "host1,host2,...",
+      "argument_type": "string",
+      "example": "scancel -w node[001-010]"
+    },
+    {
+      "short": "-p",
+      "long": "--partition",
+      "description": "Restrict the scancel operation to jobs in this partition",
+      "arguments": "partition_name",
+      "argument_type": "string",
+      "example": "scancel -p gpu"
+    },
+    {
+      "short": "-q",
+      "long": "--qos",
+      "description": "Restrict the scancel operation to jobs with this quality of service",
+      "arguments": "qos",
+      "argument_type": "string",
+      "example": "scancel -q high"
+    },
+    {
+      "short": "-Q",
+      "long": "--quiet",
+      "description": "Do not report an error if the specified job is already completed. This option is incompatible with the --verbose option.",
+      "example": "scancel -Q 12345"
+    },
+    {
+      "short": "-R",
+      "long": "--reservation",
+      "description": "Restrict the scancel operation to jobs with this reservation name",
+      "arguments": "reservation_name",
+      "argument_type": "string",
+      "example": "scancel -R maintenance"
+    },
+    {
+      "long": "--sibling",
+      "description": "Remove an active sibling job from a federated job",
+      "arguments": "cluster_name",
+      "argument_type": "string",
+      "example": "scancel --sibling=cluster2 12345"
+    },
+    {
+      "short": "-s",
+      "long": "--signal",
+      "description": "The name or number of the signal to send. If this option is not used the specified job or step will be terminated. Common signals: SIGKILL (9, default for job termination), SIGTERM (15, graceful termination), SIGINT (2, interrupt), SIGUSR1 (10), SIGUSR2 (12).",
+      "arguments": "signal_name",
+      "argument_type": "string",
+      "default": "SIGKILL (for termination)",
+      "example": "scancel --signal=SIGTERM 12345"
+    },
+    {
+      "short": "-t",
+      "long": "--state",
+      "description": "Restrict the scancel operation to jobs in this state. Valid values are PENDING, RUNNING, or SUSPENDED.",
+      "arguments": "job_state_name",
+      "argument_type": "string",
+      "example": "scancel -t PENDING -u $USER"
+    },
+    {
+      "long": "--usage",
+      "description": "Print a brief help message listing the scancel options"
+    },
+    {
+      "short": "-u",
+      "long": "--user",
+      "description": "Restrict the scancel operation to jobs owned by the given user",
+      "arguments": "user_name",
+      "argument_type": "string",
+      "example": "scancel -u john"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Print additional logging. Multiple v's increase logging detail. This option is incompatible with the --quiet option.",
+      "example": "scancel -v 12345"
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Print the version number of the scancel command"
+    },
+    {
+      "long": "--wckey",
+      "description": "Restrict the scancel operation to jobs using this workload characterization key",
+      "arguments": "wckey",
+      "argument_type": "string",
+      "example": "scancel --wckey=project1"
+    }
+  ],
+  "output_formats": {
+    "default": "scancel typically produces no output on success. Error messages are printed to stderr when jobs cannot be cancelled.",
+    "verbose": "With -v/--verbose, prints progress information about each job being signaled",
+    "quiet": "With -Q/--quiet, suppresses error messages for already completed jobs"
+  },
+  "environment_variables": [
+    {
+      "name": "SCANCEL_ACCOUNT",
+      "description": "Default account filter. Equivalent to -A/--account option.",
+      "example": "SCANCEL_ACCOUNT=research",
+      "affects_command": "Filters jobs to specified account by default"
+    },
+    {
+      "name": "SCANCEL_BATCH",
+      "description": "If set to any value, equivalent to -b/--batch option.",
+      "example": "SCANCEL_BATCH=1",
+      "affects_command": "Signals only the batch step by default"
+    },
+    {
+      "name": "SCANCEL_CTLD",
+      "description": "If set to any value, equivalent to --ctld option.",
+      "example": "SCANCEL_CTLD=1",
+      "affects_command": "Routes requests through slurmctld by default"
+    },
+    {
+      "name": "SCANCEL_CRON",
+      "description": "If set to any value, equivalent to -c/--cron option.",
+      "example": "SCANCEL_CRON=1",
+      "affects_command": "Confirms cancel of scrontab jobs by default"
+    },
+    {
+      "name": "SCANCEL_FULL",
+      "description": "If set to any value, equivalent to -f/--full option.",
+      "example": "SCANCEL_FULL=1",
+      "affects_command": "Signals batch step and children by default"
+    },
+    {
+      "name": "SCANCEL_HURRY",
+      "description": "If set to any value, equivalent to -H/--hurry option.",
+      "example": "SCANCEL_HURRY=1",
+      "affects_command": "Skips burst buffer stage-out by default"
+    },
+    {
+      "name": "SCANCEL_INTERACTIVE",
+      "description": "If set to any value, equivalent to -i/--interactive option.",
+      "example": "SCANCEL_INTERACTIVE=1",
+      "affects_command": "Prompts for confirmation by default"
+    },
+    {
+      "name": "SCANCEL_NAME",
+      "description": "Default job name filter. Equivalent to -n/--name option.",
+      "example": "SCANCEL_NAME=my_job",
+      "affects_command": "Filters jobs by name by default"
+    },
+    {
+      "name": "SCANCEL_PARTITION",
+      "description": "Default partition filter. Equivalent to -p/--partition option.",
+      "example": "SCANCEL_PARTITION=gpu",
+      "affects_command": "Filters jobs to specified partition by default"
+    },
+    {
+      "name": "SCANCEL_QOS",
+      "description": "Default QoS filter. Equivalent to -q/--qos option.",
+      "example": "SCANCEL_QOS=normal",
+      "affects_command": "Filters jobs by QoS by default"
+    },
+    {
+      "name": "SCANCEL_STATE",
+      "description": "Default state filter. Equivalent to -t/--state option.",
+      "example": "SCANCEL_STATE=PENDING",
+      "affects_command": "Filters jobs by state by default"
+    },
+    {
+      "name": "SCANCEL_USER",
+      "description": "Default user filter. Equivalent to -u/--user option.",
+      "example": "SCANCEL_USER=$USER",
+      "affects_command": "Filters jobs by user by default"
+    },
+    {
+      "name": "SCANCEL_VERBOSE",
+      "description": "If set to any value, equivalent to -v/--verbose option.",
+      "example": "SCANCEL_VERBOSE=1",
+      "affects_command": "Enables verbose output by default"
+    },
+    {
+      "name": "SCANCEL_WCKEY",
+      "description": "Default wckey filter. Equivalent to --wckey option.",
+      "example": "SCANCEL_WCKEY=project1",
+      "affects_command": "Filters jobs by wckey by default"
+    },
+    {
+      "name": "SLURM_CONF",
+      "description": "Path to the Slurm configuration file",
+      "example": "SLURM_CONF=/etc/slurm/slurm.conf",
+      "affects_command": "Specifies which Slurm configuration to use"
+    },
+    {
+      "name": "SLURM_CLUSTERS",
+      "description": "Specifies the cluster(s) to use. Equivalent to -M/--clusters option.",
+      "example": "SLURM_CLUSTERS=cluster1",
+      "affects_command": "Sets default cluster for multi-cluster operations"
+    },
+    {
+      "name": "SLURM_DEBUG_FLAGS",
+      "description": "Specify debug flags for scancel to use. See DebugFlags in slurm.conf(5) man page for a full list of flags. The environment variable takes precedence over the setting in the slurm.conf.",
+      "example": "SLURM_DEBUG_FLAGS=Protocol",
+      "affects_command": "Enables specific debug output categories"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - job(s) cancelled or signaled successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - general error occurred (e.g., invalid job ID, permission denied, connection failure)"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Cancel a single job by job ID",
+      "command": "scancel 12345",
+      "output_example": "[No output on success]"
+    },
+    {
+      "description": "Cancel a specific job array element",
+      "command": "scancel 12345_10",
+      "output_example": "[No output on success - cancels only array task 10]"
+    },
+    {
+      "description": "Cancel all elements of a job array",
+      "command": "scancel 12345",
+      "output_example": "[No output on success - cancels all array elements]"
+    },
+    {
+      "description": "Cancel a specific job step",
+      "command": "scancel 12345.1",
+      "output_example": "[No output on success - cancels step 1 of job 12345]"
+    },
+    {
+      "description": "Cancel all jobs for the current user",
+      "command": "scancel -u $USER",
+      "output_example": "[No output on success]"
+    },
+    {
+      "description": "Cancel all jobs owned by the current user (alternative syntax)",
+      "command": "scancel --me",
+      "output_example": "[No output on success]"
+    },
+    {
+      "description": "Cancel all pending jobs for current user",
+      "command": "scancel -t PENDING -u $USER",
+      "output_example": "[No output on success - only pending jobs are cancelled]"
+    },
+    {
+      "description": "Cancel all jobs in a specific partition",
+      "command": "scancel -p gpu",
+      "output_example": "[No output on success - cancels all jobs in gpu partition]"
+    },
+    {
+      "description": "Cancel jobs for a specific user in a partition",
+      "command": "scancel -u bob -p compute",
+      "output_example": "[No output on success]"
+    },
+    {
+      "description": "Send graceful termination signal (SIGTERM) to a job",
+      "command": "scancel --signal=SIGTERM 12345",
+      "output_example": "[No output on success - job receives SIGTERM instead of SIGKILL]"
+    },
+    {
+      "description": "Send SIGTERM to job and all its children processes",
+      "command": "scancel --signal=SIGTERM --full 12345",
+      "output_example": "[No output on success - batch script and all children receive SIGTERM]"
+    },
+    {
+      "description": "Send custom signal (SIGUSR1) to batch script only",
+      "command": "scancel --signal=USR1 --batch 12345",
+      "output_example": "[No output on success - only batch shell receives SIGUSR1]"
+    },
+    {
+      "description": "Cancel jobs by name",
+      "command": "scancel -n my_simulation",
+      "output_example": "[No output on success - cancels all jobs named my_simulation]"
+    },
+    {
+      "description": "Cancel jobs on specific nodes",
+      "command": "scancel -w node[001-010]",
+      "output_example": "[No output on success - cancels jobs running on nodes 001-010]"
+    },
+    {
+      "description": "Cancel jobs in interactive mode with confirmation",
+      "command": "scancel -i -u $USER",
+      "output_example": "Cancel job_id=12345 name=test partition=gpu [y/n]? y\nCancel job_id=12346 name=train partition=gpu [y/n]? n"
+    },
+    {
+      "description": "Cancel jobs quietly (no error for completed jobs)",
+      "command": "scancel -Q 12345",
+      "output_example": "[No output even if job already completed]"
+    },
+    {
+      "description": "Cancel multiple specific jobs",
+      "command": "scancel 12345 12346 12347",
+      "output_example": "[No output on success - all three jobs cancelled]"
+    },
+    {
+      "description": "Cancel all running jobs for a user",
+      "command": "scancel -t RUNNING -u $USER",
+      "output_example": "[No output on success - only running jobs are cancelled]"
+    },
+    {
+      "description": "Cancel jobs with verbose output",
+      "command": "scancel -v 12345",
+      "output_example": "scancel: Terminating job 12345"
+    },
+    {
+      "description": "Cancel jobs under a specific account",
+      "command": "scancel -A research",
+      "output_example": "[No output on success - cancels all jobs charged to research account]"
+    },
+    {
+      "description": "Cancel jobs using specific QoS",
+      "command": "scancel -q high",
+      "output_example": "[No output on success - cancels all jobs with high QoS]"
+    },
+    {
+      "description": "Cancel jobs and skip burst buffer cleanup",
+      "command": "scancel --hurry 12345",
+      "output_example": "[No output on success - job cancelled without staging out burst buffer data]"
+    },
+    {
+      "description": "Send SIGKILL to all steps without canceling job",
+      "command": "scancel --signal=KILL 12345",
+      "output_example": "[No output on success - steps killed but job continues]"
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "scancel: error: Kill job error on job id 12345: Invalid job id specified",
+      "meaning": "The specified job ID does not exist in the system",
+      "resolution": "Verify the job ID is correct using squeue. The job may have already completed or been purged from the system."
+    },
+    {
+      "message": "scancel: error: Kill job error on job id 12345: Access/permission denied",
+      "meaning": "The current user does not have permission to cancel this job",
+      "resolution": "Only the job owner or root can cancel a job. Verify you own the job or have appropriate administrative privileges."
+    },
+    {
+      "message": "scancel: error: Unable to contact slurm controller (connect failure)",
+      "meaning": "Cannot connect to the Slurm controller daemon (slurmctld)",
+      "resolution": "Check if slurmctld is running. Verify network connectivity to the controller. Ensure SLURM_CONF points to the correct configuration file."
+    },
+    {
+      "message": "scancel: error: Invalid job id: <value>",
+      "meaning": "The job ID format is invalid or cannot be parsed",
+      "resolution": "Ensure the job ID is a valid integer or proper job array notation (job_id_array_id.step_id)"
+    },
+    {
+      "message": "scancel: error: No job identification provided",
+      "meaning": "No job ID or filter criteria was specified",
+      "resolution": "Provide a job ID or use filtering options like -u, -p, -t, -n to identify which jobs to cancel"
+    },
+    {
+      "message": "scancel: error: Invalid user: <username>",
+      "meaning": "The specified user does not exist in the system",
+      "resolution": "Verify the username is correct. The user must exist on the cluster."
+    },
+    {
+      "message": "scancel: error: Invalid partition name specified",
+      "meaning": "The specified partition does not exist",
+      "resolution": "Use 'sinfo' to list available partitions. Check partition name spelling."
+    },
+    {
+      "message": "scancel: error: Invalid state specified: <state>",
+      "meaning": "An invalid job state was provided to the -t option",
+      "resolution": "Use valid state names: PENDING, RUNNING, or SUSPENDED"
+    },
+    {
+      "message": "scancel: error: Kill job error on job id 12345: Job/step already completing or completed",
+      "meaning": "The job is already in process of terminating or has completed",
+      "resolution": "No action needed. Use -Q/--quiet option to suppress this error if expected."
+    },
+    {
+      "message": "scancel: error: Can't cancel individual component of pending heterogeneous job",
+      "meaning": "Attempting to cancel a component of a pending heterogeneous job is not allowed",
+      "resolution": "Cancel the entire heterogeneous job instead, or wait until it starts running"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "squeue",
+      "sbatch",
+      "srun",
+      "scontrol",
+      "sacct",
+      "sinfo",
+      "sprio"
+    ],
+    "notes": "scancel works in coordination with slurmctld to terminate jobs. Use squeue to verify which jobs will be affected before running scancel with filtering options. Use sacct to view the final state of cancelled jobs. When canceling a job, Slurm sends SIGCONT followed by SIGTERM, waits KillWait duration (from slurm.conf), then sends SIGKILL if the job hasn't terminated."
+  },
+  "permissions": {
+    "write_operations": "Users can cancel their own jobs. Root and users with AdminLevel (Operator or Admin) can cancel any user's jobs. Account coordinators can cancel jobs under accounts they coordinate.",
+    "notes": "The PrivateData configuration option in slurm.conf may affect which jobs a user can see but does not affect cancel permissions. Authorization is always checked against job ownership."
+  },
+  "limitations": [
+    "A job or job step can only be signaled by the owner of that job or user root",
+    "While a heterogeneous job is in a PENDING state, only the entire job can be cancelled rather than its individual components",
+    "If component zero of a running heterogeneous job is cancelled, the whole het job is cancelled",
+    "Cancelling a job step will not result in the job being terminated - the job must be cancelled to release the resource allocation",
+    "Most shells cannot handle signals while a command is running (child process), so the shell waits until the command ends to handle the signal",
+    "Signals other than SIGKILL are not sent to the batch step by default - use --batch or --full to signal the batch script",
+    "If a signal value of KILL is sent to an entire job, this will cancel the active job steps but not cancel the job itself",
+    "Running scancel in loops or from many processes simultaneously can degrade slurmctld performance"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "job_state",
+        "fields": [
+          "job_id",
+          "array_job_id",
+          "array_task_id",
+          "user_id",
+          "name",
+          "partition",
+          "account",
+          "qos",
+          "state",
+          "node_list",
+          "reservation"
+        ],
+        "description": "scancel reads job state information to identify which jobs match the specified criteria (job ID, user, partition, state, etc.) and to verify the user has permission to cancel the job"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "job_state",
+        "fields": ["state", "end_time", "exit_code"],
+        "description": "scancel changes the job state to CANCELLED, sets the end_time to the current time, and records the termination signal. For signal-only operations (--signal with non-terminating signals), the job state may not change immediately."
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "squeue",
+        "shared_state": "After scancel, the job should disappear from squeue output or show CANCELLED/COMPLETING state"
+      },
+      {
+        "command": "sacct",
+        "shared_state": "sacct records the CANCELLED state and the end time for jobs terminated by scancel"
+      },
+      {
+        "command": "scontrol show job",
+        "shared_state": "Shows the CANCELLED state and reason as 'Cancelled by user' after scancel"
+      }
+    ]
+  }
+}

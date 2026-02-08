@@ -1,0 +1,98 @@
+{
+  "command": "nice",
+  "category": "general",
+  "description": "Run a program with modified scheduling priority. Adjusts CPU priority for processes. Useful for running background tasks on HPC nodes without impacting primary workloads.",
+  "synopsis": "nice [options] [command]",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/nice.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-n",
+      "long": "--adjustment",
+      "description": "Niceness adjustment (-20 to 19)",
+      "arguments": "<N>",
+      "argument_type": "integer",
+      "example": "-n 10"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run with lower priority",
+      "command": "nice -n 10 ./background_task",
+      "requires_root": false
+    },
+    {
+      "description": "Run with lowest priority",
+      "command": "nice -n 19 tar -czf backup.tar.gz /data",
+      "requires_root": false
+    },
+    {
+      "description": "Run with higher priority (root)",
+      "command": "nice -n -5 ./important_task",
+      "requires_root": true
+    },
+    {
+      "description": "Check default niceness",
+      "command": "nice",
+      "output_example": "0",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "nice: cannot set niceness: Permission denied",
+      "meaning": "Cannot increase priority (negative nice)",
+      "resolution": "Only root can use negative niceness"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["renice", "ionice", "taskset", "chrt"],
+    "notes": "Niceness range: -20 (highest priority) to 19 (lowest). Default is 0. Users can only increase niceness (lower priority). Root can decrease niceness."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "Root needed for negative niceness",
+    "notes": "Users can only make processes nicer"
+  },
+  "limitations": [
+    "Only affects CPU scheduling",
+    "Not I/O priority (use ionice)",
+    "Negative nice requires root"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "system_state",
+        "fields": ["cpu_count"],
+        "description": "Affects CPU scheduling for process",
+        "requires_privilege": "root for negative nice"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ps",
+        "shared_state": "NI column shows niceness"
+      },
+      {
+        "command": "top",
+        "shared_state": "NI column visible"
+      }
+    ]
+  }
+}

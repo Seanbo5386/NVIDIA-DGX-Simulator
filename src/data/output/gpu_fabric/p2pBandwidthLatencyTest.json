@@ -1,0 +1,111 @@
+{
+  "command": "p2pBandwidthLatencyTest",
+  "category": "gpu_fabric",
+  "description": "CUDA sample that measures peer-to-peer bandwidth and latency between GPUs. Tests NVLink and PCIe peer access capabilities and performance. Essential for validating multi-GPU communication in DGX and HGX systems.",
+  "synopsis": "p2pBandwidthLatencyTest [options]",
+  "version_documented": "CUDA Samples 12.0+",
+  "source_urls": [
+    "https://github.com/NVIDIA/cuda-samples/tree/master/Samples/5_Domain_Specific/p2pBandwidthLatencyTest"
+  ],
+  "installation": {
+    "package": "cuda-samples",
+    "notes": "Part of CUDA Samples. Build: cd /usr/local/cuda/samples/5_Domain_Specific/p2pBandwidthLatencyTest && make"
+  },
+  "global_options": [],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - all tests passed"
+    },
+    {
+      "code": 1,
+      "meaning": "Failure - CUDA error or test failed"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run full P2P bandwidth and latency test",
+      "command": "p2pBandwidthLatencyTest",
+      "output_example": "[P2P (Peer-to-Peer) GPU Bandwidth Latency Test]\nDevice: 0, NVIDIA A100-SXM4-80GB, pciBusID: 07, pciDeviceID: 0, pciDomainID:0\nDevice: 1, NVIDIA A100-SXM4-80GB, pciBusID: 0b, pciDeviceID: 0, pciDomainID:0\nDevice: 2, NVIDIA A100-SXM4-80GB, pciBusID: 48, pciDeviceID: 0, pciDomainID:0\nDevice: 3, NVIDIA A100-SXM4-80GB, pciBusID: 4c, pciDeviceID: 0, pciDomainID:0\n\nUnidirectional P2P=Disabled Bandwidth Matrix (GB/s)\n   D\\D     0      1      2      3\n     0 1559.9  22.31  22.25  22.30\n     1  22.28 1561.2  22.26  22.29\n     2  22.22  22.25 1558.7  22.31\n     3  22.30  22.28  22.24 1560.5\n\nUnidirectional P2P=Enabled Bandwidth Matrix (GB/s)\n   D\\D     0      1      2      3\n     0 1560.8 252.56 252.12 252.89\n     1 252.45 1562.1 252.67 252.34\n     2 252.01 252.89 1559.4 252.78\n     3 252.34 252.01 252.56 1561.7\n\nP2P=Enabled Latency Matrix (us)\n   D\\D     0      1      2      3\n     0   1.42   1.89   1.92   1.88\n     1   1.87   1.41   1.91   1.89\n     2   1.90   1.88   1.43   1.87\n     3   1.89   1.91   1.88   1.42\n\nResult = PASS",
+      "requires_root": false
+    },
+    {
+      "description": "Run with specific CUDA devices",
+      "command": "CUDA_VISIBLE_DEVICES=0,1 p2pBandwidthLatencyTest",
+      "requires_root": false
+    },
+    {
+      "description": "Quick validation across cluster",
+      "command": "pdsh -w node[001-010] p2pBandwidthLatencyTest 2>&1 | grep Result",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Peer access not available between devices",
+      "meaning": "GPUs cannot communicate directly via P2P",
+      "resolution": "Check nvidia-smi topo -m; GPUs may be on different CPU sockets without NVLink"
+    },
+    {
+      "message": "cudaGetDeviceCount returned 100",
+      "meaning": "No CUDA devices detected",
+      "resolution": "Check driver and GPU status with nvidia-smi"
+    },
+    {
+      "message": "Result = FAIL",
+      "meaning": "Test did not complete successfully",
+      "resolution": "Check for GPU errors, NVLink status"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "bandwidthTest",
+      "nvbandwidth",
+      "nvidia-smi topo -m",
+      "nvidia-smi nvlink -s"
+    ],
+    "notes": "Shows both P2P-disabled (through host memory) and P2P-enabled (NVLink/direct) bandwidth. Large difference between these indicates NVLink benefit. For 8-GPU DGX A100, NVLink bandwidth should be ~250+ GB/s per direction."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for basic operation",
+    "write_operations": "N/A - benchmark tool",
+    "notes": "Peer access may require CUDA IPC permissions"
+  },
+  "limitations": [
+    "Requires at least 2 GPUs",
+    "P2P capability depends on topology and NVLink presence",
+    "Results affected by other GPU workloads",
+    "Does not test all NVLink configurations (use nvbandwidth for more detail)"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": ["gpu_id", "pci_bus_id", "memory_total"],
+        "description": "Uses GPU memory for bandwidth testing"
+      },
+      {
+        "state_domain": "fabric_state",
+        "fields": ["nvlink_version", "links"],
+        "description": "Tests NVLink peer-to-peer bandwidth"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "NVLink failure",
+        "effect": "P2P bandwidth degrades to PCIe speeds"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi topo -m",
+        "shared_state": "Topology shows P2P capability matches test results"
+      },
+      {
+        "command": "nvbandwidth",
+        "shared_state": "Peer bandwidth results should be similar"
+      }
+    ]
+  }
+}

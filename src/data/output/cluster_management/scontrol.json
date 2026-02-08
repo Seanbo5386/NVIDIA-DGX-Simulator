@@ -1,0 +1,889 @@
+{
+  "command": "scontrol",
+  "category": "cluster_management",
+  "description": "scontrol is the administrative tool used to view and modify Slurm configuration and state. It provides comprehensive capabilities to view system configuration, job details, node status, partitions, and reservations. Administrators can use it to control jobs (hold, release, suspend, resume), modify job parameters, change node states, and manage partitions. It is an essential command for Slurm cluster administration and troubleshooting.",
+  "synopsis": "scontrol [OPTIONS] [COMMAND [COMMAND_OPTIONS]]",
+  "version_documented": "Slurm 23.x",
+  "source_urls": ["https://slurm.schedmd.com/scontrol.html"],
+  "installation": {
+    "package": "slurm-client or slurm",
+    "notes": "Part of the Slurm workload manager. Requires access to a Slurm cluster with slurmctld running. Administrative commands require appropriate privileges."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Display all entities including hidden partitions and nodes. When used with show commands, displays information that might otherwise be hidden."
+    },
+    {
+      "short": "-d",
+      "long": "--details",
+      "description": "Provide additional details in output. Can be used multiple times for increasing verbosity. Shows more comprehensive information about jobs, nodes, and other entities."
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Print a help message describing available scontrol commands and options."
+    },
+    {
+      "short": "-M",
+      "long": "--clusters",
+      "description": "Target the specified cluster(s) in a federated environment. Multiple cluster names can be comma-separated.",
+      "arguments": "cluster_list",
+      "argument_type": "string",
+      "example": "scontrol -M cluster1,cluster2 show jobs"
+    },
+    {
+      "short": "-o",
+      "long": "--oneliner",
+      "description": "Print information one record per line. Useful for parsing output in scripts."
+    },
+    {
+      "short": "-Q",
+      "long": "--quiet",
+      "description": "Print no informational messages, only errors. Suppress extra output."
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Print detailed information about scontrol operations. Multiple -v options increase verbosity."
+    },
+    {
+      "long": "--federation",
+      "description": "Display jobs from the federation if a member of one."
+    },
+    {
+      "long": "--future",
+      "description": "Display future nodes (nodes not yet in the cluster but configured)."
+    },
+    {
+      "long": "--json",
+      "description": "Produce JSON output for supported show commands.",
+      "arguments": "parser",
+      "argument_type": "string"
+    },
+    {
+      "long": "--local",
+      "description": "Display only local cluster information, ignoring federated clusters."
+    },
+    {
+      "long": "--sibling",
+      "description": "Display sibling job information in federated clusters."
+    },
+    {
+      "long": "--yaml",
+      "description": "Produce YAML output for supported show commands.",
+      "arguments": "parser",
+      "argument_type": "string"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "show config",
+      "description": "Display the Slurm controller configuration parameters including scheduler settings, accounting configuration, resource limits, and all slurm.conf options currently in effect.",
+      "synopsis": "scontrol show config"
+    },
+    {
+      "name": "show job",
+      "description": "Display detailed information about jobs including job ID, name, user, state, resources requested and allocated, time limits, dependencies, and more. Without a job ID, shows all jobs.",
+      "synopsis": "scontrol show job [job_id] [--details]",
+      "options": [
+        {
+          "long": "--details",
+          "description": "Show additional job information including environment variables and script content"
+        }
+      ]
+    },
+    {
+      "name": "show node",
+      "description": "Display detailed information about compute nodes including hostname, state, resources (CPUs, memory, GPUs), features, partitions, and current allocations.",
+      "synopsis": "scontrol show node [node_name]"
+    },
+    {
+      "name": "show partition",
+      "description": "Display information about partitions including name, state, default time limit, maximum time limit, nodes, and access controls.",
+      "synopsis": "scontrol show partition [partition_name]"
+    },
+    {
+      "name": "show step",
+      "description": "Display information about job steps including step ID, state, nodes, tasks, and resource usage.",
+      "synopsis": "scontrol show step [job_id.step_id]"
+    },
+    {
+      "name": "show topology",
+      "description": "Display the network topology configuration as defined in topology.conf. Shows switch hierarchy and node connections.",
+      "synopsis": "scontrol show topology"
+    },
+    {
+      "name": "show slurmd",
+      "description": "Display slurmd daemon status on the local node including version, configuration file path, and other runtime information. Must be run on a compute node.",
+      "synopsis": "scontrol show slurmd"
+    },
+    {
+      "name": "show reservation",
+      "description": "Display information about reservations including name, start time, end time, nodes, users, and accounts.",
+      "synopsis": "scontrol show reservation [reservation_name]"
+    },
+    {
+      "name": "show hostnames",
+      "description": "Convert a node range expression to a list of individual hostnames.",
+      "synopsis": "scontrol show hostnames [node_range]"
+    },
+    {
+      "name": "show hostlist",
+      "description": "Convert a list of hostnames to a condensed node range expression.",
+      "synopsis": "scontrol show hostlist [hostname_list]"
+    },
+    {
+      "name": "show burstbuffer",
+      "description": "Display burst buffer configuration and state information.",
+      "synopsis": "scontrol show burstbuffer"
+    },
+    {
+      "name": "show frontend",
+      "description": "Display front-end node information (for systems using front-end nodes).",
+      "synopsis": "scontrol show frontend [frontend_name]"
+    },
+    {
+      "name": "show licenses",
+      "description": "Display information about configured licenses and their current usage.",
+      "synopsis": "scontrol show licenses"
+    },
+    {
+      "name": "update job",
+      "description": "Modify properties of a pending or running job including time limit, partition, account, QoS, priority, and resource requests. Some modifications are only possible for pending jobs.",
+      "synopsis": "scontrol update job job_id [options]",
+      "options": [
+        {
+          "flag": "TimeLimit",
+          "description": "New time limit for the job (format: days-hours:minutes:seconds or minutes)",
+          "example": "TimeLimit=2-00:00:00"
+        },
+        {
+          "flag": "Partition",
+          "description": "Change the partition for a pending job",
+          "example": "Partition=gpu"
+        },
+        {
+          "flag": "Account",
+          "description": "Change the account for the job",
+          "example": "Account=research"
+        },
+        {
+          "flag": "QOS",
+          "description": "Change the Quality of Service for the job",
+          "example": "QOS=high"
+        },
+        {
+          "flag": "Priority",
+          "description": "Set the priority of the job (admin only)",
+          "example": "Priority=1000"
+        },
+        {
+          "flag": "NumNodes",
+          "description": "Change the number of nodes requested (pending jobs only)",
+          "example": "NumNodes=4"
+        },
+        {
+          "flag": "NumCpus",
+          "description": "Change the number of CPUs requested (pending jobs only)",
+          "example": "NumCpus=32"
+        },
+        {
+          "flag": "MinMemoryNode",
+          "description": "Change the memory per node requested",
+          "example": "MinMemoryNode=64G"
+        },
+        {
+          "flag": "Dependency",
+          "description": "Change job dependencies",
+          "example": "Dependency=afterok:12345"
+        },
+        {
+          "flag": "ReqNodeList",
+          "description": "Specify required nodes for the job",
+          "example": "ReqNodeList=node[001-004]"
+        },
+        {
+          "flag": "ExcNodeList",
+          "description": "Specify nodes to exclude from the job",
+          "example": "ExcNodeList=node005"
+        },
+        {
+          "flag": "Nice",
+          "description": "Adjust the scheduling priority relative to other user jobs",
+          "example": "Nice=100"
+        },
+        {
+          "flag": "Comment",
+          "description": "Set or update the job comment",
+          "example": "Comment=\"Updated for review\""
+        },
+        {
+          "flag": "Name",
+          "description": "Change the job name",
+          "example": "Name=new_job_name"
+        },
+        {
+          "flag": "StdOut",
+          "description": "Change the stdout file path",
+          "example": "StdOut=/path/to/new/output.log"
+        },
+        {
+          "flag": "StdErr",
+          "description": "Change the stderr file path",
+          "example": "StdErr=/path/to/new/error.log"
+        },
+        {
+          "flag": "Gres",
+          "description": "Change generic resources requested (pending jobs only)",
+          "example": "Gres=gpu:4"
+        }
+      ]
+    },
+    {
+      "name": "update node",
+      "description": "Modify node properties including state, reason, features, and weights. Used for draining nodes for maintenance, resuming nodes, and managing node configuration.",
+      "synopsis": "scontrol update NodeName=node [options]",
+      "options": [
+        {
+          "flag": "State",
+          "description": "Set the node state: DRAIN, RESUME, DOWN, POWER_DOWN, POWER_UP, UNDRAIN",
+          "example": "State=DRAIN"
+        },
+        {
+          "flag": "Reason",
+          "description": "Set the reason for the state change (required when draining)",
+          "example": "Reason=\"Scheduled maintenance\""
+        },
+        {
+          "flag": "Features",
+          "description": "Set or modify node features (admin only)",
+          "example": "Features=gpu,nvlink"
+        },
+        {
+          "flag": "Weight",
+          "description": "Set the scheduling weight for the node",
+          "example": "Weight=10"
+        },
+        {
+          "flag": "ActiveFeatures",
+          "description": "Set currently active features on the node",
+          "example": "ActiveFeatures=gpu"
+        },
+        {
+          "flag": "AvailableFeatures",
+          "description": "Set available features on the node",
+          "example": "AvailableFeatures=gpu,nvlink,a100"
+        },
+        {
+          "flag": "Comment",
+          "description": "Set a comment for the node",
+          "example": "Comment=\"New GPU installed\""
+        },
+        {
+          "flag": "Extra",
+          "description": "Set extra arbitrary node information",
+          "example": "Extra=\"rack=A1\""
+        }
+      ]
+    },
+    {
+      "name": "update partition",
+      "description": "Modify partition properties including state, limits, and access controls.",
+      "synopsis": "scontrol update PartitionName=partition [options]",
+      "options": [
+        {
+          "flag": "State",
+          "description": "Set partition state: UP, DOWN, DRAIN, INACTIVE",
+          "example": "State=DOWN"
+        },
+        {
+          "flag": "MaxTime",
+          "description": "Set maximum time limit for jobs in the partition",
+          "example": "MaxTime=7-00:00:00"
+        },
+        {
+          "flag": "DefaultTime",
+          "description": "Set default time limit for jobs",
+          "example": "DefaultTime=1:00:00"
+        },
+        {
+          "flag": "MaxNodes",
+          "description": "Set maximum nodes per job in the partition",
+          "example": "MaxNodes=64"
+        },
+        {
+          "flag": "MinNodes",
+          "description": "Set minimum nodes per job",
+          "example": "MinNodes=1"
+        },
+        {
+          "flag": "AllowGroups",
+          "description": "Set groups allowed to use the partition",
+          "example": "AllowGroups=researchers,admins"
+        },
+        {
+          "flag": "AllowAccounts",
+          "description": "Set accounts allowed to use the partition",
+          "example": "AllowAccounts=research,production"
+        },
+        {
+          "flag": "DenyAccounts",
+          "description": "Set accounts denied from using the partition",
+          "example": "DenyAccounts=test"
+        },
+        {
+          "flag": "QOS",
+          "description": "Set allowed QoS for the partition",
+          "example": "QOS=normal,high"
+        }
+      ]
+    },
+    {
+      "name": "hold",
+      "description": "Place a job on hold, preventing it from being scheduled. The job remains in the queue but will not run until released.",
+      "synopsis": "scontrol hold job_id [job_id...]"
+    },
+    {
+      "name": "release",
+      "description": "Release a held job, making it eligible for scheduling.",
+      "synopsis": "scontrol release job_id [job_id...]"
+    },
+    {
+      "name": "requeue",
+      "description": "Requeue a running or completed job. The job is stopped and returned to pending state to be scheduled again.",
+      "synopsis": "scontrol requeue job_id [job_id...]"
+    },
+    {
+      "name": "requeuehold",
+      "description": "Requeue a job and immediately place it on hold. Useful for stopping a job for later restart.",
+      "synopsis": "scontrol requeuehold job_id [job_id...]"
+    },
+    {
+      "name": "suspend",
+      "description": "Suspend a running job. The job processes are sent SIGSTOP and the job enters SUSPENDED state. Resources remain allocated.",
+      "synopsis": "scontrol suspend job_id [job_id...]"
+    },
+    {
+      "name": "resume",
+      "description": "Resume a suspended job. The job processes are sent SIGCONT and the job returns to RUNNING state.",
+      "synopsis": "scontrol resume job_id [job_id...]"
+    },
+    {
+      "name": "top",
+      "description": "Move a pending job to the top of the queue, giving it the highest priority among the user's jobs.",
+      "synopsis": "scontrol top job_id"
+    },
+    {
+      "name": "uhold",
+      "description": "Place a user hold on a job. Only the user or an administrator can release user holds.",
+      "synopsis": "scontrol uhold job_id [job_id...]"
+    },
+    {
+      "name": "reconfigure",
+      "description": "Force slurmctld to re-read configuration files (slurm.conf, gres.conf, etc.). Changes take effect without restarting the controller.",
+      "synopsis": "scontrol reconfigure"
+    },
+    {
+      "name": "shutdown",
+      "description": "Shutdown the slurmctld daemon. Requires administrator privileges.",
+      "synopsis": "scontrol shutdown [slurmctld|controller]"
+    },
+    {
+      "name": "ping",
+      "description": "Test connectivity to the slurmctld daemon. Returns status of primary and backup controllers.",
+      "synopsis": "scontrol ping"
+    },
+    {
+      "name": "version",
+      "description": "Display the version of scontrol and the Slurm daemons.",
+      "synopsis": "scontrol version"
+    },
+    {
+      "name": "takeover",
+      "description": "Force the backup slurmctld to take over as the primary controller.",
+      "synopsis": "scontrol takeover"
+    },
+    {
+      "name": "setdebug",
+      "description": "Set the debug level of slurmctld daemon for troubleshooting.",
+      "synopsis": "scontrol setdebug level"
+    },
+    {
+      "name": "setdebugflags",
+      "description": "Set or clear specific debug flags in slurmctld.",
+      "synopsis": "scontrol setdebugflags [+|-]flag"
+    },
+    {
+      "name": "schedloglevel",
+      "description": "Set the scheduler log level.",
+      "synopsis": "scontrol schedloglevel level"
+    },
+    {
+      "name": "create reservation",
+      "description": "Create a new reservation for nodes, users, or accounts.",
+      "synopsis": "scontrol create reservation ReservationName=name StartTime=time Duration=duration Users=users Nodes=nodes"
+    },
+    {
+      "name": "update reservation",
+      "description": "Modify an existing reservation.",
+      "synopsis": "scontrol update ReservationName=name [options]"
+    },
+    {
+      "name": "delete reservation",
+      "description": "Delete a reservation.",
+      "synopsis": "scontrol delete ReservationName=name"
+    },
+    {
+      "name": "notify",
+      "description": "Send a message to a running job's standard error.",
+      "synopsis": "scontrol notify job_id message"
+    },
+    {
+      "name": "write config",
+      "description": "Write the current running configuration to a file.",
+      "synopsis": "scontrol write config [file]"
+    },
+    {
+      "name": "fsdampeningfactor",
+      "description": "View or set the fair-share dampening factor.",
+      "synopsis": "scontrol fsdampeningfactor [factor]"
+    },
+    {
+      "name": "listpids",
+      "description": "List PIDs of processes belonging to a job on the local node.",
+      "synopsis": "scontrol listpids [job_id[.step_id]] [node_name]"
+    },
+    {
+      "name": "getent",
+      "description": "Get job or step information in a scriptable format.",
+      "synopsis": "scontrol getent job job_id"
+    },
+    {
+      "name": "reboot",
+      "description": "Reboot compute nodes.",
+      "synopsis": "scontrol reboot [ASAP] [NextState=state] [Reason=reason] node_list"
+    },
+    {
+      "name": "cancel_reboot",
+      "description": "Cancel a pending node reboot.",
+      "synopsis": "scontrol cancel_reboot node_list"
+    }
+  ],
+  "output_formats": {
+    "default": "Multi-line output with field=value pairs for each entity. Each record separated by blank lines.",
+    "oneliner": "Single line per record with all field=value pairs space-separated. Enabled with -o option.",
+    "json": "JSON structured output via --json option. Suitable for programmatic parsing.",
+    "yaml": "YAML structured output via --yaml option. Human-readable structured format."
+  },
+  "environment_variables": [
+    {
+      "name": "SLURM_CONF",
+      "description": "Path to the Slurm configuration file.",
+      "example": "SLURM_CONF=/etc/slurm/slurm.conf",
+      "affects_command": "Specifies which Slurm configuration to use"
+    },
+    {
+      "name": "SLURM_CLUSTERS",
+      "description": "Specifies the cluster(s) to target. Equivalent to --clusters option.",
+      "example": "SLURM_CLUSTERS=cluster1,cluster2",
+      "affects_command": "Sets default target clusters for federated environments"
+    },
+    {
+      "name": "SCONTROL_ALL",
+      "description": "If set, equivalent to --all option for show commands.",
+      "example": "SCONTROL_ALL=1",
+      "affects_command": "Shows all entities including hidden ones"
+    },
+    {
+      "name": "SLURM_TIME_FORMAT",
+      "description": "Specifies the time format for output timestamps.",
+      "example": "SLURM_TIME_FORMAT=%Y-%m-%d_%H:%M:%S",
+      "affects_command": "Controls how timestamps are displayed"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - general error occurred (e.g., invalid options, permission denied, connection failure)"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show detailed information about a specific job",
+      "command": "scontrol show job 12345",
+      "output_example": "JobId=12345 JobName=training\n   UserId=alice(1000) GroupId=researchers(100) MCS_label=N/A\n   Priority=4294901756 Nice=0 Account=research QOS=normal\n   JobState=RUNNING Reason=None Dependency=(null)\n   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0\n   RunTime=02:30:15 TimeLimit=08:00:00 TimeMin=N/A\n   SubmitTime=2025-01-15T08:00:00 EligibleTime=2025-01-15T08:00:00\n   AccrueTime=2025-01-15T08:00:00\n   StartTime=2025-01-15T08:00:15 EndTime=2025-01-15T16:00:15 Deadline=N/A\n   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2025-01-15T08:00:15\n   Partition=gpu AllocNode:Sid=login01:12345\n   ReqNodeList=(null) ExcNodeList=(null)\n   NodeList=node[001-004]\n   BatchHost=node001\n   NumNodes=4 NumCPUs=128 NumTasks=4 CPUs/Task=32 ReqB:S:C:T=0:0:*:*\n   TRES=cpu=128,mem=256G,node=4,billing=128,gres/gpu=16\n   Socks/Node=* NtasksPerN:B:S:C=1:0:*:* CoreSpec=*\n   MinCPUsNode=32 MinMemoryNode=64G MinTmpDiskNode=0\n   Features=(null) DelayBoot=00:00:00\n   OverSubscribe=OK Contiguous=0 Licenses=(null) Network=(null)\n   Command=/home/alice/scripts/train.sh\n   WorkDir=/home/alice/project\n   StdErr=/home/alice/project/job_12345.err\n   StdIn=/dev/null\n   StdOut=/home/alice/project/job_12345.out\n   Power="
+    },
+    {
+      "description": "Update job time limit to extend runtime",
+      "command": "scontrol update job 12345 TimeLimit=2-00:00:00",
+      "output_example": ""
+    },
+    {
+      "description": "Hold a job to prevent it from running",
+      "command": "scontrol hold 12345",
+      "output_example": ""
+    },
+    {
+      "description": "Release a held job",
+      "command": "scontrol release 12345",
+      "output_example": ""
+    },
+    {
+      "description": "Drain a node for maintenance",
+      "command": "scontrol update node=node01 state=drain reason=\"Scheduled hardware maintenance\"",
+      "output_example": ""
+    },
+    {
+      "description": "Return a drained node to service",
+      "command": "scontrol update node=node01 state=resume",
+      "output_example": ""
+    },
+    {
+      "description": "Show information about all partitions",
+      "command": "scontrol show partition",
+      "output_example": "PartitionName=compute\n   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL\n   AllocNodes=ALL Default=YES QoS=N/A\n   DefaultTime=01:00:00 DisableRootJobs=NO ExclusiveUser=NO GraceTime=0 Hidden=NO\n   MaxNodes=UNLIMITED MaxTime=7-00:00:00 MinNodes=0 LLN=NO MaxCPUsPerNode=UNLIMITED\n   Nodes=node[001-100]\n   PriorityJobFactor=1 PriorityTier=1 RootOnly=NO ReqResv=NO OverSubscribe=NO\n   OverTimeLimit=NONE PreemptMode=OFF\n   State=UP TotalCPUs=6400 TotalNodes=100 SelectTypeParameters=NONE\n   JobDefaults=(null)\n   DefMemPerCPU=4096 MaxMemPerNode=UNLIMITED\n\nPartitionName=gpu\n   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL\n   AllocNodes=ALL Default=NO QoS=N/A\n   DefaultTime=01:00:00 DisableRootJobs=NO ExclusiveUser=NO GraceTime=0 Hidden=NO\n   MaxNodes=16 MaxTime=2-00:00:00 MinNodes=0 LLN=NO MaxCPUsPerNode=UNLIMITED\n   Nodes=gpu[001-016]\n   PriorityJobFactor=1 PriorityTier=1 RootOnly=NO ReqResv=NO OverSubscribe=NO\n   OverTimeLimit=NONE PreemptMode=OFF\n   State=UP TotalCPUs=1024 TotalNodes=16 SelectTypeParameters=NONE\n   JobDefaults=(null)\n   DefMemPerCPU=8192 MaxMemPerNode=UNLIMITED\n   TRES=cpu=1024,mem=16384G,node=16,billing=1024,gres/gpu=128"
+    },
+    {
+      "description": "Show node information in one-line format for parsing",
+      "command": "scontrol -o show node",
+      "output_example": "NodeName=node001 Arch=x86_64 CoresPerSocket=32 CPUAlloc=64 CPUTot=64 CPULoad=63.50 AvailableFeatures=... State=ALLOCATED ...\nNodeName=node002 Arch=x86_64 CoresPerSocket=32 CPUAlloc=0 CPUTot=64 CPULoad=0.01 AvailableFeatures=... State=IDLE ..."
+    },
+    {
+      "description": "Suspend a running job",
+      "command": "scontrol suspend 12345",
+      "output_example": ""
+    },
+    {
+      "description": "Resume a suspended job",
+      "command": "scontrol resume 12345",
+      "output_example": ""
+    },
+    {
+      "description": "Requeue a failed job",
+      "command": "scontrol requeue 12345",
+      "output_example": ""
+    },
+    {
+      "description": "Check if slurmctld is responding",
+      "command": "scontrol ping",
+      "output_example": "Slurmctld(primary) at slurmctl01 is UP\nSlurmctld(backup) at slurmctl02 is UP"
+    },
+    {
+      "description": "Show cluster configuration",
+      "command": "scontrol show config",
+      "output_example": "Configuration data as of 2025-01-15T10:30:00\nAccountingStorageBackupHost = (null)\nAccountingStorageEnforce = associations,limits,qos,safe\nAccountingStorageHost   = slurmdbd01\nAccountingStoragePort   = 6819\nAccountingStorageTRES   = gres/gpu\nAccountingStorageType   = accounting_storage/slurmdbd\n...\nSchedulerType           = sched/backfill\nSelectType              = select/cons_tres\nSelectTypeParameters    = CR_Core_Memory,CR_CORE_DEFAULT_DIST_BLOCK\nSlurmctldAddr           = slurmctl01\nSlurmctldDebug          = info\nSlurmctldHost[0]        = slurmctl01\nSlurmctldHost[1]        = slurmctl02\nSlurmctldLogFile        = /var/log/slurm/slurmctld.log\nSlurmctldPort           = 6817\n..."
+    },
+    {
+      "description": "Force controller to re-read configuration",
+      "command": "scontrol reconfigure",
+      "output_example": "",
+      "requires_root": true
+    },
+    {
+      "description": "Create a reservation for maintenance",
+      "command": "scontrol create reservation ReservationName=maint StartTime=2025-01-20T00:00:00 Duration=4:00:00 Users=root Nodes=node[001-010] Flags=maint",
+      "output_example": "Reservation created: maint",
+      "requires_root": true
+    },
+    {
+      "description": "Mark a node as DOWN",
+      "command": "scontrol update NodeName=node01 State=DOWN Reason=\"Hardware failure\"",
+      "output_example": "",
+      "requires_root": true
+    },
+    {
+      "description": "Change job partition",
+      "command": "scontrol update job 12345 Partition=gpu",
+      "output_example": ""
+    },
+    {
+      "description": "Show specific node details",
+      "command": "scontrol show node gpu001",
+      "output_example": "NodeName=gpu001 Arch=x86_64 CoresPerSocket=32\n   CPUAlloc=64 CPUTot=64 CPULoad=63.92\n   AvailableFeatures=gpu,a100,nvlink\n   ActiveFeatures=gpu,a100,nvlink\n   Gres=gpu:a100:8\n   NodeAddr=10.0.1.1 NodeHostName=gpu001 Version=23.11.0\n   OS=Linux 5.15.0-91-generic #101-Ubuntu SMP\n   RealMemory=512000 AllocMem=512000 FreeMem=48234 Sockets=2 Boards=1\n   State=ALLOCATED ThreadsPerCore=1 TmpDisk=0 Weight=1 Owner=N/A MCS_label=N/A\n   Partitions=gpu\n   BootTime=2025-01-10T08:00:00 SlurmdStartTime=2025-01-10T08:05:00\n   LastBusyTime=2025-01-15T10:25:00\n   CfgTRES=cpu=64,mem=512000M,billing=64,gres/gpu=8\n   AllocTRES=cpu=64,mem=512000M,gres/gpu=8\n   CapWatts=n/a\n   CurrentWatts=0 AveWatts=0\n   ExtSensorsJoules=n/s ExtSensorsWatts=0 ExtSensorsTemp=n/s"
+    },
+    {
+      "description": "Move a job to the top of the queue",
+      "command": "scontrol top 12345",
+      "output_example": ""
+    },
+    {
+      "description": "Show Slurm version",
+      "command": "scontrol version",
+      "output_example": "slurm 23.11.0"
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "slurm_update_job error: Invalid job id specified",
+      "meaning": "The job ID provided does not exist in the system",
+      "resolution": "Verify the job ID is correct. Use squeue to list current jobs."
+    },
+    {
+      "message": "slurm_update_node error: Invalid node name specified",
+      "meaning": "The node name provided does not exist in the cluster configuration",
+      "resolution": "Check the node name spelling. Use 'scontrol show nodes' or 'sinfo -N' to list valid node names."
+    },
+    {
+      "message": "slurm_update_job error: Access/permission denied",
+      "meaning": "You don't have permission to modify this job or setting",
+      "resolution": "Only job owners can modify their own jobs. Administrators can modify any job. Some settings require admin privileges."
+    },
+    {
+      "message": "slurm_reconfigure error: Access/permission denied",
+      "meaning": "The reconfigure command requires administrator privileges",
+      "resolution": "Run the command as a Slurm administrator or root user."
+    },
+    {
+      "message": "error: Unable to contact slurm controller (connect failure)",
+      "meaning": "Cannot connect to the slurmctld daemon",
+      "resolution": "Check if slurmctld is running. Verify network connectivity. Check SLURM_CONF environment variable."
+    },
+    {
+      "message": "slurm_update_job error: Job/step already completing or completed",
+      "meaning": "Cannot modify a job that has already finished or is in the process of finishing",
+      "resolution": "The job is no longer modifiable. Use sacct to view historical job information."
+    },
+    {
+      "message": "slurm_hold_job error: Job is already held",
+      "meaning": "The job is already in a held state",
+      "resolution": "The job is already held. Use 'scontrol release' to release it when ready."
+    },
+    {
+      "message": "slurm_suspend_job error: Invalid job state",
+      "meaning": "The job cannot be suspended (e.g., it's not running)",
+      "resolution": "Only running jobs can be suspended. Check job state with 'squeue -j job_id'."
+    },
+    {
+      "message": "error: Update of this parameter is not allowed",
+      "meaning": "The parameter cannot be changed for this job state or type",
+      "resolution": "Some parameters can only be modified for pending jobs, not running jobs. Check documentation for allowed modifications."
+    },
+    {
+      "message": "slurm_requeue error: Requested operation not supported on external job",
+      "meaning": "Cannot requeue a job from a federated cluster",
+      "resolution": "Use the --clusters option to target the originating cluster for the job."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "squeue",
+      "sinfo",
+      "sbatch",
+      "srun",
+      "scancel",
+      "sacct",
+      "sstat",
+      "sacctmgr",
+      "sprio",
+      "sview"
+    ],
+    "notes": "scontrol is the primary administrative command for Slurm. It provides both read and write access to most Slurm state. For read-only monitoring, squeue and sinfo may be more convenient. For accounting queries, use sacct. For account/user management, use sacctmgr. scontrol is commonly used in cluster administration scripts and maintenance procedures."
+  },
+  "permissions": {
+    "read_operations": "Any user can view configuration, job, node, and partition information. Some fields may be restricted by PrivateData settings in slurm.conf.",
+    "write_operations": "Users can modify their own pending jobs. Administrators (SlurmUser or root) can modify any job, change node states, modify partitions, reconfigure the controller, and perform other administrative operations.",
+    "notes": "The PrivateData configuration option controls what information users can see about other users' jobs. Administrative commands like reconfigure, shutdown, and node state changes require SlurmUser or root privileges."
+  },
+  "limitations": [
+    "Some job parameters can only be modified while the job is pending, not after it starts running",
+    "Node state changes may not take effect immediately if jobs are running on the node",
+    "Suspended jobs still hold their allocated resources; nodes are not freed",
+    "Configuration changes via reconfigure do not affect running jobs",
+    "Some parameters cannot be modified once a job has been submitted regardless of state",
+    "Federated cluster operations may have additional restrictions",
+    "Interactive scontrol mode requires terminal access and is not scriptable"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "job_state",
+        "fields": [
+          "job_id",
+          "name",
+          "user",
+          "state",
+          "time_used",
+          "time_limit",
+          "nodes_allocated",
+          "node_list",
+          "partition",
+          "account",
+          "qos",
+          "priority",
+          "submit_time",
+          "start_time",
+          "end_time",
+          "dependencies",
+          "reason",
+          "features",
+          "cpus_requested",
+          "memory_requested",
+          "gres_requested",
+          "work_directory",
+          "command",
+          "stdout",
+          "stderr",
+          "environment",
+          "comment"
+        ],
+        "description": "scontrol show job reads comprehensive job state from the Slurm controller including all job attributes, resource requests, scheduling information, and execution details"
+      },
+      {
+        "state_domain": "node_state",
+        "fields": [
+          "hostname",
+          "state",
+          "reason",
+          "cpus_total",
+          "cpus_allocated",
+          "memory_total",
+          "memory_allocated",
+          "gres",
+          "features",
+          "partitions",
+          "weight",
+          "boot_time",
+          "slurmd_start_time",
+          "arch",
+          "os"
+        ],
+        "description": "scontrol show node reads detailed node information including hardware configuration, current state, resource allocation, and features"
+      },
+      {
+        "state_domain": "partition_state",
+        "fields": [
+          "partition_name",
+          "state",
+          "default_time",
+          "max_time",
+          "max_nodes",
+          "min_nodes",
+          "nodes",
+          "total_cpus",
+          "total_nodes",
+          "allow_groups",
+          "allow_accounts",
+          "deny_accounts",
+          "qos",
+          "priority_tier",
+          "preempt_mode"
+        ],
+        "description": "scontrol show partition reads partition configuration including limits, access controls, and associated nodes"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "job_state",
+        "fields": [
+          "time_limit",
+          "partition",
+          "account",
+          "qos",
+          "priority",
+          "hold_state",
+          "dependencies",
+          "features",
+          "num_nodes",
+          "num_cpus",
+          "min_memory",
+          "gres",
+          "req_nodes",
+          "exc_nodes",
+          "nice",
+          "comment",
+          "name",
+          "stdout",
+          "stderr",
+          "suspended_state"
+        ],
+        "description": "scontrol update job and job control commands (hold, release, suspend, resume, requeue) modify job attributes and state",
+        "requires_privilege": "User for own jobs, admin for any job"
+      },
+      {
+        "state_domain": "node_state",
+        "fields": [
+          "state",
+          "reason",
+          "features",
+          "active_features",
+          "available_features",
+          "weight",
+          "comment",
+          "extra"
+        ],
+        "description": "scontrol update node modifies node state and attributes including draining nodes for maintenance",
+        "requires_privilege": "admin"
+      },
+      {
+        "state_domain": "partition_state",
+        "fields": [
+          "state",
+          "max_time",
+          "default_time",
+          "max_nodes",
+          "min_nodes",
+          "allow_groups",
+          "allow_accounts",
+          "deny_accounts",
+          "qos"
+        ],
+        "description": "scontrol update partition modifies partition configuration and access controls",
+        "requires_privilege": "admin"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Job submitted via sbatch/srun",
+        "effect": "New job visible in scontrol show job output"
+      },
+      {
+        "state_change": "Job state changes (pending to running, etc.)",
+        "effect": "scontrol show job reflects new state and updated fields (StartTime, NodeList, etc.)"
+      },
+      {
+        "state_change": "Node state changes (hardware failure, admin action)",
+        "effect": "scontrol show node reflects new state and reason"
+      },
+      {
+        "state_change": "Configuration file modified",
+        "effect": "scontrol reconfigure loads new configuration; scontrol show config reflects changes"
+      },
+      {
+        "state_change": "Job modified via scontrol update",
+        "effect": "Changes immediately visible in squeue and scontrol show job"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "squeue",
+        "shared_state": "Job state, partition, time limits, nodes, and other job attributes must be consistent between squeue output and scontrol show job"
+      },
+      {
+        "command": "sinfo",
+        "shared_state": "Node state, partition state, and resource availability must be consistent between sinfo output and scontrol show node/partition"
+      },
+      {
+        "command": "sacct",
+        "shared_state": "Job attributes and state for currently running jobs must be consistent with accounting data"
+      },
+      {
+        "command": "sbatch",
+        "shared_state": "Job parameters submitted via sbatch should match what scontrol show job displays"
+      },
+      {
+        "command": "scancel",
+        "shared_state": "Jobs cancelled via scancel should reflect CANCELLED state in scontrol show job"
+      },
+      {
+        "command": "sprio",
+        "shared_state": "Job priority values should be consistent between sprio and scontrol show job output"
+      }
+    ]
+  }
+}

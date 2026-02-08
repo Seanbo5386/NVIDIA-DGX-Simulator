@@ -1,0 +1,630 @@
+{
+  "command": "ip",
+  "category": "networking",
+  "description": "Show and manipulate routing, network devices, interfaces, and tunnels. The ip command is the primary tool from the iproute2 package for configuring network interfaces, routing tables, tunnels, traffic control, and more on Linux systems. It replaces the older net-tools commands (ifconfig, route, arp) and provides a unified, modern interface for network configuration and diagnostics. In HPC clusters, ip is essential for managing high-speed Ethernet interfaces, bonding configurations, VLANs, and multi-homed network setups.",
+  "synopsis": "ip [OPTIONS] OBJECT { COMMAND | help }",
+  "version_documented": "iproute2-6.1.0",
+  "source_urls": [
+    "https://wiki.linuxfoundation.org/networking/iproute2",
+    "https://man7.org/linux/man-pages/man8/ip.8.html",
+    "https://github.com/iproute2/iproute2"
+  ],
+  "installation": {
+    "package": "iproute2",
+    "notes": "Pre-installed on most Linux distributions. On RHEL/CentOS: yum install iproute. On Ubuntu/Debian: apt install iproute2. The package provides ip, ss, tc, and other network utilities."
+  },
+  "global_options": [
+    {
+      "short": "-V",
+      "long": "-Version",
+      "description": "Print the version of the ip utility and exit."
+    },
+    {
+      "short": "-h",
+      "long": "-human",
+      "description": "Output statistics with human-readable suffixes (e.g., K, M, G)."
+    },
+    {
+      "short": "-s",
+      "long": "-stats",
+      "description": "Output more information. Can be used multiple times for additional verbosity."
+    },
+    {
+      "short": "-d",
+      "long": "-details",
+      "description": "Output more detailed information about objects."
+    },
+    {
+      "short": "-j",
+      "long": "-json",
+      "description": "Output results in JSON format for machine parsing.",
+      "example": "ip -j addr show"
+    },
+    {
+      "short": "-p",
+      "long": "-pretty",
+      "description": "When combined with -j, format JSON output with indentation for readability.",
+      "example": "ip -j -p addr show"
+    },
+    {
+      "short": "-c",
+      "long": "-color",
+      "description": "Use color output. Can specify 'always', 'auto', or 'never'.",
+      "arguments": "[always|auto|never]",
+      "argument_type": "string",
+      "default": "auto",
+      "example": "ip -c addr show"
+    },
+    {
+      "short": "-br",
+      "long": "-brief",
+      "description": "Print only basic information in a tabular format for improved readability.",
+      "example": "ip -br addr show"
+    },
+    {
+      "short": "-4",
+      "description": "Shortcut for -family inet. Show only IPv4 addresses/routes."
+    },
+    {
+      "short": "-6",
+      "description": "Shortcut for -family inet6. Show only IPv6 addresses/routes."
+    },
+    {
+      "short": "-o",
+      "long": "-oneline",
+      "description": "Output each record on a single line, replacing newlines with backslashes. Useful for parsing with grep/awk.",
+      "example": "ip -o addr show"
+    },
+    {
+      "short": "-r",
+      "long": "-resolve",
+      "description": "Print DNS names instead of host addresses when possible."
+    },
+    {
+      "short": "-n",
+      "long": "-netns",
+      "description": "Switch to the specified network namespace.",
+      "arguments": "NETNS",
+      "argument_type": "string",
+      "example": "ip -n container1 addr show"
+    },
+    {
+      "short": "-a",
+      "long": "-all",
+      "description": "Execute command over all objects where applicable (e.g., all netns)."
+    },
+    {
+      "short": "-t",
+      "long": "-timestamp",
+      "description": "Display current time when using monitor option."
+    },
+    {
+      "short": "-f",
+      "long": "-family",
+      "description": "Specifies the protocol family to use.",
+      "arguments": "FAMILY",
+      "argument_type": "string",
+      "example": "ip -f inet6 addr show"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "addr",
+      "description": "Manage IP addresses on network interfaces. Display, add, delete, or flush IP addresses.",
+      "synopsis": "ip addr { add | change | replace | del } ADDRESS dev IFNAME [LIFETIME] [CONFFLAG-LIST]\nip addr { show | save | flush } [dev IFNAME] [scope SCOPE-ID] [to PREFIX] [FLAG-LIST] [label PATTERN]\nip addr { showdump | restore }",
+      "options": [
+        {
+          "flag": "show",
+          "description": "Display IP addresses. Default action if no subcommand specified."
+        },
+        {
+          "flag": "add",
+          "description": "Add a new IP address to an interface.",
+          "example": "ip addr add 192.168.1.10/24 dev eth0"
+        },
+        {
+          "flag": "del",
+          "description": "Delete an IP address from an interface.",
+          "example": "ip addr del 192.168.1.10/24 dev eth0"
+        },
+        {
+          "flag": "flush",
+          "description": "Flush all addresses matching criteria.",
+          "example": "ip addr flush dev eth0"
+        }
+      ]
+    },
+    {
+      "name": "link",
+      "description": "Manage network device attributes. Display and modify network interface state, MTU, MAC address, and other properties.",
+      "synopsis": "ip link add [link DEV] [name] NAME type TYPE [ARGS]\nip link delete DEV type TYPE [ARGS]\nip link set DEV { up | down | arp { on | off } | promisc { on | off } | mtu MTU | ... }\nip link show [DEV] [up]",
+      "options": [
+        {
+          "flag": "show",
+          "description": "Display link attributes. Default action if no subcommand specified."
+        },
+        {
+          "flag": "set",
+          "description": "Modify link attributes such as state, MTU, or MAC address.",
+          "example": "ip link set eth0 up"
+        },
+        {
+          "flag": "add",
+          "description": "Add a virtual link (bridge, bond, vlan, vxlan, etc.).",
+          "example": "ip link add bond0 type bond mode 802.3ad"
+        },
+        {
+          "flag": "del",
+          "description": "Delete a virtual link.",
+          "example": "ip link del bond0"
+        }
+      ]
+    },
+    {
+      "name": "route",
+      "description": "Manage routing table entries. Display, add, delete, replace, or monitor routing table entries.",
+      "synopsis": "ip route { list | flush } SELECTOR\nip route save SELECTOR\nip route restore\nip route get ROUTE_GET_FLAGS ADDRESS [from ADDRESS iif STRING] [oif STRING] [mark MARK] [vrf NAME]\nip route { add | del | change | append | replace } ROUTE",
+      "options": [
+        {
+          "flag": "show",
+          "description": "Display routing table entries. Default action."
+        },
+        {
+          "flag": "add",
+          "description": "Add a new route.",
+          "example": "ip route add 10.0.0.0/8 via 192.168.1.1"
+        },
+        {
+          "flag": "del",
+          "description": "Delete a route.",
+          "example": "ip route del 10.0.0.0/8"
+        },
+        {
+          "flag": "get",
+          "description": "Show the route for a specific destination.",
+          "example": "ip route get 8.8.8.8"
+        },
+        {
+          "flag": "flush",
+          "description": "Flush routing tables matching criteria.",
+          "example": "ip route flush cache"
+        }
+      ]
+    },
+    {
+      "name": "neigh",
+      "description": "Manage ARP/NDISC cache entries (neighbor table). Display, add, delete, or flush entries in the neighbor table.",
+      "synopsis": "ip neigh { add | del | change | replace } { ADDR [ lladdr LLADDR ] [ nud STATE ] | proxy ADDR } [ dev DEV ]\nip neigh { show | flush } [ proxy ] [ to PREFIX ] [ dev DEV ] [ nud STATE ] [ vrf NAME ]",
+      "options": [
+        {
+          "flag": "show",
+          "description": "Display neighbor table entries (ARP cache). Default action."
+        },
+        {
+          "flag": "add",
+          "description": "Add a neighbor entry.",
+          "example": "ip neigh add 192.168.1.1 lladdr 00:11:22:33:44:55 dev eth0"
+        },
+        {
+          "flag": "del",
+          "description": "Delete a neighbor entry.",
+          "example": "ip neigh del 192.168.1.1 dev eth0"
+        },
+        {
+          "flag": "flush",
+          "description": "Flush neighbor entries.",
+          "example": "ip neigh flush dev eth0"
+        }
+      ]
+    },
+    {
+      "name": "netns",
+      "description": "Manage network namespaces. Create, delete, list, and execute commands within network namespaces for isolation.",
+      "synopsis": "ip netns { list | add | attach | set | identify | delete | pids | exec | monitor }",
+      "options": [
+        {
+          "flag": "list",
+          "description": "List all named network namespaces."
+        },
+        {
+          "flag": "add",
+          "description": "Create a new named network namespace.",
+          "example": "ip netns add container1"
+        },
+        {
+          "flag": "del",
+          "description": "Delete a named network namespace.",
+          "example": "ip netns del container1"
+        },
+        {
+          "flag": "exec",
+          "description": "Execute a command within a network namespace.",
+          "example": "ip netns exec container1 ip addr show"
+        },
+        {
+          "flag": "identify",
+          "description": "Report network namespace for a process ID."
+        }
+      ]
+    },
+    {
+      "name": "tunnel",
+      "description": "Manage IP tunnels (IPIP, SIT, GRE, ISATAP). Used for encapsulating IP traffic over IP networks.",
+      "synopsis": "ip tunnel { add | change | del | show | prl | 6rd } [NAME] [mode MODE] [remote ADDR] [local ADDR] ...",
+      "options": [
+        {
+          "flag": "add",
+          "description": "Add a new tunnel.",
+          "example": "ip tunnel add gre0 mode gre remote 192.168.1.2 local 192.168.1.1"
+        },
+        {
+          "flag": "del",
+          "description": "Delete a tunnel.",
+          "example": "ip tunnel del gre0"
+        },
+        {
+          "flag": "show",
+          "description": "List tunnels."
+        }
+      ]
+    },
+    {
+      "name": "maddr",
+      "description": "Manage multicast addresses. Display and manage multicast group memberships on interfaces.",
+      "synopsis": "ip maddr { add | del } MULTIADDR dev STRING\nip maddr show [dev STRING]"
+    },
+    {
+      "name": "mroute",
+      "description": "Manage multicast routing cache entries. Display multicast routing table.",
+      "synopsis": "ip mroute show [ [ to ] PREFIX ] [ from PREFIX ] [ iif DEVICE ] [ table TABLE_ID ]"
+    },
+    {
+      "name": "monitor",
+      "description": "Monitor netlink messages for network events in real-time. Useful for watching link state changes, route updates, and address modifications.",
+      "synopsis": "ip monitor [ all | OBJECT-LIST ] [file FILENAME] [label] [all-nsid] [dev DEVICE]"
+    },
+    {
+      "name": "rule",
+      "description": "Manage routing policy rules. Used for policy-based routing with multiple routing tables.",
+      "synopsis": "ip rule { add | del } SELECTOR ACTION\nip rule { flush | save | restore }\nip rule [ list [ SELECTOR ]]"
+    },
+    {
+      "name": "vrf",
+      "description": "Manage Virtual Routing and Forwarding domains. Associate interfaces with VRF tables for network segmentation.",
+      "synopsis": "ip vrf { show | exec | identify | pids }"
+    }
+  ],
+  "output_formats": {
+    "default": "Human-readable multi-line format with interface names, addresses, and attributes aligned for readability.",
+    "json": "Machine-parseable JSON output when using -j flag. Can be combined with -p for pretty-printed JSON.",
+    "brief": "Tabular summary format with key information per line when using -br flag.",
+    "oneline": "Each record output on a single line with backslash separators when using -o flag."
+  },
+  "environment_variables": [
+    {
+      "name": "COLORFGBG",
+      "description": "Used to detect terminal background color for automatic color scheme selection.",
+      "affects_command": "Affects automatic color detection when -c auto is used."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - invalid arguments, permission denied, or operation failed"
+    },
+    {
+      "code": 2,
+      "meaning": "Error - command syntax error or missing required argument"
+    },
+    {
+      "code": 255,
+      "meaning": "Error - network namespace does not exist or other critical failure"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show all IP addresses on all interfaces",
+      "command": "ip addr show",
+      "output_example": "1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000\n    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00\n    inet 127.0.0.1/8 scope host lo\n       valid_lft forever preferred_lft forever\n2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000\n    link/ether 00:11:22:33:44:55 brd ff:ff:ff:ff:ff:ff\n    inet 192.168.1.10/24 brd 192.168.1.255 scope global eth0\n       valid_lft forever preferred_lft forever",
+      "requires_root": false
+    },
+    {
+      "description": "Show addresses in brief tabular format",
+      "command": "ip -br addr show",
+      "output_example": "lo               UNKNOWN        127.0.0.1/8 ::1/128\neth0             UP             192.168.1.10/24 fe80::211:22ff:fe33:4455/64\neth1             DOWN",
+      "requires_root": false
+    },
+    {
+      "description": "Show link status for all interfaces in brief format",
+      "command": "ip -br link show",
+      "output_example": "lo               UNKNOWN        00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>\neth0             UP             00:11:22:33:44:55 <BROADCAST,MULTICAST,UP,LOWER_UP>\neth1             DOWN           00:11:22:33:44:56 <BROADCAST,MULTICAST>",
+      "requires_root": false
+    },
+    {
+      "description": "Output addresses in JSON format for scripting",
+      "command": "ip -j addr show",
+      "output_example": "[{\"ifindex\":1,\"ifname\":\"lo\",\"flags\":[\"LOOPBACK\",\"UP\",\"LOWER_UP\"],\"mtu\":65536,...}]",
+      "requires_root": false
+    },
+    {
+      "description": "Add an IP address to an interface",
+      "command": "ip addr add 10.0.0.1/24 dev eth0",
+      "requires_root": true
+    },
+    {
+      "description": "Delete an IP address from an interface",
+      "command": "ip addr del 10.0.0.1/24 dev eth0",
+      "requires_root": true
+    },
+    {
+      "description": "Bring an interface up",
+      "command": "ip link set eth0 up",
+      "requires_root": true
+    },
+    {
+      "description": "Bring an interface down",
+      "command": "ip link set eth0 down",
+      "requires_root": true
+    },
+    {
+      "description": "Change the MTU of an interface",
+      "command": "ip link set eth0 mtu 9000",
+      "requires_root": true
+    },
+    {
+      "description": "Show the routing table",
+      "command": "ip route show",
+      "output_example": "default via 192.168.1.1 dev eth0 proto static metric 100\n10.0.0.0/8 via 10.1.1.1 dev eth1 proto static\n192.168.1.0/24 dev eth0 proto kernel scope link src 192.168.1.10",
+      "requires_root": false
+    },
+    {
+      "description": "Add a static route",
+      "command": "ip route add 10.0.0.0/8 via 192.168.1.254 dev eth0",
+      "requires_root": true
+    },
+    {
+      "description": "Delete a route",
+      "command": "ip route del 10.0.0.0/8",
+      "requires_root": true
+    },
+    {
+      "description": "Show which route will be used to reach a destination",
+      "command": "ip route get 8.8.8.8",
+      "output_example": "8.8.8.8 via 192.168.1.1 dev eth0 src 192.168.1.10 uid 1000\n    cache",
+      "requires_root": false
+    },
+    {
+      "description": "Show the ARP/neighbor table",
+      "command": "ip neigh show",
+      "output_example": "192.168.1.1 dev eth0 lladdr 00:aa:bb:cc:dd:ee REACHABLE\n192.168.1.254 dev eth0 lladdr 00:11:22:33:44:55 STALE",
+      "requires_root": false
+    },
+    {
+      "description": "Flush the ARP cache for an interface",
+      "command": "ip neigh flush dev eth0",
+      "requires_root": true
+    },
+    {
+      "description": "List all network namespaces",
+      "command": "ip netns list",
+      "output_example": "container1 (id: 0)\ncontainer2 (id: 1)",
+      "requires_root": false
+    },
+    {
+      "description": "Create a network namespace",
+      "command": "ip netns add myns",
+      "requires_root": true
+    },
+    {
+      "description": "Execute a command in a network namespace",
+      "command": "ip netns exec myns ip addr show",
+      "requires_root": true
+    },
+    {
+      "description": "Show interface statistics",
+      "command": "ip -s link show eth0",
+      "output_example": "2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP mode DEFAULT group default qlen 1000\n    link/ether 00:11:22:33:44:55 brd ff:ff:ff:ff:ff:ff\n    RX: bytes  packets  errors  dropped missed  mcast\n    1234567890 9876543  0       0       0       12345\n    TX: bytes  packets  errors  dropped carrier collsns\n    9876543210 8765432  0       0       0       0",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor network events in real-time",
+      "command": "ip monitor all",
+      "requires_root": false
+    },
+    {
+      "description": "Create a VLAN interface",
+      "command": "ip link add link eth0 name eth0.100 type vlan id 100",
+      "requires_root": true
+    },
+    {
+      "description": "Create a bond interface",
+      "command": "ip link add bond0 type bond mode 802.3ad",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "RTNETLINK answers: Operation not permitted",
+      "meaning": "The operation requires root privileges that the current user does not have",
+      "resolution": "Run the command with sudo or as root. Configuration changes require CAP_NET_ADMIN capability."
+    },
+    {
+      "message": "Cannot find device \"eth0\"",
+      "meaning": "The specified network interface does not exist",
+      "resolution": "Use 'ip link show' to list available interfaces. Check the interface name for typos. The interface may not be loaded or may have a different name (e.g., ens192, enp0s3)."
+    },
+    {
+      "message": "RTNETLINK answers: File exists",
+      "meaning": "The address, route, or object being added already exists",
+      "resolution": "Use 'ip addr show' or 'ip route show' to check existing configuration. Use 'replace' instead of 'add' to update existing entries, or delete the existing entry first."
+    },
+    {
+      "message": "RTNETLINK answers: Network is unreachable",
+      "meaning": "The destination network or gateway is not reachable from this host",
+      "resolution": "Verify gateway address is correct and reachable. Check that the interface has an IP address in the same subnet as the gateway."
+    },
+    {
+      "message": "RTNETLINK answers: No such process",
+      "meaning": "The specified route or address does not exist and cannot be deleted",
+      "resolution": "Use 'ip addr show' or 'ip route show' to verify the entry exists before attempting to delete it."
+    },
+    {
+      "message": "Cannot open network namespace \"xxx\": No such file or directory",
+      "meaning": "The specified network namespace does not exist",
+      "resolution": "Use 'ip netns list' to show available namespaces. Create the namespace with 'ip netns add xxx' if needed."
+    },
+    {
+      "message": "Error: argument \"xxx\" is wrong: \"yyy\" is invalid",
+      "meaning": "Invalid argument provided for the specified option",
+      "resolution": "Check the command syntax with 'ip <object> help'. Verify argument values are valid for the option."
+    },
+    {
+      "message": "RTNETLINK answers: Invalid argument",
+      "meaning": "One of the provided arguments is not valid for the operation",
+      "resolution": "Verify address format (CIDR notation), interface name, and other parameters. Check that the combination of options is valid."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "ifconfig",
+      "route",
+      "arp",
+      "netstat",
+      "ss",
+      "ethtool",
+      "tc",
+      "bridge",
+      "nmcli",
+      "networkctl"
+    ],
+    "uses_library": ["libnetlink"],
+    "notes": "The ip command is part of iproute2 and replaces the deprecated net-tools commands (ifconfig, route, arp, netstat). It uses the netlink interface to communicate with the kernel. In HPC environments, ip is commonly used alongside ethtool for interface diagnostics, ss for socket statistics, and tc for traffic control. For persistent network configuration, use distribution-specific tools (NetworkManager, systemd-networkd) or configuration files."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required. Any user can query addresses, links, routes, and neighbors.",
+    "write_operations": "Root privileges (CAP_NET_ADMIN capability) required for adding, modifying, or deleting addresses, links, routes, and neighbors.",
+    "notes": "Network namespace operations (ip netns exec) require root or appropriate capabilities. Some read operations in network namespaces may also require elevated privileges."
+  },
+  "limitations": [
+    "Does not provide persistent configuration - changes are lost on reboot unless saved by distribution-specific network management",
+    "Cannot configure wireless interfaces (use iw or wpa_supplicant for WiFi)",
+    "Does not show hardware-level details like driver info or ring buffers (use ethtool for that)",
+    "Cannot configure advanced NIC features like RSS, interrupt coalescing, or offloads (use ethtool)",
+    "Policy routing rules require understanding of multiple routing tables",
+    "Network namespace operations may have unexpected behavior with certain applications"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_eth_state",
+        "fields": [
+          "interface_name",
+          "mac_address",
+          "mtu",
+          "state",
+          "operstate",
+          "ip_addresses",
+          "ipv6_addresses",
+          "broadcast",
+          "flags",
+          "qdisc",
+          "group",
+          "txqlen",
+          "rx_bytes",
+          "rx_packets",
+          "rx_errors",
+          "tx_bytes",
+          "tx_packets",
+          "tx_errors"
+        ],
+        "description": "ip reads Ethernet interface state including addresses, link status, and statistics from the kernel via netlink"
+      },
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "routing_table",
+          "neighbor_table",
+          "network_namespaces",
+          "routing_rules",
+          "multicast_groups"
+        ],
+        "description": "ip reads routing tables, ARP/neighbor cache, and network namespace information"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "network_eth_state",
+        "fields": [
+          "ip_addresses",
+          "ipv6_addresses",
+          "mtu",
+          "state",
+          "mac_address",
+          "flags"
+        ],
+        "description": "ip modifies interface configuration including addresses, MTU, and link state",
+        "requires_flags": ["addr add", "addr del", "link set"],
+        "requires_privilege": "root or CAP_NET_ADMIN"
+      },
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "routing_table",
+          "neighbor_table",
+          "network_namespaces",
+          "routing_rules"
+        ],
+        "description": "ip modifies routing tables, neighbor entries, and network namespaces",
+        "requires_flags": [
+          "route add",
+          "route del",
+          "neigh add",
+          "neigh del",
+          "netns add",
+          "netns del"
+        ],
+        "requires_privilege": "root or CAP_NET_ADMIN"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Interface carrier state changes (link up/down)",
+        "effect": "Link operstate and flags reflect the new physical link condition"
+      },
+      {
+        "state_change": "DHCP lease obtained or renewed",
+        "effect": "New IP addresses appear in addr show output"
+      },
+      {
+        "state_change": "Routing daemon updates (OSPF, BGP via bird/quagga)",
+        "effect": "Route table entries are modified"
+      },
+      {
+        "state_change": "Container/VM creation with network namespaces",
+        "effect": "New network namespaces appear in netns list"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ifconfig",
+        "shared_state": "IP addresses and interface flags (ifconfig is deprecated but shows similar info)"
+      },
+      {
+        "command": "ethtool",
+        "shared_state": "Link state and some interface properties"
+      },
+      {
+        "command": "ss",
+        "shared_state": "Socket connections depend on interface and routing state"
+      },
+      {
+        "command": "route",
+        "shared_state": "Routing table entries (route command is deprecated)"
+      }
+    ]
+  }
+}

@@ -1,0 +1,185 @@
+{
+  "command": "curl",
+  "category": "general",
+  "description": "Transfer data from or to server. Versatile tool for HTTP requests, API calls, and file transfers. Used in HPC for API interactions and downloads.",
+  "synopsis": "curl [options] <url>",
+  "version_documented": "curl 7.68+",
+  "source_urls": ["https://curl.se/docs/manpage.html"],
+  "installation": {
+    "package": "curl",
+    "notes": "Usually installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-o",
+      "long": "--output",
+      "description": "Write to file",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-O",
+      "long": "--remote-name",
+      "description": "Use remote filename"
+    },
+    {
+      "short": "-L",
+      "long": "--location",
+      "description": "Follow redirects"
+    },
+    {
+      "short": "-s",
+      "long": "--silent",
+      "description": "Silent mode"
+    },
+    {
+      "short": "-X",
+      "long": "--request",
+      "description": "HTTP method",
+      "arguments": "<method>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-H",
+      "long": "--header",
+      "description": "Add header",
+      "arguments": "<header>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-d",
+      "long": "--data",
+      "description": "POST data",
+      "arguments": "<data>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-u",
+      "long": "--user",
+      "description": "User:password",
+      "arguments": "<credentials>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-k",
+      "long": "--insecure",
+      "description": "Skip TLS verification"
+    },
+    {
+      "short": "-C",
+      "long": "--continue-at",
+      "description": "Resume from offset",
+      "arguments": "<offset>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--limit-rate",
+      "description": "Limit bandwidth",
+      "arguments": "<rate>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-f",
+      "long": "--fail",
+      "description": "Fail silently on HTTP errors"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 6,
+      "meaning": "Could not resolve host"
+    },
+    {
+      "code": 7,
+      "meaning": "Could not connect"
+    },
+    {
+      "code": 22,
+      "meaning": "HTTP error (with -f)"
+    },
+    {
+      "code": 28,
+      "meaning": "Timeout"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Download file",
+      "command": "curl -O https://example.com/dataset.tar.gz",
+      "requires_root": false
+    },
+    {
+      "description": "Save with name",
+      "command": "curl -o model.pt https://example.com/checkpoint",
+      "requires_root": false
+    },
+    {
+      "description": "Follow redirects",
+      "command": "curl -LO https://github.com/project/releases/download/v1.0/file.tar.gz",
+      "requires_root": false
+    },
+    {
+      "description": "API GET request",
+      "command": "curl -s https://api.example.com/status | jq .",
+      "requires_root": false
+    },
+    {
+      "description": "API POST with JSON",
+      "command": "curl -X POST -H 'Content-Type: application/json' -d '{\"key\":\"value\"}' https://api.example.com/data",
+      "requires_root": false
+    },
+    {
+      "description": "Resume download",
+      "command": "curl -C - -O https://example.com/large_file.tar",
+      "requires_root": false
+    },
+    {
+      "description": "With auth header",
+      "command": "curl -H 'Authorization: Bearer $TOKEN' https://api.example.com/data",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Could not resolve host",
+      "meaning": "DNS resolution failed",
+      "resolution": "Check hostname and network"
+    },
+    {
+      "message": "Connection refused",
+      "meaning": "Server not listening",
+      "resolution": "Verify server is running and port correct"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["wget", "httpie", "jq"],
+    "notes": "More versatile than wget for APIs. Pipe to jq for JSON parsing. -sS shows errors in silent mode."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "Write to output file",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Complex for simple downloads vs wget",
+    "Many options to learn",
+    "Large JSON responses can be memory-intensive"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Saves downloaded content",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

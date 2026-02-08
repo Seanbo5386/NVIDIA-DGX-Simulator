@@ -1,0 +1,403 @@
+{
+  "command": "nvitop",
+  "category": "gpu_management",
+  "description": "An interactive NVIDIA-GPU process viewer and beyond, providing an htop-like interface for GPU monitoring. nvitop offers informative and fancy output with more information than nvidia-smi, featuring colorized box drawing, bar charts, and history graphs. It supports monitor mode with continuous updates, process sorting/filtering, and the ability to send signals to processes. Built on NVIDIA Management Library (NVML) Python bindings for efficient direct device status queries, nvitop is portable across both Linux and Windows platforms. The tool includes both one-shot query mode and continuous monitoring mode with full keyboard and mouse interactivity.",
+  "synopsis": "nvitop [--help] [--version] [--once] [--monitor [{auto,full,compact}]] [--interval SEC] [--ascii] [--colorful] [--force-color] [--light] [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2] [--only INDEX [INDEX ...]] [--only-visible] [--compute] [--only-compute] [--graphics] [--only-graphics] [--user [USERNAME ...]] [--pid PID [PID ...]]",
+  "version_documented": "1.6.2",
+  "source_urls": [
+    "https://github.com/XuehaiPan/nvitop",
+    "https://pypi.org/project/nvitop/"
+  ],
+  "installation": {
+    "package": "nvitop",
+    "notes": "Install via pip (pip install nvitop), pipx (pipx run nvitop), uvx (uvx nvitop), or conda (conda install -c conda-forge nvitop). Requires NVIDIA drivers with NVML support. Works on both Linux and Windows."
+  },
+  "global_options": [
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help documentation and exit"
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Show version number and exit"
+    },
+    {
+      "short": "-1",
+      "long": "--once",
+      "description": "Report query data only once (one-shot mode) instead of continuous monitoring"
+    },
+    {
+      "short": "-m",
+      "long": "--monitor",
+      "description": "Run as a resource monitor. Continuously report query data and handle user inputs. Mode can be auto, full, or compact.",
+      "arguments": "[{auto,full,compact}]",
+      "argument_type": "string",
+      "default": "auto",
+      "example": "nvitop -m full"
+    },
+    {
+      "long": "--interval",
+      "description": "Process status update interval in seconds",
+      "arguments": "SEC",
+      "argument_type": "float",
+      "default": "2",
+      "example": "nvitop --interval 5"
+    },
+    {
+      "short": "-U",
+      "long": "--ascii",
+      "description": "Use ASCII characters only, which is useful for terminals without Unicode support. Also available as --no-unicode."
+    },
+    {
+      "long": "--colorful",
+      "description": "Use gradient colors to get spectrum-like bar charts for enhanced visual output"
+    },
+    {
+      "long": "--force-color",
+      "description": "Force colorize output even when stdout is not a TTY terminal"
+    },
+    {
+      "long": "--light",
+      "description": "Tweak visual results for light theme terminals"
+    },
+    {
+      "long": "--gpu-util-thresh",
+      "description": "Thresholds of GPU utilization for color coding (two values: low and high thresholds)",
+      "arguments": "th1 th2",
+      "argument_type": "integer",
+      "default": "10 75",
+      "example": "nvitop --gpu-util-thresh 20 80"
+    },
+    {
+      "long": "--mem-util-thresh",
+      "description": "Thresholds of GPU memory percent utilization for color coding (two values: low and high thresholds)",
+      "arguments": "th1 th2",
+      "argument_type": "integer",
+      "default": "10 80",
+      "example": "nvitop --mem-util-thresh 15 90"
+    },
+    {
+      "short": "-o",
+      "long": "--only",
+      "description": "Only show the specified devices by index",
+      "arguments": "INDEX [INDEX ...]",
+      "argument_type": "integer",
+      "example": "nvitop -o 0 1"
+    },
+    {
+      "short": "-ov",
+      "long": "--only-visible",
+      "description": "Only show devices in the CUDA_VISIBLE_DEVICES environment variable"
+    },
+    {
+      "short": "-c",
+      "long": "--compute",
+      "description": "Only show GPU processes with the compute context (type: 'C' or 'C+G')"
+    },
+    {
+      "short": "-C",
+      "long": "--only-compute",
+      "description": "Only show GPU processes exactly with the compute context (type: 'C' only, excluding 'C+G')"
+    },
+    {
+      "short": "-g",
+      "long": "--graphics",
+      "description": "Only show GPU processes with the graphics context (type: 'G' or 'C+G')"
+    },
+    {
+      "short": "-G",
+      "long": "--only-graphics",
+      "description": "Only show GPU processes exactly with the graphics context (type: 'G' only, excluding 'C+G')"
+    },
+    {
+      "short": "-u",
+      "long": "--user",
+      "description": "Only show processes of the given users",
+      "arguments": "[USERNAME ...]",
+      "argument_type": "string",
+      "example": "nvitop -u root admin"
+    },
+    {
+      "short": "-p",
+      "long": "--pid",
+      "description": "Only show processes of the given PIDs",
+      "arguments": "PID [PID ...]",
+      "argument_type": "integer",
+      "example": "nvitop -p 1234 5678"
+    }
+  ],
+  "environment_variables": [
+    {
+      "name": "NVITOP_MONITOR_MODE",
+      "description": "Controls the default monitor mode and display settings. Accepts comma-separated values for mode, color style, and theme.",
+      "example": "auto,colorful,light",
+      "affects_command": "Sets default values for --monitor, --colorful/--plain, and --light/--dark options"
+    },
+    {
+      "name": "NVITOP_GPU_UTILIZATION_THRESHOLDS",
+      "description": "Sets the default GPU utilization thresholds for color coding",
+      "example": "10,75",
+      "affects_command": "Overrides default values for --gpu-util-thresh option"
+    },
+    {
+      "name": "NVITOP_MEMORY_UTILIZATION_THRESHOLDS",
+      "description": "Sets the default memory utilization thresholds for color coding",
+      "example": "10,80",
+      "affects_command": "Overrides default values for --mem-util-thresh option"
+    },
+    {
+      "name": "CUDA_VISIBLE_DEVICES",
+      "description": "Standard CUDA environment variable that controls which GPUs are visible to CUDA applications",
+      "example": "0,1,2",
+      "affects_command": "Used by --only-visible option to filter displayed devices"
+    },
+    {
+      "name": "LOGLEVEL",
+      "description": "Controls the logging verbosity level",
+      "example": "DEBUG",
+      "affects_command": "Sets the minimum log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Normal exit (user quit the program or one-shot mode completed successfully)"
+    },
+    {
+      "code": 1,
+      "meaning": "Error occurred (invalid arguments, no GPUs found, or initialization failure)"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Launch nvitop in default interactive monitor mode",
+      "command": "nvitop",
+      "requires_root": false
+    },
+    {
+      "description": "One-shot query of all GPU device status",
+      "command": "nvitop -1",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor specific GPUs only (GPU 0 and GPU 1)",
+      "command": "nvitop -o 0 1",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor only devices visible to CUDA via CUDA_VISIBLE_DEVICES",
+      "command": "nvitop -ov",
+      "requires_root": false
+    },
+    {
+      "description": "One-shot query showing only compute processes",
+      "command": "nvitop -1 -c",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor in full display mode with colorful gradient bars",
+      "command": "nvitop -m full --colorful",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor with compact display for smaller terminals",
+      "command": "nvitop -m compact",
+      "requires_root": false
+    },
+    {
+      "description": "Use light theme for light terminal backgrounds",
+      "command": "nvitop --light",
+      "requires_root": false
+    },
+    {
+      "description": "Use ASCII-only output for terminals without Unicode support",
+      "command": "nvitop --ascii",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor with custom update interval (5 seconds)",
+      "command": "nvitop --interval 5",
+      "requires_root": false
+    },
+    {
+      "description": "Filter to show only processes owned by specific user",
+      "command": "nvitop -u username",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor specific PIDs only",
+      "command": "nvitop -p 1234 5678",
+      "requires_root": false
+    },
+    {
+      "description": "Custom utilization thresholds for color coding",
+      "command": "nvitop --gpu-util-thresh 20 80 --mem-util-thresh 15 90",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No NVIDIA driver found",
+      "meaning": "NVIDIA drivers are not installed or the NVML library cannot be loaded",
+      "resolution": "Install NVIDIA proprietary drivers. Ensure nvidia-smi works before running nvitop."
+    },
+    {
+      "message": "Failed to initialize NVML",
+      "meaning": "The NVIDIA Management Library could not be initialized",
+      "resolution": "Ensure the NVIDIA driver is installed and loaded. Verify with 'nvidia-smi'. On Windows, ensure the NVIDIA driver service is running."
+    },
+    {
+      "message": "No GPU(s) available",
+      "meaning": "No NVIDIA GPUs were detected on the system",
+      "resolution": "Verify NVIDIA GPUs are installed and recognized. Check that devices are not filtered out by -o or -ov options."
+    },
+    {
+      "message": "Permission denied",
+      "meaning": "nvitop lacks permission to access GPU devices or process information",
+      "resolution": "Ensure the user has read access to GPU device files. On Linux, may need to be in 'video' group."
+    },
+    {
+      "message": "Invalid device index",
+      "meaning": "A specified GPU index in --only option does not exist",
+      "resolution": "Use nvidia-smi to list available GPU indices. GPU indices start at 0."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "nvidia-smi",
+      "nvtop",
+      "dcgmi",
+      "gpustat",
+      "htop",
+      "top",
+      "nvisel"
+    ],
+    "uses_library": [
+      "NVML (NVIDIA Management Library)",
+      "pynvml (Python bindings for NVML)",
+      "curses/ncurses"
+    ],
+    "notes": "nvitop is a Python-based GPU monitoring tool that provides richer output than nvidia-smi with colorized display and interactive features. Unlike C-based nvtop, it can be easily installed via pip without compilation. It includes the nvisel companion tool for CUDA device selection. The Python library component can be integrated into other applications for programmatic GPU monitoring."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required on most systems. User needs read access to NVML/driver interfaces.",
+    "write_operations": "Process signal operations (interrupt, terminate, kill) require appropriate permissions. Users can only send signals to their own processes unless running with elevated privileges.",
+    "notes": "On Linux, users may need to be in the 'video' group. On Windows, standard user permissions are typically sufficient for monitoring."
+  },
+  "limitations": [
+    "Read-only monitoring tool - cannot modify GPU settings such as clocks or power limits",
+    "Requires NVIDIA proprietary drivers with NVML support",
+    "Process signal operations limited to user's own processes without root/administrator privileges",
+    "Python-based, requires Python 3.7+ runtime",
+    "Some metrics may not be available on all GPU models or driver versions",
+    "Memory and utilization values accuracy depends on driver-reported data",
+    "Terminal must support the display features (Unicode for box drawing unless --ascii used)",
+    "Cannot monitor AMD or Intel GPUs (NVIDIA only)"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "gpu_id",
+          "name",
+          "temperature",
+          "fan_speed",
+          "power_draw",
+          "power_limit",
+          "utilization_gpu",
+          "utilization_memory",
+          "memory_total",
+          "memory_used",
+          "memory_free",
+          "clock_sm",
+          "clock_memory",
+          "encoder_utilization",
+          "decoder_utilization",
+          "pcie_rx_throughput",
+          "pcie_tx_throughput",
+          "persistence_mode",
+          "compute_mode"
+        ],
+        "description": "nvitop reads comprehensive GPU metrics through NVML Python bindings for real-time display"
+      },
+      {
+        "state_domain": "gpu_process_state",
+        "fields": [
+          "pid",
+          "process_name",
+          "user",
+          "gpu_id",
+          "used_memory",
+          "sm_utilization",
+          "compute_type",
+          "command",
+          "cpu_percent",
+          "memory_percent",
+          "running_time"
+        ],
+        "description": "nvitop reads process information to display per-process GPU usage with sorting and filtering capabilities"
+      },
+      {
+        "state_domain": "system_state",
+        "fields": ["hostname", "cpu_usage", "memory_usage"],
+        "description": "nvitop displays host system information alongside GPU metrics"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "gpu_process_state",
+        "fields": ["process_signal"],
+        "description": "nvitop can send signals (SIGINT, SIGTERM, SIGKILL) to GPU processes via interactive commands",
+        "requires_flags": ["Ctrl+C/I (interrupt)", "T (terminate)", "K (kill)"],
+        "requires_privilege": "User ownership of target process, or root/administrator for other users' processes"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "GPU utilization changes",
+        "effect": "Utilization bar charts and history graphs update in real-time"
+      },
+      {
+        "state_change": "GPU temperature changes",
+        "effect": "Temperature display updates with color coding based on thresholds"
+      },
+      {
+        "state_change": "GPU process starts or stops",
+        "effect": "Process list is updated to reflect current GPU-using processes"
+      },
+      {
+        "state_change": "GPU memory allocation changes",
+        "effect": "Memory usage bars and process memory fields update"
+      },
+      {
+        "state_change": "CUDA_VISIBLE_DEVICES environment variable changes",
+        "effect": "With --only-visible, changes which devices are displayed"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU utilization, memory usage, temperature, power draw, and process information via NVML"
+      },
+      {
+        "command": "nvidia-smi pmon",
+        "shared_state": "Per-process GPU utilization and memory usage"
+      },
+      {
+        "command": "nvtop",
+        "shared_state": "GPU metrics and process information (both use NVML)"
+      },
+      {
+        "command": "dcgmi dmon",
+        "shared_state": "GPU utilization, temperature, power metrics"
+      },
+      {
+        "command": "gpustat",
+        "shared_state": "GPU utilization, memory usage, temperature, and process information"
+      }
+    ]
+  }
+}

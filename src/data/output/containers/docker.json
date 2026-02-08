@@ -1,0 +1,1252 @@
+{
+  "command": "docker",
+  "category": "containers",
+  "description": "Platform for developing, shipping, and running applications in containers - with NVIDIA GPU support via nvidia-docker/nvidia-container-toolkit. Docker enables consistent deployment of applications across different environments by packaging code, runtime, libraries, and dependencies into standardized units called containers. The NVIDIA Container Toolkit extends Docker to enable GPU-accelerated containers for HPC, deep learning, and scientific computing workloads.",
+  "synopsis": "docker [OPTIONS] COMMAND [arg...]",
+  "version_documented": "Docker 24.0+",
+  "source_urls": ["https://docs.docker.com/reference/"],
+  "installation": {
+    "package": "docker-ce, nvidia-container-toolkit",
+    "notes": "Docker Engine (docker-ce) installed from Docker's official repository. For GPU support, install nvidia-container-toolkit from NVIDIA's repository. Requires NVIDIA driver 450.80.02+ and Docker 19.03+ for native GPU support via --gpus flag."
+  },
+  "global_options": [
+    {
+      "long": "--config",
+      "description": "Location of client config files",
+      "arguments": "PATH",
+      "argument_type": "path",
+      "default": "~/.docker"
+    },
+    {
+      "short": "-c",
+      "long": "--context",
+      "description": "Name of the context to use to connect to the daemon",
+      "arguments": "NAME",
+      "argument_type": "string"
+    },
+    {
+      "short": "-D",
+      "long": "--debug",
+      "description": "Enable debug mode"
+    },
+    {
+      "short": "-H",
+      "long": "--host",
+      "description": "Daemon socket(s) to connect to",
+      "arguments": "HOST",
+      "argument_type": "string",
+      "example": "docker -H unix:///var/run/docker.sock ps"
+    },
+    {
+      "short": "-l",
+      "long": "--log-level",
+      "description": "Set the logging level (debug, info, warn, error, fatal)",
+      "arguments": "LEVEL",
+      "argument_type": "string",
+      "default": "info"
+    },
+    {
+      "long": "--tls",
+      "description": "Use TLS; implied by --tlsverify"
+    },
+    {
+      "long": "--tlsverify",
+      "description": "Use TLS and verify the remote"
+    },
+    {
+      "short": "-v",
+      "long": "--version",
+      "description": "Print version information and exit"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "run",
+      "description": "Create and run a new container from an image. This is the primary command for starting containers with GPU support in HPC environments.",
+      "synopsis": "docker run [OPTIONS] IMAGE [COMMAND] [ARG...]",
+      "options": [
+        {
+          "long": "--gpus",
+          "description": "GPU devices to add to the container. Requires NVIDIA Container Toolkit. Use 'all' for all GPUs, 'device=0,1' for specific GPUs, or specify count.",
+          "arguments": "GPU_REQUEST",
+          "argument_type": "string",
+          "example": "docker run --gpus all nvidia/cuda:12.0-base nvidia-smi"
+        },
+        {
+          "long": "--runtime",
+          "description": "Runtime to use for this container. Use 'nvidia' for NVIDIA GPU support with older configurations.",
+          "arguments": "RUNTIME",
+          "argument_type": "string",
+          "example": "docker run --runtime=nvidia nvidia/cuda:12.0-base nvidia-smi"
+        },
+        {
+          "short": "-d",
+          "long": "--detach",
+          "description": "Run container in background and print container ID"
+        },
+        {
+          "short": "-i",
+          "long": "--interactive",
+          "description": "Keep STDIN open even if not attached"
+        },
+        {
+          "short": "-t",
+          "long": "--tty",
+          "description": "Allocate a pseudo-TTY"
+        },
+        {
+          "long": "--rm",
+          "description": "Automatically remove the container when it exits"
+        },
+        {
+          "long": "--name",
+          "description": "Assign a name to the container",
+          "arguments": "NAME",
+          "argument_type": "string"
+        },
+        {
+          "short": "-v",
+          "long": "--volume",
+          "description": "Bind mount a volume. Essential for accessing datasets and models in HPC workloads.",
+          "arguments": "HOST_PATH:CONTAINER_PATH[:OPTIONS]",
+          "argument_type": "string",
+          "example": "docker run --gpus all -v /data:/data nvcr.io/nvidia/pytorch:23.10-py3"
+        },
+        {
+          "long": "--mount",
+          "description": "Attach a filesystem mount to the container with more explicit options than -v",
+          "arguments": "MOUNT_OPTIONS",
+          "argument_type": "string"
+        },
+        {
+          "long": "--network",
+          "description": "Connect a container to a network. Use 'host' for full network access in HPC.",
+          "arguments": "NETWORK",
+          "argument_type": "string",
+          "example": "docker run --gpus all --network=host myimage"
+        },
+        {
+          "long": "--ipc",
+          "description": "IPC mode to use. Use 'host' for shared memory access required by multi-process GPU training.",
+          "arguments": "MODE",
+          "argument_type": "string",
+          "example": "docker run --gpus all --ipc=host myimage python -m torch.distributed.launch train.py"
+        },
+        {
+          "long": "--shm-size",
+          "description": "Size of /dev/shm (shared memory). Important for PyTorch DataLoader workers and multi-GPU training.",
+          "arguments": "SIZE",
+          "argument_type": "string",
+          "default": "64m",
+          "example": "docker run --gpus all --shm-size=16g myimage"
+        },
+        {
+          "long": "--ulimit",
+          "description": "Set ulimit options. Use 'memlock=-1' to unlock memory for RDMA/GPU direct operations.",
+          "arguments": "ULIMIT",
+          "argument_type": "string",
+          "example": "docker run --gpus all --ulimit memlock=-1 --ulimit stack=67108864 myimage"
+        },
+        {
+          "short": "-e",
+          "long": "--env",
+          "description": "Set environment variables",
+          "arguments": "KEY=VALUE",
+          "argument_type": "string",
+          "example": "docker run --gpus all -e CUDA_VISIBLE_DEVICES=0,1 myimage"
+        },
+        {
+          "long": "--env-file",
+          "description": "Read in a file of environment variables",
+          "arguments": "FILE",
+          "argument_type": "path"
+        },
+        {
+          "short": "-w",
+          "long": "--workdir",
+          "description": "Working directory inside the container",
+          "arguments": "DIR",
+          "argument_type": "path"
+        },
+        {
+          "short": "-u",
+          "long": "--user",
+          "description": "Username or UID (format: <name|uid>[:<group|gid>])",
+          "arguments": "USER",
+          "argument_type": "string"
+        },
+        {
+          "short": "-p",
+          "long": "--publish",
+          "description": "Publish a container's port(s) to the host",
+          "arguments": "HOST_PORT:CONTAINER_PORT",
+          "argument_type": "string"
+        },
+        {
+          "long": "--cpus",
+          "description": "Number of CPUs to allocate",
+          "arguments": "NUMBER",
+          "argument_type": "number"
+        },
+        {
+          "short": "-m",
+          "long": "--memory",
+          "description": "Memory limit",
+          "arguments": "LIMIT",
+          "argument_type": "string",
+          "example": "docker run --gpus all -m 64g myimage"
+        },
+        {
+          "long": "--memory-swap",
+          "description": "Swap limit equal to memory plus swap: -1 to enable unlimited swap",
+          "arguments": "LIMIT",
+          "argument_type": "string"
+        },
+        {
+          "long": "--cap-add",
+          "description": "Add Linux capabilities",
+          "arguments": "CAPABILITY",
+          "argument_type": "string",
+          "example": "docker run --gpus all --cap-add=SYS_PTRACE myimage"
+        },
+        {
+          "long": "--privileged",
+          "description": "Give extended privileges to this container. Use with caution."
+        },
+        {
+          "long": "--security-opt",
+          "description": "Security options",
+          "arguments": "OPTION",
+          "argument_type": "string",
+          "example": "docker run --security-opt seccomp=unconfined myimage"
+        },
+        {
+          "long": "--device",
+          "description": "Add a host device to the container",
+          "arguments": "DEVICE",
+          "argument_type": "string"
+        },
+        {
+          "long": "--hostname",
+          "description": "Container host name",
+          "arguments": "HOSTNAME",
+          "argument_type": "string"
+        },
+        {
+          "long": "--restart",
+          "description": "Restart policy to apply when a container exits",
+          "arguments": "POLICY",
+          "argument_type": "string",
+          "default": "no"
+        },
+        {
+          "long": "--pull",
+          "description": "Pull image before running (always, missing, never)",
+          "arguments": "POLICY",
+          "argument_type": "string",
+          "default": "missing"
+        }
+      ]
+    },
+    {
+      "name": "exec",
+      "description": "Execute a command in a running container. Useful for debugging GPU containers.",
+      "synopsis": "docker exec [OPTIONS] CONTAINER COMMAND [ARG...]",
+      "options": [
+        {
+          "short": "-d",
+          "long": "--detach",
+          "description": "Run command in the background"
+        },
+        {
+          "short": "-i",
+          "long": "--interactive",
+          "description": "Keep STDIN open even if not attached"
+        },
+        {
+          "short": "-t",
+          "long": "--tty",
+          "description": "Allocate a pseudo-TTY"
+        },
+        {
+          "short": "-e",
+          "long": "--env",
+          "description": "Set environment variables",
+          "arguments": "KEY=VALUE",
+          "argument_type": "string"
+        },
+        {
+          "short": "-u",
+          "long": "--user",
+          "description": "Username or UID",
+          "arguments": "USER",
+          "argument_type": "string"
+        },
+        {
+          "short": "-w",
+          "long": "--workdir",
+          "description": "Working directory inside the container",
+          "arguments": "DIR",
+          "argument_type": "path"
+        }
+      ]
+    },
+    {
+      "name": "ps",
+      "description": "List containers. Shows running containers by default.",
+      "synopsis": "docker ps [OPTIONS]",
+      "options": [
+        {
+          "short": "-a",
+          "long": "--all",
+          "description": "Show all containers (default shows just running)"
+        },
+        {
+          "short": "-f",
+          "long": "--filter",
+          "description": "Filter output based on conditions provided",
+          "arguments": "FILTER",
+          "argument_type": "string",
+          "example": "docker ps -f status=running"
+        },
+        {
+          "long": "--format",
+          "description": "Format output using a custom template",
+          "arguments": "FORMAT",
+          "argument_type": "string",
+          "example": "docker ps --format '{{.Names}}\\t{{.Status}}'"
+        },
+        {
+          "short": "-n",
+          "long": "--last",
+          "description": "Show n last created containers",
+          "arguments": "N",
+          "argument_type": "integer"
+        },
+        {
+          "short": "-l",
+          "long": "--latest",
+          "description": "Show the latest created container"
+        },
+        {
+          "long": "--no-trunc",
+          "description": "Don't truncate output"
+        },
+        {
+          "short": "-q",
+          "long": "--quiet",
+          "description": "Only display container IDs"
+        },
+        {
+          "short": "-s",
+          "long": "--size",
+          "description": "Display total file sizes"
+        }
+      ]
+    },
+    {
+      "name": "images",
+      "description": "List images available locally.",
+      "synopsis": "docker images [OPTIONS] [REPOSITORY[:TAG]]",
+      "options": [
+        {
+          "short": "-a",
+          "long": "--all",
+          "description": "Show all images (default hides intermediate images)"
+        },
+        {
+          "short": "-f",
+          "long": "--filter",
+          "description": "Filter output based on conditions provided",
+          "arguments": "FILTER",
+          "argument_type": "string"
+        },
+        {
+          "long": "--format",
+          "description": "Format output using a custom template",
+          "arguments": "FORMAT",
+          "argument_type": "string"
+        },
+        {
+          "long": "--no-trunc",
+          "description": "Don't truncate output"
+        },
+        {
+          "short": "-q",
+          "long": "--quiet",
+          "description": "Only show image IDs"
+        },
+        {
+          "long": "--digests",
+          "description": "Show digests"
+        }
+      ]
+    },
+    {
+      "name": "pull",
+      "description": "Download an image from a registry. Essential for pulling NGC containers for GPU workloads.",
+      "synopsis": "docker pull [OPTIONS] NAME[:TAG|@DIGEST]",
+      "options": [
+        {
+          "short": "-a",
+          "long": "--all-tags",
+          "description": "Download all tagged images in the repository"
+        },
+        {
+          "long": "--disable-content-trust",
+          "description": "Skip image verification"
+        },
+        {
+          "long": "--platform",
+          "description": "Set platform if server is multi-platform capable",
+          "arguments": "PLATFORM",
+          "argument_type": "string"
+        },
+        {
+          "short": "-q",
+          "long": "--quiet",
+          "description": "Suppress verbose output"
+        }
+      ]
+    },
+    {
+      "name": "build",
+      "description": "Build an image from a Dockerfile.",
+      "synopsis": "docker build [OPTIONS] PATH | URL | -",
+      "options": [
+        {
+          "short": "-t",
+          "long": "--tag",
+          "description": "Name and optionally a tag in the name:tag format",
+          "arguments": "NAME:TAG",
+          "argument_type": "string",
+          "example": "docker build -t myimage:latest ."
+        },
+        {
+          "short": "-f",
+          "long": "--file",
+          "description": "Name of the Dockerfile",
+          "arguments": "FILE",
+          "argument_type": "path",
+          "default": "Dockerfile"
+        },
+        {
+          "long": "--build-arg",
+          "description": "Set build-time variables",
+          "arguments": "VAR=VALUE",
+          "argument_type": "string"
+        },
+        {
+          "long": "--no-cache",
+          "description": "Do not use cache when building the image"
+        },
+        {
+          "long": "--pull",
+          "description": "Always attempt to pull a newer version of the image"
+        },
+        {
+          "long": "--target",
+          "description": "Set the target build stage to build",
+          "arguments": "STAGE",
+          "argument_type": "string"
+        },
+        {
+          "long": "--platform",
+          "description": "Set platform if server is multi-platform capable",
+          "arguments": "PLATFORM",
+          "argument_type": "string"
+        },
+        {
+          "long": "--progress",
+          "description": "Set type of progress output (auto, plain, tty)",
+          "arguments": "TYPE",
+          "argument_type": "string"
+        },
+        {
+          "short": "-q",
+          "long": "--quiet",
+          "description": "Suppress the build output and print image ID on success"
+        }
+      ]
+    },
+    {
+      "name": "stop",
+      "description": "Stop one or more running containers.",
+      "synopsis": "docker stop [OPTIONS] CONTAINER [CONTAINER...]",
+      "options": [
+        {
+          "short": "-t",
+          "long": "--time",
+          "description": "Seconds to wait for stop before killing it",
+          "arguments": "SECONDS",
+          "argument_type": "integer",
+          "default": "10"
+        },
+        {
+          "short": "-s",
+          "long": "--signal",
+          "description": "Signal to send to the container",
+          "arguments": "SIGNAL",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "start",
+      "description": "Start one or more stopped containers.",
+      "synopsis": "docker start [OPTIONS] CONTAINER [CONTAINER...]",
+      "options": [
+        {
+          "short": "-a",
+          "long": "--attach",
+          "description": "Attach STDOUT/STDERR and forward signals"
+        },
+        {
+          "short": "-i",
+          "long": "--interactive",
+          "description": "Attach container's STDIN"
+        }
+      ]
+    },
+    {
+      "name": "restart",
+      "description": "Restart one or more containers.",
+      "synopsis": "docker restart [OPTIONS] CONTAINER [CONTAINER...]",
+      "options": [
+        {
+          "short": "-t",
+          "long": "--time",
+          "description": "Seconds to wait for stop before killing the container",
+          "arguments": "SECONDS",
+          "argument_type": "integer",
+          "default": "10"
+        },
+        {
+          "short": "-s",
+          "long": "--signal",
+          "description": "Signal to send to the container",
+          "arguments": "SIGNAL",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "rm",
+      "description": "Remove one or more containers.",
+      "synopsis": "docker rm [OPTIONS] CONTAINER [CONTAINER...]",
+      "options": [
+        {
+          "short": "-f",
+          "long": "--force",
+          "description": "Force the removal of a running container (uses SIGKILL)"
+        },
+        {
+          "short": "-l",
+          "long": "--link",
+          "description": "Remove the specified link"
+        },
+        {
+          "short": "-v",
+          "long": "--volumes",
+          "description": "Remove anonymous volumes associated with the container"
+        }
+      ]
+    },
+    {
+      "name": "rmi",
+      "description": "Remove one or more images.",
+      "synopsis": "docker rmi [OPTIONS] IMAGE [IMAGE...]",
+      "options": [
+        {
+          "short": "-f",
+          "long": "--force",
+          "description": "Force removal of the image"
+        },
+        {
+          "long": "--no-prune",
+          "description": "Do not delete untagged parents"
+        }
+      ]
+    },
+    {
+      "name": "logs",
+      "description": "Fetch the logs of a container. Essential for debugging GPU training jobs.",
+      "synopsis": "docker logs [OPTIONS] CONTAINER",
+      "options": [
+        {
+          "short": "-f",
+          "long": "--follow",
+          "description": "Follow log output"
+        },
+        {
+          "long": "--since",
+          "description": "Show logs since timestamp or relative duration",
+          "arguments": "TIMESTAMP",
+          "argument_type": "string",
+          "example": "docker logs --since 10m mycontainer"
+        },
+        {
+          "long": "--until",
+          "description": "Show logs before a timestamp or relative duration",
+          "arguments": "TIMESTAMP",
+          "argument_type": "string"
+        },
+        {
+          "short": "-n",
+          "long": "--tail",
+          "description": "Number of lines to show from the end of the logs",
+          "arguments": "N",
+          "argument_type": "string",
+          "default": "all"
+        },
+        {
+          "short": "-t",
+          "long": "--timestamps",
+          "description": "Show timestamps"
+        },
+        {
+          "long": "--details",
+          "description": "Show extra details provided to logs"
+        }
+      ]
+    },
+    {
+      "name": "inspect",
+      "description": "Return low-level information on Docker objects including GPU configuration.",
+      "synopsis": "docker inspect [OPTIONS] NAME|ID [NAME|ID...]",
+      "options": [
+        {
+          "short": "-f",
+          "long": "--format",
+          "description": "Format output using a Go template",
+          "arguments": "FORMAT",
+          "argument_type": "string",
+          "example": "docker inspect --format '{{.HostConfig.DeviceRequests}}' mycontainer"
+        },
+        {
+          "short": "-s",
+          "long": "--size",
+          "description": "Display total file sizes if the type is container"
+        },
+        {
+          "long": "--type",
+          "description": "Return JSON for specified type",
+          "arguments": "TYPE",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "stats",
+      "description": "Display a live stream of container resource usage statistics including GPU memory if applicable.",
+      "synopsis": "docker stats [OPTIONS] [CONTAINER...]",
+      "options": [
+        {
+          "short": "-a",
+          "long": "--all",
+          "description": "Show all containers (default shows just running)"
+        },
+        {
+          "long": "--format",
+          "description": "Format output using a custom template",
+          "arguments": "FORMAT",
+          "argument_type": "string"
+        },
+        {
+          "long": "--no-stream",
+          "description": "Disable streaming stats and only pull the first result"
+        },
+        {
+          "long": "--no-trunc",
+          "description": "Do not truncate output"
+        }
+      ]
+    },
+    {
+      "name": "login",
+      "description": "Log in to a registry. Required for NGC and private registries.",
+      "synopsis": "docker login [OPTIONS] [SERVER]",
+      "options": [
+        {
+          "short": "-u",
+          "long": "--username",
+          "description": "Username",
+          "arguments": "USERNAME",
+          "argument_type": "string"
+        },
+        {
+          "short": "-p",
+          "long": "--password",
+          "description": "Password",
+          "arguments": "PASSWORD",
+          "argument_type": "string"
+        },
+        {
+          "long": "--password-stdin",
+          "description": "Take the password from stdin"
+        }
+      ]
+    },
+    {
+      "name": "push",
+      "description": "Upload an image to a registry.",
+      "synopsis": "docker push [OPTIONS] NAME[:TAG]",
+      "options": [
+        {
+          "short": "-a",
+          "long": "--all-tags",
+          "description": "Push all tagged images in the repository"
+        },
+        {
+          "short": "-q",
+          "long": "--quiet",
+          "description": "Suppress verbose output"
+        }
+      ]
+    },
+    {
+      "name": "tag",
+      "description": "Create a tag TARGET_IMAGE that refers to SOURCE_IMAGE.",
+      "synopsis": "docker tag SOURCE_IMAGE[:TAG] TARGET_IMAGE[:TAG]"
+    },
+    {
+      "name": "cp",
+      "description": "Copy files/folders between a container and the local filesystem.",
+      "synopsis": "docker cp [OPTIONS] CONTAINER:SRC_PATH DEST_PATH | docker cp [OPTIONS] SRC_PATH CONTAINER:DEST_PATH",
+      "options": [
+        {
+          "short": "-a",
+          "long": "--archive",
+          "description": "Archive mode (copy all uid/gid information)"
+        },
+        {
+          "short": "-L",
+          "long": "--follow-link",
+          "description": "Always follow symbol link in SRC_PATH"
+        },
+        {
+          "short": "-q",
+          "long": "--quiet",
+          "description": "Suppress progress output during copy"
+        }
+      ]
+    },
+    {
+      "name": "commit",
+      "description": "Create a new image from a container's changes.",
+      "synopsis": "docker commit [OPTIONS] CONTAINER [REPOSITORY[:TAG]]",
+      "options": [
+        {
+          "short": "-a",
+          "long": "--author",
+          "description": "Author of the image",
+          "arguments": "AUTHOR",
+          "argument_type": "string"
+        },
+        {
+          "short": "-c",
+          "long": "--change",
+          "description": "Apply Dockerfile instruction to the created image",
+          "arguments": "INSTRUCTION",
+          "argument_type": "string"
+        },
+        {
+          "short": "-m",
+          "long": "--message",
+          "description": "Commit message",
+          "arguments": "MESSAGE",
+          "argument_type": "string"
+        },
+        {
+          "short": "-p",
+          "long": "--pause",
+          "description": "Pause container during commit",
+          "default": "true"
+        }
+      ]
+    },
+    {
+      "name": "save",
+      "description": "Save one or more images to a tar archive.",
+      "synopsis": "docker save [OPTIONS] IMAGE [IMAGE...]",
+      "options": [
+        {
+          "short": "-o",
+          "long": "--output",
+          "description": "Write to a file instead of STDOUT",
+          "arguments": "FILE",
+          "argument_type": "path"
+        }
+      ]
+    },
+    {
+      "name": "load",
+      "description": "Load an image from a tar archive.",
+      "synopsis": "docker load [OPTIONS]",
+      "options": [
+        {
+          "short": "-i",
+          "long": "--input",
+          "description": "Read from tar archive file instead of STDIN",
+          "arguments": "FILE",
+          "argument_type": "path"
+        },
+        {
+          "short": "-q",
+          "long": "--quiet",
+          "description": "Suppress the load output"
+        }
+      ]
+    },
+    {
+      "name": "system",
+      "description": "Manage Docker system resources.",
+      "synopsis": "docker system COMMAND",
+      "options": [
+        {
+          "flag": "df",
+          "description": "Show docker disk usage"
+        },
+        {
+          "flag": "prune",
+          "description": "Remove unused data (containers, networks, images, build cache)"
+        },
+        {
+          "flag": "info",
+          "description": "Display system-wide information"
+        },
+        {
+          "flag": "events",
+          "description": "Get real-time events from the server"
+        }
+      ]
+    },
+    {
+      "name": "volume",
+      "description": "Manage volumes for persistent data storage.",
+      "synopsis": "docker volume COMMAND",
+      "options": [
+        {
+          "flag": "create",
+          "description": "Create a volume"
+        },
+        {
+          "flag": "inspect",
+          "description": "Display detailed information on one or more volumes"
+        },
+        {
+          "flag": "ls",
+          "description": "List volumes"
+        },
+        {
+          "flag": "rm",
+          "description": "Remove one or more volumes"
+        },
+        {
+          "flag": "prune",
+          "description": "Remove all unused local volumes"
+        }
+      ]
+    },
+    {
+      "name": "network",
+      "description": "Manage networks for container communication.",
+      "synopsis": "docker network COMMAND",
+      "options": [
+        {
+          "flag": "create",
+          "description": "Create a network"
+        },
+        {
+          "flag": "connect",
+          "description": "Connect a container to a network"
+        },
+        {
+          "flag": "disconnect",
+          "description": "Disconnect a container from a network"
+        },
+        {
+          "flag": "inspect",
+          "description": "Display detailed information on one or more networks"
+        },
+        {
+          "flag": "ls",
+          "description": "List networks"
+        },
+        {
+          "flag": "rm",
+          "description": "Remove one or more networks"
+        },
+        {
+          "flag": "prune",
+          "description": "Remove all unused networks"
+        }
+      ]
+    }
+  ],
+  "output_formats": {
+    "default": "Human-readable tabular format for list commands; JSON for inspect commands",
+    "json": "JSON output available via --format '{{json .}}' or docker inspect",
+    "go_template": "Custom output using Go templates with --format flag"
+  },
+  "environment_variables": [
+    {
+      "name": "DOCKER_HOST",
+      "description": "Daemon socket to connect to",
+      "example": "DOCKER_HOST=tcp://192.168.1.100:2375",
+      "affects_command": "Sets the Docker daemon endpoint for all commands"
+    },
+    {
+      "name": "DOCKER_CONFIG",
+      "description": "Location of client configuration files",
+      "example": "DOCKER_CONFIG=/opt/docker/config",
+      "affects_command": "Changes the directory where Docker looks for config.json"
+    },
+    {
+      "name": "DOCKER_CONTENT_TRUST",
+      "description": "Enable content trust for image verification",
+      "example": "DOCKER_CONTENT_TRUST=1",
+      "affects_command": "When set to 1, enforces image signature verification"
+    },
+    {
+      "name": "NVIDIA_VISIBLE_DEVICES",
+      "description": "Controls which GPUs are visible inside the container",
+      "example": "NVIDIA_VISIBLE_DEVICES=0,1",
+      "affects_command": "Passed to container via nvidia-container-toolkit to select GPUs"
+    },
+    {
+      "name": "NVIDIA_DRIVER_CAPABILITIES",
+      "description": "Controls which driver capabilities are exposed to containers",
+      "example": "NVIDIA_DRIVER_CAPABILITIES=compute,utility",
+      "affects_command": "Limits GPU driver features available inside containers"
+    },
+    {
+      "name": "CUDA_VISIBLE_DEVICES",
+      "description": "CUDA runtime GPU selection (inside container)",
+      "example": "CUDA_VISIBLE_DEVICES=0,1",
+      "affects_command": "Used within container to select GPUs for CUDA applications"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "General error or operation failed"
+    },
+    {
+      "code": 125,
+      "meaning": "Docker daemon error - the command could not be executed by Docker itself"
+    },
+    {
+      "code": 126,
+      "meaning": "Container command cannot be invoked (permission denied or not executable)"
+    },
+    {
+      "code": 127,
+      "meaning": "Container command not found"
+    },
+    {
+      "code": 137,
+      "meaning": "Container was killed (128 + SIGKILL signal 9)"
+    },
+    {
+      "code": 139,
+      "meaning": "Container crashed with segmentation fault (128 + SIGSEGV signal 11)"
+    },
+    {
+      "code": 143,
+      "meaning": "Container was terminated (128 + SIGTERM signal 15)"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run container with all GPUs",
+      "command": "docker run --gpus all nvidia/cuda:12.0-base nvidia-smi",
+      "output_example": "+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 535.104.12   Driver Version: 535.104.12   CUDA Version: 12.2     |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|                               |                      |               MIG M. |\n|===============================+======================+======================|\n|   0  NVIDIA A100-SXM4...  On  | 00000000:07:00.0 Off |                    0 |\n| N/A   32C    P0    62W / 400W |      0MiB / 81920MiB |      0%      Default |\n|                               |                      |             Disabled |\n+-------------------------------+----------------------+----------------------+",
+      "requires_root": false
+    },
+    {
+      "description": "Interactive GPU shell with PyTorch NGC container",
+      "command": "docker run --gpus all -it --rm nvcr.io/nvidia/pytorch:23.10-py3 bash",
+      "requires_root": false
+    },
+    {
+      "description": "Multi-GPU training with shared memory and data volume",
+      "command": "docker run --gpus all --ipc=host -v /data:/data myimage python train.py",
+      "requires_root": false
+    },
+    {
+      "description": "Run with specific GPUs (GPU 0 and 1)",
+      "command": "docker run --gpus '\"device=0,1\"' nvidia/cuda:12.0-base nvidia-smi",
+      "requires_root": false
+    },
+    {
+      "description": "NGC TensorFlow container with host networking",
+      "command": "docker run --gpus all --network=host nvcr.io/nvidia/tensorflow:23.10-tf2-py3 python script.py",
+      "requires_root": false
+    },
+    {
+      "description": "Container with unlimited memory lock for RDMA/GPUDirect",
+      "command": "docker run --gpus all --ulimit memlock=-1 --ulimit stack=67108864 --ipc=host myimage",
+      "requires_root": false
+    },
+    {
+      "description": "Container stats (snapshot, not streaming)",
+      "command": "docker stats --no-stream",
+      "output_example": "CONTAINER ID   NAME          CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O         PIDS\na1b2c3d4e5f6   gpu_trainer   125.50%   12.34GiB / 125.8GiB   9.81%     1.23GB / 456MB    100MB / 5.67GB    48",
+      "requires_root": false
+    },
+    {
+      "description": "List all containers including stopped ones",
+      "command": "docker ps -a",
+      "output_example": "CONTAINER ID   IMAGE                                  COMMAND       CREATED        STATUS                    PORTS     NAMES\na1b2c3d4e5f6   nvcr.io/nvidia/pytorch:23.10-py3      \"bash\"        2 hours ago    Up 2 hours                          gpu_trainer\nb2c3d4e5f6a7   nvidia/cuda:12.0-base                  \"nvidia-smi\"  3 hours ago    Exited (0) 3 hours ago              test_gpu",
+      "requires_root": false
+    },
+    {
+      "description": "Pull NGC container for GPU deep learning",
+      "command": "docker pull nvcr.io/nvidia/pytorch:23.10-py3",
+      "requires_root": false
+    },
+    {
+      "description": "Login to NGC registry",
+      "command": "docker login nvcr.io -u '$oauthtoken' --password-stdin < ~/ngc_api_key.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Execute nvidia-smi inside running container",
+      "command": "docker exec mycontainer nvidia-smi",
+      "requires_root": false
+    },
+    {
+      "description": "View container logs with timestamps",
+      "command": "docker logs -t --tail 100 mycontainer",
+      "requires_root": false
+    },
+    {
+      "description": "Inspect GPU configuration of a container",
+      "command": "docker inspect --format '{{json .HostConfig.DeviceRequests}}' mycontainer",
+      "output_example": "[{\"Driver\":\"\",\"Count\":0,\"DeviceIDs\":[\"all\"],\"Capabilities\":[[\"gpu\"]],\"Options\":{}}]",
+      "requires_root": false
+    },
+    {
+      "description": "Build custom GPU image from Dockerfile",
+      "command": "docker build -t my-gpu-app:latest -f Dockerfile.gpu .",
+      "requires_root": false
+    },
+    {
+      "description": "Run distributed training with all GPUs and increased shared memory",
+      "command": "docker run --gpus all --ipc=host --shm-size=16g -v /datasets:/data myimage torchrun --nproc_per_node=8 train.py",
+      "requires_root": false
+    },
+    {
+      "description": "Save image to tar file for transfer to air-gapped system",
+      "command": "docker save -o pytorch_ngc.tar nvcr.io/nvidia/pytorch:23.10-py3",
+      "requires_root": false
+    },
+    {
+      "description": "Load image from tar file",
+      "command": "docker load -i pytorch_ngc.tar",
+      "requires_root": false
+    },
+    {
+      "description": "Remove all stopped containers",
+      "command": "docker container prune -f",
+      "requires_root": false
+    },
+    {
+      "description": "Show Docker disk usage",
+      "command": "docker system df",
+      "output_example": "TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE\nImages          10        3         45.23GB   32.15GB (71%)\nContainers      5         2         1.234GB   500MB (40%)\nLocal Volumes   3         2         10.5GB    2GB (19%)\nBuild Cache     0         0         0B        0B",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "docker: Error response from daemon: could not select device driver \"nvidia\" with capabilities: [[gpu]]",
+      "meaning": "NVIDIA Container Toolkit is not installed or configured properly",
+      "resolution": "Install nvidia-container-toolkit: 'apt-get install nvidia-container-toolkit' and restart Docker daemon. Verify with 'nvidia-container-cli info'."
+    },
+    {
+      "message": "docker: Error response from daemon: OCI runtime create failed: container_linux.go: starting container process caused: process_linux.go: running exec setns process for init caused: exit status 1",
+      "meaning": "Container runtime error, often related to GPU access or namespace issues",
+      "resolution": "Check NVIDIA driver is loaded ('nvidia-smi'), verify nvidia-container-toolkit installation, and ensure Docker daemon was restarted after toolkit installation."
+    },
+    {
+      "message": "Error: No such container",
+      "meaning": "The specified container ID or name does not exist",
+      "resolution": "Use 'docker ps -a' to list all containers and verify the correct container ID or name."
+    },
+    {
+      "message": "Error response from daemon: conflict: unable to delete (image is being used by running container)",
+      "meaning": "Cannot delete an image that is in use by a container",
+      "resolution": "Stop and remove the container first with 'docker stop <container>' and 'docker rm <container>', then remove the image."
+    },
+    {
+      "message": "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?",
+      "meaning": "Docker daemon is not running or user lacks permission to access the socket",
+      "resolution": "Start Docker daemon with 'systemctl start docker' or add user to docker group: 'usermod -aG docker $USER' (requires re-login)."
+    },
+    {
+      "message": "Error response from daemon: pull access denied for nvcr.io/nvidia/..., repository does not exist or may require 'docker login'",
+      "meaning": "Authentication required for NGC private repository or image does not exist",
+      "resolution": "Login to NGC with 'docker login nvcr.io' using '$oauthtoken' as username and your NGC API key as password."
+    },
+    {
+      "message": "OCI runtime exec failed: exec failed: container_linux.go: starting container process caused: exec: \"nvidia-smi\": executable file not found in $PATH",
+      "meaning": "The requested command is not available in the container",
+      "resolution": "Ensure the container was started with --gpus flag and is based on an NVIDIA CUDA image that includes nvidia-smi."
+    },
+    {
+      "message": "Error response from daemon: Conflict. The container name \"/mycontainer\" is already in use",
+      "meaning": "A container with the same name already exists",
+      "resolution": "Remove the existing container with 'docker rm mycontainer' or use a different name. Use 'docker ps -a' to see all containers."
+    },
+    {
+      "message": "nvidia-container-cli: initialization error: nvml error: driver not loaded",
+      "meaning": "NVIDIA driver is not loaded or accessible",
+      "resolution": "Load NVIDIA driver with 'modprobe nvidia' or check driver installation with 'nvidia-smi'. May require reboot after driver installation."
+    },
+    {
+      "message": "Error response from daemon: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error running hook #0: error running hook: exit status 1, stdout: , stderr: nvidia-container-cli: device error",
+      "meaning": "GPU device access error during container creation",
+      "resolution": "Check GPU health with 'nvidia-smi', verify device permissions on /dev/nvidia*, and ensure no other process has exclusive access to the GPU."
+    },
+    {
+      "message": "no space left on device",
+      "meaning": "Docker storage or system disk is full",
+      "resolution": "Clean up Docker resources with 'docker system prune -a' to remove unused images, containers, and volumes. Check disk space with 'df -h'."
+    },
+    {
+      "message": "Error response from daemon: shm size must be a positive value",
+      "meaning": "Invalid --shm-size value specified",
+      "resolution": "Use a valid size format like '16g', '8192m', or '8589934592' (bytes). Ensure value is positive."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "nvidia-smi",
+      "nvidia-container-cli",
+      "docker-compose",
+      "podman",
+      "singularity",
+      "enroot",
+      "nvidia-persistenced"
+    ],
+    "uses_library": [
+      "nvidia-container-toolkit",
+      "libnvidia-container",
+      "NVML (NVIDIA Management Library)"
+    ],
+    "notes": "Docker with NVIDIA Container Toolkit provides GPU support through the --gpus flag (Docker 19.03+) or --runtime=nvidia (legacy). The nvidia-container-toolkit hooks into the container creation process to expose GPU devices and drivers. For HPC workloads, often used with Slurm via pyxis plugin or converted to Singularity/Enroot images. NGC (NVIDIA GPU Cloud) provides optimized containers for deep learning frameworks."
+  },
+  "permissions": {
+    "read_operations": "Listing containers and images (docker ps, docker images) typically requires Docker socket access. Users must be in the 'docker' group or use sudo.",
+    "write_operations": "All container and image operations require Docker daemon access. Running GPU containers requires appropriate device permissions for /dev/nvidia* devices.",
+    "notes": "By default, Docker daemon runs as root and socket is owned by root:docker. Users in the 'docker' group effectively have root-equivalent access. For production HPC, consider rootless Docker or alternative runtimes like Singularity that support unprivileged GPU containers."
+  },
+  "limitations": [
+    "GPU support requires NVIDIA Container Toolkit and compatible NVIDIA driver (450.80.02+)",
+    "Docker daemon runs as root by default; rootless mode has limitations with GPU passthrough",
+    "Container networking overhead may impact GPU Direct RDMA performance",
+    "Shared memory (--shm-size) must be explicitly sized for multi-process GPU workloads",
+    "No native MPI support; requires additional configuration for multi-node GPU jobs",
+    "Image sizes for GPU containers (especially NGC) are very large (10-30GB+)",
+    "GPU MIG (Multi-Instance GPU) support requires specific nvidia-container-toolkit configuration",
+    "Cannot run multiple Docker daemons on the same host without namespace isolation",
+    "Storage drivers may impact I/O performance for data-intensive GPU workloads"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "container_state",
+        "fields": [
+          "container_id",
+          "name",
+          "image",
+          "status",
+          "ports",
+          "mounts",
+          "gpus_attached"
+        ],
+        "description": "Docker reads container state for ps, inspect, logs, stats, and other query commands"
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "gpu_id",
+          "uuid",
+          "name",
+          "memory_total",
+          "memory_used",
+          "driver_version"
+        ],
+        "description": "When using --gpus flag, Docker queries available GPUs through nvidia-container-cli for device selection and capability validation"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "container_state",
+        "fields": [
+          "container_id",
+          "name",
+          "image",
+          "status",
+          "created",
+          "started",
+          "ports",
+          "mounts",
+          "gpus_attached",
+          "runtime",
+          "pid"
+        ],
+        "description": "Creates new container records, updates status on start/stop/restart, removes on rm",
+        "requires_flags": ["run", "create", "start", "stop", "restart", "rm"]
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["memory_used"],
+        "description": "GPU containers allocate GPU memory which is reflected in GPU state",
+        "requires_flags": ["--gpus"]
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Container created with --gpus flag",
+        "effect": "nvidia-container-toolkit attaches GPU devices to container namespace"
+      },
+      {
+        "state_change": "Container stopped or removed",
+        "effect": "GPU resources are released, GPU memory is freed"
+      },
+      {
+        "state_change": "Image pulled from registry",
+        "effect": "New image available in local image store"
+      },
+      {
+        "state_change": "Container network configuration changed",
+        "effect": "Container connectivity and port mappings updated"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU processes list shows container processes; GPU memory usage reflects container allocations"
+      },
+      {
+        "command": "docker ps",
+        "shared_state": "Container list and status consistent across docker ps invocations"
+      },
+      {
+        "command": "nvidia-container-cli",
+        "shared_state": "GPU device visibility and capabilities match container GPU configuration"
+      },
+      {
+        "command": "docker inspect",
+        "shared_state": "Detailed container state consistent with docker ps and runtime state"
+      }
+    ]
+  }
+}

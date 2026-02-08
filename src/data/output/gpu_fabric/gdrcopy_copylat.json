@@ -1,0 +1,145 @@
+{
+  "command": "gdrcopy_copylat",
+  "category": "gpu_fabric",
+  "description": "Measure GPU-CPU memory copy latency using GDRCopy. Tests GPUDirect RDMA memory access latency. Essential for benchmarking low-latency GPU communication patterns.",
+  "synopsis": "gdrcopy_copylat [options]",
+  "version_documented": "gdrcopy 2.3+",
+  "source_urls": ["https://github.com/NVIDIA/gdrcopy"],
+  "installation": {
+    "package": "gdrcopy",
+    "notes": "Install via: apt install gdrcopy or build from source. Requires gdrdrv kernel module."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--device",
+      "description": "GPU device ID",
+      "arguments": "<id>",
+      "argument_type": "integer",
+      "example": "-d 0"
+    },
+    {
+      "short": "-s",
+      "long": "--size",
+      "description": "Buffer size in bytes",
+      "arguments": "<bytes>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-n",
+      "long": "--iterations",
+      "description": "Number of iterations",
+      "arguments": "<count>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--write",
+      "description": "Test write latency (CPU to GPU)"
+    },
+    {
+      "long": "--read",
+      "description": "Test read latency (GPU to CPU)"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Basic latency test",
+      "command": "gdrcopy_copylat",
+      "output_example": "GPU 0 (NVIDIA A100-SXM4-80GB):\n  Size: 8 bytes\n  Write latency: 1.2 us\n  Read latency:  1.5 us",
+      "requires_root": false
+    },
+    {
+      "description": "Test specific GPU",
+      "command": "gdrcopy_copylat -d 2",
+      "requires_root": false
+    },
+    {
+      "description": "Test with larger size",
+      "command": "gdrcopy_copylat -s 4096",
+      "requires_root": false
+    },
+    {
+      "description": "More iterations for accuracy",
+      "command": "gdrcopy_copylat -n 100000",
+      "requires_root": false
+    },
+    {
+      "description": "Read-only latency",
+      "command": "gdrcopy_copylat --read",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "gdrdrv module not loaded",
+      "meaning": "GDRCopy kernel module missing",
+      "resolution": "Load module: sudo modprobe gdrdrv"
+    },
+    {
+      "message": "cuMemAlloc failed",
+      "meaning": "Cannot allocate GPU memory",
+      "resolution": "Check GPU memory availability"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "gdrcopy_copybw",
+      "gdrcopy_sanity",
+      "ib_write_lat",
+      "nvidia-smi"
+    ],
+    "notes": "Low-latency GPU memory access is critical for GPUDirect RDMA applications. Latency depends on PCIe hops and NUMA topology."
+  },
+  "permissions": {
+    "read_operations": "User with GPU access",
+    "write_operations": "N/A - benchmark tool",
+    "notes": "Needs access to /dev/gdrdrv and GPU device"
+  },
+  "limitations": [
+    "Requires gdrdrv kernel module",
+    "NVIDIA GPUs only",
+    "Latency varies by system topology",
+    "Results affected by system load"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": ["gpu_id", "pci_bus_id"],
+        "description": "Accesses GPU memory for latency measurement"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "GPU memory mapping",
+        "effect": "Can measure latency to mapped memory"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "gdrcopy_copybw",
+        "shared_state": "GPU device selection matches"
+      },
+      {
+        "command": "ib_write_lat",
+        "shared_state": "Network latency can be compared to memory latency"
+      }
+    ]
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "command": "ln",
+  "category": "general",
+  "description": "Make links between files. Creates hard or symbolic links to files. Essential for organizing HPC data and sharing files across directories.",
+  "synopsis": "ln [options] <target> <link_name>",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/ln.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-s",
+      "long": "--symbolic",
+      "description": "Create symbolic link"
+    },
+    {
+      "short": "-f",
+      "long": "--force",
+      "description": "Remove existing destinations"
+    },
+    {
+      "short": "-n",
+      "long": "--no-dereference",
+      "description": "Don't follow symlinks"
+    },
+    {
+      "short": "-r",
+      "long": "--relative",
+      "description": "Create relative symlink"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Verbose output"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Create symbolic link",
+      "command": "ln -s /data/dataset /home/user/data",
+      "requires_root": false
+    },
+    {
+      "description": "Create hard link",
+      "command": "ln original.txt link.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Force replace link",
+      "command": "ln -sf /new/target /existing/link",
+      "requires_root": false
+    },
+    {
+      "description": "Relative symlink",
+      "command": "ln -sr ../data/file.txt ./link",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "File exists",
+      "meaning": "Link name already exists",
+      "resolution": "Use -f to force or choose different name"
+    },
+    {
+      "message": "Invalid cross-device link",
+      "meaning": "Hard link across filesystems",
+      "resolution": "Use symbolic link (-s) instead"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["readlink", "ls -l", "cp"],
+    "notes": "Symlinks work across filesystems, hard links don't. Symlinks can point to directories. Use readlink to resolve symlinks."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "Write access to link location",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Hard links don't work across filesystems",
+    "Broken symlinks cause errors",
+    "Directory hard links usually not allowed"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Creates file links",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ls -l",
+        "shared_state": "Links shown with ->"
+      }
+    ]
+  }
+}

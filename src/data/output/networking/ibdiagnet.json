@@ -1,0 +1,184 @@
+{
+  "command": "ibdiagnet",
+  "category": "networking",
+  "description": "InfiniBand fabric diagnostic tool. Performs comprehensive fabric discovery, routing verification, and error checking. Essential for diagnosing InfiniBand network issues and validating fabric health in HPC clusters.",
+  "synopsis": "ibdiagnet [options]",
+  "version_documented": "OFED/ibdiags 5.0+",
+  "source_urls": [
+    "https://docs.nvidia.com/networking/display/ibdiagnet/ibdiagnet"
+  ],
+  "installation": {
+    "package": "ibutils2",
+    "notes": "Part of MLNX_OFED or install via: apt install ibutils2 or yum install ibutils2"
+  },
+  "global_options": [
+    {
+      "short": "-o",
+      "long": "--output_dir",
+      "description": "Output directory for reports",
+      "arguments": "<dir>",
+      "argument_type": "path",
+      "default": "/var/tmp/ibdiagnet2"
+    },
+    {
+      "short": "-t",
+      "long": "--topo_file",
+      "description": "Topology file for expected fabric",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "long": "--pm",
+      "description": "Collect Performance Manager counters"
+    },
+    {
+      "long": "--pc",
+      "description": "Reset port counters after reading"
+    },
+    {
+      "long": "--ls",
+      "description": "Perform link speed check"
+    },
+    {
+      "long": "--lw",
+      "description": "Perform link width check"
+    },
+    {
+      "short": "-r",
+      "long": "--routing",
+      "description": "Check routing tables"
+    },
+    {
+      "long": "--skip",
+      "description": "Skip specified checks",
+      "arguments": "<check_list>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--db_csv",
+      "description": "Export database in CSV format"
+    },
+    {
+      "short": "-v",
+      "description": "Increase verbosity (can be repeated)"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - no errors found"
+    },
+    {
+      "code": 1,
+      "meaning": "Errors or warnings detected"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run full fabric diagnostic",
+      "command": "ibdiagnet",
+      "output_example": "Loading IBDIAGNET from: /usr/share/ibdiagnet\n-I- Discovering network...\n-I- Discovering 128 nodes\n-I- Checking for errors...\n-W- Warning: Port 0x0002c903001f8c30 has 5 SymbolErrors\n-I- No critical errors found\n-I- Report saved to /var/tmp/ibdiagnet2/ibdiagnet2.log",
+      "requires_root": true
+    },
+    {
+      "description": "Check with performance counters",
+      "command": "ibdiagnet --pm --ls --lw",
+      "requires_root": true
+    },
+    {
+      "description": "Save output to specific directory",
+      "command": "ibdiagnet -o /tmp/fabric_check",
+      "requires_root": true
+    },
+    {
+      "description": "Check routing tables",
+      "command": "ibdiagnet -r",
+      "requires_root": true
+    },
+    {
+      "description": "Verify against expected topology",
+      "command": "ibdiagnet -t expected_topo.txt",
+      "requires_root": true
+    },
+    {
+      "description": "Export CSV for analysis",
+      "command": "ibdiagnet --db_csv",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Failed to init SM query",
+      "meaning": "Cannot communicate with Subnet Manager",
+      "resolution": "Verify SM is running (opensm) and port is active"
+    },
+    {
+      "message": "SymbolErrors on port",
+      "meaning": "Cable or signal quality issues",
+      "resolution": "Check cable connections, may need cable replacement"
+    },
+    {
+      "message": "LinkDowned counter non-zero",
+      "meaning": "Link has been reset/bounced",
+      "resolution": "Check for intermittent connectivity issues"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "ibstat",
+      "iblinkinfo",
+      "ibnetdiscover",
+      "perfquery",
+      "opensm"
+    ],
+    "notes": "ibdiagnet performs comprehensive diagnostics including: fabric discovery, link error checking, routing validation, and performance counter collection. Reports are saved to output directory for later analysis."
+  },
+  "permissions": {
+    "read_operations": "Root required for full diagnostics",
+    "write_operations": "N/A - diagnostic tool",
+    "notes": "May reset port counters with --pc flag"
+  },
+  "limitations": [
+    "Requires Subnet Manager to be running",
+    "Full scan can take several minutes on large fabrics",
+    "Some checks require MLNX_OFED version of tool"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": [
+          "device",
+          "port",
+          "state",
+          "link_speed",
+          "link_width",
+          "error_counters"
+        ],
+        "description": "Reads comprehensive IB fabric state"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Fabric error occurs",
+        "effect": "ibdiagnet detects and reports the error"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "iblinkinfo",
+        "shared_state": "Link states and errors should match"
+      },
+      {
+        "command": "perfquery",
+        "shared_state": "Error counters match"
+      }
+    ]
+  }
+}

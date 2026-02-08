@@ -1,0 +1,286 @@
+{
+  "command": "nvtop",
+  "category": "gpu_management",
+  "description": "Interactive NVIDIA GPU and process monitor - htop-like interface for GPU monitoring. nvtop provides a real-time, ncurses-based terminal interface for monitoring GPU utilization, memory usage, temperature, power consumption, and running processes. It supports multiple GPU vendors including NVIDIA, AMD, Intel, and others, with a customizable interface and persistent preferences.",
+  "synopsis": "nvtop [options]",
+  "version_documented": "Latest (3.x+)",
+  "source_urls": ["https://github.com/Syllo/nvtop"],
+  "installation": {
+    "package": "nvtop",
+    "notes": "Available in most Linux distribution repositories (apt, dnf, pacman). Can also be built from source. Requires appropriate GPU drivers (NVIDIA proprietary driver for NVIDIA GPUs). Not compatible with the nouveau open-source driver."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--delay",
+      "description": "Set the update delay/refresh rate. Value is in tenths of seconds (e.g., 10 = 1 second).",
+      "arguments": "DELAY",
+      "argument_type": "integer",
+      "default": "10",
+      "example": "nvtop -d 20"
+    },
+    {
+      "short": "-v",
+      "long": "--version",
+      "description": "Display program version and exit"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help information and exit"
+    },
+    {
+      "short": "-s",
+      "long": "--gpu-select",
+      "description": "Select specific GPUs to monitor by ID. Multiple IDs are separated by colons.",
+      "arguments": "ID1:ID2:...",
+      "argument_type": "string",
+      "example": "nvtop -s 0:1"
+    },
+    {
+      "short": "-i",
+      "long": "--gpu-ignore",
+      "description": "Ignore specific GPUs by ID. Multiple IDs are separated by colons.",
+      "arguments": "ID1:ID2:...",
+      "argument_type": "string",
+      "example": "nvtop -i 2:3"
+    },
+    {
+      "short": "-p",
+      "long": "--no-plot",
+      "description": "Disable the utilization plot graphs, showing only bar indicators"
+    },
+    {
+      "short": "-P",
+      "long": "--no-processes",
+      "description": "Disable the process list display"
+    },
+    {
+      "short": "-C",
+      "long": "--no-color",
+      "description": "Disable colored output, enabling monochrome mode"
+    },
+    {
+      "short": "-N",
+      "long": "--no-cache",
+      "description": "Do not save or restore interface preferences"
+    },
+    {
+      "short": "-f",
+      "long": "--freedom-unit",
+      "description": "Display temperature in Fahrenheit instead of Celsius"
+    },
+    {
+      "short": "-E",
+      "long": "--encode-hide",
+      "description": "Set the encoder/decoder auto-hide timer in seconds. When encoder/decoder is not in use, the meters will be hidden after this duration.",
+      "arguments": "SECONDS",
+      "argument_type": "integer",
+      "example": "nvtop -E 30"
+    },
+    {
+      "short": "-r",
+      "long": "--reverse-abs",
+      "description": "Reverse the plot direction, showing recent data on the left and older data on the right"
+    },
+    {
+      "short": "-c",
+      "long": "--config-file",
+      "description": "Specify a custom configuration file location",
+      "arguments": "PATH",
+      "argument_type": "path",
+      "example": "nvtop -c ~/.config/nvtop/custom.ini"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Launch nvtop with default settings for interactive GPU monitoring",
+      "command": "nvtop",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor with slower update interval (2 seconds)",
+      "command": "nvtop -d 20",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor only specific GPUs (GPU 0 and GPU 1)",
+      "command": "nvtop -s 0:1",
+      "requires_root": false
+    },
+    {
+      "description": "Disable graphical plots, show only bars",
+      "command": "nvtop -p",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor without process list (metrics only)",
+      "command": "nvtop -P",
+      "requires_root": false
+    },
+    {
+      "description": "Use monochrome mode (no colors)",
+      "command": "nvtop -C",
+      "requires_root": false
+    },
+    {
+      "description": "Display temperatures in Fahrenheit",
+      "command": "nvtop -f",
+      "requires_root": false
+    },
+    {
+      "description": "Ignore specific GPUs (skip GPU 2 and 3)",
+      "command": "nvtop -i 2:3",
+      "requires_root": false
+    },
+    {
+      "description": "Use custom configuration file",
+      "command": "nvtop -c /path/to/custom/config.ini",
+      "requires_root": false
+    },
+    {
+      "description": "Minimal display with no plots and no color",
+      "command": "nvtop -p -C",
+      "requires_root": false
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Normal exit (user quit the program)"
+    },
+    {
+      "code": 1,
+      "meaning": "Error occurred (invalid arguments, no GPUs found, or initialization failure)"
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No GPU to monitor",
+      "meaning": "nvtop could not detect any supported GPUs on the system",
+      "resolution": "Verify GPUs are installed and detected by the system. Check that the appropriate driver is loaded (nvidia-smi for NVIDIA). Ensure GPUs are not filtered out by -i or -s options."
+    },
+    {
+      "message": "Could not initialize NVML",
+      "meaning": "The NVIDIA Management Library could not be initialized",
+      "resolution": "Ensure the NVIDIA proprietary driver is installed and loaded. The nouveau driver is not supported. Run 'nvidia-smi' to verify driver status."
+    },
+    {
+      "message": "Permission denied",
+      "meaning": "nvtop lacks permission to access GPU devices or driver interfaces",
+      "resolution": "Ensure the user has read access to /dev/nvidia* devices. May need to be in the 'video' group on some systems."
+    },
+    {
+      "message": "Invalid GPU ID",
+      "meaning": "A specified GPU ID in -s or -i options does not exist",
+      "resolution": "Use nvidia-smi or similar to list available GPU IDs. GPU IDs typically start at 0."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "nvidia-smi",
+      "dcgmi",
+      "gpustat",
+      "nvitop",
+      "htop",
+      "top"
+    ],
+    "uses_library": ["NVML (NVIDIA Management Library)", "ncurses"],
+    "notes": "nvtop provides an htop-like interface specifically for GPU monitoring. It reads GPU data through vendor-specific libraries (NVML for NVIDIA). Unlike nvidia-smi, nvtop is purely a monitoring tool with no configuration or management capabilities. For scripting and automation, nvidia-smi or dcgmi are more appropriate. nvtop supports multiple GPU vendors but NVIDIA support requires the proprietary driver."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required on most systems. User may need to be in the 'video' group to access GPU devices.",
+    "write_operations": "nvtop is a read-only monitoring tool. The only write operation is saving preferences to the user's config directory.",
+    "notes": "The F9 kill signal feature requires appropriate permissions to send signals to processes. Users can only send signals to their own processes unless running as root."
+  },
+  "limitations": [
+    "Read-only monitoring tool - cannot modify GPU settings",
+    "Not compatible with the nouveau open-source NVIDIA driver",
+    "Requires ncurses-capable terminal",
+    "Some metrics may not be available on all GPU models or vendors",
+    "Older NVIDIA GPUs may have limited metric support",
+    "Process-level GPU utilization accuracy depends on driver support",
+    "Memory usage displayed in multiples of 1024 bytes (KiB, MiB)",
+    "Cannot run in headless/non-interactive mode for scripting (use nvidia-smi instead)"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "gpu_id",
+          "name",
+          "temperature",
+          "fan_speed",
+          "power_draw",
+          "power_limit",
+          "utilization_gpu",
+          "utilization_memory",
+          "memory_total",
+          "memory_used",
+          "memory_free",
+          "clock_sm",
+          "clock_memory",
+          "encoder_utilization",
+          "decoder_utilization",
+          "pcie_rx_throughput",
+          "pcie_tx_throughput"
+        ],
+        "description": "nvtop reads comprehensive GPU metrics through vendor libraries (NVML for NVIDIA) for real-time display"
+      },
+      {
+        "state_domain": "gpu_process_state",
+        "fields": [
+          "pid",
+          "process_name",
+          "user",
+          "gpu_id",
+          "used_memory",
+          "compute_utilization"
+        ],
+        "description": "nvtop reads process information to display per-process GPU usage in the process list"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "GPU utilization changes",
+        "effect": "Utilization graphs and bars update in real-time"
+      },
+      {
+        "state_change": "GPU temperature changes",
+        "effect": "Temperature display updates"
+      },
+      {
+        "state_change": "GPU process starts or stops",
+        "effect": "Process list is updated to reflect current GPU-using processes"
+      },
+      {
+        "state_change": "Video encoder/decoder becomes active",
+        "effect": "ENC/DEC meters appear in the display"
+      },
+      {
+        "state_change": "GPU memory allocation changes",
+        "effect": "Memory usage graphs and process memory fields update"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU utilization, memory usage, temperature, power draw, fan speed, and process information"
+      },
+      {
+        "command": "nvidia-smi pmon",
+        "shared_state": "Per-process GPU utilization and memory usage"
+      },
+      {
+        "command": "dcgmi dmon",
+        "shared_state": "GPU utilization, temperature, power, encoder/decoder utilization"
+      },
+      {
+        "command": "gpustat",
+        "shared_state": "GPU utilization, memory usage, temperature, power draw, and process information"
+      }
+    ]
+  }
+}

@@ -1,0 +1,368 @@
+{
+  "command": "nv-fabricmanager",
+  "category": "gpu_fabric",
+  "description": "NVIDIA Fabric Manager daemon for NVSwitch-based multi-GPU systems (DGX, HGX). Fabric Manager is responsible for configuring and managing NVLink fabric on systems with NVSwitch, enabling GPU-to-GPU communication across the entire GPU fabric. It initializes NVSwitch devices, configures NVLink routing tables, monitors fabric health, handles error recovery, and manages GPU partitioning for multi-tenant deployments. Essential for proper operation of DGX A100/H100 and HGX platforms.",
+  "synopsis": "nv-fabricmanager [options]",
+  "version_documented": "Latest (535.x+)",
+  "source_urls": [
+    "https://docs.nvidia.com/datacenter/tesla/fabric-manager-user-guide/index.html",
+    "https://docs.nvidia.com/datacenter/dgx/dgx-fabric-manager-user-guide/index.html"
+  ],
+  "installation": {
+    "package": "nvidia-fabricmanager",
+    "notes": "Installed as part of NVIDIA datacenter drivers or via CUDA repository. Package name may include driver version suffix (e.g., nvidia-fabricmanager-535). Runs as a systemd service (nvidia-fabricmanager.service). Required on systems with NVSwitch (DGX A100/H100, HGX platforms)."
+  },
+  "global_options": [
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help information and usage"
+    },
+    {
+      "short": "-v",
+      "long": "--version",
+      "description": "Display Fabric Manager version information"
+    },
+    {
+      "short": "-c",
+      "long": "--config",
+      "description": "Path to the Fabric Manager configuration file",
+      "arguments": "FILE",
+      "argument_type": "path",
+      "default": "/usr/share/nvidia/nvswitch/fabricmanager.cfg",
+      "example": "nv-fabricmanager -c /etc/nvidia/fabricmanager.cfg"
+    },
+    {
+      "long": "--log-level",
+      "description": "Set the logging level (0=None, 1=Fatal, 2=Error, 3=Warning, 4=Info, 5=Debug, 6=Verbose)",
+      "arguments": "LEVEL",
+      "argument_type": "integer",
+      "default": "4",
+      "example": "nv-fabricmanager --log-level 5"
+    },
+    {
+      "long": "--log-file",
+      "description": "Path to the log file for daemon output",
+      "arguments": "FILE",
+      "argument_type": "path",
+      "default": "/var/log/fabricmanager.log",
+      "example": "nv-fabricmanager --log-file /var/log/nvidia/fm.log"
+    },
+    {
+      "long": "--log-append",
+      "description": "Append to existing log file instead of overwriting",
+      "default": "false"
+    },
+    {
+      "long": "--log-file-max-size",
+      "description": "Maximum log file size in MB before rotation",
+      "arguments": "SIZE_MB",
+      "argument_type": "integer",
+      "default": "1024"
+    },
+    {
+      "long": "--log-file-max-count",
+      "description": "Maximum number of rotated log files to keep",
+      "arguments": "COUNT",
+      "argument_type": "integer",
+      "default": "3"
+    },
+    {
+      "short": "-d",
+      "long": "--daemon",
+      "description": "Run Fabric Manager as a background daemon process"
+    },
+    {
+      "long": "--pid-file",
+      "description": "Path to the PID file when running as daemon",
+      "arguments": "FILE",
+      "argument_type": "path",
+      "default": "/var/run/nvidia-fabricmanager.pid"
+    },
+    {
+      "long": "--restart-on-failure",
+      "description": "Automatically restart Fabric Manager on failure",
+      "default": "true"
+    },
+    {
+      "long": "--fabric-mode",
+      "description": "Fabric initialization mode (0=Full GPU/NVSwitch config, 1=NVSwitch only)",
+      "arguments": "MODE",
+      "argument_type": "integer",
+      "default": "0"
+    },
+    {
+      "long": "--fm-stay-resident-on-failures",
+      "description": "Keep Fabric Manager running even after initialization failures",
+      "default": "false"
+    },
+    {
+      "long": "--access-control-list",
+      "description": "Path to ACL file for GPU access control",
+      "arguments": "FILE",
+      "argument_type": "path"
+    }
+  ],
+  "output_formats": {
+    "log": "Structured log output to configured log file with timestamps, severity levels, and fabric event details",
+    "syslog": "Integration with system logging via systemd journal when running as a service"
+  },
+  "environment_variables": [
+    {
+      "name": "FABRIC_MANAGER_LOG_FILE",
+      "description": "Override the log file path",
+      "example": "FABRIC_MANAGER_LOG_FILE=/var/log/custom-fm.log",
+      "affects_command": "Sets the log file path without requiring command-line argument"
+    },
+    {
+      "name": "FABRIC_MANAGER_LOG_LEVEL",
+      "description": "Override the logging level",
+      "example": "FABRIC_MANAGER_LOG_LEVEL=5",
+      "affects_command": "Sets the log verbosity level"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - Fabric Manager exited normally"
+    },
+    {
+      "code": 1,
+      "meaning": "General error or initialization failure"
+    },
+    {
+      "code": 2,
+      "meaning": "Configuration file error"
+    },
+    {
+      "code": 3,
+      "meaning": "NVSwitch initialization failed"
+    },
+    {
+      "code": 4,
+      "meaning": "NVLink fabric configuration failed"
+    },
+    {
+      "code": 5,
+      "meaning": "GPU not found or not accessible"
+    },
+    {
+      "code": 6,
+      "meaning": "Insufficient permissions"
+    },
+    {
+      "code": 7,
+      "meaning": "Fatal fabric error requiring restart"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Start Fabric Manager service via systemd",
+      "command": "systemctl start nvidia-fabricmanager",
+      "output_example": "",
+      "requires_root": true
+    },
+    {
+      "description": "Check Fabric Manager service status",
+      "command": "systemctl status nvidia-fabricmanager",
+      "output_example": "nvidia-fabricmanager.service - NVIDIA Fabric Manager Service\n   Loaded: loaded (/lib/systemd/system/nvidia-fabricmanager.service; enabled)\n   Active: active (running) since Mon 2024-01-15 10:30:00 UTC; 2h 15min ago\n Main PID: 1234 (nv-fabricmanager)\n    Tasks: 8 (limit: 1048576)\n   Memory: 32.0M\n   CGroup: /system.slice/nvidia-fabricmanager.service\n           └─1234 /usr/bin/nv-fabricmanager -c /usr/share/nvidia/nvswitch/fabricmanager.cfg",
+      "requires_root": false
+    },
+    {
+      "description": "Run Fabric Manager in foreground with debug logging",
+      "command": "nv-fabricmanager -c /usr/share/nvidia/nvswitch/fabricmanager.cfg --log-level 5",
+      "output_example": "[2024-01-15 10:30:00.123] [Info] Fabric Manager starting\n[2024-01-15 10:30:00.456] [Info] Found 8 GPUs and 6 NVSwitches\n[2024-01-15 10:30:01.234] [Info] Initializing NVSwitch fabric\n[2024-01-15 10:30:02.567] [Info] NVLink routing tables configured\n[2024-01-15 10:30:02.890] [Info] Fabric Manager initialization complete",
+      "requires_root": true
+    },
+    {
+      "description": "Enable Fabric Manager service to start on boot",
+      "command": "systemctl enable nvidia-fabricmanager",
+      "output_example": "Created symlink /etc/systemd/system/multi-user.target.wants/nvidia-fabricmanager.service -> /lib/systemd/system/nvidia-fabricmanager.service",
+      "requires_root": true
+    },
+    {
+      "description": "View Fabric Manager logs",
+      "command": "journalctl -u nvidia-fabricmanager -f",
+      "output_example": "Jan 15 10:30:00 dgx01 nv-fabricmanager[1234]: [Info] Fabric Manager starting\nJan 15 10:30:01 dgx01 nv-fabricmanager[1234]: [Info] NVSwitch 0: 36 active NVLink ports\nJan 15 10:30:01 dgx01 nv-fabricmanager[1234]: [Info] GPU fabric configured successfully",
+      "requires_root": false
+    },
+    {
+      "description": "Restart Fabric Manager after GPU reset or error recovery",
+      "command": "systemctl restart nvidia-fabricmanager",
+      "output_example": "",
+      "requires_root": true
+    },
+    {
+      "description": "Stop Fabric Manager service",
+      "command": "systemctl stop nvidia-fabricmanager",
+      "output_example": "",
+      "requires_root": true
+    },
+    {
+      "description": "Check NVLink topology after Fabric Manager starts (using nvidia-smi)",
+      "command": "nvidia-smi topo -m",
+      "output_example": "        GPU0    GPU1    GPU2    GPU3    GPU4    GPU5    GPU6    GPU7    NVS0    NVS1\nGPU0     X      NV18    NV18    NV18    NV18    NV18    NV18    NV18    NVS     NVS\nGPU1    NV18     X      NV18    NV18    NV18    NV18    NV18    NV18    NVS     NVS\nGPU2    NV18    NV18     X      NV18    NV18    NV18    NV18    NV18    NVS     NVS\nGPU3    NV18    NV18    NV18     X      NV18    NV18    NV18    NV18    NVS     NVS",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Failed to initialize NVSwitch",
+      "meaning": "Fabric Manager could not initialize one or more NVSwitch devices",
+      "resolution": "Check NVSwitch hardware status, verify driver is loaded correctly. Examine dmesg for NVSwitch errors. May require system reboot or hardware inspection."
+    },
+    {
+      "message": "NVLink training failed on link X",
+      "meaning": "An NVLink connection between GPU and NVSwitch failed to establish",
+      "resolution": "Check NVLink hardware connections. Run nvidia-smi nvlink -s to identify affected links. May indicate cable issues or hardware failure."
+    },
+    {
+      "message": "Fabric Manager: GPU Y is not responding",
+      "meaning": "A GPU is not responding to Fabric Manager queries",
+      "resolution": "Check GPU health with nvidia-smi. GPU may be in a bad state requiring reset. Verify GPU power and seating."
+    },
+    {
+      "message": "Configuration file not found",
+      "meaning": "The specified or default configuration file does not exist",
+      "resolution": "Verify fabricmanager.cfg exists at /usr/share/nvidia/nvswitch/ or specify correct path with -c option."
+    },
+    {
+      "message": "Insufficient permissions to access NVSwitch",
+      "meaning": "Fabric Manager cannot access NVSwitch devices due to permission issues",
+      "resolution": "Run Fabric Manager as root or ensure proper device permissions on /dev/nvidia-nvswitch* devices."
+    },
+    {
+      "message": "NVSwitch X: Fatal error detected",
+      "meaning": "A fatal error occurred on an NVSwitch device",
+      "resolution": "Examine detailed logs for error type. May require NVSwitch reset or system reboot. Check for thermal or power issues."
+    },
+    {
+      "message": "Fabric partition conflict",
+      "meaning": "GPU partitioning configuration conflicts with current fabric state",
+      "resolution": "Review access control list configuration. Ensure GPU partitions do not overlap incorrectly."
+    },
+    {
+      "message": "NVLink error count threshold exceeded",
+      "meaning": "Too many NVLink errors detected on one or more links",
+      "resolution": "Check NVLink cable connections and hardware. May indicate degraded link requiring replacement. Review nvidia-smi nvlink -e for error details."
+    },
+    {
+      "message": "Fabric Manager already running",
+      "meaning": "Another instance of Fabric Manager is already running",
+      "resolution": "Stop the existing instance with systemctl stop nvidia-fabricmanager before starting a new one. Check for stale PID file."
+    },
+    {
+      "message": "GPU-NVSwitch topology mismatch",
+      "meaning": "The detected GPU-NVSwitch topology does not match expected configuration",
+      "resolution": "Verify all GPUs and NVSwitches are properly detected. Check physical connections. May indicate partial hardware failure."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "nvidia-smi",
+      "dcgmi",
+      "nvidia-smi topo",
+      "nvidia-smi nvlink"
+    ],
+    "uses_library": [
+      "NVML (NVIDIA Management Library)",
+      "NVSwitch Management Library"
+    ],
+    "notes": "Fabric Manager must be running before GPUs can communicate via NVSwitch on DGX/HGX platforms. nvidia-smi will show limited NVLink information if Fabric Manager is not running. dcgmi health checks depend on Fabric Manager for NVSwitch health status. Fabric Manager should start after nvidia-persistenced and before GPU workloads."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for status queries via systemctl or log viewing.",
+    "write_operations": "Root privileges required to start/stop/restart Fabric Manager service, modify configuration, or access NVSwitch devices directly.",
+    "notes": "Fabric Manager runs as a system service with root privileges to access NVSwitch and GPU hardware. Device permissions on /dev/nvidia-nvswitch* are required."
+  },
+  "limitations": [
+    "Only applicable on systems with NVSwitch (DGX A100/H100, HGX platforms)",
+    "Not needed on systems without NVSwitch (direct NVLink peer-to-peer)",
+    "Must be running before NVLink fabric is usable",
+    "Restart required after GPU reset or certain error conditions",
+    "Configuration changes require service restart",
+    "Cannot dynamically reconfigure fabric topology while running",
+    "GPU partitioning features require compatible hardware and configuration"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "gpu_id",
+          "uuid",
+          "pci_bus_id",
+          "nvlink_link_count",
+          "nvlink_version"
+        ],
+        "description": "Reads GPU identification and NVLink capability information during fabric initialization"
+      },
+      {
+        "state_domain": "fabric_state",
+        "fields": [
+          "nvswitch_count",
+          "nvswitch_id",
+          "nvswitch_port_count",
+          "nvlink_status",
+          "nvlink_errors"
+        ],
+        "description": "Reads NVSwitch device status and NVLink port health for monitoring and error handling"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "fabric_state",
+        "fields": [
+          "nvlink_routing_table",
+          "fabric_initialized",
+          "nvswitch_status",
+          "nvlink_status"
+        ],
+        "description": "Configures NVLink routing tables and fabric state for GPU interconnect",
+        "requires_privilege": "root"
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["nvlink_active", "fabric_attached"],
+        "description": "Updates GPU fabric attachment status after successful initialization",
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "System boot or driver load",
+        "effect": "Fabric Manager starts and initializes NVSwitch fabric"
+      },
+      {
+        "state_change": "NVLink error detected",
+        "effect": "Error logged and may trigger link retraining or error recovery"
+      },
+      {
+        "state_change": "NVSwitch fatal error",
+        "effect": "Fabric Manager logs error and may require restart"
+      },
+      {
+        "state_change": "GPU reset occurs",
+        "effect": "Fabric Manager may need restart to reconfigure fabric"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU enumeration, NVLink status must reflect Fabric Manager configuration"
+      },
+      {
+        "command": "nvidia-smi topo -m",
+        "shared_state": "GPU topology shows NVSwitch connections only when Fabric Manager is running"
+      },
+      {
+        "command": "nvidia-smi nvlink -s",
+        "shared_state": "NVLink link status reflects Fabric Manager initialization state"
+      },
+      {
+        "command": "dcgmi health",
+        "shared_state": "DCGM health checks include NVSwitch/NVLink health from Fabric Manager"
+      }
+    ]
+  }
+}

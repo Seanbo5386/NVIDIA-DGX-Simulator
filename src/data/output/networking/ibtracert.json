@@ -1,0 +1,120 @@
+{
+  "command": "ibtracert",
+  "category": "networking",
+  "description": "InfiniBand traceroute utility. Traces path through IB fabric between nodes. Essential for diagnosing IB routing in HPC clusters.",
+  "synopsis": "ibtracert [options] <src_lid> <dest_lid>",
+  "version_documented": "infiniband-diags 2.1+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/ibtracert.8.html"],
+  "installation": {
+    "package": "infiniband-diags",
+    "notes": "Part of InfiniBand diagnostics package."
+  },
+  "global_options": [
+    {
+      "short": "-n",
+      "long": "--no_info",
+      "description": "Don't show node info"
+    },
+    {
+      "short": "-m",
+      "long": "--mlid",
+      "description": "Multicast LID",
+      "arguments": "<mlid>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-f",
+      "long": "--force",
+      "description": "Force route lookup"
+    },
+    {
+      "short": "-C",
+      "long": "--Ca",
+      "description": "CA name",
+      "arguments": "<ca>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-P",
+      "long": "--Port",
+      "description": "CA port",
+      "arguments": "<port>",
+      "argument_type": "integer"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Trace between LIDs",
+      "command": "ibtracert 5 15",
+      "requires_root": false
+    },
+    {
+      "description": "Trace with node info",
+      "command": "ibtracert 1 20",
+      "requires_root": false
+    },
+    {
+      "description": "From specific port",
+      "command": "ibtracert -C mlx5_0 -P 1 5 10",
+      "requires_root": false
+    },
+    {
+      "description": "Minimal output",
+      "command": "ibtracert -n 1 15",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "can't reach",
+      "meaning": "No path to destination",
+      "resolution": "Check SM and fabric connectivity"
+    },
+    {
+      "message": "bad lid",
+      "meaning": "Invalid LID",
+      "resolution": "Verify LID with ibstat/iblinkinfo"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["ibping", "iblinkinfo", "ibnetdiscover"],
+    "notes": "Shows switches in path. Use iblinkinfo to get LIDs. Path depends on SM routing algorithm."
+  },
+  "permissions": {
+    "read_operations": "Read IB fabric",
+    "write_operations": "N/A",
+    "notes": "May need IB group membership"
+  },
+  "limitations": [
+    "Requires valid LIDs",
+    "Path may change after SM reconfiguration",
+    "Only shows unicast paths"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["routes", "topology"],
+        "description": "Traces IB fabric path"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "iblinkinfo",
+        "shared_state": "Both show fabric topology"
+      }
+    ]
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "command": "sminfo",
+  "category": "networking",
+  "description": "Query InfiniBand Subnet Manager information. Shows SM state, priority, and GUID. Essential for verifying SM availability and redundancy in HPC InfiniBand fabrics.",
+  "synopsis": "sminfo [options]",
+  "version_documented": "OFED/rdma-core 30+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/sminfo.8.html"],
+  "installation": {
+    "package": "infiniband-diags",
+    "notes": "Install via: apt install infiniband-diags or yum install infiniband-diags"
+  },
+  "global_options": [
+    {
+      "short": "-C",
+      "long": "--Ca",
+      "description": "Use specified CA name",
+      "arguments": "<ca_name>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-P",
+      "long": "--Port",
+      "description": "Use specified CA port",
+      "arguments": "<port>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-s",
+      "long": "--state",
+      "description": "Set SM state (requires privilege)",
+      "arguments": "<state>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-p",
+      "long": "--priority",
+      "description": "Set SM priority (requires privilege)",
+      "arguments": "<priority>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Query current Subnet Manager info",
+      "command": "sminfo",
+      "output_example": "sminfo: sm lid 1 sm guid 0x0002c903001f8c30, activity count 123456 priority 14 state 3 SMINFO_MASTER",
+      "requires_root": false
+    },
+    {
+      "description": "Query using specific HCA",
+      "command": "sminfo -C mlx5_0",
+      "requires_root": false
+    },
+    {
+      "description": "Check SM across cluster nodes",
+      "command": "pdsh -w node[001-010] sminfo | dshbak -c",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "sminfo: iberror",
+      "meaning": "Cannot communicate with SM",
+      "resolution": "Verify SM is running and port is active"
+    },
+    {
+      "message": "No SM found",
+      "meaning": "No Subnet Manager detected in fabric",
+      "resolution": "Start opensm on a suitable node"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["opensm", "ibstat", "ibnetdiscover", "smpquery"],
+    "notes": "SM state values: 1=NOT_ACTIVE, 2=DISCOVERING, 3=STANDBY, 4=MASTER. Priority 0-15, higher wins mastership. Multiple SMs provide redundancy."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for queries",
+    "write_operations": "Root required to modify SM state/priority",
+    "notes": "State modifications affect entire fabric"
+  },
+  "limitations": [
+    "Only shows local SM view",
+    "Setting state/priority requires special permissions",
+    "Fabric must have active SM"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": ["sm_lid"],
+        "description": "Reads SM state information"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "SM failover",
+        "effect": "Different SM becomes master"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ibstat",
+        "shared_state": "sm_lid in ibstat matches sminfo SM LID"
+      },
+      {
+        "command": "opensm",
+        "shared_state": "SM state reflects opensm status"
+      }
+    ]
+  }
+}

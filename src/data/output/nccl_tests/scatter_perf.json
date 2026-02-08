@@ -1,0 +1,139 @@
+{
+  "command": "scatter_perf",
+  "category": "nccl_tests",
+  "description": "NCCL Scatter performance test. Measures one-to-all data distribution with different portions to each GPU. Tests scatter collective for distributed workload distribution.",
+  "synopsis": "scatter_perf [options]",
+  "version_documented": "nccl-tests 2.0+",
+  "source_urls": ["https://github.com/NVIDIA/nccl-tests"],
+  "installation": {
+    "package": "nccl-tests",
+    "notes": "Build from source with NCCL and MPI support"
+  },
+  "global_options": [
+    {
+      "short": "-b",
+      "long": "--minbytes",
+      "description": "Minimum message size",
+      "arguments": "<size>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-e",
+      "long": "--maxbytes",
+      "description": "Maximum message size",
+      "arguments": "<size>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-f",
+      "long": "--stepfactor",
+      "description": "Size multiplication factor",
+      "arguments": "<factor>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-g",
+      "long": "--ngpus",
+      "description": "GPUs per process",
+      "arguments": "<num>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-n",
+      "long": "--iters",
+      "description": "Iterations",
+      "arguments": "<num>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-r",
+      "long": "--root",
+      "description": "Root GPU",
+      "arguments": "<gpu>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-c",
+      "long": "--check",
+      "description": "Verify results",
+      "arguments": "<0|1>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Basic scatter test",
+      "command": "mpirun -np 8 ./scatter_perf -b 8 -e 128M -g 1",
+      "output_example": "#       size    count   type     time   algbw   busbw\n   134217728 33554432  float   1456.7   92.1   80.6",
+      "requires_root": false
+    },
+    {
+      "description": "Multi-node test",
+      "command": "mpirun -np 16 -H node1,node2 ./scatter_perf -e 512M",
+      "requires_root": false
+    },
+    {
+      "description": "With verification",
+      "command": "mpirun -np 8 ./scatter_perf -c 1 -r 0",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "NCCL error",
+      "meaning": "Collective operation failed",
+      "resolution": "Check NCCL setup and GPU connectivity"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["gather_perf", "broadcast_perf", "all_gather_perf"],
+    "notes": "Scatter distributes different portions of data from root to each GPU. Opposite of gather operation. Root holds n*size bytes, each GPU receives size bytes."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "N/A - benchmark",
+    "notes": "GPU access required"
+  },
+  "limitations": [
+    "Requires NCCL",
+    "Root GPU memory scales with participant count",
+    "Network can bottleneck"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": ["gpu_id", "memory_total"],
+        "description": "Uses GPU memory for scatter operation"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "NCCL communicator created",
+        "effect": "Can perform scatter collective"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "gather_perf",
+        "shared_state": "Reverse operation, complementary"
+      }
+    ]
+  }
+}

@@ -1,0 +1,148 @@
+{
+  "command": "iotop",
+  "category": "monitoring",
+  "description": "Monitor I/O usage by processes. Shows disk read/write rates per process in real-time. Essential for identifying I/O bottlenecks in HPC workloads.",
+  "synopsis": "iotop [options]",
+  "version_documented": "iotop 0.6+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/iotop.8.html"],
+  "installation": {
+    "package": "iotop",
+    "notes": "Install via: apt install iotop or yum install iotop"
+  },
+  "global_options": [
+    {
+      "short": "-o",
+      "long": "--only",
+      "description": "Show only processes doing I/O"
+    },
+    {
+      "short": "-b",
+      "long": "--batch",
+      "description": "Non-interactive batch mode"
+    },
+    {
+      "short": "-n",
+      "long": "--iter",
+      "description": "Number of iterations",
+      "arguments": "<N>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-d",
+      "long": "--delay",
+      "description": "Delay between iterations",
+      "arguments": "<seconds>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-p",
+      "long": "--pid",
+      "description": "Monitor specific PIDs",
+      "arguments": "<pid>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-u",
+      "long": "--user",
+      "description": "Monitor specific user",
+      "arguments": "<user>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-P",
+      "long": "--processes",
+      "description": "Show processes instead of threads"
+    },
+    {
+      "short": "-a",
+      "long": "--accumulated",
+      "description": "Show accumulated I/O"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Interactive mode",
+      "command": "iotop",
+      "output_example": "Total DISK READ:       250.00 M/s | Total DISK WRITE:       150.00 M/s\n  TID  PRIO  USER     DISK READ  DISK WRITE  SWAPIN     IO>    COMMAND\n12345 be/4  user       200.00 M/s   100.00 M/s  0.00 %  45.00 % python train.py",
+      "requires_root": true
+    },
+    {
+      "description": "Only active processes",
+      "command": "iotop -o",
+      "requires_root": true
+    },
+    {
+      "description": "Batch mode for logging",
+      "command": "iotop -b -n 10 -d 2",
+      "requires_root": true
+    },
+    {
+      "description": "Monitor specific user",
+      "command": "iotop -u username -o",
+      "requires_root": true
+    },
+    {
+      "description": "Show processes not threads",
+      "command": "iotop -oP",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Netlink error: Operation not permitted",
+      "meaning": "Need root privileges",
+      "resolution": "Run with sudo"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["iostat", "top", "htop", "pidstat"],
+    "notes": "Requires CONFIG_TASKSTATS kernel option. Shows actual disk I/O, not cache. Interactive keys: o=only I/O, p=processes, a=accumulated, q=quit."
+  },
+  "permissions": {
+    "read_operations": "Root required",
+    "write_operations": "N/A - monitoring only",
+    "notes": "Uses kernel taskstats interface"
+  },
+  "limitations": [
+    "Requires root or CAP_NET_ADMIN",
+    "Shows threads by default",
+    "Not all I/O is trackable"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["device"],
+        "description": "Monitors I/O to storage devices"
+      },
+      {
+        "state_domain": "gpu_process_state",
+        "fields": ["pid"],
+        "description": "Shows I/O for GPU training processes"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "I/O activity",
+        "effect": "Updates process I/O rates"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "iostat",
+        "shared_state": "Total I/O rates correlate"
+      }
+    ]
+  }
+}

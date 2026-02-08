@@ -1,0 +1,193 @@
+{
+  "command": "nodeset",
+  "category": "parallel_shell",
+  "description": "Compute operations on node sets in HPC clusters. Part of ClusterShell, provides powerful tools for manipulating sets of hostnames using range expressions. Essential for HPC system administration tasks.",
+  "synopsis": "nodeset [OPTIONS] [COMMAND] [nodeset1] [nodeset2] ...",
+  "version_documented": "ClusterShell 1.8+",
+  "source_urls": [
+    "https://clustershell.readthedocs.io/en/latest/tools/nodeset.html"
+  ],
+  "installation": {
+    "package": "clustershell",
+    "notes": "Install via: pip install clustershell or apt install clustershell or yum install clustershell"
+  },
+  "global_options": [
+    {
+      "short": "-c",
+      "long": "--count",
+      "description": "Output count of nodes in nodeset"
+    },
+    {
+      "short": "-e",
+      "long": "--expand",
+      "description": "Expand nodeset to individual hostnames"
+    },
+    {
+      "short": "-f",
+      "long": "--fold",
+      "description": "Fold (compress) nodeset"
+    },
+    {
+      "short": "-r",
+      "long": "--regroup",
+      "description": "Regroup using configured groups"
+    },
+    {
+      "short": "-l",
+      "long": "--list",
+      "description": "List all group names"
+    },
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Use all nodes from group source"
+    },
+    {
+      "short": "-g",
+      "long": "--group",
+      "description": "Use nodes from specified group",
+      "arguments": "<group>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-x",
+      "long": "--exclude",
+      "description": "Exclude nodes",
+      "arguments": "<nodeset>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-i",
+      "long": "--intersection",
+      "description": "Compute intersection of nodesets"
+    },
+    {
+      "short": "-X",
+      "long": "--xor",
+      "description": "Compute XOR of nodesets"
+    },
+    {
+      "short": "-s",
+      "long": "--separator",
+      "description": "Output separator",
+      "arguments": "<sep>",
+      "argument_type": "string",
+      "default": "\\n"
+    },
+    {
+      "short": "-S",
+      "long": "--autostep",
+      "description": "Enable auto step in folding"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Expand node range to individual names",
+      "command": "nodeset -e node[001-004]",
+      "output_example": "node001\nnode002\nnode003\nnode004",
+      "requires_root": false
+    },
+    {
+      "description": "Fold list into compact range",
+      "command": "nodeset -f node001 node002 node003 node004",
+      "output_example": "node[001-004]",
+      "requires_root": false
+    },
+    {
+      "description": "Count nodes in range",
+      "command": "nodeset -c node[001-100]",
+      "output_example": "100",
+      "requires_root": false
+    },
+    {
+      "description": "Exclude nodes from set",
+      "command": "nodeset -f node[001-010] -x node[005-007]",
+      "output_example": "node[001-004,008-010]",
+      "requires_root": false
+    },
+    {
+      "description": "Compute intersection of node sets",
+      "command": "nodeset -i node[001-050] node[025-075]",
+      "output_example": "node[025-050]",
+      "requires_root": false
+    },
+    {
+      "description": "Use with Slurm node list",
+      "command": "nodeset -e \"$(scontrol show job 12345 | grep NodeList | cut -d= -f2)\"",
+      "requires_root": false
+    },
+    {
+      "description": "Expand with space separator (for pdsh)",
+      "command": "nodeset -e -S' ' node[001-010]",
+      "output_example": "node001 node002 node003 node004 node005 node006 node007 node008 node009 node010",
+      "requires_root": false
+    },
+    {
+      "description": "List all configured groups",
+      "command": "nodeset -l",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Parse error in expression",
+      "meaning": "Invalid node range syntax",
+      "resolution": "Check bracket syntax, use node[001-010] format"
+    },
+    {
+      "message": "No source found for group",
+      "meaning": "Group source not configured",
+      "resolution": "Configure /etc/clustershell/groups.conf or use explicit nodesets"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "clush",
+      "pdsh",
+      "sinfo -N",
+      "scontrol show hostnames"
+    ],
+    "notes": "nodeset is the node set manipulation tool for ClusterShell. Integrates with Slurm via group bindings. Zero-padded ranges like [001-100] are preserved."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "N/A - computational tool",
+    "notes": "Group lookups may require read access to configuration files"
+  },
+  "limitations": [
+    "Group sources must be configured for -g and -a options",
+    "Complex expressions may be hard to parse visually",
+    "Performance scales with number of nodes"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "node_state",
+        "fields": ["hostname"],
+        "description": "When using group bindings, reads node lists from Slurm or other sources"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "clush -w",
+        "shared_state": "Node range syntax is identical"
+      },
+      {
+        "command": "scontrol show hostnames",
+        "shared_state": "Expanded node lists should match"
+      }
+    ]
+  }
+}

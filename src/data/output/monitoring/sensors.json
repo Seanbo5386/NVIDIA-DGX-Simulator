@@ -1,0 +1,160 @@
+{
+  "command": "sensors",
+  "category": "monitoring",
+  "description": "Display hardware sensor readings including temperatures, fan speeds, and voltages. Reads data from lm-sensors kernel drivers. Useful for monitoring CPU and motherboard temperatures in HPC nodes.",
+  "synopsis": "sensors [options] [chip]",
+  "version_documented": "lm-sensors 3.6+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/sensors.1.html"],
+  "installation": {
+    "package": "lm-sensors",
+    "notes": "Install via: apt install lm-sensors or yum install lm_sensors. Run sensors-detect to configure kernel modules."
+  },
+  "global_options": [
+    {
+      "short": "-f",
+      "long": "--fahrenheit",
+      "description": "Display temperatures in Fahrenheit"
+    },
+    {
+      "short": "-A",
+      "long": "--no-adapter",
+      "description": "Do not show adapter names"
+    },
+    {
+      "short": "-u",
+      "description": "Show raw (unformatted) output"
+    },
+    {
+      "short": "-j",
+      "long": "--json",
+      "description": "Output in JSON format"
+    },
+    {
+      "short": "-c",
+      "long": "--config-file",
+      "description": "Use specified config file",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-s",
+      "long": "--set",
+      "description": "Set chip parameters from config file"
+    },
+    {
+      "short": "-v",
+      "long": "--version",
+      "description": "Display version"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error (no sensors found, etc.)"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display all sensor readings",
+      "command": "sensors",
+      "output_example": "coretemp-isa-0000\nAdapter: ISA adapter\nPackage id 0:  +45.0°C  (high = +100.0°C, crit = +110.0°C)\nCore 0:        +42.0°C  (high = +100.0°C, crit = +110.0°C)\nCore 1:        +43.0°C  (high = +100.0°C, crit = +110.0°C)\nCore 2:        +44.0°C  (high = +100.0°C, crit = +110.0°C)\nCore 3:        +41.0°C  (high = +100.0°C, crit = +110.0°C)\n\nnct6798-isa-0290\nAdapter: ISA adapter\nVcore:               1.10 V  (min =  +0.00 V, max =  +1.74 V)\nfan1:               1250 RPM  (min =    0 RPM)\nfan2:               1100 RPM  (min =    0 RPM)\nPECI Agent 0:      +46.0°C  (high = +100.0°C, hyst = +99.0°C)",
+      "requires_root": false
+    },
+    {
+      "description": "Display in JSON format",
+      "command": "sensors -j",
+      "requires_root": false
+    },
+    {
+      "description": "Show specific chip",
+      "command": "sensors coretemp-isa-0000",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor temperatures in a loop",
+      "command": "watch -n 1 sensors",
+      "requires_root": false
+    },
+    {
+      "description": "Check temperatures across cluster",
+      "command": "pdsh -w node[001-010] sensors | grep 'Package id' | sort",
+      "requires_root": false
+    },
+    {
+      "description": "Show raw values for scripting",
+      "command": "sensors -u",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No sensors found!",
+      "meaning": "lm-sensors not configured or no supported hardware",
+      "resolution": "Run 'sensors-detect' to configure, then load suggested modules"
+    },
+    {
+      "message": "Can't read /sys/class/hwmon",
+      "meaning": "hwmon subsystem not available",
+      "resolution": "Kernel may need CONFIG_HWMON enabled"
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "sensors-detect",
+      "ipmitool sdr",
+      "nvidia-smi --query-gpu=temperature.gpu",
+      "turbostat"
+    ],
+    "notes": "sensors reads from kernel hwmon interface. For GPU temperatures, use nvidia-smi. For BMC/IPMI sensors, use ipmitool. sensors-detect must be run once to configure kernel modules."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for basic reading",
+    "write_operations": "Root required for sensors-detect and module loading",
+    "notes": "Some sensors may require specific kernel modules to be loaded"
+  },
+  "limitations": [
+    "Does not read GPU temperatures (use nvidia-smi)",
+    "Requires lm-sensors kernel modules",
+    "Not all motherboards have supported sensors",
+    "Fan speed readings may not be available on all systems"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["cpu_model"],
+        "description": "Reads CPU and motherboard sensor values"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Temperature increase",
+        "effect": "Sensor values update in real-time"
+      },
+      {
+        "state_change": "Fan speed change",
+        "effect": "Fan RPM readings change"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ipmitool sdr",
+        "shared_state": "Some sensors may overlap with IPMI readings"
+      },
+      {
+        "command": "turbostat",
+        "shared_state": "CPU package temperature should be similar"
+      }
+    ]
+  }
+}

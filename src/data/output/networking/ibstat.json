@@ -1,0 +1,236 @@
+{
+  "command": "ibstat",
+  "category": "networking",
+  "description": "Query basic InfiniBand device attributes and port status. ibstat displays essential information about InfiniBand Host Channel Adapters (HCAs) including device type, firmware version, port state, physical link state, link speed, and subnet manager information. It is a fundamental diagnostic tool for InfiniBand network administration and troubleshooting.",
+  "synopsis": "ibstat [options] [device] [port]",
+  "version_documented": "rdma-core 44.0+",
+  "source_urls": ["https://github.com/linux-rdma/rdma-core"],
+  "installation": {
+    "package": "rdma-core or infiniband-diags",
+    "notes": "On RHEL/CentOS: yum install rdma-core infiniband-diags. On Ubuntu/Debian: apt install rdma-core infiniband-diags. Part of the standard RDMA userspace utilities."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "long": "--debug",
+      "description": "Enable debug output. Shows additional diagnostic information useful for troubleshooting ibstat itself."
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display usage information and available options."
+    },
+    {
+      "short": "-l",
+      "long": "--list_of_cas",
+      "description": "List all available Channel Adapters (HCAs) by name without detailed port information."
+    },
+    {
+      "short": "-p",
+      "description": "Show port information in a condensed format. When used with a device name, shows only the port GUIDs."
+    },
+    {
+      "short": "-s",
+      "description": "Short output format. Shows only the port state (stat) without detailed attributes. Useful for quick status checks in scripts."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display the ibstat version information."
+    }
+  ],
+  "output_formats": {
+    "default": "Human-readable multi-line format showing CA (Channel Adapter) information followed by port details. Each CA section includes type, ports count, firmware version, hardware version, node GUID, and system image GUID. Each port section includes state, physical state, rate, base LID, SM LID, capability mask, and link layer.",
+    "short": "Condensed format showing only port state information. Enabled with -s flag.",
+    "list": "Simple list of HCA device names. Enabled with -l flag."
+  },
+  "environment_variables": [
+    {
+      "name": "IBSTAT_DEBUG",
+      "description": "Enable debug output when set to any value.",
+      "example": "IBSTAT_DEBUG=1 ibstat",
+      "affects_command": "Produces additional diagnostic output for troubleshooting."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - query completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - failed to query device or invalid arguments"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "List all available InfiniBand HCAs (Channel Adapters) in the system",
+      "command": "ibstat -l",
+      "output_example": "mlx5_0\nmlx5_1",
+      "requires_root": false
+    },
+    {
+      "description": "Show all InfiniBand device and port information",
+      "command": "ibstat",
+      "output_example": "CA 'mlx5_0'\n\tCA type: MT4123\n\tNumber of ports: 1\n\tFirmware version: 20.35.1012\n\tHardware version: 0\n\tNode GUID: 0x506b4b0300ab1234\n\tSystem image GUID: 0x506b4b0300ab1234\n\tPort 1:\n\t\tState: Active\n\t\tPhysical state: LinkUp\n\t\tRate: 200\n\t\tBase lid: 123\n\t\tLMC: 0\n\t\tSM lid: 1\n\t\tCapability mask: 0x2651e84a\n\t\tPort GUID: 0x506b4b0300ab1234\n\t\tLink layer: InfiniBand",
+      "requires_root": false
+    },
+    {
+      "description": "Query a specific HCA device",
+      "command": "ibstat mlx5_0",
+      "output_example": "CA 'mlx5_0'\n\tCA type: MT4123\n\tNumber of ports: 1\n\tFirmware version: 20.35.1012\n\tHardware version: 0\n\tNode GUID: 0x506b4b0300ab1234\n\tSystem image GUID: 0x506b4b0300ab1234\n\tPort 1:\n\t\tState: Active\n\t\tPhysical state: LinkUp\n\t\tRate: 200\n\t\tBase lid: 123\n\t\tLMC: 0\n\t\tSM lid: 1\n\t\tCapability mask: 0x2651e84a\n\t\tPort GUID: 0x506b4b0300ab1234\n\t\tLink layer: InfiniBand",
+      "requires_root": false
+    },
+    {
+      "description": "Query a specific port on a specific HCA",
+      "command": "ibstat mlx5_0 1",
+      "output_example": "CA 'mlx5_0'\n\tCA type: MT4123\n\tNumber of ports: 1\n\tFirmware version: 20.35.1012\n\tHardware version: 0\n\tNode GUID: 0x506b4b0300ab1234\n\tSystem image GUID: 0x506b4b0300ab1234\n\tPort 1:\n\t\tState: Active\n\t\tPhysical state: LinkUp\n\t\tRate: 200\n\t\tBase lid: 123\n\t\tLMC: 0\n\t\tSM lid: 1\n\t\tCapability mask: 0x2651e84a\n\t\tPort GUID: 0x506b4b0300ab1234\n\t\tLink layer: InfiniBand",
+      "requires_root": false
+    },
+    {
+      "description": "Quick status check showing only port states",
+      "command": "ibstat -s",
+      "output_example": "CA: mlx5_0\n\tPort 1: State: Active Physical state: LinkUp",
+      "requires_root": false
+    },
+    {
+      "description": "Show port GUIDs for a specific device",
+      "command": "ibstat -p mlx5_0",
+      "output_example": "0x506b4b0300ab1234",
+      "requires_root": false
+    },
+    {
+      "description": "Check if any HCA port is down (scripting pattern)",
+      "command": "ibstat | grep -E 'State:|Physical state:'",
+      "output_example": "\t\tState: Active\n\t\tPhysical state: LinkUp",
+      "requires_root": false
+    },
+    {
+      "description": "Get the link rate of all ports",
+      "command": "ibstat | grep Rate",
+      "output_example": "\t\tRate: 200",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "ibstat: no devices found",
+      "meaning": "No InfiniBand HCAs were detected in the system",
+      "resolution": "Verify InfiniBand hardware is installed with 'lspci | grep -i mellanox' or 'lspci | grep -i infiniband'. Check if RDMA kernel modules are loaded with 'lsmod | grep mlx' or 'lsmod | grep ib'. Load modules with 'modprobe mlx5_core mlx5_ib' if needed."
+    },
+    {
+      "message": "ibstat: device 'xxx' not found",
+      "meaning": "The specified HCA device name does not exist",
+      "resolution": "Use 'ibstat -l' to list available devices. Device names are typically mlx5_0, mlx5_1, etc. for Mellanox/NVIDIA ConnectX adapters."
+    },
+    {
+      "message": "ibstat: invalid port number",
+      "meaning": "The specified port number does not exist on the device",
+      "resolution": "Check the number of ports on the device with 'ibstat <device>'. Port numbers typically start from 1."
+    },
+    {
+      "message": "CA 'mlx5_0' ... Port 1: State: Down Physical state: Polling",
+      "meaning": "The port is attempting to establish a link but no active connection exists",
+      "resolution": "Check physical cable connections. Verify the remote port is up. Check for cable damage. Ensure the subnet manager is running on the fabric."
+    },
+    {
+      "message": "CA 'mlx5_0' ... Port 1: State: Down Physical state: Disabled",
+      "meaning": "The port has been administratively disabled",
+      "resolution": "The port may be disabled intentionally. To re-enable, use appropriate fabric management tools or OpenSM configuration."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "ibstatus",
+      "iblinkinfo",
+      "mlxlink",
+      "ibhosts",
+      "ibswitches",
+      "ibportstate",
+      "perfquery",
+      "smpquery",
+      "ibnetdiscover",
+      "ibdiagnet",
+      "opensm"
+    ],
+    "uses_library": ["libibverbs", "libibmad", "libibumad"],
+    "notes": "ibstat queries local HCA attributes through the kernel's InfiniBand interface. For fabric-wide topology information, use iblinkinfo or ibnetdiscover. For detailed link diagnostics on NVIDIA/Mellanox adapters, use mlxlink. ibstat is often used in conjunction with opensm (Open Subnet Manager) for fabric management."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required for basic queries. Any user can query HCA and port status.",
+    "write_operations": "ibstat is read-only and does not modify any settings.",
+    "notes": "Some related commands (like ibportstate for modifying port state) require root privileges. ibstat itself is purely diagnostic."
+  },
+  "limitations": [
+    "Only shows local HCA information, not fabric-wide topology",
+    "Does not show detailed error counters (use perfquery for that)",
+    "Does not show cable information or signal quality (use mlxlink for that)",
+    "Rate is shown as a single number (e.g., 200) representing Gb/s, not detailed width x speed",
+    "Does not provide historical or trending data",
+    "Cannot modify port or HCA settings (read-only tool)"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": [
+          "device",
+          "port",
+          "state",
+          "physical_state",
+          "link_speed",
+          "link_width",
+          "lid",
+          "sm_lid",
+          "guid",
+          "capability_mask",
+          "link_layer",
+          "firmware_version",
+          "hardware_version"
+        ],
+        "description": "ibstat reads InfiniBand HCA device and port state from the kernel's RDMA subsystem"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "IB port state changes (Active, Down, Init, Armed)",
+        "effect": "Port State field reflects the new logical state"
+      },
+      {
+        "state_change": "Physical link state changes (LinkUp, Polling, Disabled)",
+        "effect": "Physical state field reflects the new physical link condition"
+      },
+      {
+        "state_change": "Link speed or width negotiation completes",
+        "effect": "Rate field shows the newly negotiated link rate"
+      },
+      {
+        "state_change": "Subnet Manager assigns new LIDs",
+        "effect": "Base lid and SM lid fields are updated"
+      },
+      {
+        "state_change": "Firmware is updated on the HCA",
+        "effect": "Firmware version field shows the new version after adapter reset"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ibstatus",
+        "shared_state": "Port state, physical state, rate, LID information (ibstatus shows similar but slightly different format)"
+      },
+      {
+        "command": "iblinkinfo",
+        "shared_state": "Port state and link connectivity (iblinkinfo shows fabric-wide view)"
+      },
+      {
+        "command": "mlxlink",
+        "shared_state": "Link state, speed, and width (mlxlink provides more detailed diagnostics)"
+      },
+      {
+        "command": "smpquery portinfo",
+        "shared_state": "Detailed port attributes through Subnet Management Protocol"
+      }
+    ]
+  }
+}

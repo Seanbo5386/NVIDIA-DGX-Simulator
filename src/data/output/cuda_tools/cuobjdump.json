@@ -1,0 +1,141 @@
+{
+  "command": "cuobjdump",
+  "category": "cuda_tools",
+  "description": "CUDA object file analyzer. Extracts and displays information from CUDA binary files. Used for debugging and analyzing compiled CUDA code.",
+  "synopsis": "cuobjdump [options] <file>...",
+  "version_documented": "CUDA 12.0+",
+  "source_urls": ["https://docs.nvidia.com/cuda/cuda-binary-utilities/"],
+  "installation": {
+    "package": "cuda-toolkit",
+    "notes": "Part of CUDA toolkit."
+  },
+  "global_options": [
+    {
+      "short": "-all",
+      "description": "Dump all sections"
+    },
+    {
+      "short": "-elf",
+      "description": "Dump ELF structure"
+    },
+    {
+      "short": "-ptx",
+      "description": "Extract PTX code"
+    },
+    {
+      "short": "-sass",
+      "description": "Dump SASS code"
+    },
+    {
+      "short": "-res-usage",
+      "description": "Show resource usage"
+    },
+    {
+      "short": "-symbols",
+      "description": "List symbols"
+    },
+    {
+      "short": "-lelf",
+      "description": "List ELF files"
+    },
+    {
+      "short": "-xptx",
+      "description": "Extract PTX to files",
+      "arguments": "<dir>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-xelf",
+      "description": "Extract ELF to files",
+      "arguments": "<dir>",
+      "argument_type": "path"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show resource usage",
+      "command": "cuobjdump -res-usage my_kernel.cubin",
+      "requires_root": false
+    },
+    {
+      "description": "Extract PTX",
+      "command": "cuobjdump -ptx my_executable",
+      "requires_root": false
+    },
+    {
+      "description": "Dump SASS assembly",
+      "command": "cuobjdump -sass my_kernel.cubin",
+      "requires_root": false
+    },
+    {
+      "description": "List symbols",
+      "command": "cuobjdump -symbols my_executable",
+      "requires_root": false
+    },
+    {
+      "description": "Extract PTX to files",
+      "command": "cuobjdump -xptx ./ptx_output my_executable",
+      "requires_root": false
+    },
+    {
+      "description": "All info",
+      "command": "cuobjdump -all my_kernel.cubin",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "no cubin/PTX found",
+      "meaning": "No CUDA code in file",
+      "resolution": "Check if file contains CUDA code"
+    },
+    {
+      "message": "cannot open file",
+      "meaning": "File not found or accessible",
+      "resolution": "Check file path and permissions"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["nvdisasm", "ptxas", "nvcc"],
+    "notes": "-res-usage shows registers, shared memory. Useful for occupancy analysis. nvdisasm gives more detailed SASS."
+  },
+  "permissions": {
+    "read_operations": "Read CUDA binary files",
+    "write_operations": "Write extracted files",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Only CUDA binaries",
+    "May not work with stripped binaries",
+    "Large output for complex kernels"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads CUDA binary files"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Extracts PTX/ELF files",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

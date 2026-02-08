@@ -1,0 +1,225 @@
+{
+  "command": "nvidia-cuda-mps-control",
+  "category": "gpu_management",
+  "description": "NVIDIA CUDA Multi-Process Service (MPS) control daemon interface. MPS allows multiple CUDA applications to share a single GPU context, reducing context switching overhead and enabling better GPU utilization when running many small CUDA jobs. This is particularly useful in HPC environments for running multiple MPI ranks on a single GPU or sharing GPUs among multiple users.",
+  "synopsis": "nvidia-cuda-mps-control [options]",
+  "version_documented": "CUDA 12.0+",
+  "source_urls": ["https://docs.nvidia.com/deploy/mps/index.html"],
+  "installation": {
+    "package": "cuda-toolkit",
+    "notes": "Installed as part of the CUDA Toolkit. Requires NVIDIA driver with MPS support. Works with Volta and newer architectures for full MPS features."
+  },
+  "global_options": [
+    {
+      "short": "-d",
+      "description": "Start the control daemon in background mode"
+    },
+    {
+      "short": "-f",
+      "description": "Start the control daemon in foreground mode (for debugging)"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "start_server",
+      "description": "Start an MPS server for the specified GPU",
+      "synopsis": "start_server -uid <uid>"
+    },
+    {
+      "name": "quit",
+      "description": "Shutdown the MPS control daemon and all MPS servers"
+    },
+    {
+      "name": "get_server_list",
+      "description": "List all active MPS servers and their associated GPUs"
+    },
+    {
+      "name": "ps",
+      "description": "Show all MPS client processes and their GPU assignments"
+    },
+    {
+      "name": "get_default_active_thread_percentage",
+      "description": "Query the default compute resource limit for new clients"
+    },
+    {
+      "name": "set_default_active_thread_percentage",
+      "description": "Set the default compute resource percentage for new clients",
+      "synopsis": "set_default_active_thread_percentage <percentage>"
+    },
+    {
+      "name": "get_default_device_pinned_mem_limit",
+      "description": "Query the default pinned memory limit for new clients"
+    },
+    {
+      "name": "set_default_device_pinned_mem_limit",
+      "description": "Set the default pinned memory limit for new clients",
+      "synopsis": "set_default_device_pinned_mem_limit <dev> <value>"
+    }
+  ],
+  "environment_variables": [
+    {
+      "name": "CUDA_VISIBLE_DEVICES",
+      "description": "Control which GPUs are visible to MPS daemon and clients",
+      "example": "CUDA_VISIBLE_DEVICES=0,1"
+    },
+    {
+      "name": "CUDA_MPS_PIPE_DIRECTORY",
+      "description": "Directory for MPS control and server pipes",
+      "example": "/tmp/nvidia-mps"
+    },
+    {
+      "name": "CUDA_MPS_LOG_DIRECTORY",
+      "description": "Directory for MPS log files",
+      "example": "/var/log/nvidia-mps"
+    },
+    {
+      "name": "CUDA_MPS_ACTIVE_THREAD_PERCENTAGE",
+      "description": "Limit compute resources available to MPS client",
+      "example": "50"
+    },
+    {
+      "name": "CUDA_MPS_PINNED_DEVICE_MEM_LIMIT",
+      "description": "Limit pinned memory per device for MPS client",
+      "example": "0=4G"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - daemon startup failed or command error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Start MPS control daemon",
+      "command": "nvidia-cuda-mps-control -d",
+      "requires_root": false
+    },
+    {
+      "description": "Start MPS daemon with specific GPU",
+      "command": "export CUDA_VISIBLE_DEVICES=0 && nvidia-cuda-mps-control -d",
+      "requires_root": false
+    },
+    {
+      "description": "Check active MPS servers",
+      "command": "echo get_server_list | nvidia-cuda-mps-control",
+      "requires_root": false
+    },
+    {
+      "description": "List MPS client processes",
+      "command": "echo ps | nvidia-cuda-mps-control",
+      "requires_root": false
+    },
+    {
+      "description": "Shutdown MPS daemon",
+      "command": "echo quit | nvidia-cuda-mps-control",
+      "requires_root": false
+    },
+    {
+      "description": "Set default compute percentage to 50%",
+      "command": "echo set_default_active_thread_percentage 50 | nvidia-cuda-mps-control",
+      "requires_root": false
+    },
+    {
+      "description": "Start MPS daemon in foreground for debugging",
+      "command": "nvidia-cuda-mps-control -f",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "An instance of this daemon is already running",
+      "meaning": "MPS control daemon is already active",
+      "resolution": "Use 'echo quit | nvidia-cuda-mps-control' to stop existing daemon first"
+    },
+    {
+      "message": "Failed to start MPS server",
+      "meaning": "Cannot create MPS server for the GPU",
+      "resolution": "Check GPU compute mode (must be EXCLUSIVE_PROCESS or DEFAULT), verify CUDA_VISIBLE_DEVICES"
+    },
+    {
+      "message": "MPS requires Volta or newer GPU architecture",
+      "meaning": "GPU does not support full MPS features",
+      "resolution": "Use Volta (V100), Turing, Ampere, Hopper or newer GPUs for full MPS support"
+    },
+    {
+      "message": "Cannot create pipe directory",
+      "meaning": "Permission error creating MPS pipe directory",
+      "resolution": "Check permissions on CUDA_MPS_PIPE_DIRECTORY or use a user-writable location"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["nvidia-cuda-mps-server", "nvidia-smi", "cuda-gdb"],
+    "uses_library": ["NVML", "CUDA Driver API"],
+    "notes": "MPS allows multiple CUDA contexts to share a GPU, reducing context switch overhead. All MPS clients share memory protection domain - use only with trusted applications. Incompatible with CUDA debugging. For Volta+ GPUs, each client gets isolated address space."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for querying MPS status",
+    "write_operations": "User must own the MPS daemon process to send control commands",
+    "notes": "MPS daemon runs as the user who started it. Clients must run as the same user or use appropriate permissions."
+  },
+  "limitations": [
+    "All MPS clients share the same CUDA context on pre-Volta GPUs",
+    "Cannot use CUDA debugger with MPS-enabled applications",
+    "Compute sanitizer tools have limited support with MPS",
+    "MPS server is tied to a single user - multi-user GPU sharing requires separate MPS daemons",
+    "Maximum of 48 MPS clients per GPU on Volta+ architectures",
+    "Memory errors in one client may affect other clients on pre-Volta GPUs"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "gpu_id",
+          "compute_mode",
+          "mps_compute_running_processes",
+          "architecture"
+        ],
+        "description": "Reads GPU state to determine MPS compatibility and current status"
+      },
+      {
+        "state_domain": "gpu_process_state",
+        "fields": ["pid", "process_name", "used_memory"],
+        "description": "Reads process information for MPS client tracking"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "gpu_state",
+        "fields": ["mps_server_active", "mps_active_thread_percentage"],
+        "description": "Modifies GPU MPS state when starting/stopping servers",
+        "requires_privilege": "User must own MPS daemon"
+      },
+      {
+        "state_domain": "gpu_process_state",
+        "fields": ["mps_client_id", "mps_resource_limit"],
+        "description": "Tracks MPS client registrations and resource limits"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "CUDA application start with MPS",
+        "effect": "New MPS client registered, resources allocated"
+      },
+      {
+        "state_change": "CUDA application exit",
+        "effect": "MPS client unregistered, resources released"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU process list shows MPS server when active"
+      },
+      {
+        "command": "nvidia-cuda-mps-server",
+        "shared_state": "MPS server process managed by control daemon"
+      }
+    ]
+  }
+}

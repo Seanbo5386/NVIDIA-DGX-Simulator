@@ -1,0 +1,176 @@
+{
+  "command": "grep",
+  "category": "general",
+  "description": "Search for patterns in files. Matches regular expressions in text. Essential for log analysis and searching HPC job outputs.",
+  "synopsis": "grep [options] <pattern> [file]...",
+  "version_documented": "GNU grep 3.7+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/grep.1.html"],
+  "installation": {
+    "package": "grep",
+    "notes": "GNU grep installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-i",
+      "long": "--ignore-case",
+      "description": "Case insensitive matching"
+    },
+    {
+      "short": "-v",
+      "long": "--invert-match",
+      "description": "Select non-matching lines"
+    },
+    {
+      "short": "-r",
+      "long": "--recursive",
+      "description": "Search directories recursively"
+    },
+    {
+      "short": "-l",
+      "long": "--files-with-matches",
+      "description": "Print only filenames"
+    },
+    {
+      "short": "-n",
+      "long": "--line-number",
+      "description": "Print line numbers"
+    },
+    {
+      "short": "-c",
+      "long": "--count",
+      "description": "Print only count of matches"
+    },
+    {
+      "short": "-E",
+      "long": "--extended-regexp",
+      "description": "Use extended regex"
+    },
+    {
+      "short": "-o",
+      "long": "--only-matching",
+      "description": "Print only matched parts"
+    },
+    {
+      "short": "-A",
+      "long": "--after-context",
+      "description": "Print lines after match",
+      "arguments": "<num>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-B",
+      "long": "--before-context",
+      "description": "Print lines before match",
+      "arguments": "<num>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-C",
+      "long": "--context",
+      "description": "Print context lines",
+      "arguments": "<num>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--include",
+      "description": "Search only matching files",
+      "arguments": "<glob>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--exclude",
+      "description": "Skip matching files",
+      "arguments": "<glob>",
+      "argument_type": "string"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Match found"
+    },
+    {
+      "code": 1,
+      "meaning": "No match found"
+    },
+    {
+      "code": 2,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Search in file",
+      "command": "grep 'error' job.log",
+      "requires_root": false
+    },
+    {
+      "description": "Case insensitive search",
+      "command": "grep -i 'warning' *.log",
+      "requires_root": false
+    },
+    {
+      "description": "Recursive search",
+      "command": "grep -r 'CUDA_ERROR' /var/log/",
+      "requires_root": false
+    },
+    {
+      "description": "With line numbers and context",
+      "command": "grep -n -C 3 'OOM' training.log",
+      "requires_root": false
+    },
+    {
+      "description": "Count matches",
+      "command": "grep -c 'epoch' output.log",
+      "requires_root": false
+    },
+    {
+      "description": "Filter job errors",
+      "command": "grep -E '(ERROR|FATAL|Exception)' slurm-*.out",
+      "requires_root": false
+    },
+    {
+      "description": "Invert match (exclude)",
+      "command": "grep -v 'DEBUG' application.log",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No such file or directory",
+      "meaning": "File not found",
+      "resolution": "Check path and filename"
+    },
+    {
+      "message": "Invalid regular expression",
+      "meaning": "Regex syntax error",
+      "resolution": "Fix pattern or escape special chars"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["egrep", "fgrep", "awk", "sed"],
+    "notes": "egrep = grep -E, fgrep = grep -F. Use ripgrep (rg) for faster searches. -P enables Perl regex."
+  },
+  "permissions": {
+    "read_operations": "Read access to files",
+    "write_operations": "N/A",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Basic regex by default",
+    "Slow on very large files",
+    "Binary file detection can be wrong"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Searches file contents"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

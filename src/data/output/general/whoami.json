@@ -1,0 +1,83 @@
+{
+  "command": "whoami",
+  "category": "general",
+  "description": "Print effective user name. Shows current user identity. Simple utility for scripts to check running user.",
+  "synopsis": "whoami",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/whoami.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show current user",
+      "command": "whoami",
+      "requires_root": false
+    },
+    {
+      "description": "Use in script",
+      "command": "USER=$(whoami)",
+      "requires_root": false
+    },
+    {
+      "description": "Check if root",
+      "command": "[ $(whoami) = root ] && echo 'Running as root'",
+      "requires_root": false
+    },
+    {
+      "description": "Create user directory",
+      "command": "mkdir -p /scratch/$(whoami)/job_output",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "cannot find name for user ID",
+      "meaning": "User ID has no name",
+      "resolution": "Check user database"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["id", "logname", "who"],
+    "notes": "Equivalent to id -un. logname shows login name (may differ after su). $USER environment variable is similar."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "N/A",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Only shows effective user",
+    "Does not show groups",
+    "Minimal functionality"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["users"],
+        "description": "Reads current user identity"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "id",
+        "shared_state": "whoami = id -un"
+      }
+    ]
+  }
+}

@@ -1,0 +1,262 @@
+{
+  "command": "hostname",
+  "category": "system_info",
+  "description": "Show or set the system hostname. The hostname command displays or sets the system's network name used to identify the machine on a network. It can retrieve the fully qualified domain name (FQDN), short hostname, domain name, IP addresses, and DNS aliases. In HPC environments, hostnames are critical for job scheduling, node identification, MPI communication, and cluster management. The command reads from system configuration files and can modify the hostname when run with root privileges.",
+  "synopsis": "hostname [-a|--alias] [-A|--all-fqdns] [-b|--boot] [-d|--domain] [-f|--fqdn|--long] [-F|--file filename] [-h|--help] [-i|--ip-address] [-I|--all-ip-addresses] [-s|--short] [-V|--version] [-y|--yp|--nis] [name]",
+  "version_documented": "hostname 3.23+",
+  "source_urls": [
+    "https://man7.org/linux/man-pages/man1/hostname.1.html",
+    "https://linux.die.net/man/1/hostname"
+  ],
+  "installation": {
+    "package": "hostname",
+    "notes": "On Debian/Ubuntu systems, provided by the hostname package. On RHEL/CentOS/Fedora, may be part of the hostname or iproute2 package. On some distributions, it is part of the net-tools or coreutils package. Pre-installed on virtually all Linux distributions."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--alias",
+      "description": "Display the alias name of the host (if used). This is a DNS alias associated with the hostname."
+    },
+    {
+      "short": "-A",
+      "long": "--all-fqdns",
+      "description": "Display all FQDNs (Fully Qualified Domain Names) of the machine. Enumerates all configured network addresses and translates them to DNS domain names. Does not depend on hostname resolution order.",
+      "example": "hostname -A"
+    },
+    {
+      "short": "-b",
+      "long": "--boot",
+      "description": "Always set a hostname; this allows the file specified by -F to be non-existent or empty, in which case the default hostname 'localhost' will be used."
+    },
+    {
+      "short": "-d",
+      "long": "--domain",
+      "description": "Display the DNS domain name. Do not use the domainname command to get the DNS domain name because it will show the NIS domain name and not the DNS domain name.",
+      "example": "hostname -d"
+    },
+    {
+      "short": "-f",
+      "long": "--fqdn",
+      "description": "Display the FQDN (Fully Qualified Domain Name). A FQDN consists of the short host name and the DNS domain name. Unless you are using bind or NIS for host lookups, you can change the FQDN and DNS domain name in /etc/hosts.",
+      "example": "hostname -f"
+    },
+    {
+      "long": "--long",
+      "description": "Display the FQDN (Fully Qualified Domain Name). Alias for --fqdn.",
+      "example": "hostname --long"
+    },
+    {
+      "short": "-F",
+      "long": "--file",
+      "description": "Read the hostname from the specified file. Comments (lines starting with '#') are ignored.",
+      "arguments": "filename",
+      "argument_type": "path",
+      "example": "hostname -F /etc/hostname"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help text and exit."
+    },
+    {
+      "short": "-i",
+      "long": "--ip-address",
+      "description": "Display the network address(es) of the host name. Note that this works only if the host name can be resolved. Avoid using this option; use hostname --all-ip-addresses instead.",
+      "example": "hostname -i"
+    },
+    {
+      "short": "-I",
+      "long": "--all-ip-addresses",
+      "description": "Display all network addresses of the host. This option enumerates all configured addresses on all network interfaces. The loopback interface and IPv6 link-local addresses are omitted. This is the recommended way to get the IP addresses.",
+      "example": "hostname -I"
+    },
+    {
+      "short": "-s",
+      "long": "--short",
+      "description": "Display the short host name. This is the host name cut at the first dot.",
+      "example": "hostname -s"
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version information and exit."
+    },
+    {
+      "short": "-y",
+      "long": "--yp",
+      "description": "Display the NIS/YP domain name. If no argument is given, the current domain name is displayed."
+    },
+    {
+      "long": "--nis",
+      "description": "Display the NIS domain name. Alias for --yp."
+    }
+  ],
+  "output_formats": {
+    "default": "Plain text output with the hostname or requested information on a single line.",
+    "ip_addresses": "Space-separated list of IP addresses when using -I option.",
+    "fqdns": "Space-separated list of FQDNs when using -A option."
+  },
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - general failure, invalid option, or hostname could not be resolved"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display the current hostname",
+      "command": "hostname",
+      "output_example": "compute-node-001",
+      "requires_root": false
+    },
+    {
+      "description": "Display the fully qualified domain name (FQDN)",
+      "command": "hostname -f",
+      "output_example": "compute-node-001.cluster.example.com",
+      "requires_root": false
+    },
+    {
+      "description": "Display the short hostname",
+      "command": "hostname -s",
+      "output_example": "compute-node-001",
+      "requires_root": false
+    },
+    {
+      "description": "Display the DNS domain name",
+      "command": "hostname -d",
+      "output_example": "cluster.example.com",
+      "requires_root": false
+    },
+    {
+      "description": "Display all IP addresses of the host",
+      "command": "hostname -I",
+      "output_example": "192.168.1.100 10.0.0.100 172.16.0.100",
+      "requires_root": false
+    },
+    {
+      "description": "Display the IP address associated with the hostname",
+      "command": "hostname -i",
+      "output_example": "192.168.1.100",
+      "requires_root": false
+    },
+    {
+      "description": "Display all FQDNs of the machine",
+      "command": "hostname -A",
+      "output_example": "compute-node-001.cluster.example.com compute-node-001.ib.cluster.example.com",
+      "requires_root": false
+    },
+    {
+      "description": "Set the hostname temporarily (until reboot)",
+      "command": "hostname new-hostname",
+      "requires_root": true
+    },
+    {
+      "description": "Set the hostname from a file",
+      "command": "hostname -F /etc/hostname",
+      "requires_root": true
+    },
+    {
+      "description": "Get hostname for use in MPI rank identification",
+      "command": "hostname -s",
+      "output_example": "gpu-node-042",
+      "requires_root": false
+    },
+    {
+      "description": "Get IP address for InfiniBand network interface",
+      "command": "hostname -I | awk '{print $2}'",
+      "output_example": "10.0.0.100",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "hostname: you must be root to change the host name",
+      "meaning": "Attempting to set the hostname without root privileges",
+      "resolution": "Run the command with sudo or as root user: sudo hostname new-hostname"
+    },
+    {
+      "message": "hostname: Name or service not known",
+      "meaning": "The hostname cannot be resolved to an IP address when using -i option",
+      "resolution": "Ensure the hostname is properly configured in /etc/hosts or DNS. Use 'hostname -I' instead to get IP addresses without requiring name resolution."
+    },
+    {
+      "message": "hostname: Local domain name not set",
+      "meaning": "The domain name is not configured when using -d option",
+      "resolution": "Configure the FQDN in /etc/hosts or ensure DNS is properly set up for the hostname."
+    },
+    {
+      "message": "hostname: Host name lookup failure",
+      "meaning": "DNS or name resolution failed when trying to resolve the hostname",
+      "resolution": "Check /etc/hosts, /etc/resolv.conf, and DNS server availability. Ensure the hostname is properly registered."
+    },
+    {
+      "message": "hostname: the specified hostname is invalid",
+      "meaning": "The provided hostname contains invalid characters or format",
+      "resolution": "Hostnames must start with a letter, contain only alphanumeric characters and hyphens, and be less than 64 characters."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "uname -n",
+      "hostnamectl",
+      "domainname",
+      "dnsdomainname",
+      "cat /etc/hostname",
+      "cat /proc/sys/kernel/hostname"
+    ],
+    "notes": "The hostname command provides the same hostname as 'uname -n'. On systemd-based systems, 'hostnamectl' provides more comprehensive hostname management including static, transient, and pretty hostnames. Changes made with 'hostname' are temporary and lost on reboot; use 'hostnamectl set-hostname' for persistent changes on systemd systems, or edit /etc/hostname on traditional systems."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required. Reading the hostname is available to all users.",
+    "write_operations": "Root privileges required to set the hostname. Use sudo or run as root.",
+    "notes": "Setting the hostname with this command is temporary and will be reset on reboot. For persistent hostname changes, use hostnamectl or edit /etc/hostname."
+  },
+  "limitations": [
+    "Hostname changes made with this command are temporary and lost on reboot",
+    "The -i option depends on name resolution and may fail if DNS is not configured",
+    "On some systems, changing the hostname may require updating /etc/hosts manually",
+    "Maximum hostname length is typically 64 characters (POSIX limit)",
+    "Does not validate hostname against DNS or cluster naming conventions"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["hostname", "fqdn", "domain_name", "ip_addresses"],
+        "description": "Reads the system hostname from kernel state (/proc/sys/kernel/hostname), domain information from /etc/hosts and DNS, and IP addresses from network interface configuration."
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "system_state",
+        "fields": ["hostname"],
+        "description": "Sets the transient hostname in kernel memory. Does not modify /etc/hostname directly.",
+        "requires_flags": ["[name]"],
+        "requires_privilege": "root"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "uname -n",
+        "shared_state": "Both commands read the same kernel hostname value"
+      },
+      {
+        "command": "hostnamectl",
+        "shared_state": "Transient hostname is consistent between hostname and hostnamectl status"
+      },
+      {
+        "command": "/proc/sys/kernel/hostname",
+        "shared_state": "Direct kernel hostname value matches hostname command output"
+      },
+      {
+        "command": "scontrol show node",
+        "shared_state": "Slurm node names should match system hostnames for proper job scheduling"
+      }
+    ]
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "command": "ping",
+  "category": "networking",
+  "description": "Send ICMP ECHO_REQUEST to network hosts. Tests network connectivity and measures latency. Essential for verifying HPC cluster network health.",
+  "synopsis": "ping [options] <destination>",
+  "version_documented": "iputils 20210202+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/ping.8.html"],
+  "installation": {
+    "package": "iputils-ping",
+    "notes": "Usually installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-c",
+      "description": "Number of packets",
+      "arguments": "<count>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-i",
+      "description": "Interval between packets",
+      "arguments": "<seconds>",
+      "argument_type": "float"
+    },
+    {
+      "short": "-W",
+      "description": "Timeout for reply",
+      "arguments": "<seconds>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-s",
+      "description": "Packet size",
+      "arguments": "<bytes>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-f",
+      "description": "Flood ping (fast)"
+    },
+    {
+      "short": "-q",
+      "description": "Quiet output"
+    },
+    {
+      "short": "-4",
+      "description": "IPv4 only"
+    },
+    {
+      "short": "-6",
+      "description": "IPv6 only"
+    },
+    {
+      "short": "-I",
+      "description": "Interface or address",
+      "arguments": "<interface>",
+      "argument_type": "string"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success (at least one reply)"
+    },
+    {
+      "code": 1,
+      "meaning": "No reply received"
+    },
+    {
+      "code": 2,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Basic connectivity test",
+      "command": "ping -c 4 node01",
+      "requires_root": false
+    },
+    {
+      "description": "Continuous ping",
+      "command": "ping gateway.cluster.local",
+      "requires_root": false
+    },
+    {
+      "description": "Quick check (1 packet)",
+      "command": "ping -c 1 -W 2 storage-server",
+      "requires_root": false
+    },
+    {
+      "description": "Test specific interface",
+      "command": "ping -I ib0 10.0.0.1",
+      "requires_root": false
+    },
+    {
+      "description": "Large packet test",
+      "command": "ping -c 10 -s 8972 node02",
+      "requires_root": false
+    },
+    {
+      "description": "Quiet mode for scripts",
+      "command": "ping -c 1 -q host && echo 'reachable'",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Destination Host Unreachable",
+      "meaning": "Cannot route to host",
+      "resolution": "Check network path and routing"
+    },
+    {
+      "message": "Request timeout",
+      "meaning": "No response received",
+      "resolution": "Check if host is up and firewall rules"
+    },
+    {
+      "message": "Network is unreachable",
+      "meaning": "No route to network",
+      "resolution": "Check routing table"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["traceroute", "mtr", "arping"],
+    "notes": "Exit code useful in scripts. Flood ping (-f) needs root. InfiniBand has ibping for IB network."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "N/A",
+    "notes": "Flood ping requires root"
+  },
+  "limitations": [
+    "ICMP may be blocked by firewalls",
+    "Flood ping requires privileges",
+    "Not representative of TCP/UDP performance"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_eth_state",
+        "fields": ["connectivity"],
+        "description": "Tests network connectivity"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

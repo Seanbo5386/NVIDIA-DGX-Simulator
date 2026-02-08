@@ -1,0 +1,164 @@
+{
+  "command": "cmake",
+  "category": "general",
+  "description": "Cross-platform build system generator. Generates Makefiles and project files from CMakeLists.txt. Standard for building complex HPC and CUDA applications.",
+  "synopsis": "cmake [options] <path-to-source>",
+  "version_documented": "cmake 3.20+",
+  "source_urls": ["https://cmake.org/cmake/help/latest/manual/cmake.1.html"],
+  "installation": {
+    "package": "cmake",
+    "notes": "Install via package manager or cmake.org."
+  },
+  "global_options": [
+    {
+      "short": "-S",
+      "description": "Source directory",
+      "arguments": "<path>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-B",
+      "description": "Build directory",
+      "arguments": "<path>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-G",
+      "description": "Generator to use",
+      "arguments": "<generator>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-D",
+      "description": "Define cache variable",
+      "arguments": "<var>=<value>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--build",
+      "description": "Build a project",
+      "arguments": "<dir>",
+      "argument_type": "path"
+    },
+    {
+      "long": "--install",
+      "description": "Install a project",
+      "arguments": "<dir>",
+      "argument_type": "path"
+    },
+    {
+      "long": "--parallel",
+      "description": "Parallel build jobs",
+      "arguments": "[jobs]",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--preset",
+      "description": "Use configure preset",
+      "arguments": "<preset>",
+      "argument_type": "string"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Configure build",
+      "command": "cmake -B build -S .",
+      "requires_root": false
+    },
+    {
+      "description": "Configure with CUDA",
+      "command": "cmake -B build -DCMAKE_CUDA_ARCHITECTURES=80",
+      "requires_root": false
+    },
+    {
+      "description": "Release build",
+      "command": "cmake -B build -DCMAKE_BUILD_TYPE=Release",
+      "requires_root": false
+    },
+    {
+      "description": "Build project",
+      "command": "cmake --build build --parallel $(nproc)",
+      "requires_root": false
+    },
+    {
+      "description": "Install",
+      "command": "cmake --install build --prefix /usr/local",
+      "requires_root": true
+    },
+    {
+      "description": "Configure with MPI",
+      "command": "cmake -B build -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx",
+      "requires_root": false
+    },
+    {
+      "description": "Use Ninja generator",
+      "command": "cmake -B build -G Ninja && cmake --build build",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Could NOT find CUDA",
+      "meaning": "CUDA toolkit not found",
+      "resolution": "Set CMAKE_CUDA_COMPILER or CUDA_TOOLKIT_ROOT_DIR"
+    },
+    {
+      "message": "CMake Error at CMakeLists.txt",
+      "meaning": "Error in CMake configuration",
+      "resolution": "Check CMakeLists.txt and dependencies"
+    },
+    {
+      "message": "Could not find a package configuration file",
+      "meaning": "Required package not found",
+      "resolution": "Install package or set CMAKE_PREFIX_PATH"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["make", "ninja", "ccmake"],
+    "notes": "Use -B for out-of-source builds. Ninja is faster than Make. ccmake provides curses UI for configuration."
+  },
+  "permissions": {
+    "read_operations": "Read CMakeLists.txt",
+    "write_operations": "Write build files",
+    "notes": "Install may need root"
+  },
+  "limitations": [
+    "Learning curve for CMake syntax",
+    "Generated files can be large",
+    "Version compatibility issues"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads CMakeLists.txt and source"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Generates build system files",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "make",
+        "shared_state": "make builds cmake-generated Makefiles"
+      }
+    ]
+  }
+}

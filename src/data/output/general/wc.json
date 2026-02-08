@@ -1,0 +1,96 @@
+{
+  "command": "wc",
+  "category": "general",
+  "description": "Print newline, word, and byte counts for files. Quick file statistics utility. Essential for counting lines in HPC data files and logs.",
+  "synopsis": "wc [options] [file...]",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/wc.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-l",
+      "long": "--lines",
+      "description": "Print line count only"
+    },
+    {
+      "short": "-w",
+      "long": "--words",
+      "description": "Print word count only"
+    },
+    {
+      "short": "-c",
+      "long": "--bytes",
+      "description": "Print byte count"
+    },
+    {
+      "short": "-m",
+      "long": "--chars",
+      "description": "Print character count"
+    },
+    {
+      "short": "-L",
+      "long": "--max-line-length",
+      "description": "Print max line length"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Count lines in file",
+      "command": "wc -l data.csv",
+      "output_example": "1000000 data.csv",
+      "requires_root": false
+    },
+    {
+      "description": "Count from stdin",
+      "command": "cat file.txt | wc -l",
+      "requires_root": false
+    },
+    {
+      "description": "Full statistics",
+      "command": "wc data.txt",
+      "output_example": "  1000   5000  25000 data.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Count files",
+      "command": "ls | wc -l",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [],
+  "interoperability": {
+    "related_commands": ["cat", "head", "tail"],
+    "notes": "Output format: lines words bytes filename. Commonly used with pipes to count results."
+  },
+  "permissions": {
+    "read_operations": "Read access to files",
+    "write_operations": "N/A - read-only",
+    "notes": "Standard user"
+  },
+  "limitations": ["Reads entire file for counting", "Large files can be slow"],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads files to count"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

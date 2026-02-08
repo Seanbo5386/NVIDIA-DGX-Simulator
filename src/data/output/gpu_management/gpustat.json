@@ -1,0 +1,333 @@
+{
+  "command": "gpustat",
+  "category": "gpu_management",
+  "description": "A minimal and efficient command-line utility for querying and monitoring NVIDIA GPU status. gpustat provides a simpler alternative to nvidia-smi, displaying GPU information in a compact, colorful format. It shows GPU index, name, temperature, utilization percentage, memory usage, and running processes with their resource consumption. The tool supports watch mode for continuous monitoring, JSON output for scripting, and various options to customize the displayed information.",
+  "synopsis": "gpustat [options]",
+  "version_documented": "1.1.1",
+  "source_urls": [
+    "https://github.com/wookayin/gpustat",
+    "https://pypi.org/project/gpustat/"
+  ],
+  "installation": {
+    "package": "gpustat (via pip install gpustat)",
+    "notes": "Requires Python >= 3.6 (for gpustat 1.1+), NVIDIA driver R450.00 or higher, and nvidia-ml-py >= 12.535.108 (for gpustat 1.2+). Install via 'pip install gpustat' or 'pip install --user gpustat' for user-level installation. For development version: 'pip install git+https://github.com/wookayin/gpustat.git@master'"
+  },
+  "global_options": [
+    {
+      "long": "--color",
+      "description": "Force colored output even when output is not a terminal"
+    },
+    {
+      "long": "--no-color",
+      "description": "Suppress colored output"
+    },
+    {
+      "short": "-u",
+      "long": "--show-user",
+      "description": "Display the username of the process owner for each GPU process"
+    },
+    {
+      "short": "-c",
+      "long": "--show-cmd",
+      "description": "Display the process command name for each GPU process"
+    },
+    {
+      "short": "-f",
+      "long": "--show-full-cmd",
+      "description": "Display the full command line and additional CPU statistics for each GPU process"
+    },
+    {
+      "short": "-p",
+      "long": "--show-pid",
+      "description": "Display the process ID (PID) for each GPU process"
+    },
+    {
+      "short": "-F",
+      "long": "--show-fan",
+      "description": "Display GPU fan speed percentage"
+    },
+    {
+      "short": "-e",
+      "long": "--show-codec",
+      "description": "Display GPU encoder and decoder utilization percentages"
+    },
+    {
+      "short": "-P",
+      "long": "--show-power",
+      "description": "Display GPU power usage (current draw and power limit in watts)"
+    },
+    {
+      "short": "-a",
+      "long": "--show-all",
+      "description": "Display all available GPU and process properties (equivalent to combining -u -c -p -F -e -P)"
+    },
+    {
+      "long": "--id",
+      "description": "Query and display only the specified GPUs by their index numbers",
+      "arguments": "GPU_IDS",
+      "argument_type": "string",
+      "example": "gpustat --id 0,1,2"
+    },
+    {
+      "long": "--no-processes",
+      "description": "Hide GPU process information, displaying only GPU-level metrics"
+    },
+    {
+      "short": "-i",
+      "long": "--watch",
+      "description": "Run in watch mode, continuously refreshing the display at specified interval (in seconds). Also available as --interval.",
+      "arguments": "INTERVAL",
+      "argument_type": "float",
+      "default": "1.0",
+      "example": "gpustat -i 2"
+    },
+    {
+      "long": "--json",
+      "description": "Output GPU status in JSON format for programmatic parsing and scripting"
+    },
+    {
+      "long": "--print-completion",
+      "description": "Generate and print shell completion scripts for bash, zsh, or tcsh",
+      "arguments": "SHELL",
+      "argument_type": "string",
+      "example": "gpustat --print-completion bash"
+    },
+    {
+      "long": "--debug",
+      "description": "Enable debug mode with verbose output for troubleshooting"
+    },
+    {
+      "short": "-v",
+      "long": "--version",
+      "description": "Display gpustat version information and exit"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help information and exit"
+    }
+  ],
+  "output_formats": {
+    "default": "[GPU_INDEX] GPU_NAME | TEMPERATURE, UTILIZATION% | USED_MEM / TOTAL_MEM MB | PROCESS/PID(MEM)",
+    "json": "JSON object containing hostname, query_time, and array of GPU objects with full metrics"
+  },
+  "environment_variables": [
+    {
+      "name": "CUDA_DEVICE_ORDER",
+      "description": "Controls the order in which CUDA enumerates GPU devices",
+      "example": "PCI_BUS_ID",
+      "affects_command": "When set to PCI_BUS_ID, CUDA device indices will match gpustat GPU indices, ensuring consistent GPU identification across tools"
+    },
+    {
+      "name": "CUDA_VISIBLE_DEVICES",
+      "description": "Restricts which GPUs are visible to CUDA applications",
+      "example": "0,1",
+      "affects_command": "Does not affect gpustat directly as it uses NVML, but may cause confusion when comparing with CUDA application outputs"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Successful execution"
+    },
+    {
+      "code": 1,
+      "meaning": "Error occurred (NVML initialization failure, no GPUs found, or invalid arguments)"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display basic GPU status with default compact output",
+      "command": "gpustat",
+      "output_example": "[0] GeForce GTX Titan X | 77'C, 96 % | 11848 / 12287 MB | python/52046(11821M)",
+      "requires_root": false
+    },
+    {
+      "description": "Display all GPU information including user, command, PID, fan, codec, and power",
+      "command": "gpustat -a",
+      "requires_root": false
+    },
+    {
+      "description": "Display GPU status with process usernames",
+      "command": "gpustat -u",
+      "requires_root": false
+    },
+    {
+      "description": "Display GPU status with process commands and PIDs",
+      "command": "gpustat -c -p",
+      "requires_root": false
+    },
+    {
+      "description": "Display GPU power usage and fan speeds",
+      "command": "gpustat -P -F",
+      "requires_root": false
+    },
+    {
+      "description": "Continuous monitoring with 2-second refresh interval",
+      "command": "gpustat -i 2",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor specific GPUs by index",
+      "command": "gpustat --id 0,1",
+      "requires_root": false
+    },
+    {
+      "description": "Output GPU status in JSON format for scripting",
+      "command": "gpustat --json",
+      "requires_root": false
+    },
+    {
+      "description": "Display GPU metrics only without process information",
+      "command": "gpustat --no-processes",
+      "requires_root": false
+    },
+    {
+      "description": "Generate bash completion script",
+      "command": "gpustat --print-completion bash >> ~/.bashrc",
+      "requires_root": false
+    },
+    {
+      "description": "Watch mode with all information and no colors (for logging)",
+      "command": "gpustat -a -i 5 --no-color",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "NVML Shared Library Not Found",
+      "meaning": "The NVIDIA Management Library (NVML) shared library could not be loaded",
+      "resolution": "Ensure NVIDIA drivers are properly installed. Install or reinstall the NVIDIA driver package. Verify libnvidia-ml.so exists in the library path."
+    },
+    {
+      "message": "No NVIDIA GPU found",
+      "meaning": "gpustat could not detect any NVIDIA GPUs on the system",
+      "resolution": "Verify NVIDIA GPUs are installed and detected by running 'nvidia-smi'. Check that NVIDIA drivers are loaded with 'lsmod | grep nvidia'."
+    },
+    {
+      "message": "Driver/library version mismatch",
+      "meaning": "The installed nvidia-ml-py version is incompatible with the NVIDIA driver version",
+      "resolution": "Update nvidia-ml-py with 'pip install --upgrade nvidia-ml-py'. Ensure NVIDIA driver version is R450.00 or higher for gpustat 1.0+."
+    },
+    {
+      "message": "ModuleNotFoundError: No module named 'pynvml'",
+      "meaning": "The required nvidia-ml-py package is not installed",
+      "resolution": "Install nvidia-ml-py with 'pip install nvidia-ml-py'. Note: use nvidia-ml-py, not pynvml."
+    },
+    {
+      "message": "Permission denied",
+      "meaning": "The user lacks permission to access NVIDIA GPU devices",
+      "resolution": "Add the user to the 'video' group with 'sudo usermod -aG video $USER'. Log out and back in for changes to take effect."
+    },
+    {
+      "message": "Invalid GPU index",
+      "meaning": "The specified GPU index in --id does not exist on the system",
+      "resolution": "Run 'gpustat' without --id to see available GPU indices. Use valid comma-separated indices that exist on the system."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "nvidia-smi",
+      "nvtop",
+      "nvitop",
+      "dcgmi",
+      "dcgm-exporter",
+      "watch"
+    ],
+    "uses_library": [
+      "nvidia-ml-py (Python bindings for NVML)",
+      "NVML (NVIDIA Management Library)"
+    ],
+    "notes": "gpustat is a Python wrapper around NVML that provides simplified GPU monitoring output. It uses the same underlying library as nvidia-smi but presents information more compactly. For persistent GPU monitoring in production environments, consider nvidia-smi daemon mode (requires root) which improves query speed. GPU indices use PCI_BUS_ID ordering; set CUDA_DEVICE_ORDER=PCI_BUS_ID to align CUDA application indices with gpustat output. The gpustat-web companion project provides a web-based interface using gpustat."
+  },
+  "permissions": {
+    "read_operations": "No special permissions typically required. User may need to be in the 'video' group on some systems to access GPU devices via NVML.",
+    "write_operations": "gpustat is a read-only monitoring tool with no write operations to GPU state.",
+    "notes": "Running nvidia-smi daemon (requires root) can improve gpustat query performance by reducing NVML overhead."
+  },
+  "limitations": [
+    "NVIDIA GPUs only - AMD and Intel GPUs are not supported",
+    "Requires NVIDIA proprietary drivers (does not work with nouveau)",
+    "Requires NVIDIA driver version R450.00 or higher for gpustat 1.0+",
+    "Read-only monitoring tool - cannot modify GPU settings or configurations",
+    "Process memory shown is GPU memory only, not total process memory",
+    "Watch mode may have higher CPU usage compared to nvidia-smi daemon mode",
+    "Does not support multi-instance GPU (MIG) mode metrics in older versions",
+    "Fan speed may not be available on all GPU models (especially passively cooled)",
+    "Encoder/decoder utilization requires GPU and driver support"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": [
+          "gpu_id",
+          "name",
+          "temperature",
+          "fan_speed",
+          "power_draw",
+          "power_limit",
+          "utilization_gpu",
+          "memory_total",
+          "memory_used",
+          "encoder_utilization",
+          "decoder_utilization"
+        ],
+        "description": "gpustat reads GPU hardware metrics through NVML to display current GPU status including temperature, utilization, memory, power, and fan speed"
+      },
+      {
+        "state_domain": "gpu_process_state",
+        "fields": [
+          "pid",
+          "process_name",
+          "user",
+          "gpu_id",
+          "used_memory",
+          "command_line"
+        ],
+        "description": "gpustat reads process information from NVML to display which processes are using GPU memory and their resource consumption"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "GPU utilization changes",
+        "effect": "Utilization percentage in display updates"
+      },
+      {
+        "state_change": "GPU temperature changes",
+        "effect": "Temperature reading in display updates"
+      },
+      {
+        "state_change": "GPU memory allocation changes",
+        "effect": "Memory usage values update"
+      },
+      {
+        "state_change": "GPU process starts or terminates",
+        "effect": "Process list is updated on next query"
+      },
+      {
+        "state_change": "GPU power consumption changes",
+        "effect": "Power draw value updates when -P flag is used"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU utilization, memory usage, temperature, power draw, fan speed, and process information through NVML"
+      },
+      {
+        "command": "nvidia-smi pmon",
+        "shared_state": "Per-process GPU memory usage and process identification"
+      },
+      {
+        "command": "nvtop",
+        "shared_state": "GPU utilization, memory usage, temperature, power draw, and process information"
+      },
+      {
+        "command": "dcgmi dmon",
+        "shared_state": "GPU utilization, temperature, power usage, and encoder/decoder utilization"
+      }
+    ]
+  }
+}

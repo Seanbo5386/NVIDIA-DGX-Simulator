@@ -1,0 +1,495 @@
+{
+  "command": "sinfo",
+  "category": "cluster_management",
+  "description": "sinfo displays information about Slurm partitions and nodes. It reports the state of partitions and the nodes they contain, including availability, time limits, node counts, and detailed node configuration. The command queries the slurmctld daemon via remote procedure calls and provides extensive filtering and formatting options for monitoring cluster status and capacity planning.",
+  "synopsis": "sinfo [OPTIONS]",
+  "version_documented": "Slurm 23.x",
+  "source_urls": ["https://slurm.schedmd.com/sinfo.html"],
+  "installation": {
+    "package": "slurm-client or slurm",
+    "notes": "Part of the Slurm workload manager. Requires access to a Slurm cluster with slurmctld running."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Display information about all partitions, including partitions that are configured as hidden and partitions that are unavailable to the user's group."
+    },
+    {
+      "short": "-d",
+      "long": "--dead",
+      "description": "Display only non-responding (dead) nodes. If specified, this takes precedence over the --responding option."
+    },
+    {
+      "short": "-e",
+      "long": "--exact",
+      "description": "Display exact values rather than rounded approximations. By default, values are rounded for readability (e.g., memory in GB). This option shows precise values."
+    },
+    {
+      "short": "-F",
+      "long": "--future",
+      "description": "Report nodes in FUTURE state. These are nodes that are configured in slurm.conf but not yet available for use."
+    },
+    {
+      "long": "--federation",
+      "description": "Show all partitions from the federation if member of one. By default, only local cluster partitions are shown."
+    },
+    {
+      "short": "-h",
+      "long": "--noheader",
+      "description": "Do not print a header on the output. Useful for scripting when parsing raw data."
+    },
+    {
+      "long": "--help",
+      "description": "Print a help message describing all sinfo options."
+    },
+    {
+      "long": "--hide",
+      "description": "Do not display information about hidden partitions. This is the default behavior."
+    },
+    {
+      "short": "-i",
+      "long": "--iterate",
+      "description": "Print the state on a periodic basis at the specified interval in seconds. Continuously update the display until interrupted.",
+      "arguments": "seconds",
+      "argument_type": "integer",
+      "example": "sinfo -i 30"
+    },
+    {
+      "long": "--json",
+      "description": "Produce JSON output. Suitable for programmatic parsing and integration with monitoring systems.",
+      "arguments": "parser",
+      "argument_type": "string"
+    },
+    {
+      "short": "-l",
+      "long": "--long",
+      "description": "Print more detailed information including TIMELIMIT, JOB_SIZE, ROOT, OVERSUBS, GROUPS, NODES, STATE, and NODELIST. Provides comprehensive partition configuration details."
+    },
+    {
+      "long": "--local",
+      "description": "Show only information about the local cluster, ignoring partitions from federated clusters."
+    },
+    {
+      "short": "-M",
+      "long": "--clusters",
+      "description": "Display information from the specified cluster(s). Multiple cluster names can be comma separated. Use 'all' to query all clusters.",
+      "arguments": "cluster_list",
+      "argument_type": "string",
+      "example": "sinfo -M cluster1,cluster2"
+    },
+    {
+      "short": "-n",
+      "long": "--nodes",
+      "description": "Print information only about the specified node(s). Multiple node names can be comma separated. A node range expression can be used (e.g., 'linux[00-07]').",
+      "arguments": "node_list",
+      "argument_type": "string",
+      "example": "sinfo -n node[001-010]"
+    },
+    {
+      "short": "-N",
+      "long": "--Node",
+      "description": "Print information in a node-oriented format with one line per node-partition pair. By default, output is partition-oriented, grouping nodes with similar configurations."
+    },
+    {
+      "long": "--noconvert",
+      "description": "Do not convert unit values to a more readable form. Keeps original units (e.g., megabytes remain as megabytes rather than converting to gigabytes)."
+    },
+    {
+      "short": "-o",
+      "long": "--format",
+      "description": "Specify the information to be displayed using format codes. The format specification is '%[[.]size]type'. Size specifies minimum field width. A '.' prefix right-justifies. Type is a single character code specifying the field.",
+      "arguments": "format_string",
+      "argument_type": "string",
+      "example": "sinfo -o \"%P %.10l %.6D %.6t %N\""
+    },
+    {
+      "short": "-O",
+      "long": "--Format",
+      "description": "Specify the output format using long descriptive field names. Multiple fields are comma-separated. Field names include: Allocmem, AllocNodes, Available, Cluster, Comment, Cores, CPUs, CPUsLoad, CPUsState, DefaultTime, Disk, Extra, Features, FreeMem, Gres, GresUsed, Groups, MaxCPUsPerNode, Memory, NodeAddr, NodeAIOT, NodeHost, Nodes, NodeList, OverSubscribe, Partition, PartitionName, Port, PreemptMode, PriorityJobFactor, PriorityTier, Reason, Root, Size, SocketCoreThread, Sockets, State, StateCompact, StateComplete, StateLong, Threads, Time, Timestamp, TmpDisk, User, UserLong, Version, Weight.",
+      "arguments": "field_list",
+      "argument_type": "string",
+      "example": "sinfo -O Partition,Available,Nodes,StateCompact,NodeList"
+    },
+    {
+      "short": "-p",
+      "long": "--partition",
+      "description": "Print information only about the specified partition(s). Multiple partition names can be comma separated.",
+      "arguments": "partition_list",
+      "argument_type": "string",
+      "example": "sinfo -p gpu,compute"
+    },
+    {
+      "short": "-r",
+      "long": "--responding",
+      "description": "Display only responding nodes. If specified with --dead, the --dead option takes precedence."
+    },
+    {
+      "short": "-R",
+      "long": "--list-reasons",
+      "description": "List reasons nodes are in the down, drained, fail, or failing state. Includes the user who set the reason and when."
+    },
+    {
+      "short": "-s",
+      "long": "--summarize",
+      "description": "List only a partition state summary with no node state details. Shows partition-level summary of node counts in each state."
+    },
+    {
+      "short": "-S",
+      "long": "--sort",
+      "description": "Sort the records by the specified field(s). Multiple fields can be comma separated. Prefix with '-' for descending order. Default sort is by partition name, then node name.",
+      "arguments": "sort_list",
+      "argument_type": "string",
+      "example": "sinfo -S P,-m"
+    },
+    {
+      "short": "-t",
+      "long": "--states",
+      "description": "List nodes only having the specified state(s). Multiple states can be comma separated. Valid states: alloc, allocated, comp, completing, down, drain, drained, draining, fail, failing, future, idle, maint, mix, mixed, no_respond, npc, planned, power_down, power_up, powered_down, powering_down, powering_up, reboot_issued, reboot_requested, reserved, unknown.",
+      "arguments": "state_list",
+      "argument_type": "string",
+      "example": "sinfo -t idle,mix"
+    },
+    {
+      "long": "--usage",
+      "description": "Print a brief help message listing the available options."
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Print detailed event logging. Multiple -v options increase verbosity."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Print version information and exit."
+    },
+    {
+      "long": "--yaml",
+      "description": "Produce YAML output. Human-readable structured format suitable for configuration management tools.",
+      "arguments": "parser",
+      "argument_type": "string"
+    }
+  ],
+  "output_formats": {
+    "default": "Tabular format showing: PARTITION, AVAIL, TIMELIMIT, NODES, STATE, NODELIST. Nodes with similar configurations are grouped on the same line.",
+    "long": "Extended format (-l) showing: PARTITION, AVAIL, TIMELIMIT, JOB_SIZE, ROOT, OVERSUBS, GROUPS, NODES, STATE, NODELIST. Shows detailed partition configuration.",
+    "node_centric": "Node-oriented format (-N) with one line per node-partition pair showing: NODELIST, NODES, PARTITION, STATE, CPUS, S:C:T, MEMORY, TMP_DISK, WEIGHT, AVAIL_FE, REASON.",
+    "summarize": "Summary format (-s) showing partition-level totals: PARTITION, AVAIL, TIMELIMIT, NODES(A/I/O/T). Shows allocated/idle/other/total node counts.",
+    "reasons": "Reason format (-R) showing: REASON, USER, TIMESTAMP, NODELIST. Lists why nodes are down/drained.",
+    "json": "JSON structured output via --json option. Suitable for programmatic parsing.",
+    "yaml": "YAML structured output via --yaml option. Human-readable structured format.",
+    "format_codes": "Format codes for -o option: %a (State/availability: up/down), %A (Node count by state: allocated/idle), %b (Active features), %B (Max CPUs per node), %c (CPUs per node), %C (CPU count: allocated/idle/other/total), %d (Tmp disk per node in MB), %D (Number of nodes), %e (Free memory per node in MB), %E (Reason for node state), %f (Available features), %F (Node count by state: A/I/O/T), %g (Groups allowed), %G (Generic resources GRES), %h (OverSubscribe setting), %H (Timestamp when reason was set), %I (Partition job priority factor), %l (Max job time limit), %L (Default job time limit), %m (Memory per node in MB), %M (PreemptMode), %n (Hostnames), %N (Node names), %o (Node addresses), %O (CPU load), %p (Partition priority tier), %P (Partition name with * for default), %r (Root-only job flag), %R (Partition name), %s (Max job size), %S (Allowed allocating nodes), %t (Node state compact), %T (Node state extended), %u (User who set reason), %U (User ID who set reason), %v (Slurmd version), %V (Cluster name), %w (Scheduling weight), %X (Sockets per node), %Y (Cores per socket), %z (S:C:T extended processor info), %Z (Threads per core).",
+    "node_state_codes": "Compact state codes: alloc (allocated), comp (completing), down, drain (drained/draining), fail (failing), futr (future), idle, maint, mix (mixed), npc (non-persistent cgroup), plnd (planned), pow_dn (powered_down), pow_up (powering_up), resv (reserved), unk (unknown). Suffixes: * (not responding), ~ (powered off), # (powering up), $ (maintenance reservation), @ (pending reboot), ^ (reboot issued), - (planned by backfill)."
+  },
+  "environment_variables": [
+    {
+      "name": "SINFO_ALL",
+      "description": "If set to any value, equivalent to --all option. Shows all partitions including hidden ones.",
+      "example": "SINFO_ALL=1",
+      "affects_command": "Displays all partitions without needing -a flag"
+    },
+    {
+      "name": "SINFO_FEDERATION",
+      "description": "If set to any value, equivalent to --federation option.",
+      "example": "SINFO_FEDERATION=1",
+      "affects_command": "Shows partitions from all federation clusters"
+    },
+    {
+      "name": "SINFO_FORMAT",
+      "description": "Default output format. Equivalent to -o option.",
+      "example": "SINFO_FORMAT=\"%P %.10l %.6D %.6t %N\"",
+      "affects_command": "Sets the default output format for sinfo"
+    },
+    {
+      "name": "SINFO_LOCAL",
+      "description": "If set to any value, equivalent to --local option.",
+      "example": "SINFO_LOCAL=1",
+      "affects_command": "Restricts output to local cluster only"
+    },
+    {
+      "name": "SINFO_PARTITION",
+      "description": "Default partition filter. Equivalent to -p option.",
+      "example": "SINFO_PARTITION=gpu",
+      "affects_command": "Filters output to specified partition by default"
+    },
+    {
+      "name": "SINFO_SORT",
+      "description": "Default sort order. Equivalent to -S option.",
+      "example": "SINFO_SORT=P,-m",
+      "affects_command": "Sets default sort order for output"
+    },
+    {
+      "name": "SLURM_CLUSTERS",
+      "description": "Specifies the cluster(s) to use. Equivalent to --clusters option.",
+      "example": "SLURM_CLUSTERS=cluster1,cluster2",
+      "affects_command": "Sets default clusters for multi-cluster queries"
+    },
+    {
+      "name": "SLURM_CONF",
+      "description": "Path to the Slurm configuration file.",
+      "example": "SLURM_CONF=/etc/slurm/slurm.conf",
+      "affects_command": "Specifies which Slurm configuration to use"
+    },
+    {
+      "name": "SLURM_DEBUG_FLAGS",
+      "description": "Debug flags to enable additional logging.",
+      "example": "SLURM_DEBUG_FLAGS=NO_CONF_HASH",
+      "affects_command": "Enables specific debug behaviors"
+    },
+    {
+      "name": "SLURM_TIME_FORMAT",
+      "description": "Specifies the time format for output. Can be 'standard', 'relative', or a strftime format string.",
+      "example": "SLURM_TIME_FORMAT=%Y-%m-%d_%H:%M:%S",
+      "affects_command": "Controls how timestamps and time limits are displayed"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - general error occurred (e.g., invalid options, connection failure)"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display basic cluster overview with default format",
+      "command": "sinfo",
+      "output_example": "PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST\ndebug*       up      30:00      2   idle node[001-002]\ncompute      up    8:00:00     16    mix node[010-025]\ncompute      up    8:00:00      8  alloc node[026-033]\ncompute      up    8:00:00      4   idle node[034-037]\ngpu          up   24:00:00      8  alloc gpu[001-008]"
+    },
+    {
+      "description": "Display node-centric view with one line per node",
+      "command": "sinfo -N",
+      "output_example": "NODELIST   NODES PARTITION STATE\nnode001        1    debug* idle\nnode002        1    debug* idle\nnode010        1   compute mix\nnode011        1   compute mix\ngpu001         1       gpu alloc"
+    },
+    {
+      "description": "Display long format with detailed partition information",
+      "command": "sinfo -l",
+      "output_example": "Wed Jan 15 10:00:00 2025\nPARTITION AVAIL  TIMELIMIT  JOB_SIZE ROOT OVERSUBS     GROUPS  NODES       STATE NODELIST\ndebug*       up      30:00       1-4   no       NO        all      2        idle node[001-002]\ncompute      up    8:00:00      1-64   no       NO        all     28       mixed node[010-037]\ngpu          up   24:00:00       1-8   no EXCLUSIVE     gpuusers  8   allocated gpu[001-008]"
+    },
+    {
+      "description": "Display partition-specific information",
+      "command": "sinfo -p gpu",
+      "output_example": "PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST\ngpu          up   24:00:00      4  alloc gpu[001-004]\ngpu          up   24:00:00      4   idle gpu[005-008]"
+    },
+    {
+      "description": "Display reasons for down/drained nodes",
+      "command": "sinfo -R",
+      "output_example": "REASON                              USER      TIMESTAMP           NODELIST\nNot responding                      slurm     2025-01-15T08:30:00 node042\nScheduled maintenance               admin     2025-01-14T18:00:00 node[050-055]\nHardware failure: memory errors     admin     2025-01-13T14:22:00 gpu003"
+    },
+    {
+      "description": "Display custom format output",
+      "command": "sinfo -o \"%P %.10l %.6D %.6t %N\"",
+      "output_example": "PARTITION   TIMELIMIT  NODES  STATE NODELIST\ndebug*         30:00      2   idle node[001-002]\ncompute      8:00:00     16    mix node[010-025]\ncompute      8:00:00      8  alloc node[026-033]"
+    },
+    {
+      "description": "Display only idle nodes",
+      "command": "sinfo -t idle",
+      "output_example": "PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST\ndebug*       up      30:00      2   idle node[001-002]\ncompute      up    8:00:00      4   idle node[034-037]\ngpu          up   24:00:00      4   idle gpu[005-008]"
+    },
+    {
+      "description": "Display summarized partition information",
+      "command": "sinfo -s",
+      "output_example": "PARTITION AVAIL  TIMELIMIT   NODES(A/I/O/T) NODELIST\ndebug*       up      30:00          0/2/0/2 node[001-002]\ncompute      up    8:00:00       8/4/16/28 node[010-037]\ngpu          up   24:00:00        4/4/0/8 gpu[001-008]"
+    },
+    {
+      "description": "Display CPU allocation summary",
+      "command": "sinfo -o \"%P %C\"",
+      "output_example": "PARTITION CPUS(A/I/O/T)\ndebug* 0/64/0/64\ncompute 512/128/256/896\ngpu 256/256/0/512"
+    },
+    {
+      "description": "Display GPU (GRES) information",
+      "command": "sinfo -o \"%P %G %N\"",
+      "output_example": "PARTITION GRES NODELIST\ndebug* (null) node[001-002]\ncompute (null) node[010-037]\ngpu gpu:a100:4 gpu[001-008]"
+    },
+    {
+      "description": "Display node-centric view with detailed hardware info",
+      "command": "sinfo -N -l",
+      "output_example": "Wed Jan 15 10:00:00 2025\nNODELIST   NODES PARTITION       STATE CPUS    S:C:T MEMORY TMP_DISK WEIGHT AVAIL_FE REASON\nnode001        1    debug*        idle   32   2:8:2 128000        0      1   (null) none\nnode010        1   compute       mixed   64   2:16:2 256000   500000      1   (null) none\ngpu001         1       gpu   allocated   64   2:16:2 512000  1000000     10    a100 none"
+    },
+    {
+      "description": "Continuously monitor cluster state",
+      "command": "sinfo -i 60",
+      "output_example": "[Output refreshes every 60 seconds showing current cluster state]"
+    },
+    {
+      "description": "Display without header for scripting",
+      "command": "sinfo -h -o \"%P %a %D\"",
+      "output_example": "debug* up 2\ncompute up 28\ngpu up 8"
+    },
+    {
+      "description": "Output in JSON format for programmatic use",
+      "command": "sinfo --json",
+      "output_example": "{\"meta\":{\"plugin\":{\"type\":\"openapi/slurmctld\"},\"Slurm\":{\"version\":{\"major\":23}}},\"sinfo\":[{\"partition\":{\"name\":\"debug\"},\"nodes\":{\"total\":2,\"state\":{\"idle\":2}}}]}"
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "slurm_load_partitions error: Unable to contact slurm controller (connect failure)",
+      "meaning": "Cannot connect to the Slurm controller daemon (slurmctld)",
+      "resolution": "Check if slurmctld is running. Verify network connectivity to the controller. Ensure SLURM_CONF points to the correct configuration file."
+    },
+    {
+      "message": "slurm_load_partitions error: Invalid partition name specified",
+      "meaning": "The specified partition does not exist",
+      "resolution": "Use 'sinfo' without -p option to list available partitions. Check partition name spelling."
+    },
+    {
+      "message": "slurm_load_node error: Invalid node name specified",
+      "meaning": "One or more specified node names do not exist",
+      "resolution": "Verify node names are correct. Use sinfo without -n option to see available nodes. Check for typos in node range expressions."
+    },
+    {
+      "message": "sinfo: error: Invalid node state specified",
+      "meaning": "An invalid state was provided to the -t option",
+      "resolution": "Use valid state names: alloc, comp, down, drain, drained, draining, fail, failing, future, idle, maint, mix, mixed, no_respond, npc, planned, power_down, power_up, powered_down, powering_down, powering_up, reboot_issued, reboot_requested, reserved, unknown."
+    },
+    {
+      "message": "sinfo: error: Invalid format specification",
+      "meaning": "The format string provided to -o contains invalid format codes",
+      "resolution": "Review the format codes in the sinfo man page. Ensure correct syntax: %[.]size]type"
+    },
+    {
+      "message": "slurm_load_partitions error: Socket timed out on send/recv operation",
+      "meaning": "Communication with slurmctld timed out",
+      "resolution": "The controller may be overloaded or network issues exist. Try again or check controller status."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "squeue",
+      "scontrol",
+      "sacct",
+      "sbatch",
+      "srun",
+      "scancel",
+      "sview"
+    ],
+    "notes": "sinfo queries the slurmctld daemon for current partition and node state. For detailed node or partition configuration, use 'scontrol show node' or 'scontrol show partition'. The output is commonly used for monitoring dashboards and capacity planning scripts. High-frequency calls can impact slurmctld performance."
+  },
+  "permissions": {
+    "read_operations": "Any user can view partition and node state information. Some node details may be restricted by PrivateData settings in slurm.conf.",
+    "notes": "The PrivateData configuration option in slurm.conf can restrict visibility of certain node attributes. Administrators always have full visibility."
+  },
+  "limitations": [
+    "Output is a point-in-time snapshot; cluster state changes continuously",
+    "High-frequency calls to sinfo can degrade slurmctld performance",
+    "Node features shown are configured features, not necessarily active hardware capabilities",
+    "Memory and disk values may be rounded unless --exact is specified",
+    "Federated cluster queries may have increased latency",
+    "GRES information shows configured resources, not necessarily available resources",
+    "Some fields require specific Slurm configuration to be populated"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "node_state",
+        "fields": [
+          "hostname",
+          "state",
+          "cpu_count",
+          "cpu_load",
+          "memory_total",
+          "memory_free",
+          "tmp_disk",
+          "features",
+          "gres",
+          "gres_used",
+          "weight",
+          "reason",
+          "reason_time",
+          "reason_user",
+          "boot_time",
+          "slurmd_version",
+          "sockets",
+          "cores_per_socket",
+          "threads_per_core",
+          "real_memory",
+          "alloc_cpus",
+          "alloc_memory",
+          "arch",
+          "os"
+        ],
+        "description": "sinfo reads comprehensive node state information from the Slurm controller including hardware configuration, current state, resource usage, and any reasons for non-available states"
+      },
+      {
+        "state_domain": "partition_state",
+        "fields": [
+          "partition_name",
+          "state",
+          "availability",
+          "total_cpus",
+          "total_nodes",
+          "default_time",
+          "max_time",
+          "min_nodes",
+          "max_nodes",
+          "root_only",
+          "oversubscribe",
+          "groups",
+          "priority_tier",
+          "priority_job_factor",
+          "preempt_mode",
+          "allow_accounts",
+          "deny_accounts",
+          "allow_qos",
+          "deny_qos",
+          "nodes"
+        ],
+        "description": "sinfo reads partition configuration and state from the Slurm controller including access controls, time limits, resource limits, and member nodes"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Node state changes (idle to allocated, drain, down, etc.)",
+        "effect": "sinfo output reflects new node state in STATE column and node counts"
+      },
+      {
+        "state_change": "Partition availability changes (up to down, drain)",
+        "effect": "sinfo output reflects new partition state in AVAIL column"
+      },
+      {
+        "state_change": "Node reason set by administrator (drain, down)",
+        "effect": "sinfo -R output shows new reason, user, and timestamp"
+      },
+      {
+        "state_change": "Node added or removed from cluster",
+        "effect": "Node appears in or disappears from sinfo output"
+      },
+      {
+        "state_change": "Partition configuration changed",
+        "effect": "sinfo output reflects new partition parameters (time limits, node list, etc.)"
+      },
+      {
+        "state_change": "Jobs start or complete on nodes",
+        "effect": "Node state changes between idle, mix, and alloc; CPU counts change"
+      },
+      {
+        "state_change": "Power management state changes",
+        "effect": "Node state shows power_down, powering_up, powered_down suffixes"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "scontrol show nodes",
+        "shared_state": "Full node state including all attributes shown by sinfo plus additional internal details"
+      },
+      {
+        "command": "scontrol show partitions",
+        "shared_state": "Full partition configuration including all attributes shown by sinfo plus additional settings"
+      },
+      {
+        "command": "squeue",
+        "shared_state": "Node allocation state - running jobs visible in squeue correspond to allocated nodes in sinfo"
+      },
+      {
+        "command": "sview",
+        "shared_state": "Graphical representation of the same partition and node state data"
+      }
+    ]
+  }
+}

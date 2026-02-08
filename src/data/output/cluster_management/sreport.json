@@ -1,0 +1,190 @@
+{
+  "command": "sreport",
+  "category": "cluster_management",
+  "description": "Generate reports from Slurm accounting data. Provides usage summaries by cluster, user, account, and time period. Essential for tracking resource utilization and generating allocation reports in HPC centers.",
+  "synopsis": "sreport [OPTIONS] REPORT_TYPE [REPORT_OPTIONS]",
+  "version_documented": "Slurm 23.02+",
+  "source_urls": ["https://slurm.schedmd.com/sreport.html"],
+  "installation": {
+    "package": "slurm-client",
+    "notes": "Part of Slurm workload manager. Requires slurmdbd (database daemon) for accounting data."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--all_clusters",
+      "description": "Report on all clusters"
+    },
+    {
+      "short": "-M",
+      "long": "--clusters",
+      "description": "Report on specific clusters",
+      "arguments": "<cluster_list>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-n",
+      "long": "--noheader",
+      "description": "Do not print header"
+    },
+    {
+      "short": "-p",
+      "long": "--parsable",
+      "description": "Output in parsable format"
+    },
+    {
+      "short": "-P",
+      "long": "--parsable2",
+      "description": "Parsable format without trailing delimiter"
+    },
+    {
+      "short": "-t",
+      "long": "--time_format",
+      "description": "Time format (seconds, minutes, hours)",
+      "arguments": "<format>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-T",
+      "long": "--tres",
+      "description": "Report on trackable resources",
+      "arguments": "<tres_list>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Increase verbosity"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "cluster",
+      "description": "Report cluster utilization",
+      "synopsis": "sreport cluster utilization"
+    },
+    {
+      "name": "user",
+      "description": "Report user usage",
+      "synopsis": "sreport user top"
+    },
+    {
+      "name": "job",
+      "description": "Report job statistics",
+      "synopsis": "sreport job sizes"
+    },
+    {
+      "name": "reservation",
+      "description": "Report reservation usage",
+      "synopsis": "sreport reservation utilization"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show cluster utilization for last month",
+      "command": "sreport cluster utilization start=$(date -d '1 month ago' +%Y-%m-%d) end=$(date +%Y-%m-%d)",
+      "output_example": "--------------------------------------------------------------------------------\nCluster Utilization 2024-01-01T00:00:00 - 2024-01-31T23:59:59 (2678400 secs)\nUsage reported in CPU Minutes\n--------------------------------------------------------------------------------\n  Cluster     Allocated   Down        PLND Down   Idle        Reserved    Reported\n--------- ------------- ------------- ------------- ------------- ------------- -------------\n  cluster     12345678         12345         56789       234567           0     15000000",
+      "requires_root": false
+    },
+    {
+      "description": "Show top 10 users by usage",
+      "command": "sreport user top start=2024-01-01 end=2024-01-31 TopCount=10",
+      "requires_root": false
+    },
+    {
+      "description": "Show GPU utilization by account",
+      "command": "sreport cluster AccountUtilizationByUser -T gres/gpu start=2024-01-01",
+      "requires_root": false
+    },
+    {
+      "description": "Show job size distribution",
+      "command": "sreport job sizes start=2024-01-01",
+      "requires_root": false
+    },
+    {
+      "description": "Parsable output for scripting",
+      "command": "sreport -P user top start=2024-01-01 TopCount=100",
+      "requires_root": false
+    },
+    {
+      "description": "Show utilization with time in hours",
+      "command": "sreport -t hours cluster utilization start=2024-01-01",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No accounting data found",
+      "meaning": "No data in slurmdbd for the time range",
+      "resolution": "Check time range and verify slurmdbd is running"
+    },
+    {
+      "message": "Unknown report type",
+      "meaning": "Invalid report type specified",
+      "resolution": "Use sreport --help to see available reports"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["sacct", "sshare", "sacctmgr", "squeue"],
+    "notes": "sreport provides aggregate summaries while sacct provides per-job details. Requires slurmdbd to be configured and collecting accounting data."
+  },
+  "permissions": {
+    "read_operations": "No special permissions for own data",
+    "write_operations": "N/A - read-only command",
+    "notes": "Admin users can see all user data"
+  },
+  "limitations": [
+    "Requires slurmdbd accounting daemon",
+    "Data limited to configured accounting storage period",
+    "TRES reporting requires appropriate Slurm configuration"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "job_state",
+        "fields": [
+          "job_id",
+          "user",
+          "account",
+          "partition",
+          "num_cpus",
+          "num_gpus",
+          "time_used"
+        ],
+        "description": "Aggregates historical job data from accounting database"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Job completion",
+        "effect": "Job data added to accounting database"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "sacct",
+        "shared_state": "Individual job records aggregate to sreport totals"
+      },
+      {
+        "command": "sshare",
+        "shared_state": "Usage data contributes to fair-share"
+      }
+    ]
+  }
+}

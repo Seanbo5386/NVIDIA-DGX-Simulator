@@ -1,0 +1,181 @@
+{
+  "command": "watch",
+  "category": "monitoring",
+  "description": "Execute a program periodically and display the output. Useful for monitoring changing system state, watching GPU metrics, job queues, or any command output that updates over time.",
+  "synopsis": "watch [options] command",
+  "version_documented": "procps-ng 3.3.17+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/watch.1.html"],
+  "installation": {
+    "package": "procps-ng",
+    "notes": "Part of procps-ng package, installed by default on most Linux distributions."
+  },
+  "global_options": [
+    {
+      "short": "-n",
+      "long": "--interval",
+      "description": "Specify update interval in seconds",
+      "arguments": "<seconds>",
+      "argument_type": "number",
+      "default": "2",
+      "example": "-n 1"
+    },
+    {
+      "short": "-d",
+      "long": "--differences",
+      "description": "Highlight differences between updates"
+    },
+    {
+      "long": "--differences=permanent",
+      "description": "Highlight all changes since first iteration"
+    },
+    {
+      "short": "-t",
+      "long": "--no-title",
+      "description": "Turn off the header showing interval and command"
+    },
+    {
+      "short": "-b",
+      "long": "--beep",
+      "description": "Beep if command has a non-zero exit"
+    },
+    {
+      "short": "-e",
+      "long": "--errexit",
+      "description": "Freeze updates when command has non-zero exit"
+    },
+    {
+      "short": "-g",
+      "long": "--chgexit",
+      "description": "Exit when output changes"
+    },
+    {
+      "short": "-c",
+      "long": "--color",
+      "description": "Interpret ANSI color sequences"
+    },
+    {
+      "short": "-x",
+      "long": "--exec",
+      "description": "Pass command to exec instead of sh -c"
+    },
+    {
+      "short": "-p",
+      "long": "--precise",
+      "description": "Make watch attempt to run command every interval seconds"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    },
+    {
+      "short": "-v",
+      "long": "--version",
+      "description": "Display version"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Various errors"
+    },
+    {
+      "code": 2,
+      "meaning": "Fork failed or pipe failed"
+    },
+    {
+      "code": 8,
+      "meaning": "User exited with q"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Monitor GPU status every second",
+      "command": "watch -n 1 nvidia-smi",
+      "requires_root": false
+    },
+    {
+      "description": "Watch job queue with highlighting",
+      "command": "watch -d squeue -u $USER",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor GPU memory usage with color",
+      "command": "watch -n 1 -c 'nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu --format=csv'",
+      "requires_root": false
+    },
+    {
+      "description": "Watch node status in Slurm",
+      "command": "watch -n 5 'sinfo -N'",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor InfiniBand port errors",
+      "command": "watch -n 10 -d 'perfquery -x'",
+      "requires_root": true
+    },
+    {
+      "description": "Watch disk space without header",
+      "command": "watch -t -n 60 df -h",
+      "requires_root": false
+    },
+    {
+      "description": "Exit when job completes",
+      "command": "watch -g 'squeue -j 12345'",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor system load",
+      "command": "watch -n 1 'uptime; free -h'",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "watch: command not found",
+      "meaning": "procps-ng not installed",
+      "resolution": "Install procps-ng package"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["nvidia-smi -l", "htop", "top", "dstat", "while loop"],
+    "notes": "watch is simpler than while loops for interactive monitoring. Use nvidia-smi -l for native GPU looping. The -c flag is essential for commands with colored output."
+  },
+  "permissions": {
+    "read_operations": "Depends on the command being watched",
+    "write_operations": "N/A - watch itself is read-only",
+    "notes": "Command permissions apply to the executed command"
+  },
+  "limitations": [
+    "Output must fit terminal size",
+    "Cannot interact with watched command",
+    "Minimum interval is 0.1 seconds",
+    "Shell command expansion happens once unless using quotes properly"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": [],
+        "description": "watch itself reads no state; it executes other commands"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Timer interval",
+        "effect": "Re-executes monitored command"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "The command being watched",
+        "shared_state": "Output reflects current state of monitored command"
+      }
+    ]
+  }
+}

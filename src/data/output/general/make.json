@@ -1,0 +1,162 @@
+{
+  "command": "make",
+  "category": "general",
+  "description": "GNU make utility. Builds programs from source using Makefiles. Essential for compiling HPC applications, CUDA code, and MPI programs.",
+  "synopsis": "make [options] [target]...",
+  "version_documented": "GNU Make 4.3+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/make.1.html"],
+  "installation": {
+    "package": "make",
+    "notes": "Part of build-essential on Debian/Ubuntu."
+  },
+  "global_options": [
+    {
+      "short": "-j",
+      "long": "--jobs",
+      "description": "Parallel jobs",
+      "arguments": "[N]",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-f",
+      "long": "--file",
+      "description": "Use specified makefile",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-C",
+      "long": "--directory",
+      "description": "Change to directory first",
+      "arguments": "<dir>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-n",
+      "long": "--dry-run",
+      "description": "Print commands without running"
+    },
+    {
+      "short": "-B",
+      "long": "--always-make",
+      "description": "Unconditionally make all targets"
+    },
+    {
+      "short": "-k",
+      "long": "--keep-going",
+      "description": "Continue on errors"
+    },
+    {
+      "short": "-s",
+      "long": "--silent",
+      "description": "Don't echo commands"
+    },
+    {
+      "long": "--debug",
+      "description": "Print debugging info",
+      "arguments": "[flags]",
+      "argument_type": "string"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error in makefile"
+    },
+    {
+      "code": 2,
+      "meaning": "Error in target"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Build default target",
+      "command": "make",
+      "requires_root": false
+    },
+    {
+      "description": "Parallel build",
+      "command": "make -j$(nproc)",
+      "requires_root": false
+    },
+    {
+      "description": "Build specific target",
+      "command": "make install",
+      "requires_root": false
+    },
+    {
+      "description": "Clean build",
+      "command": "make clean && make -j8",
+      "requires_root": false
+    },
+    {
+      "description": "Build with variables",
+      "command": "make CUDA_HOME=/usr/local/cuda CC=gcc-9",
+      "requires_root": false
+    },
+    {
+      "description": "Dry run to see commands",
+      "command": "make -n install",
+      "requires_root": false
+    },
+    {
+      "description": "Build in different directory",
+      "command": "make -C /path/to/source -j$(nproc)",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No targets specified and no makefile found",
+      "meaning": "No Makefile in directory",
+      "resolution": "Run configure or check directory"
+    },
+    {
+      "message": "No rule to make target",
+      "meaning": "Target or dependency missing",
+      "resolution": "Check target name and dependencies"
+    },
+    {
+      "message": "recipe failed",
+      "meaning": "Command in recipe returned error",
+      "resolution": "Fix the failing command"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["cmake", "ninja", "autoconf"],
+    "notes": "-j is crucial for HPC builds. Use -j$(nproc) for max parallelism. cmake often generates Makefiles."
+  },
+  "permissions": {
+    "read_operations": "Read Makefile and sources",
+    "write_operations": "Write build outputs",
+    "notes": "make install may need root"
+  },
+  "limitations": [
+    "Tab-sensitive syntax",
+    "Complex dependency management",
+    "No built-in parallel safety checking"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads source files and Makefile"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Creates build outputs",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

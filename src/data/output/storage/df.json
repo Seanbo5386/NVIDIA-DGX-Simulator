@@ -1,0 +1,324 @@
+{
+  "command": "df",
+  "category": "storage",
+  "description": "Report filesystem disk space usage. The df command displays the amount of disk space available on the filesystem containing each file name argument. If no file name is given, the space available on all currently mounted filesystems is shown. By default, disk space is shown in 1K blocks. This is an essential command for monitoring storage utilization on HPC nodes, including local filesystems, NFS mounts, and parallel filesystems.",
+  "synopsis": "df [OPTION]... [FILE]...",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/df.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of GNU coreutils which is installed by default on virtually all Linux distributions. Provides essential file, shell, and text manipulation utilities."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Include pseudo, duplicate, and inaccessible filesystems in the report. This includes filesystems with 0 blocks like /proc and /sys."
+    },
+    {
+      "short": "-B",
+      "long": "--block-size",
+      "description": "Scale sizes by SIZE before printing them. SIZE may be K, M, G, T, P, E, Z, Y (powers of 1024) or KB, MB (powers of 1000). For example, '-BM' prints sizes in megabytes.",
+      "arguments": "SIZE",
+      "argument_type": "string",
+      "example": "df -BG"
+    },
+    {
+      "short": "-h",
+      "long": "--human-readable",
+      "description": "Print sizes in powers of 1024 with human-readable suffixes (e.g., 1K, 234M, 2G). This is the most commonly used option."
+    },
+    {
+      "short": "-H",
+      "long": "--si",
+      "description": "Print sizes in powers of 1000 with SI unit suffixes (e.g., 1.1G). Uses decimal rather than binary prefixes."
+    },
+    {
+      "short": "-i",
+      "long": "--inodes",
+      "description": "List inode usage information instead of block usage. Shows total, used, and available inodes for each filesystem."
+    },
+    {
+      "short": "-k",
+      "description": "Display sizes in 1K (1024 bytes) blocks. Equivalent to --block-size=1K. This is the default."
+    },
+    {
+      "short": "-l",
+      "long": "--local",
+      "description": "Limit listing to local filesystems only. Excludes NFS, CIFS, and other network filesystems."
+    },
+    {
+      "long": "--no-sync",
+      "description": "Do not invoke sync before getting usage information. This is the default behavior for faster operation."
+    },
+    {
+      "long": "--sync",
+      "description": "Invoke sync before getting usage information. Ensures all pending writes are flushed to disk before reporting."
+    },
+    {
+      "long": "--output",
+      "description": "Use a specified output format with selectable columns. Available fields: source, fstype, itotal, iused, iavail, ipcent, size, used, avail, pcent, file, target.",
+      "arguments": "[FIELD_LIST]",
+      "argument_type": "string",
+      "example": "df --output=source,size,used,avail,pcent,target"
+    },
+    {
+      "short": "-P",
+      "long": "--portability",
+      "description": "Use POSIX output format with consistent column widths. Each filesystem is always printed on exactly one line, which is useful for parsing."
+    },
+    {
+      "short": "-t",
+      "long": "--type",
+      "description": "Limit listing to filesystems of the specified type. Can be specified multiple times to include multiple types.",
+      "arguments": "TYPE",
+      "argument_type": "string",
+      "example": "df -t ext4 -t xfs"
+    },
+    {
+      "short": "-T",
+      "long": "--print-type",
+      "description": "Print filesystem type in the output. Adds a 'Type' column showing the filesystem format."
+    },
+    {
+      "short": "-x",
+      "long": "--exclude-type",
+      "description": "Limit listing to filesystems not of the specified type. Can be specified multiple times to exclude multiple types.",
+      "arguments": "TYPE",
+      "argument_type": "string",
+      "example": "df -x tmpfs -x devtmpfs"
+    },
+    {
+      "long": "--total",
+      "description": "Elide all entries insignificant to available space, and produce a grand total. Shows summary of all filesystems."
+    },
+    {
+      "long": "--help",
+      "description": "Display help information and exit."
+    },
+    {
+      "long": "--version",
+      "description": "Display version information and exit."
+    }
+  ],
+  "output_formats": {
+    "default": "Tabular format with columns for Filesystem, 1K-blocks, Used, Available, Use%, and Mounted on.",
+    "human_readable": "Tabular format with human-readable sizes (K, M, G, T) using powers of 1024.",
+    "si": "Tabular format with SI units using powers of 1000.",
+    "posix": "POSIX-compliant format with each filesystem on a single line, suitable for parsing.",
+    "inode": "Tabular format showing inode information instead of block usage."
+  },
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - all filesystems processed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - one or more filesystems could not be accessed or an error occurred"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display basic disk space usage",
+      "command": "df",
+      "output_example": "Filesystem     1K-blocks      Used Available Use% Mounted on\n/dev/sda1      961304072 234567890 677896182  26% /\ntmpfs           32868352         0  32868352   0% /dev/shm\n/dev/nvme0n1p1 976762560 489234567 437851993  53% /scratch",
+      "requires_root": false
+    },
+    {
+      "description": "Display human-readable disk space usage",
+      "command": "df -h",
+      "output_example": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/sda1       917G  224G  647G  26% /\ntmpfs            32G     0   32G   0% /dev/shm\n/dev/nvme0n1p1  932G  467G  418G  53% /scratch",
+      "requires_root": false
+    },
+    {
+      "description": "Display disk space with filesystem types",
+      "command": "df -Th",
+      "output_example": "Filesystem     Type      Size  Used Avail Use% Mounted on\n/dev/sda1      xfs       917G  224G  647G  26% /\ntmpfs          tmpfs      32G     0   32G   0% /dev/shm\n/dev/nvme0n1p1 ext4      932G  467G  418G  53% /scratch\n10.0.0.1:/home nfs4      100T   45T   55T  45% /home",
+      "requires_root": false
+    },
+    {
+      "description": "Display disk space for a specific mount point",
+      "command": "df -h /scratch",
+      "output_example": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/nvme0n1p1  932G  467G  418G  53% /scratch",
+      "requires_root": false
+    },
+    {
+      "description": "Display only Lustre filesystems",
+      "command": "df -t lustre",
+      "output_example": "Filesystem          1K-blocks         Used    Available Use% Mounted on\n192.168.1.1@o2ib:/lustre 9007199254740992 4503599627370496 4503599627370496  50% /lustre",
+      "requires_root": false
+    },
+    {
+      "description": "Display disk space excluding tmpfs filesystems",
+      "command": "df -h -x tmpfs",
+      "output_example": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/sda1       917G  224G  647G  26% /\n/dev/nvme0n1p1  932G  467G  418G  53% /scratch",
+      "requires_root": false
+    },
+    {
+      "description": "Display disk space with grand total",
+      "command": "df -h --total",
+      "output_example": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/sda1       917G  224G  647G  26% /\n/dev/nvme0n1p1  932G  467G  418G  53% /scratch\ntotal           1.9T  691G  1.1T  39% -",
+      "requires_root": false
+    },
+    {
+      "description": "Display inode usage",
+      "command": "df -i",
+      "output_example": "Filesystem        Inodes    IUsed     IFree IUse% Mounted on\n/dev/sda1      61054976  1234567  59820409    3% /\n/dev/nvme0n1p1 61054976   567890  60487086    1% /scratch",
+      "requires_root": false
+    },
+    {
+      "description": "Display local filesystems only",
+      "command": "df -hl",
+      "output_example": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/sda1       917G  224G  647G  26% /\n/dev/nvme0n1p1  932G  467G  418G  53% /scratch",
+      "requires_root": false
+    },
+    {
+      "description": "Display POSIX-compliant output for scripting",
+      "command": "df -P",
+      "output_example": "Filesystem     1024-blocks      Used Available Capacity Mounted on\n/dev/sda1        961304072 234567890 677896182      26% /\n/dev/nvme0n1p1   976762560 489234567 437851993      53% /scratch",
+      "requires_root": false
+    },
+    {
+      "description": "Extract usage percentage for a specific mount point",
+      "command": "df -h /scratch | awk 'NR==2 {print $5}'",
+      "output_example": "53%",
+      "requires_root": false
+    },
+    {
+      "description": "Display multiple specific filesystem types",
+      "command": "df -Th -t ext4 -t xfs",
+      "output_example": "Filesystem     Type  Size  Used Avail Use% Mounted on\n/dev/sda1      xfs   917G  224G  647G  26% /\n/dev/nvme0n1p1 ext4  932G  467G  418G  53% /scratch",
+      "requires_root": false
+    },
+    {
+      "description": "Display disk space with custom output columns",
+      "command": "df --output=source,fstype,size,used,avail,pcent,target",
+      "output_example": "Filesystem     Type     1K-blocks      Used     Avail Use% Mounted on\n/dev/sda1      xfs      961304072 234567890 677896182  26% /\n/dev/nvme0n1p1 ext4     976762560 489234567 437851993  53% /scratch",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "df: cannot read table of mounted file systems",
+      "meaning": "Unable to read /etc/mtab or /proc/mounts to determine mounted filesystems",
+      "resolution": "Verify /proc is mounted and /etc/mtab exists or is a symlink to /proc/mounts. Check system boot state."
+    },
+    {
+      "message": "df: '/path': No such file or directory",
+      "meaning": "The specified file or directory does not exist",
+      "resolution": "Verify the path exists and is spelled correctly."
+    },
+    {
+      "message": "df: '/mount': Permission denied",
+      "meaning": "User does not have permission to access the specified path or filesystem",
+      "resolution": "Check file and directory permissions. Some mount points may require root access."
+    },
+    {
+      "message": "df: '/mount': Stale file handle",
+      "meaning": "NFS mount has become stale due to server disconnect or export removal",
+      "resolution": "Remount the NFS filesystem or wait for automatic NFS recovery. Check NFS server availability."
+    },
+    {
+      "message": "df: '/mount': Transport endpoint is not connected",
+      "meaning": "FUSE-based filesystem (like sshfs) has disconnected",
+      "resolution": "Unmount and remount the FUSE filesystem. Check network connectivity for remote mounts."
+    },
+    {
+      "message": "df: unrecognized option",
+      "meaning": "An invalid command-line option was specified",
+      "resolution": "Check option syntax with 'df --help'. Some options may not be available in older versions."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "lfs df",
+      "du",
+      "mount",
+      "findmnt",
+      "lsblk",
+      "stat -f",
+      "quota"
+    ],
+    "uses_library": [],
+    "notes": "The df command reads filesystem information from /proc/mounts and queries the kernel for usage statistics using statfs(). For Lustre filesystems, the standard df command works but provides aggregate information; use 'lfs df' for detailed per-OST/MDT information. The reported 'Available' space may be less than 'Total - Used' due to reserved blocks for root (typically 5% on ext4). The df command is essential for storage monitoring scripts and is commonly used in HPC environments to check scratch space availability before job submission."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required for most filesystems. Memory statistics are available to all users.",
+    "write_operations": "df is read-only and does not modify any system state.",
+    "notes": "Some encrypted or access-controlled filesystems may require appropriate permissions to query. Network filesystems may timeout if the server is unreachable."
+  },
+  "limitations": [
+    "Does not show per-OST information for Lustre filesystems; use 'lfs df' instead",
+    "Available space may not account for quota limits; user's actual available space may be less",
+    "Network filesystem queries may hang or timeout if the server is unreachable",
+    "Does not show real-time updates; each invocation is a point-in-time snapshot",
+    "Block size calculations may vary slightly between different filesystem types",
+    "Reserved blocks for root user are not shown in the output by default",
+    "On very large filesystems, the 1K-blocks column may overflow in older versions",
+    "Cannot distinguish between different mount namespaces"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": [
+          "device",
+          "mount_point",
+          "fs_type",
+          "total_size",
+          "used_size",
+          "available_size",
+          "use_percent"
+        ],
+        "description": "Reads filesystem usage statistics from local and mounted filesystems via statfs() system call."
+      },
+      {
+        "state_domain": "storage_lustre_state",
+        "fields": ["mount_point", "total_space", "used_space", "free_space"],
+        "description": "Reads aggregate space usage from Lustre filesystem mounts. For detailed per-target information, use lfs df."
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Filesystem mount/unmount",
+        "effect": "New filesystems appear in output when mounted; disappear when unmounted."
+      },
+      {
+        "state_change": "File creation/deletion",
+        "effect": "Used and Available space values change as files are created or deleted."
+      },
+      {
+        "state_change": "Inode allocation/deallocation",
+        "effect": "Inode counts (with -i option) change as files are created or deleted."
+      },
+      {
+        "state_change": "Network filesystem availability",
+        "effect": "Command may hang or report errors if NFS/Lustre servers become unreachable."
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "lfs df",
+        "shared_state": "Lustre mount points show consistent aggregate space reporting between df and lfs df summary line."
+      },
+      {
+        "command": "mount",
+        "shared_state": "Filesystem list in df corresponds to mounted filesystems shown by mount command."
+      },
+      {
+        "command": "findmnt",
+        "shared_state": "Mount points and filesystem types are consistent with findmnt output."
+      },
+      {
+        "command": "du",
+        "shared_state": "Total used space reported by df should approximately equal sum of file sizes reported by du."
+      },
+      {
+        "command": "stat -f",
+        "shared_state": "Filesystem statistics from stat -f are consistent with df output for the same filesystem."
+      }
+    ]
+  }
+}

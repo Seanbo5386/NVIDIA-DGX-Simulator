@@ -1,0 +1,319 @@
+{
+  "command": "lscpu",
+  "category": "system_info",
+  "description": "Display CPU architecture information including cores, threads, sockets, NUMA nodes, caches, and CPU features. The lscpu command gathers CPU architecture information from sysfs, /proc/cpuinfo, and any applicable architecture-specific libraries. It reports the number of CPUs, threads per core, cores per socket, sockets, NUMA nodes, CPU family, model, and stepping, cache sizes, and available CPU flags/features. This information is essential for understanding the CPU topology and capabilities of HPC nodes.",
+  "synopsis": "lscpu [options]",
+  "version_documented": "util-linux 2.37+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/lscpu.1.html"],
+  "installation": {
+    "package": "util-linux",
+    "notes": "Part of the util-linux package which is installed by default on virtually all Linux distributions. No special hardware or driver requirements."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "Include lines for online and offline CPUs in the output (default for -e). Shows all CPUs regardless of their current state."
+    },
+    {
+      "short": "-b",
+      "long": "--online",
+      "description": "Limit the output to online CPUs only (default for -p). Excludes CPUs that have been taken offline."
+    },
+    {
+      "short": "-c",
+      "long": "--offline",
+      "description": "Limit the output to offline CPUs only. Shows CPUs that have been administratively disabled."
+    },
+    {
+      "short": "-e",
+      "long": "--extended",
+      "description": "Display the CPU information in human-readable extended format. Optionally specify a comma-separated list of columns to display.",
+      "arguments": "[=list]",
+      "argument_type": "string",
+      "example": "lscpu -e=CPU,CORE,SOCKET,NODE"
+    },
+    {
+      "short": "-p",
+      "long": "--parse",
+      "description": "Optimize the command output for easy parsing. Output is in a format suitable for scripting and automation. Optionally specify columns.",
+      "arguments": "[=list]",
+      "argument_type": "string",
+      "example": "lscpu -p=CPU,CORE,SOCKET"
+    },
+    {
+      "short": "-s",
+      "long": "--sysroot",
+      "description": "Gather CPU data for a Linux instance other than the instance from which the lscpu command is issued. Useful for examining offline or chroot environments.",
+      "arguments": "<directory>",
+      "argument_type": "path",
+      "example": "lscpu -s /mnt/target"
+    },
+    {
+      "short": "-x",
+      "long": "--hex",
+      "description": "Use hexadecimal masks for CPU sets (e.g., 0x3 instead of 0,1). Useful for direct use in CPU affinity settings."
+    },
+    {
+      "short": "-y",
+      "long": "--physical",
+      "description": "Display physical IDs for all columns with topology elements (socket, core, etc.). Shows hardware identifiers rather than logical indices."
+    },
+    {
+      "short": "-J",
+      "long": "--json",
+      "description": "Use JSON output format for the default summary or extended output. Provides structured output for programmatic parsing.",
+      "example": "lscpu -J"
+    },
+    {
+      "short": "-B",
+      "long": "--bytes",
+      "description": "Print sizes in bytes rather than in human-readable format. Useful for precise calculations."
+    },
+    {
+      "short": "-C",
+      "long": "--caches",
+      "description": "Display details about CPU caches including size, type, and which CPUs share each cache level. Optionally specify columns.",
+      "arguments": "[=list]",
+      "argument_type": "string",
+      "example": "lscpu -C"
+    },
+    {
+      "short": "-H",
+      "long": "--list-columns",
+      "description": "List the columns that can be specified with the --extended, --parse, and --caches options."
+    },
+    {
+      "long": "--hierarchic",
+      "description": "Use subsections in summary output for improved readability of topology information.",
+      "arguments": "[=when]",
+      "argument_type": "string",
+      "default": "auto",
+      "example": "lscpu --hierarchic=always"
+    },
+    {
+      "long": "--output-all",
+      "description": "Output all available columns. Requires -e, -p, or -C option to specify the output mode."
+    },
+    {
+      "short": "-r",
+      "long": "--raw",
+      "description": "Produce output in its raw format for extended, parse, or caches outputs. No formatting or alignment applied."
+    },
+    {
+      "long": "--annotate",
+      "description": "Adds an annotation to each column header name explaining the column purpose.",
+      "arguments": "[=when]",
+      "argument_type": "string",
+      "default": "auto"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help text and exit."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version information and exit."
+    }
+  ],
+  "output_formats": {
+    "default": "Human-readable summary format showing CPU architecture, cores, threads, sockets, cache sizes, and features in a key-value layout.",
+    "extended": "Tabular format with one row per logical CPU showing topology details (CPU, CORE, SOCKET, NODE, etc.) using -e option.",
+    "parse": "Colon-separated values optimized for scripting using -p option. Lines starting with # are comments.",
+    "json": "Structured JSON output using -J option. Suitable for programmatic parsing and integration with other tools.",
+    "caches": "Tabular format showing cache information per level (L1d, L1i, L2, L3) using -C option."
+  },
+  "environment_variables": [
+    {
+      "name": "LSCPU_COLUMNS",
+      "description": "Specify default output columns for -e and -p options. Overridden by explicit column specification on command line.",
+      "example": "LSCPU_COLUMNS=CPU,CORE,SOCKET,NODE",
+      "affects_command": "Sets default columns for extended and parse output modes"
+    },
+    {
+      "name": "LSCPU_CACHES_COLUMNS",
+      "description": "Specify default output columns for -C option. Overridden by explicit column specification on command line.",
+      "example": "LSCPU_CACHES_COLUMNS=NAME,ONE-SIZE,ALL-SIZE,WAYS",
+      "affects_command": "Sets default columns for cache information output"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - general failure or invalid option"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display basic CPU architecture information",
+      "command": "lscpu",
+      "output_example": "Architecture:                    x86_64\nCPU op-mode(s):                  32-bit, 64-bit\nByte Order:                      Little Endian\nAddress sizes:                   46 bits physical, 57 bits virtual\nCPU(s):                          128\nOn-line CPU(s) list:             0-127\nThread(s) per core:              2\nCore(s) per socket:              32\nSocket(s):                       2\nNUMA node(s):                    2\nVendor ID:                       GenuineIntel\nCPU family:                      6\nModel:                           106\nModel name:                      Intel(R) Xeon(R) Platinum 8358 CPU @ 2.60GHz\nStepping:                        6\nCPU MHz:                         2600.000\nCPU max MHz:                     3400.0000\nCPU min MHz:                     800.0000\nBogoMIPS:                        5200.00\nL1d cache:                       3 MiB\nL1i cache:                       2 MiB\nL2 cache:                        80 MiB\nL3 cache:                        96 MiB\nNUMA node0 CPU(s):               0-31,64-95\nNUMA node1 CPU(s):               32-63,96-127\nFlags:                           fpu vme de pse tsc msr pae mce cx8 apic sep...",
+      "requires_root": false
+    },
+    {
+      "description": "Display CPU information in JSON format",
+      "command": "lscpu -J",
+      "output_example": "{\n   \"lscpu\": [\n      {\"field\": \"Architecture:\", \"data\": \"x86_64\"},\n      {\"field\": \"CPU(s):\", \"data\": \"128\"},\n      {\"field\": \"Thread(s) per core:\", \"data\": \"2\"},\n      {\"field\": \"Core(s) per socket:\", \"data\": \"32\"},\n      {\"field\": \"Socket(s):\", \"data\": \"2\"}...\n   ]\n}",
+      "requires_root": false
+    },
+    {
+      "description": "Display extended CPU information with topology",
+      "command": "lscpu -e",
+      "output_example": "CPU NODE SOCKET CORE L1d:L1i:L2:L3 ONLINE MAXMHZ    MINMHZ\n0   0    0      0    0:0:0:0       yes    3400.0000 800.0000\n1   0    0      1    1:1:1:0       yes    3400.0000 800.0000\n...",
+      "requires_root": false
+    },
+    {
+      "description": "Display CPU cache information",
+      "command": "lscpu -C",
+      "output_example": "NAME ONE-SIZE ALL-SIZE WAYS TYPE        LEVEL  INSTANCES\nL1d  48K      3M       12   Data            1         64\nL1i  32K      2M        8   Instruction     1         64\nL2   1.2M     80M      20   Unified         2         64\nL3   48M      96M      12   Unified         3          2",
+      "requires_root": false
+    },
+    {
+      "description": "Display parseable output for scripting",
+      "command": "lscpu -p",
+      "output_example": "# The following is the parsable format...\n# CPU,Core,Socket,Node,,L1d,L1i,L2,L3\n0,0,0,0,,0,0,0,0\n1,1,0,0,,1,1,1,0\n2,2,0,0,,2,2,2,0\n...",
+      "requires_root": false
+    },
+    {
+      "description": "Display specific columns in extended format",
+      "command": "lscpu -e=CPU,CORE,SOCKET,NODE",
+      "output_example": "CPU CORE SOCKET NODE\n0   0    0      0\n1   1    0      0\n32  0    1      1\n...",
+      "requires_root": false
+    },
+    {
+      "description": "Display CPU information with hexadecimal masks",
+      "command": "lscpu -x",
+      "output_example": "Architecture:                    x86_64\n...\nNUMA node0 CPU(s):               0x00000000ffffffff,00000000ffffffff\nNUMA node1 CPU(s):               0xffffffff00000000,ffffffff00000000",
+      "requires_root": false
+    },
+    {
+      "description": "List available columns for extended output",
+      "command": "lscpu -H",
+      "output_example": "Available output columns:\nCPU        logical CPU number\nCORE       logical core number\nSOCKET     logical socket number\nNODE       logical NUMA node number\nBOOK       logical book number\nDRAWER     logical drawer number\n...",
+      "requires_root": false
+    },
+    {
+      "description": "Display all available columns in extended format",
+      "command": "lscpu -e --output-all",
+      "requires_root": false
+    },
+    {
+      "description": "Get CPU count for parallel job configuration",
+      "command": "lscpu | grep '^CPU(s):' | awk '{print $2}'",
+      "output_example": "128",
+      "requires_root": false
+    },
+    {
+      "description": "Get number of NUMA nodes for memory affinity",
+      "command": "lscpu | grep 'NUMA node(s):' | awk '{print $3}'",
+      "output_example": "2",
+      "requires_root": false
+    },
+    {
+      "description": "Check CPU flags for specific features (e.g., AVX-512)",
+      "command": "lscpu | grep Flags | grep -o 'avx512[a-z]*'",
+      "output_example": "avx512f\navx512dq\navx512ifma\navx512cd\navx512bw\navx512vl",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "lscpu: cannot open /sys/devices/system/cpu/cpu0: No such file or directory",
+      "meaning": "The sysfs filesystem is not mounted or accessible",
+      "resolution": "Ensure /sys is mounted (mount -t sysfs sysfs /sys). This is typically done automatically at boot."
+    },
+    {
+      "message": "lscpu: failed to determine number of CPUs",
+      "meaning": "Unable to read CPU information from system files",
+      "resolution": "Check that /sys/devices/system/cpu/ and /proc/cpuinfo are accessible and contain valid data."
+    },
+    {
+      "message": "unknown column",
+      "meaning": "An invalid column name was specified with -e, -p, or -C options",
+      "resolution": "Use 'lscpu -H' to list valid column names for the output format."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "numactl --hardware",
+      "hwloc-ls",
+      "cat /proc/cpuinfo",
+      "nproc",
+      "getconf _NPROCESSORS_ONLN",
+      "dmidecode -t processor",
+      "lstopo"
+    ],
+    "uses_library": [],
+    "notes": "lscpu provides a unified view of CPU topology that combines information from multiple sources (/proc/cpuinfo, sysfs, architecture-specific files). For NUMA topology visualization, hwloc-ls or lstopo may provide additional graphical or detailed views. The output is consistent with /proc/cpuinfo but presented in a more organized format."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required. All CPU information is available to non-privileged users via /sys and /proc filesystems.",
+    "write_operations": "lscpu is read-only and does not modify any system state.",
+    "notes": "Running lscpu with --sysroot requires read access to the target directory structure."
+  },
+  "limitations": [
+    "CPU MHz values may be inaccurate due to frequency scaling and turbo boost states",
+    "On virtual machines, some topology information may not accurately reflect underlying hardware",
+    "Cache information for some architectures may be incomplete or unavailable",
+    "Hyperthreading detection relies on kernel reporting and may not be accurate on all systems",
+    "Some CPU flags may not be listed if the kernel does not expose them"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "cpu_model",
+          "cpu_count",
+          "cpu_sockets",
+          "cpu_cores_per_socket",
+          "architecture"
+        ],
+        "description": "Reads CPU topology, model information, architecture type, and hardware capabilities from /sys/devices/system/cpu/, /proc/cpuinfo, and architecture-specific sources."
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "CPU hotplug (online/offline)",
+        "effect": "Changes in online CPU count and which CPUs are available. Use -a to see all CPUs or -b/-c to filter."
+      },
+      {
+        "state_change": "CPU frequency scaling",
+        "effect": "CPU MHz values may change between invocations based on current processor P-state."
+      },
+      {
+        "state_change": "Turbo boost activation",
+        "effect": "Maximum frequency may exceed base frequency when turbo boost is active and thermal headroom permits."
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "/proc/cpuinfo",
+        "shared_state": "CPU model, flags, cores, and processor information are sourced from /proc/cpuinfo"
+      },
+      {
+        "command": "numactl --hardware",
+        "shared_state": "NUMA node configuration and CPU-to-node mapping are consistent between commands"
+      },
+      {
+        "command": "hwloc-ls",
+        "shared_state": "CPU topology (sockets, cores, threads, caches) is consistent with hwloc topology reports"
+      },
+      {
+        "command": "nproc",
+        "shared_state": "Online CPU count matches nproc output"
+      },
+      {
+        "command": "sinfo",
+        "shared_state": "Slurm node CPU counts should match lscpu CPU(s) values for accurate resource scheduling"
+      }
+    ]
+  }
+}

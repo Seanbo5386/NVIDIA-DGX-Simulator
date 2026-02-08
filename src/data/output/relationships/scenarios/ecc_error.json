@@ -1,0 +1,87 @@
+{
+  "$schema": "../../schema.json",
+  "scenario_id": "ecc_error",
+  "scenario_name": "GPU ECC Memory Errors",
+  "description": "Simulates ECC memory errors on GPU, from correctable single-bit errors to uncorrectable double-bit errors",
+  "severity": "warning",
+  "initial_state_change": {
+    "domain": "gpu_state",
+    "affected_entity": "GPU index 1 on node dgx-node-01",
+    "changes": {
+      "ecc_errors_correctable": 47,
+      "ecc_errors_uncorrectable": 0,
+      "ecc_mode": "Enabled"
+    }
+  },
+  "affected_commands": [
+    {
+      "command": "nvidia-smi -q -d ECC",
+      "category": "gpu_management",
+      "output_before": "GPU 00000000:15:00.0\n    Ecc Mode\n        Current                           : Enabled\n        Pending                           : Enabled\n    ECC Errors\n        Volatile\n            SRAM Correctable              : 0\n            SRAM Uncorrectable            : 0\n            DRAM Correctable              : 0\n            DRAM Uncorrectable            : 0",
+      "output_after": "GPU 00000000:15:00.0\n    Ecc Mode\n        Current                           : Enabled\n        Pending                           : Enabled\n    ECC Errors\n        Volatile\n            SRAM Correctable              : 12\n            SRAM Uncorrectable            : 0\n            DRAM Correctable              : 35\n            DRAM Uncorrectable            : 0",
+      "key_differences": [
+        "Non-zero correctable error counts",
+        "SRAM and DRAM errors present"
+      ]
+    },
+    {
+      "command": "nvidia-smi",
+      "category": "gpu_management",
+      "output_before": "|   1  NVIDIA A100-SXM4-80GB On | 00000000:15:00.0 Off |                    0 |",
+      "output_after": "|   1  NVIDIA A100-SXM4-80GB On | 00000000:15:00.0 Off |                   47 |",
+      "key_differences": ["Volatile Uncorr. ECC column shows error count"]
+    },
+    {
+      "command": "dcgmi health -c",
+      "category": "gpu_management",
+      "output_before": "| GPU 1      | Green  | Passed |",
+      "output_after": "| GPU 1      | Yellow | Warning |\nWarnings: GPU 1 - Elevated correctable ECC errors detected",
+      "key_differences": ["Health status Yellow", "ECC warning message"]
+    },
+    {
+      "command": "dcgmi diag -r 3",
+      "category": "gpu_management",
+      "output_before": "+---------------------------+------------------------+\n| GPU 1                     | Pass                   |",
+      "output_after": "+---------------------------+------------------------+\n| GPU 1                     | Warn - ECC errors      |\nDiagnostic Results: GPU memory showing elevated error rate",
+      "key_differences": ["Diagnostic warns about ECC", "Memory health flagged"]
+    },
+    {
+      "command": "nvidia-smi --query-remapped-rows=remapped_rows.uncorrectable --format=csv -i 1",
+      "category": "gpu_management",
+      "output_before": "remapped_rows.uncorrectable\n0",
+      "output_after": "remapped_rows.uncorrectable\n0",
+      "key_differences": [
+        "Row remapping counter - increases with uncorrectable errors"
+      ]
+    }
+  ],
+  "recovery_actions": [
+    {
+      "action": "Check current ECC error counts",
+      "command": "nvidia-smi -q -d ECC -i 1"
+    },
+    {
+      "action": "Clear volatile ECC counters",
+      "command": "nvidia-smi -i 1 --reset-ecc-errors=volatile"
+    },
+    {
+      "action": "Monitor error rate over time",
+      "command": "watch -n 60 'nvidia-smi -q -d ECC -i 1 | grep -A2 Volatile'"
+    },
+    {
+      "action": "Run memory diagnostic",
+      "command": "dcgmi diag -r 3 -i 1"
+    },
+    {
+      "action": "If errors persist, schedule GPU replacement",
+      "command": "scontrol update NodeName=dgx-node-01 State=DRAIN Reason='GPU 1 ECC errors - RMA pending'"
+    }
+  ],
+  "simulator_notes": [
+    "Correctable errors are automatically fixed by ECC hardware",
+    "High correctable error rate may indicate failing memory",
+    "Uncorrectable errors cause GPU processes to crash",
+    "After threshold of uncorrectable errors, GPU may require reset or RMA",
+    "Row remapping can recover some bad memory cells"
+  ]
+}

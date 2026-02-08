@@ -1,0 +1,196 @@
+{
+  "command": "fio",
+  "category": "diagnostics",
+  "description": "Flexible I/O tester for benchmarking storage performance. Simulates various I/O workloads with configurable parameters. Essential for HPC storage system evaluation.",
+  "synopsis": "fio [options] <jobfile>",
+  "version_documented": "fio 3.28+",
+  "source_urls": ["https://fio.readthedocs.io/"],
+  "installation": {
+    "package": "fio",
+    "notes": "Install via: apt install fio or yum install fio"
+  },
+  "global_options": [
+    {
+      "long": "--name",
+      "description": "Job name",
+      "arguments": "<name>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--filename",
+      "description": "File to test",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "long": "--rw",
+      "description": "I/O pattern",
+      "arguments": "<pattern>",
+      "argument_type": "string",
+      "example": "--rw=randread"
+    },
+    {
+      "long": "--bs",
+      "description": "Block size",
+      "arguments": "<size>",
+      "argument_type": "string",
+      "example": "--bs=4k"
+    },
+    {
+      "long": "--size",
+      "description": "Total size to read/write",
+      "arguments": "<size>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--numjobs",
+      "description": "Number of parallel jobs",
+      "arguments": "<num>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--iodepth",
+      "description": "I/O queue depth",
+      "arguments": "<depth>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--runtime",
+      "description": "Runtime in seconds",
+      "arguments": "<seconds>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--ioengine",
+      "description": "I/O engine to use",
+      "arguments": "<engine>",
+      "argument_type": "string",
+      "example": "--ioengine=libaio"
+    },
+    {
+      "long": "--direct",
+      "description": "Use O_DIRECT (bypass cache)",
+      "arguments": "<0|1>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--output-format",
+      "description": "Output format",
+      "arguments": "<format>",
+      "argument_type": "string",
+      "example": "--output-format=json"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Sequential read benchmark",
+      "command": "fio --name=seqread --rw=read --bs=1M --size=10G --filename=/scratch/test --direct=1",
+      "output_example": "seqread: (g=0): rw=read, bs=1M-1M\n  read: IOPS=2500, BW=2500MB/s (2621MB/s)\n    slat (usec): min=10, max=100, avg=25\n    clat (usec): min=100, max=1000, avg=380",
+      "requires_root": false
+    },
+    {
+      "description": "Random 4K reads (SSD test)",
+      "command": "fio --name=rand4k --rw=randread --bs=4k --size=1G --numjobs=4 --iodepth=32 --ioengine=libaio --direct=1 --filename=/dev/nvme0n1",
+      "requires_root": true
+    },
+    {
+      "description": "Mixed read/write workload",
+      "command": "fio --name=mixed --rw=randrw --rwmixread=70 --bs=4k --size=1G --runtime=60 --filename=/scratch/test",
+      "requires_root": false
+    },
+    {
+      "description": "Lustre parallel test",
+      "command": "fio --name=lustre --rw=write --bs=1M --size=10G --numjobs=8 --directory=/lustre/scratch",
+      "requires_root": false
+    },
+    {
+      "description": "JSON output",
+      "command": "fio --name=test --rw=read --bs=1M --size=1G --output-format=json --filename=/tmp/test",
+      "requires_root": false
+    },
+    {
+      "description": "Latency test",
+      "command": "fio --name=latency --rw=randread --bs=4k --size=100M --iodepth=1 --direct=1 --filename=/dev/nvme0n1",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "file setup failed",
+      "meaning": "Cannot create or access test file",
+      "resolution": "Check permissions and path"
+    },
+    {
+      "message": "io_submit: Permission denied",
+      "meaning": "Cannot use libaio engine",
+      "resolution": "Use sync engine or run as root for block devices"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["dd", "iozone", "bonnie++", "iostat"],
+    "notes": "fio is the standard storage benchmark. Common patterns: read, write, randread, randwrite, randrw. Engines: sync, libaio, io_uring. Use direct=1 for accurate storage benchmarks."
+  },
+  "permissions": {
+    "read_operations": "User access to test location",
+    "write_operations": "Write access to test location",
+    "notes": "Raw device testing requires root"
+  },
+  "limitations": [
+    "Results vary by configuration",
+    "Raw device tests need root",
+    "Can fill storage if misconfigured"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["device", "mount_point"],
+        "description": "Tests storage device performance"
+      },
+      {
+        "state_domain": "storage_lustre_state",
+        "fields": ["mount_point"],
+        "description": "Can benchmark Lustre filesystems"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Creates test files during benchmark",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Storage mounted",
+        "effect": "Can benchmark mounted storage"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "iostat",
+        "shared_state": "I/O metrics correlate during benchmark"
+      },
+      {
+        "command": "dd",
+        "shared_state": "Sequential bandwidth comparable"
+      }
+    ]
+  }
+}

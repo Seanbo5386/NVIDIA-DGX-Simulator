@@ -1,0 +1,144 @@
+{
+  "command": "netstat",
+  "category": "networking",
+  "description": "Print network connections, routing tables, interface statistics. Legacy network diagnostic tool. Common on older HPC systems.",
+  "synopsis": "netstat [options]",
+  "version_documented": "net-tools 2.10+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/netstat.8.html"],
+  "installation": {
+    "package": "net-tools",
+    "notes": "Legacy package, ss is preferred."
+  },
+  "global_options": [
+    {
+      "short": "-t",
+      "long": "--tcp",
+      "description": "TCP connections"
+    },
+    {
+      "short": "-u",
+      "long": "--udp",
+      "description": "UDP connections"
+    },
+    {
+      "short": "-l",
+      "long": "--listening",
+      "description": "Listening sockets"
+    },
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "All sockets"
+    },
+    {
+      "short": "-n",
+      "long": "--numeric",
+      "description": "Numeric addresses"
+    },
+    {
+      "short": "-p",
+      "long": "--program",
+      "description": "Show PID/program"
+    },
+    {
+      "short": "-r",
+      "long": "--route",
+      "description": "Routing table"
+    },
+    {
+      "short": "-i",
+      "long": "--interfaces",
+      "description": "Interface table"
+    },
+    {
+      "short": "-s",
+      "long": "--statistics",
+      "description": "Protocol statistics"
+    },
+    {
+      "short": "-c",
+      "long": "--continuous",
+      "description": "Continuous output"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "All listening ports",
+      "command": "netstat -tlnp",
+      "requires_root": true
+    },
+    {
+      "description": "All connections",
+      "command": "netstat -an",
+      "requires_root": false
+    },
+    {
+      "description": "Routing table",
+      "command": "netstat -rn",
+      "requires_root": false
+    },
+    {
+      "description": "Interface statistics",
+      "command": "netstat -i",
+      "requires_root": false
+    },
+    {
+      "description": "Protocol statistics",
+      "command": "netstat -s",
+      "requires_root": false
+    },
+    {
+      "description": "TCP with programs",
+      "command": "netstat -tnp",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "not permitted",
+      "meaning": "Cannot show process names",
+      "resolution": "Use sudo"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["ss", "ip", "lsof"],
+    "notes": "Deprecated - use ss instead. Still available on many systems. -tlnp is most common usage."
+  },
+  "permissions": {
+    "read_operations": "Read network info",
+    "write_operations": "N/A",
+    "notes": "Process info needs root"
+  },
+  "limitations": [
+    "Deprecated in favor of ss",
+    "Slower than ss",
+    "May not be installed by default"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_eth_state",
+        "fields": ["connections", "routes", "interfaces"],
+        "description": "Shows network state"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "ss",
+        "shared_state": "Both show socket information"
+      }
+    ]
+  }
+}

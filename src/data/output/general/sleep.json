@@ -1,0 +1,87 @@
+{
+  "command": "sleep",
+  "category": "general",
+  "description": "Delay for specified time. Pauses execution for given duration. Commonly used in HPC scripts for timing and polling loops.",
+  "synopsis": "sleep <number>[suffix]...",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/sleep.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Sleep 5 seconds",
+      "command": "sleep 5",
+      "requires_root": false
+    },
+    {
+      "description": "Sleep 1 minute",
+      "command": "sleep 1m",
+      "requires_root": false
+    },
+    {
+      "description": "Sleep 2 hours",
+      "command": "sleep 2h",
+      "requires_root": false
+    },
+    {
+      "description": "Fractional seconds",
+      "command": "sleep 0.5",
+      "requires_root": false
+    },
+    {
+      "description": "Polling loop",
+      "command": "while [ ! -f done.flag ]; do sleep 30; done",
+      "requires_root": false
+    },
+    {
+      "description": "Delay between commands",
+      "command": "nvidia-smi; sleep 10; nvidia-smi",
+      "requires_root": false
+    },
+    {
+      "description": "Wait for job start",
+      "command": "sbatch job.sh && sleep 5 && squeue -u $USER",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "invalid time interval",
+      "meaning": "Bad duration format",
+      "resolution": "Use number with optional suffix (s,m,h,d)"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["timeout", "wait", "watch"],
+    "notes": "Suffix: s=seconds (default), m=minutes, h=hours, d=days. Supports floating point. Multiple values are summed."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "N/A",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Cannot be resumed after interrupt",
+    "Minimum granularity depends on system",
+    "Uses some CPU for timer"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": []
+  }
+}

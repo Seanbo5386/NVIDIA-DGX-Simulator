@@ -1,0 +1,180 @@
+{
+  "command": "sgather",
+  "category": "cluster_management",
+  "description": "Gather files from compute nodes within a Slurm job allocation. Collects output files from all nodes to a central location. Complement to sbcast for file collection.",
+  "synopsis": "sgather [options] <source> <destination>",
+  "version_documented": "Slurm 21.08+",
+  "source_urls": ["https://slurm.schedmd.com/sgather.html"],
+  "installation": {
+    "package": "slurm-client",
+    "notes": "Part of Slurm workload manager."
+  },
+  "global_options": [
+    {
+      "short": "-C",
+      "long": "--compress",
+      "description": "Compress files during transfer",
+      "arguments": "[type]",
+      "argument_type": "string"
+    },
+    {
+      "short": "-f",
+      "long": "--force",
+      "description": "Overwrite existing files"
+    },
+    {
+      "short": "-F",
+      "long": "--fanout",
+      "description": "Fanout for tree gather",
+      "arguments": "<count>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-j",
+      "long": "--jobid",
+      "description": "Job ID for gather",
+      "arguments": "<jobid>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-k",
+      "long": "--keep",
+      "description": "Keep source files on nodes"
+    },
+    {
+      "short": "-r",
+      "long": "--recursive",
+      "description": "Gather directories recursively"
+    },
+    {
+      "short": "-t",
+      "long": "--timeout",
+      "description": "Transfer timeout seconds",
+      "arguments": "<seconds>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Verbose output"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Gather output files",
+      "command": "sgather /tmp/output.dat ./results/",
+      "requires_root": false
+    },
+    {
+      "description": "Gather with compression",
+      "command": "sgather -C lz4 /local/results.bin ./collected/",
+      "requires_root": false
+    },
+    {
+      "description": "Keep source files",
+      "command": "sgather -k /scratch/checkpoint.dat ./checkpoints/",
+      "requires_root": false
+    },
+    {
+      "description": "Gather directory recursively",
+      "command": "sgather -r /tmp/output_dir ./gathered_results/",
+      "requires_root": false
+    },
+    {
+      "description": "Verbose gather",
+      "command": "sgather -v /local/data.bin ./data/",
+      "output_example": "sgather: gathering '/local/data.bin' from 64 nodes\nsgather: collected 64 files, 1.2 GB total",
+      "requires_root": false
+    },
+    {
+      "description": "Force overwrite",
+      "command": "sgather -f /tmp/results.json ./results/",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "No job allocation",
+      "meaning": "Not running within a Slurm job",
+      "resolution": "Run sgather within job or specify --jobid"
+    },
+    {
+      "message": "Source not found",
+      "meaning": "File doesn't exist on some nodes",
+      "resolution": "Verify file exists on all nodes"
+    },
+    {
+      "message": "Destination exists",
+      "meaning": "Output file already exists",
+      "resolution": "Use -f/--force to overwrite"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["sbcast", "srun", "sbatch", "pdcp"],
+    "notes": "Files gathered are named with node suffix (e.g., output.dat.node001). Useful for collecting per-node output when not using shared filesystem."
+  },
+  "permissions": {
+    "read_operations": "Must have valid job allocation",
+    "write_operations": "Write access to destination",
+    "notes": "Runs as job user"
+  },
+  "limitations": [
+    "Requires active Slurm job allocation",
+    "Source must exist on all nodes",
+    "Files renamed with node suffix",
+    "May timeout on slow networks"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "job_state",
+        "fields": ["job_id", "node_list"],
+        "description": "Uses job allocation to determine source nodes"
+      },
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads files from compute node local storage"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Writes collected files to destination",
+        "requires_privilege": "job allocation"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Job completion",
+        "effect": "sgather typically used before job ends"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "sbcast",
+        "shared_state": "Reverse operation for distributing files"
+      },
+      {
+        "command": "srun",
+        "shared_state": "Uses same job allocation"
+      }
+    ]
+  }
+}

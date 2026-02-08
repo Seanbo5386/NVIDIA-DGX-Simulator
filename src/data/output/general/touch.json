@@ -1,0 +1,127 @@
+{
+  "command": "touch",
+  "category": "general",
+  "description": "Change file timestamps. Creates empty files or updates access/modification times. Commonly used in HPC for job signaling and marking progress.",
+  "synopsis": "touch [options] <file>...",
+  "version_documented": "coreutils 8.32+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/touch.1.html"],
+  "installation": {
+    "package": "coreutils",
+    "notes": "Part of coreutils, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "description": "Change only access time"
+    },
+    {
+      "short": "-m",
+      "description": "Change only modification time"
+    },
+    {
+      "short": "-c",
+      "long": "--no-create",
+      "description": "Do not create files"
+    },
+    {
+      "short": "-d",
+      "long": "--date",
+      "description": "Use specified date",
+      "arguments": "<date>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-t",
+      "description": "Use specified time",
+      "arguments": "[[CC]YY]MMDDhhmm[.ss]",
+      "argument_type": "string"
+    },
+    {
+      "short": "-r",
+      "long": "--reference",
+      "description": "Use reference file's times",
+      "arguments": "<file>",
+      "argument_type": "path"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Create empty file",
+      "command": "touch newfile.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Update timestamp to now",
+      "command": "touch existing_file.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Create multiple files",
+      "command": "touch file1.txt file2.txt file3.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Set specific date",
+      "command": "touch -d '2024-01-15 10:30:00' file.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Match reference file",
+      "command": "touch -r reference.txt newfile.txt",
+      "requires_root": false
+    },
+    {
+      "description": "Job completion marker",
+      "command": "touch /scratch/job_${SLURM_JOB_ID}.done",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Permission denied",
+      "meaning": "Cannot write to directory",
+      "resolution": "Check directory permissions"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["stat", "ls -l", "date"],
+    "notes": "Creates file if not exists (unless -c). Often used for job signaling in HPC workflows."
+  },
+  "permissions": {
+    "read_operations": "N/A",
+    "write_operations": "Write to directory for new files, ownership for existing",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "Cannot change ctime (status change time)",
+    "Nanosecond precision requires special options"
+  ],
+  "state_interactions": {
+    "reads_from": [],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Creates or updates file timestamps",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "stat",
+        "shared_state": "File timestamps shown"
+      }
+    ]
+  }
+}

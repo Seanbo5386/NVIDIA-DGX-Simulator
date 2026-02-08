@@ -1,0 +1,524 @@
+{
+  "command": "ethtool",
+  "category": "networking",
+  "description": "Query and configure network device driver and hardware settings. ethtool is the standard Linux utility for displaying and modifying Ethernet device parameters including link speed, duplex settings, auto-negotiation, driver information, NIC statistics, ring buffer sizes, offload settings, interrupt coalescing, and pause parameters. It provides low-level access to network interface card capabilities and is essential for network performance tuning and troubleshooting in HPC environments.",
+  "synopsis": "ethtool [options] <devname>",
+  "version_documented": "ethtool 6.x",
+  "source_urls": [
+    "https://man7.org/linux/man-pages/man8/ethtool.8.html",
+    "https://mirrors.edge.kernel.org/pub/software/network/ethtool/"
+  ],
+  "installation": {
+    "package": "ethtool",
+    "notes": "Available in standard Linux package repositories. On RHEL/CentOS: yum install ethtool. On Ubuntu/Debian: apt install ethtool. Usually pre-installed on most Linux distributions."
+  },
+  "global_options": [
+    {
+      "short": "-i",
+      "long": "--driver",
+      "description": "Query driver information for the specified interface. Shows driver name, version, firmware version, bus information, and supported features.",
+      "example": "ethtool -i eth0"
+    },
+    {
+      "short": "-S",
+      "long": "--statistics",
+      "description": "Query NIC and driver-specific statistics. Output varies by driver but typically includes packet counts, error counters, and hardware-specific metrics.",
+      "example": "ethtool -S eth0"
+    },
+    {
+      "short": "-g",
+      "long": "--show-ring",
+      "description": "Query ring buffer sizes for RX and TX queues. Shows current and maximum values for ring buffer entries.",
+      "example": "ethtool -g eth0"
+    },
+    {
+      "short": "-G",
+      "long": "--set-ring",
+      "description": "Set ring buffer sizes for RX and TX queues. Accepts rx, tx, rx-mini, and rx-jumbo parameters.",
+      "arguments": "[rx N] [tx N] [rx-mini N] [rx-jumbo N]",
+      "argument_type": "string",
+      "example": "ethtool -G eth0 rx 4096 tx 4096"
+    },
+    {
+      "short": "-k",
+      "long": "--show-offload",
+      "description": "Query offload settings (also known as features). Shows status of hardware offloading capabilities like TSO, GSO, GRO, checksum offload, and scatter-gather.",
+      "example": "ethtool -k eth0"
+    },
+    {
+      "short": "-K",
+      "long": "--offload",
+      "description": "Set offload settings (features). Enable or disable specific offload capabilities.",
+      "arguments": "<feature> on|off [...]",
+      "argument_type": "string",
+      "example": "ethtool -K eth0 tso on gro on"
+    },
+    {
+      "short": "-c",
+      "long": "--show-coalesce",
+      "description": "Query interrupt coalescing settings. Shows adaptive coalescing status, usec/frame parameters for RX and TX interrupt moderation.",
+      "example": "ethtool -c eth0"
+    },
+    {
+      "short": "-C",
+      "long": "--coalesce",
+      "description": "Set interrupt coalescing parameters. Configure adaptive coalescing, RX/TX usec and frame limits.",
+      "arguments": "[adaptive-rx on|off] [adaptive-tx on|off] [rx-usecs N] [tx-usecs N] [rx-frames N] [tx-frames N] ...",
+      "argument_type": "string",
+      "example": "ethtool -C eth0 adaptive-rx on rx-usecs 50"
+    },
+    {
+      "short": "-a",
+      "long": "--show-pause",
+      "description": "Query pause frame settings. Shows auto-negotiation status and RX/TX pause frame configuration.",
+      "example": "ethtool -a eth0"
+    },
+    {
+      "short": "-A",
+      "long": "--pause",
+      "description": "Set pause frame parameters. Configure auto-negotiation and RX/TX pause frame settings.",
+      "arguments": "[autoneg on|off] [rx on|off] [tx on|off]",
+      "argument_type": "string",
+      "example": "ethtool -A eth0 autoneg off rx on tx on"
+    },
+    {
+      "short": "-l",
+      "long": "--show-channels",
+      "description": "Query number of channels (combined, RX, TX, and other). Shows current and maximum channel counts for multi-queue NICs.",
+      "example": "ethtool -l eth0"
+    },
+    {
+      "short": "-L",
+      "long": "--set-channels",
+      "description": "Set number of channels for multi-queue operation. Configure combined, RX, TX, and other queue counts.",
+      "arguments": "[rx N] [tx N] [combined N] [other N]",
+      "argument_type": "string",
+      "example": "ethtool -L eth0 combined 8"
+    },
+    {
+      "short": "-s",
+      "long": "--change",
+      "description": "Change device settings including speed, duplex, auto-negotiation, and advertised link modes.",
+      "arguments": "[speed N] [duplex half|full] [autoneg on|off] [advertise N] [port tp|aui|bnc|mii|fibre|da] ...",
+      "argument_type": "string",
+      "example": "ethtool -s eth0 speed 100000 duplex full autoneg off"
+    },
+    {
+      "short": "-r",
+      "long": "--negotiate",
+      "description": "Restart auto-negotiation on the specified device if auto-negotiation is enabled.",
+      "example": "ethtool -r eth0"
+    },
+    {
+      "short": "-p",
+      "long": "--identify",
+      "description": "Initiate adapter-specific physical identification (e.g., blinking LEDs) for the specified duration in seconds.",
+      "arguments": "[N]",
+      "argument_type": "integer",
+      "default": "indefinite until interrupted",
+      "example": "ethtool -p eth0 5"
+    },
+    {
+      "short": "-t",
+      "long": "--test",
+      "description": "Execute adapter self-test. Mode can be online (non-disruptive) or offline (may disrupt operation).",
+      "arguments": "[offline|online|external_lb]",
+      "argument_type": "string",
+      "example": "ethtool -t eth0 offline"
+    },
+    {
+      "short": "-e",
+      "long": "--eeprom-dump",
+      "description": "Dump EEPROM contents. Can specify raw output, offset, and length.",
+      "arguments": "[raw on|off] [offset N] [length N]",
+      "argument_type": "string",
+      "example": "ethtool -e eth0"
+    },
+    {
+      "short": "-E",
+      "long": "--change-eeprom",
+      "description": "Write data to EEPROM. Specify magic number, offset, length, and value.",
+      "arguments": "magic N [offset N] [length N] [value N]",
+      "argument_type": "string",
+      "example": "ethtool -E eth0 magic 0x10ec8168 offset 0x12 value 0x34"
+    },
+    {
+      "short": "-m",
+      "long": "--dump-module-eeprom",
+      "description": "Query module EEPROM/transceiver information (SFP, SFP+, QSFP). Shows vendor info, serial number, wavelength, power levels.",
+      "arguments": "[raw on|off] [hex on|off] [offset N] [length N]",
+      "argument_type": "string",
+      "example": "ethtool -m eth0"
+    },
+    {
+      "short": "-n",
+      "long": "--show-nfc",
+      "description": "Query RX network flow classification (NFC) rules or hash options. Use rx-flow-hash for hash configuration.",
+      "arguments": "[rx-flow-hash tcp4|udp4|tcp6|udp6|...]",
+      "argument_type": "string",
+      "example": "ethtool -n eth0 rx-flow-hash tcp4"
+    },
+    {
+      "short": "-N",
+      "long": "--config-nfc",
+      "description": "Configure RX network flow classification rules or hash options.",
+      "arguments": "[rx-flow-hash tcp4|udp4|tcp6|udp6|... m|v|t|s|d|f|n|r...] | [flow-type ...] [action N]",
+      "argument_type": "string",
+      "example": "ethtool -N eth0 rx-flow-hash tcp4 sdfn"
+    },
+    {
+      "short": "-x",
+      "long": "--show-rxfh-indir",
+      "description": "Query RSS (Receive Side Scaling) indirection table and hash key.",
+      "example": "ethtool -x eth0"
+    },
+    {
+      "short": "-X",
+      "long": "--set-rxfh-indir",
+      "description": "Set RSS indirection table entries and/or hash key.",
+      "arguments": "[equal N] | [weight W0 W1 ...] | [hkey <hash_key>] | [hfunc <func>] | [default]",
+      "argument_type": "string",
+      "example": "ethtool -X eth0 equal 4"
+    },
+    {
+      "short": "-T",
+      "long": "--show-time-stamping",
+      "description": "Query device time stamping capabilities for PTP (Precision Time Protocol) support.",
+      "example": "ethtool -T eth0"
+    },
+    {
+      "long": "--show-eee",
+      "description": "Query Energy-Efficient Ethernet (EEE) settings and status.",
+      "example": "ethtool --show-eee eth0"
+    },
+    {
+      "long": "--set-eee",
+      "description": "Configure Energy-Efficient Ethernet (EEE) settings.",
+      "arguments": "[eee on|off] [tx-lpi on|off] [tx-timer N] [advertise N]",
+      "argument_type": "string",
+      "example": "ethtool --set-eee eth0 eee on"
+    },
+    {
+      "long": "--show-priv-flags",
+      "description": "Query device-specific private flags. Available flags vary by driver.",
+      "example": "ethtool --show-priv-flags eth0"
+    },
+    {
+      "long": "--set-priv-flags",
+      "description": "Set device-specific private flags.",
+      "arguments": "<flag> on|off [...]",
+      "argument_type": "string",
+      "example": "ethtool --set-priv-flags eth0 link-down-on-close on"
+    },
+    {
+      "long": "--reset",
+      "description": "Reset device components. Flags specify which components to reset.",
+      "arguments": "[flags N] | [mgmt] | [irq] | [dma] | [filter] | [offload] | [mac] | [phy] | [ram] | [dedicated] | [all]",
+      "argument_type": "string",
+      "example": "ethtool --reset eth0 all"
+    },
+    {
+      "long": "--show-fec",
+      "description": "Query Forward Error Correction (FEC) settings and capabilities.",
+      "example": "ethtool --show-fec eth0"
+    },
+    {
+      "long": "--set-fec",
+      "description": "Configure Forward Error Correction (FEC) encoding mode.",
+      "arguments": "encoding auto|off|rs|baser|llrs [...]",
+      "argument_type": "string",
+      "example": "ethtool --set-fec eth0 encoding rs"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help message with available options and usage information."
+    },
+    {
+      "long": "--version",
+      "description": "Display ethtool version information."
+    }
+  ],
+  "output_formats": {
+    "default": "Human-readable multi-line format with field labels and values. Format varies by query type (driver info, statistics, ring buffers, etc.).",
+    "raw": "For EEPROM and module dumps, raw option outputs binary data without formatting."
+  },
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - command failed (device not found, permission denied, operation not supported, invalid arguments)"
+    },
+    {
+      "code": 80,
+      "meaning": "Operation not supported by device or driver"
+    },
+    {
+      "code": 81,
+      "meaning": "No data available from device"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Check link speed and status for a network interface",
+      "command": "ethtool eth0",
+      "output_example": "Settings for eth0:\n\tSupported ports: [ TP ]\n\tSupported link modes:   10baseT/Half 10baseT/Full\n\t                        100baseT/Half 100baseT/Full\n\t                        1000baseT/Full\n\tSpeed: 1000Mb/s\n\tDuplex: Full\n\tAuto-negotiation: on\n\tLink detected: yes"
+    },
+    {
+      "description": "Query driver and firmware information",
+      "command": "ethtool -i eth0",
+      "output_example": "driver: mlx5_core\nversion: 5.15.0-50-generic\nfirmware-version: 20.35.2000 (MT_0000000425)\nexpansion-rom-version:\nbus-info: 0000:3b:00.0\nsupports-statistics: yes\nsupports-test: yes\nsupports-eeprom-access: yes\nsupports-register-dump: no\nsupports-priv-flags: yes"
+    },
+    {
+      "description": "Display NIC statistics and error counters",
+      "command": "ethtool -S eth0",
+      "output_example": "NIC statistics:\n     rx_packets: 12345678\n     tx_packets: 9876543\n     rx_bytes: 12345678901\n     tx_bytes: 9876543210\n     rx_errors: 0\n     tx_errors: 0\n     rx_dropped: 0\n     tx_dropped: 0\n     rx_crc_errors: 0\n     rx_length_errors: 0"
+    },
+    {
+      "description": "Check offload settings (TSO, GRO, checksums)",
+      "command": "ethtool -k eth0",
+      "output_example": "Features for eth0:\nrx-checksumming: on\ntx-checksumming: on\n\ttx-checksum-ipv4: on\n\ttx-checksum-ip-generic: off [fixed]\nscatter-gather: on\ntcp-segmentation-offload: on\ngeneric-receive-offload: on\nlarge-receive-offload: off [fixed]"
+    },
+    {
+      "description": "Enable TSO and GRO offload features",
+      "command": "ethtool -K eth0 tso on gro on",
+      "requires_root": true
+    },
+    {
+      "description": "Query ring buffer sizes",
+      "command": "ethtool -g eth0",
+      "output_example": "Ring parameters for eth0:\nPre-set maximums:\nRX:\t\t8192\nRX Mini:\tn/a\nRX Jumbo:\tn/a\nTX:\t\t8192\nCurrent hardware settings:\nRX:\t\t1024\nRX Mini:\tn/a\nRX Jumbo:\tn/a\nTX:\t\t1024"
+    },
+    {
+      "description": "Increase ring buffer sizes for better performance",
+      "command": "ethtool -G eth0 rx 4096 tx 4096",
+      "requires_root": true
+    },
+    {
+      "description": "Query interrupt coalescing settings",
+      "command": "ethtool -c eth0",
+      "output_example": "Coalesce parameters for eth0:\nAdaptive RX: on  TX: on\nstats-block-usecs: 0\nsample-interval: 0\npkt-rate-low: 0\npkt-rate-high: 0\n\nrx-usecs: 16\nrx-frames: 128\nrx-usecs-irq: 0\nrx-frames-irq: 0\n\ntx-usecs: 16\ntx-frames: 128"
+    },
+    {
+      "description": "Configure interrupt coalescing for latency-sensitive workloads",
+      "command": "ethtool -C eth0 adaptive-rx off rx-usecs 0 rx-frames 1",
+      "requires_root": true
+    },
+    {
+      "description": "Query pause frame settings",
+      "command": "ethtool -a eth0",
+      "output_example": "Pause parameters for eth0:\nAutonegotiate:\ton\nRX:\t\ton\nTX:\t\ton"
+    },
+    {
+      "description": "Query number of channels for multi-queue NIC",
+      "command": "ethtool -l eth0",
+      "output_example": "Channel parameters for eth0:\nPre-set maximums:\nRX:\t\tn/a\nTX:\t\tn/a\nOther:\t\tn/a\nCombined:\t63\nCurrent hardware settings:\nRX:\t\tn/a\nTX:\t\tn/a\nOther:\t\tn/a\nCombined:\t8"
+    },
+    {
+      "description": "Set number of combined channels to match CPU cores",
+      "command": "ethtool -L eth0 combined 16",
+      "requires_root": true
+    },
+    {
+      "description": "Query module/transceiver information (SFP/QSFP)",
+      "command": "ethtool -m eth0",
+      "output_example": "Identifier                                : 0x11 (QSFP28)\nExtended identifier                       : 0x00\nConnector                                 : 0x23 (No separable connector)\nTransceiver codes                         : 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00\nVendor name                               : Mellanox\nVendor OUI                                : 00:02:c9\nVendor PN                                 : MCP1600-C003E30N\nVendor rev                                : A2\nVendor SN                                 : MT2051FT05432"
+    },
+    {
+      "description": "Query FEC (Forward Error Correction) settings",
+      "command": "ethtool --show-fec eth0",
+      "output_example": "FEC parameters for eth0:\nConfigured FEC encodings: Auto\nActive FEC encoding: RS"
+    },
+    {
+      "description": "Set FEC encoding to Reed-Solomon",
+      "command": "ethtool --set-fec eth0 encoding rs",
+      "requires_root": true
+    },
+    {
+      "description": "Blink NIC LEDs for physical identification",
+      "command": "ethtool -p eth0 10",
+      "requires_root": true
+    },
+    {
+      "description": "Run adapter self-test",
+      "command": "ethtool -t eth0 offline",
+      "output_example": "The test result is PASS",
+      "requires_root": true
+    },
+    {
+      "description": "Query RSS indirection table",
+      "command": "ethtool -x eth0",
+      "output_example": "RX flow hash indirection table for eth0 with 8 RX ring(s):\n    0:      0     1     2     3     4     5     6     7\n    8:      0     1     2     3     4     5     6     7\nRSS hash key:\n3a:82:e2:de:..."
+    },
+    {
+      "description": "Set link speed to 100Gbps with auto-negotiation off",
+      "command": "ethtool -s eth0 speed 100000 duplex full autoneg off",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Cannot get device settings: No such device",
+      "meaning": "The specified network interface does not exist",
+      "resolution": "Verify interface name with 'ip link show' or 'ifconfig -a'. Check for typos in device name."
+    },
+    {
+      "message": "Cannot get device settings: Operation not permitted",
+      "meaning": "Insufficient permissions to query the device",
+      "resolution": "Run ethtool with sudo or as root. Some operations require elevated privileges."
+    },
+    {
+      "message": "Cannot get device driver information: Operation not supported",
+      "meaning": "The driver does not support this ethtool operation",
+      "resolution": "Not all drivers support all ethtool features. Check driver documentation for supported operations."
+    },
+    {
+      "message": "Cannot get device ring settings: Operation not supported",
+      "meaning": "Ring buffer query/configuration not supported by this driver",
+      "resolution": "Some virtual or software interfaces do not support ring buffer operations."
+    },
+    {
+      "message": "Cannot set device ring parameters: Invalid argument",
+      "meaning": "Requested ring buffer size is invalid (too large or not a power of 2)",
+      "resolution": "Use -g to query maximum values. Ensure values do not exceed maximums shown."
+    },
+    {
+      "message": "Cannot get device coalesce settings: Operation not supported",
+      "meaning": "Interrupt coalescing not supported by this driver or device",
+      "resolution": "Some devices do not support interrupt coalescing configuration."
+    },
+    {
+      "message": "netlink error: Operation not permitted",
+      "meaning": "Netlink-based operation requires elevated privileges",
+      "resolution": "Run as root or with appropriate capabilities (CAP_NET_ADMIN)."
+    },
+    {
+      "message": "ETHTOOL_GSTATS failed: Operation not supported",
+      "meaning": "Statistics query not supported by this driver",
+      "resolution": "Not all drivers expose statistics through ethtool. Try driver-specific methods."
+    },
+    {
+      "message": "Cannot set device channel parameters: Device or resource busy",
+      "meaning": "Cannot change channel count while interface is in use",
+      "resolution": "Bring the interface down with 'ip link set eth0 down' before changing channels."
+    },
+    {
+      "message": "Cannot get module EEPROM information: Operation not supported",
+      "meaning": "No pluggable module present or driver does not support module EEPROM query",
+      "resolution": "Verify a transceiver module is inserted. Check if the port supports pluggable modules."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "ip",
+      "ifconfig",
+      "mlxlink",
+      "mii-tool",
+      "lspci",
+      "dmesg",
+      "tc",
+      "ss",
+      "netstat",
+      "iperf3"
+    ],
+    "uses_library": ["libc", "netlink"],
+    "notes": "ethtool uses ioctl and netlink interfaces to communicate with network drivers. Feature availability depends on driver support. For Mellanox/NVIDIA adapters, mlxlink provides additional diagnostic capabilities. For InfiniBand, use ibstat and related tools. ethtool settings are typically not persistent across reboots; use network configuration files or systemd-networkd for persistence."
+  },
+  "permissions": {
+    "read_operations": "Most query operations work as non-root user, but some statistics and hardware information may require root",
+    "write_operations": "Root privileges (or CAP_NET_ADMIN capability) required for all configuration changes (-s, -G, -K, -C, -A, -L, -N, -X, etc.)",
+    "notes": "Some operations may require the interface to be down. EEPROM write operations can permanently damage hardware if used incorrectly."
+  },
+  "limitations": [
+    "Feature availability depends on driver support - not all drivers implement all ethtool operations",
+    "Settings are not persistent across reboots by default",
+    "Some virtual interfaces (bridges, bonds, VLANs) have limited ethtool support",
+    "Statistics output format varies significantly between drivers",
+    "Cannot query remote network devices",
+    "Channel count changes typically require interface to be down",
+    "Ring buffer changes may cause brief traffic interruption",
+    "EEPROM modifications can permanently damage hardware"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_eth_state",
+        "fields": [
+          "link_speed",
+          "duplex",
+          "auto_negotiation",
+          "link_detected",
+          "driver_name",
+          "driver_version",
+          "firmware_version",
+          "bus_info",
+          "rx_packets",
+          "tx_packets",
+          "rx_bytes",
+          "tx_bytes",
+          "rx_errors",
+          "tx_errors",
+          "ring_buffer_rx",
+          "ring_buffer_tx",
+          "offload_features",
+          "coalesce_settings",
+          "pause_settings",
+          "channel_count",
+          "fec_mode",
+          "module_info"
+        ],
+        "description": "ethtool reads comprehensive Ethernet interface state including link parameters, statistics, driver information, and hardware configuration"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "network_eth_state",
+        "fields": [
+          "link_speed",
+          "duplex",
+          "auto_negotiation",
+          "ring_buffer_rx",
+          "ring_buffer_tx",
+          "offload_features",
+          "coalesce_settings",
+          "pause_settings",
+          "channel_count",
+          "fec_mode",
+          "rss_config"
+        ],
+        "description": "ethtool can configure link parameters, buffer sizes, offload features, interrupt coalescing, pause frames, channel counts, FEC, and RSS settings",
+        "requires_flags": [
+          "-s",
+          "-G",
+          "-K",
+          "-C",
+          "-A",
+          "-L",
+          "-N",
+          "-X",
+          "--set-fec",
+          "--set-eee",
+          "--set-priv-flags"
+        ],
+        "requires_privilege": "root"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ip",
+        "shared_state": "Link state, MTU (ip shows interface status; ethtool provides detailed NIC parameters)"
+      },
+      {
+        "command": "ifconfig",
+        "shared_state": "Link state, basic statistics (legacy interface; ethtool provides more detailed hardware info)"
+      },
+      {
+        "command": "mlxlink",
+        "shared_state": "Link speed, FEC settings, module info (mlxlink provides Mellanox-specific diagnostics; ethtool is driver-agnostic)"
+      }
+    ]
+  }
+}

@@ -1,0 +1,192 @@
+{
+  "command": "perf",
+  "category": "monitoring",
+  "description": "Linux performance analysis tool using hardware counters. Profiles CPU cycles, cache misses, branch mispredictions, and more. Essential for HPC application performance analysis.",
+  "synopsis": "perf [options] <command> [args]",
+  "version_documented": "Linux 5.0+",
+  "source_urls": ["https://perf.wiki.kernel.org/index.php/Main_Page"],
+  "installation": {
+    "package": "linux-tools-generic",
+    "notes": "Install via: apt install linux-tools-$(uname -r) or yum install perf"
+  },
+  "subcommands": [
+    {
+      "name": "stat",
+      "description": "Run command and gather performance counter statistics"
+    },
+    {
+      "name": "record",
+      "description": "Record performance data to perf.data"
+    },
+    {
+      "name": "report",
+      "description": "Read perf.data and display profile"
+    },
+    {
+      "name": "top",
+      "description": "System profiling tool similar to top"
+    },
+    {
+      "name": "list",
+      "description": "List available events"
+    },
+    {
+      "name": "annotate",
+      "description": "Read perf.data and display annotated code"
+    }
+  ],
+  "global_options": [
+    {
+      "short": "-e",
+      "long": "--event",
+      "description": "Select events to count",
+      "arguments": "<event>",
+      "argument_type": "string",
+      "example": "-e cycles,instructions,cache-misses"
+    },
+    {
+      "short": "-a",
+      "long": "--all-cpus",
+      "description": "Profile all CPUs system-wide"
+    },
+    {
+      "short": "-p",
+      "long": "--pid",
+      "description": "Profile existing process",
+      "arguments": "<pid>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-g",
+      "description": "Enable call-graph recording"
+    },
+    {
+      "short": "-o",
+      "long": "--output",
+      "description": "Output file",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Basic performance stats",
+      "command": "perf stat ./myapp",
+      "output_example": "Performance counter stats for './myapp':\n\n      1,234,567,890      cycles\n        987,654,321      instructions              #    0.80  insn per cycle\n         12,345,678      cache-misses              #   10.23% of cache refs\n\n       2.345678901 seconds time elapsed",
+      "requires_root": false
+    },
+    {
+      "description": "Profile with call graph",
+      "command": "perf record -g ./myapp",
+      "requires_root": false
+    },
+    {
+      "description": "System-wide profiling",
+      "command": "perf top -a",
+      "requires_root": true
+    },
+    {
+      "description": "Profile existing process",
+      "command": "perf record -p 12345 sleep 10",
+      "requires_root": false
+    },
+    {
+      "description": "View recorded profile",
+      "command": "perf report",
+      "requires_root": false
+    },
+    {
+      "description": "List available events",
+      "command": "perf list",
+      "requires_root": false
+    },
+    {
+      "description": "Count cache misses",
+      "command": "perf stat -e cache-misses,cache-references ./myapp",
+      "requires_root": false
+    },
+    {
+      "description": "NUMA profiling",
+      "command": "perf stat -e node-loads,node-load-misses ./myapp",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Permission denied",
+      "meaning": "Cannot access performance counters",
+      "resolution": "Run as root or set perf_event_paranoid sysctl"
+    },
+    {
+      "message": "No permission to enable events",
+      "meaning": "Kernel restricts PMU access",
+      "resolution": "Set kernel.perf_event_paranoid=-1"
+    },
+    {
+      "message": "perf.data not found",
+      "meaning": "No recorded data file",
+      "resolution": "Run perf record first"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["top", "mpstat", "oprofile", "vtune"],
+    "notes": "Requires kernel support for perf_events. Some events require root or perf_event_paranoid=-1. Use perf list to see available events for your CPU."
+  },
+  "permissions": {
+    "read_operations": "Some events need root or CAP_SYS_ADMIN",
+    "write_operations": "N/A - read-only monitoring",
+    "notes": "Set /proc/sys/kernel/perf_event_paranoid for user access"
+  },
+  "limitations": [
+    "Event availability varies by CPU",
+    "Some events need root",
+    "Overhead can affect measurements",
+    "GPU events not included (use nvprof)"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["cpu_count"],
+        "description": "Uses CPU performance monitoring units"
+      },
+      {
+        "state_domain": "gpu_process_state",
+        "fields": ["pid"],
+        "description": "Can profile processes running on GPUs (CPU portion)"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Process execution",
+        "effect": "Performance counters are sampled"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "mpstat",
+        "shared_state": "CPU utilization metrics correlate"
+      },
+      {
+        "command": "top",
+        "shared_state": "Process CPU usage correlates with perf data"
+      }
+    ]
+  }
+}

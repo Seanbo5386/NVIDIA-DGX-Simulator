@@ -1,0 +1,137 @@
+{
+  "command": "ptxas",
+  "category": "cuda_tools",
+  "description": "PTX to SASS assembler. Compiles PTX intermediate code to GPU machine code. Used for low-level CUDA optimization and kernel analysis.",
+  "synopsis": "ptxas [options] <file>",
+  "version_documented": "CUDA 12.0+",
+  "source_urls": ["https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/"],
+  "installation": {
+    "package": "cuda-toolkit",
+    "notes": "Part of CUDA toolkit."
+  },
+  "global_options": [
+    {
+      "short": "-o",
+      "long": "--output-file",
+      "description": "Output file",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "long": "--gpu-name",
+      "description": "Target GPU architecture",
+      "arguments": "<arch>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Verbose output"
+    },
+    {
+      "long": "--warn-on-spills",
+      "description": "Warn on register spills"
+    },
+    {
+      "short": "-O",
+      "long": "--opt-level",
+      "description": "Optimization level (0-3)",
+      "arguments": "<level>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--maxrregcount",
+      "description": "Max registers per thread",
+      "arguments": "<count>",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--def-load-cache",
+      "description": "Default load cache modifier",
+      "arguments": "<modifier>",
+      "argument_type": "string"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Compile PTX to cubin",
+      "command": "ptxas -arch=sm_80 -o kernel.cubin kernel.ptx",
+      "requires_root": false
+    },
+    {
+      "description": "Verbose with spill warnings",
+      "command": "ptxas -v --warn-on-spills -arch=sm_80 kernel.ptx",
+      "requires_root": false
+    },
+    {
+      "description": "Limit register usage",
+      "command": "ptxas --maxrregcount=32 -arch=sm_80 kernel.ptx",
+      "requires_root": false
+    },
+    {
+      "description": "Check resource usage",
+      "command": "ptxas -v -arch=sm_80 kernel.ptx 2>&1 | grep -E '(registers|memory)'",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Entry function uses too much shared data",
+      "meaning": "Shared memory exceeds limit",
+      "resolution": "Reduce shared memory usage"
+    },
+    {
+      "message": "Register spills detected",
+      "meaning": "Too many registers needed",
+      "resolution": "Reduce register pressure or accept spills"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["nvcc", "cuobjdump", "nvdisasm"],
+    "notes": "-v shows register and memory usage. Useful for optimizing occupancy. Part of nvcc compilation chain."
+  },
+  "permissions": {
+    "read_operations": "Read PTX files",
+    "write_operations": "Write cubin files",
+    "notes": "Standard user"
+  },
+  "limitations": [
+    "PTX must be valid",
+    "Architecture must be specified",
+    "Some PTX features arch-specific"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Reads PTX source files"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Writes compiled cubin files",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "nvcc",
+        "shared_state": "nvcc uses ptxas internally"
+      }
+    ]
+  }
+}

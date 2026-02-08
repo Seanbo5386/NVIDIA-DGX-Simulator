@@ -1,0 +1,149 @@
+{
+  "command": "mpstat",
+  "category": "monitoring",
+  "description": "Report per-processor statistics. Part of the sysstat package, mpstat displays CPU utilization statistics for each available processor or processor set, useful for identifying CPU imbalances in HPC workloads.",
+  "synopsis": "mpstat [options] [interval [count]]",
+  "version_documented": "sysstat 12.0+",
+  "source_urls": ["https://man7.org/linux/man-pages/man1/mpstat.1.html"],
+  "installation": {
+    "package": "sysstat",
+    "notes": "Install via: apt install sysstat or yum install sysstat"
+  },
+  "global_options": [
+    {
+      "short": "-A",
+      "description": "Display all statistics (equivalent to -u -I ALL)"
+    },
+    {
+      "short": "-I",
+      "description": "Report interrupt statistics",
+      "arguments": "{keyword|ALL}",
+      "argument_type": "string",
+      "example": "-I SUM"
+    },
+    {
+      "short": "-P",
+      "description": "Select processors to report",
+      "arguments": "{cpu_list|ON|ALL}",
+      "argument_type": "string",
+      "example": "-P 0,2,4-7"
+    },
+    {
+      "short": "-u",
+      "description": "Report CPU utilization"
+    },
+    {
+      "short": "-o",
+      "description": "Output format",
+      "arguments": "JSON",
+      "argument_type": "string"
+    },
+    {
+      "short": "-V",
+      "description": "Display version information"
+    },
+    {
+      "short": "-h",
+      "description": "Display help"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Invalid arguments"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Show all CPU utilization",
+      "command": "mpstat -P ALL",
+      "output_example": "Linux 5.15.0-88-generic (dgx-node-01)   01/15/2024      _x86_64_        (128 CPU)\n\n02:30:45 PM  CPU    %usr   %nice    %sys %iowait    %irq   %soft  %steal  %guest  %gnice   %idle\n02:30:45 PM  all   45.23    0.00    2.15    0.12    0.08    0.15    0.00    0.00    0.00   52.27\n02:30:45 PM    0   89.50    0.00    1.25    0.00    0.50    0.25    0.00    0.00    0.00    8.50\n02:30:45 PM    1   92.00    0.00    1.50    0.00    0.25    0.25    0.00    0.00    0.00    6.00",
+      "requires_root": false
+    },
+    {
+      "description": "Monitor CPU every 2 seconds, 5 times",
+      "command": "mpstat -P ALL 2 5",
+      "requires_root": false
+    },
+    {
+      "description": "Show specific CPUs (NUMA node 0)",
+      "command": "mpstat -P 0-15 1",
+      "requires_root": false
+    },
+    {
+      "description": "Show interrupt statistics",
+      "command": "mpstat -I ALL",
+      "requires_root": false
+    },
+    {
+      "description": "Output in JSON format",
+      "command": "mpstat -o JSON -P ALL 1 1",
+      "requires_root": false
+    },
+    {
+      "description": "Check for CPU imbalance in cluster",
+      "command": "pdsh -w node[001-010] 'mpstat -P ALL 1 1 | tail -n +4' | dshbak -c",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Cannot find disk activity collector",
+      "meaning": "sysstat data collection not configured",
+      "resolution": "Ensure sysstat service is enabled or use direct invocation"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["sar", "iostat", "vmstat", "top", "htop", "pidstat"],
+    "notes": "Part of sysstat package. Per-CPU statistics help identify NUMA imbalances and CPU affinity issues in HPC workloads. High %iowait may indicate storage bottlenecks."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required",
+    "write_operations": "N/A - read-only command",
+    "notes": "Reads from /proc/stat"
+  },
+  "limitations": [
+    "Does not show which processes are using CPU (use pidstat)",
+    "Does not correlate with GPU usage",
+    "Instant snapshot may not reflect sustained behavior",
+    "Interval statistics reset with each interval"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": ["cpu_count", "load_1min", "load_5min", "load_15min"],
+        "description": "Reads per-CPU statistics from /proc/stat"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "CPU utilization change",
+        "effect": "Statistics reflect current CPU activity"
+      },
+      {
+        "state_change": "Process CPU affinity change",
+        "effect": "Per-CPU utilization shifts"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "top",
+        "shared_state": "Overall CPU utilization matches"
+      },
+      {
+        "command": "sar -u",
+        "shared_state": "CPU utilization percentages consistent"
+      },
+      {
+        "command": "uptime",
+        "shared_state": "Load averages indicate same CPU pressure"
+      }
+    ]
+  }
+}

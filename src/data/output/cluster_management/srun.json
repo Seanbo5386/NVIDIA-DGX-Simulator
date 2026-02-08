@@ -1,0 +1,882 @@
+{
+  "command": "srun",
+  "category": "cluster_management",
+  "description": "srun is used to run parallel jobs or create job steps within an existing allocation. When run outside of an allocation, srun will first request resources (similar to salloc), then run the specified command. When run within an existing allocation (such as a batch script or an interactive session from salloc), srun creates a job step that executes the specified command in parallel across allocated resources. srun is the primary mechanism for launching MPI applications and parallel tasks on Slurm-managed clusters. Unlike sbatch, srun is synchronous and waits for the command to complete before returning.",
+  "synopsis": "srun [OPTIONS...] executable [args...]",
+  "version_documented": "Slurm 23.x",
+  "source_urls": ["https://slurm.schedmd.com/srun.html"],
+  "installation": {
+    "package": "slurm-client or slurm",
+    "notes": "Part of the Slurm workload manager. Requires access to a Slurm cluster with slurmctld running."
+  },
+  "global_options": [
+    {
+      "short": "-A",
+      "long": "--account",
+      "description": "Charge resources used by this job to the specified account. The account is an arbitrary string used for tracking or billing purposes.",
+      "arguments": "account",
+      "argument_type": "string",
+      "example": "srun -A research hostname"
+    },
+    {
+      "short": "-b",
+      "long": "--bcast",
+      "description": "Copy the executable to local storage on each node before execution. Can specify a destination path after '=' sign.",
+      "arguments": "dest_path",
+      "argument_type": "path",
+      "example": "srun --bcast=/tmp/prog ./large_binary"
+    },
+    {
+      "long": "--begin",
+      "description": "Defer job step execution until the specified time. Time formats include HH:MM:SS, YYYY-MM-DD, now+count[seconds|minutes|hours|days|weeks].",
+      "arguments": "time",
+      "argument_type": "string",
+      "example": "srun --begin=now+1hour hostname"
+    },
+    {
+      "short": "-D",
+      "long": "--chdir",
+      "description": "Change to the specified directory before executing the command. The path can be absolute or relative to the current directory.",
+      "arguments": "directory",
+      "argument_type": "path",
+      "example": "srun --chdir=/scratch/user/work ./myapp"
+    },
+    {
+      "short": "-c",
+      "long": "--cpus-per-task",
+      "description": "Request the specified number of CPUs per task. This is used to allocate multiple CPUs to each task, commonly needed for multi-threaded applications using OpenMP or similar.",
+      "arguments": "ncpus",
+      "argument_type": "integer",
+      "example": "srun -c 8 ./openmp_app"
+    },
+    {
+      "long": "--cpus-per-gpu",
+      "description": "Request the specified number of CPUs for each GPU allocated to the job.",
+      "arguments": "ncpus",
+      "argument_type": "integer",
+      "example": "srun --cpus-per-gpu=10 --gpus=4 ./gpu_app"
+    },
+    {
+      "short": "-e",
+      "long": "--error",
+      "description": "File to redirect standard error. Filename patterns using replacement symbols are supported (%j for job ID, %t for task ID, etc.).",
+      "arguments": "filename",
+      "argument_type": "path",
+      "example": "srun --error=job_%j.err ./myapp"
+    },
+    {
+      "short": "-x",
+      "long": "--exclude",
+      "description": "Explicitly exclude certain nodes from the job step's resource allocation.",
+      "arguments": "hostlist",
+      "argument_type": "string",
+      "example": "srun --exclude=node[001-010] ./myapp"
+    },
+    {
+      "long": "--exclusive",
+      "description": "Request exclusive access to nodes for this job step. The step will not share nodes with other job steps. Can specify 'user' to share only with steps from the same user, 'mcs' for MCS isolation, or 'topo' for topology-based exclusivity.",
+      "arguments": "user|mcs|topo",
+      "argument_type": "string",
+      "example": "srun --exclusive ./myapp"
+    },
+    {
+      "long": "--export",
+      "description": "Identify which environment variables from the current environment should be propagated to the job step. Options: ALL (default), NONE, or specific variables.",
+      "arguments": "vars",
+      "argument_type": "string",
+      "example": "srun --export=ALL,MY_VAR=value ./myapp"
+    },
+    {
+      "short": "-B",
+      "long": "--extra-node-info",
+      "description": "Restrict allocation to nodes matching specified socket, core, and thread configuration (sockets[:cores[:threads]]).",
+      "arguments": "sockets[:cores[:threads]]",
+      "argument_type": "string",
+      "example": "srun -B 2:8:2 ./myapp"
+    },
+    {
+      "short": "-G",
+      "long": "--gpus",
+      "description": "Total number of GPUs required for the job step. Can specify GPU type (e.g., --gpus=a100:4).",
+      "arguments": "[type:]num",
+      "argument_type": "string",
+      "example": "srun --gpus=4 ./cuda_app"
+    },
+    {
+      "long": "--gpus-per-node",
+      "description": "Number of GPUs required per allocated node. Can specify GPU type.",
+      "arguments": "[type:]num",
+      "argument_type": "string",
+      "example": "srun --gpus-per-node=2 ./cuda_app"
+    },
+    {
+      "long": "--gpus-per-socket",
+      "description": "Number of GPUs required per socket. Can specify GPU type.",
+      "arguments": "[type:]num",
+      "argument_type": "string"
+    },
+    {
+      "long": "--gpus-per-task",
+      "description": "Number of GPUs required per task. Can specify GPU type.",
+      "arguments": "[type:]num",
+      "argument_type": "string",
+      "example": "srun --gpus-per-task=1 -n 8 ./cuda_app"
+    },
+    {
+      "long": "--gres",
+      "description": "Specifies a comma-delimited list of generic consumable resources required per node. Common gres types include gpu, mps, and shard.",
+      "arguments": "list",
+      "argument_type": "string",
+      "example": "srun --gres=gpu:2 ./myapp"
+    },
+    {
+      "long": "--gres-flags",
+      "description": "Specify generic resource task binding options. Options include disable-binding, enforce-binding, one-task-per-sharing.",
+      "arguments": "flags",
+      "argument_type": "string"
+    },
+    {
+      "long": "--gpu-bind",
+      "description": "Bind tasks to GPUs. Options include closest, map_gpu, mask_gpu, none, per_task, single.",
+      "arguments": "type",
+      "argument_type": "string",
+      "example": "srun --gpu-bind=closest ./cuda_app"
+    },
+    {
+      "long": "--gpu-freq",
+      "description": "Request specific GPU frequency settings. Can specify memory and/or graphics frequencies.",
+      "arguments": "frequency",
+      "argument_type": "string",
+      "example": "srun --gpu-freq=high ./cuda_app"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display help information and exit."
+    },
+    {
+      "long": "--het-group",
+      "description": "Specify which heterogeneous job component to run on. Used with multi-component jobs.",
+      "arguments": "group_list",
+      "argument_type": "string"
+    },
+    {
+      "short": "-i",
+      "long": "--input",
+      "description": "Specify the file from which to read standard input. Default is to read from the terminal or /dev/null in batch mode.",
+      "arguments": "filename",
+      "argument_type": "path",
+      "example": "srun --input=input.dat ./myapp"
+    },
+    {
+      "short": "-I",
+      "long": "--immediate",
+      "description": "Exit immediately if resources are not available within the specified time (in seconds). Value of 0 means exit immediately if resources unavailable.",
+      "arguments": "seconds",
+      "argument_type": "integer",
+      "example": "srun --immediate=60 ./myapp"
+    },
+    {
+      "short": "-J",
+      "long": "--job-name",
+      "description": "Specify a name for the job step. The name is displayed in squeue output for the step.",
+      "arguments": "jobname",
+      "argument_type": "string",
+      "example": "srun --job-name=training ./myapp"
+    },
+    {
+      "long": "--jobid",
+      "description": "Run the command as a step within the specified existing job allocation. Used when running srun from outside the allocation.",
+      "arguments": "jobid",
+      "argument_type": "integer",
+      "example": "srun --jobid=12345 hostname"
+    },
+    {
+      "short": "-K",
+      "long": "--kill-on-bad-exit",
+      "description": "Control whether the job step should be terminated if any task exits with a non-zero exit code. 0=no, 1=yes.",
+      "arguments": "0|1",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "srun --kill-on-bad-exit=0 ./myapp"
+    },
+    {
+      "short": "-l",
+      "long": "--label",
+      "description": "Prepend task number to lines of stdout/stderr. Useful for distinguishing output from multiple parallel tasks.",
+      "example": "srun -l -n 4 hostname"
+    },
+    {
+      "long": "--mem",
+      "description": "Specify the real memory required per node. Different units may be specified using the suffix K, M, G, or T. Default is megabytes.",
+      "arguments": "size[units]",
+      "argument_type": "string",
+      "example": "srun --mem=64G ./myapp"
+    },
+    {
+      "long": "--mem-bind",
+      "description": "Bind tasks to memory. Options include local, none, prefer, rank, verbose, map_mem, mask_mem.",
+      "arguments": "type",
+      "argument_type": "string"
+    },
+    {
+      "long": "--mem-per-cpu",
+      "description": "Minimum memory required per allocated CPU. Different units may be specified using the suffix K, M, G, or T.",
+      "arguments": "size[units]",
+      "argument_type": "string",
+      "example": "srun --mem-per-cpu=4G ./myapp"
+    },
+    {
+      "long": "--mem-per-gpu",
+      "description": "Minimum memory required per allocated GPU. Different units may be specified using the suffix K, M, G, or T.",
+      "arguments": "size[units]",
+      "argument_type": "string",
+      "example": "srun --mem-per-gpu=32G ./cuda_app"
+    },
+    {
+      "long": "--mpi",
+      "description": "Specify the MPI type to use for this job step. Common values: pmix, pmi2, none. This determines how MPI processes are launched and communicate.",
+      "arguments": "type",
+      "argument_type": "string",
+      "example": "srun --mpi=pmix ./mpi_app"
+    },
+    {
+      "long": "--multi-prog",
+      "description": "Run a Multiple Program Multiple Data (MPMD) job. The executable argument is a configuration file specifying the command to run for each task.",
+      "example": "srun --multi-prog config.txt"
+    },
+    {
+      "short": "-N",
+      "long": "--nodes",
+      "description": "Request a specific number of nodes for the job step. Can specify a minimum and maximum (e.g., 2-4).",
+      "arguments": "minnodes[-maxnodes]",
+      "argument_type": "string",
+      "example": "srun -N 4 ./myapp"
+    },
+    {
+      "short": "-w",
+      "long": "--nodelist",
+      "description": "Request specific nodes by name for the job step. Can be a comma-separated list or a file containing hostnames.",
+      "arguments": "hostlist",
+      "argument_type": "string",
+      "example": "srun --nodelist=node[001-004] ./myapp"
+    },
+    {
+      "short": "-n",
+      "long": "--ntasks",
+      "description": "Request the specified number of tasks (MPI ranks). This is the total number of parallel processes to launch across all nodes.",
+      "arguments": "number",
+      "argument_type": "integer",
+      "example": "srun -n 32 ./mpi_app"
+    },
+    {
+      "long": "--ntasks-per-core",
+      "description": "Request the maximum number of tasks to be invoked per core.",
+      "arguments": "ntasks",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--ntasks-per-gpu",
+      "description": "Request the number of tasks to be invoked per GPU.",
+      "arguments": "ntasks",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--ntasks-per-node",
+      "description": "Request the specified number of tasks per node. Useful for hybrid MPI/OpenMP jobs.",
+      "arguments": "ntasks",
+      "argument_type": "integer",
+      "example": "srun --ntasks-per-node=4 ./myapp"
+    },
+    {
+      "long": "--ntasks-per-socket",
+      "description": "Request the maximum number of tasks to be invoked per socket.",
+      "arguments": "ntasks",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-o",
+      "long": "--output",
+      "description": "File to redirect standard output. Supports replacement symbols: %A (array job ID), %a (array task ID), %j (job ID), %J (job ID with step), %N (hostname), %n (node ID), %s (step ID), %t (task ID), %u (username), %x (job name).",
+      "arguments": "filename",
+      "argument_type": "path",
+      "example": "srun --output=step_%j_%s.out ./myapp"
+    },
+    {
+      "short": "-O",
+      "long": "--overcommit",
+      "description": "Overcommit resources. Allow more tasks to be launched than CPUs are available. This is useful for I/O-bound jobs or when tasks will not all be active simultaneously.",
+      "example": "srun -O -n 64 ./io_bound_app"
+    },
+    {
+      "short": "-s",
+      "long": "--oversubscribe",
+      "description": "Allow the job step to share resources with other running steps. This is the opposite of --exclusive."
+    },
+    {
+      "long": "--overlap",
+      "description": "Allow the step to use resources already in use by other running steps. Resources are shared rather than being exclusively allocated.",
+      "example": "srun --overlap hostname"
+    },
+    {
+      "short": "-p",
+      "long": "--partition",
+      "description": "Request resources from the specified partition. Multiple partitions may be specified as a comma-separated list.",
+      "arguments": "partition_names",
+      "argument_type": "string",
+      "example": "srun -p gpu ./cuda_app"
+    },
+    {
+      "long": "--power",
+      "description": "Specify power management options for the job step.",
+      "arguments": "flags",
+      "argument_type": "string"
+    },
+    {
+      "long": "--prolog",
+      "description": "Execute the specified command before launching the user's command. Runs on the first node of the allocation.",
+      "arguments": "executable",
+      "argument_type": "path"
+    },
+    {
+      "long": "--propagate",
+      "description": "Specify which resource limits should be propagated to the job step. Default is to propagate all limits.",
+      "arguments": "limits",
+      "argument_type": "string"
+    },
+    {
+      "long": "--pty",
+      "description": "Execute task zero in pseudo-terminal mode. Implies --unbuffered. Used for interactive sessions.",
+      "example": "srun --pty bash"
+    },
+    {
+      "short": "-q",
+      "long": "--qos",
+      "description": "Request a Quality of Service for the job step. QoS affects scheduling priority and resource limits.",
+      "arguments": "qos",
+      "argument_type": "string",
+      "example": "srun --qos=high ./myapp"
+    },
+    {
+      "short": "-Q",
+      "long": "--quiet",
+      "description": "Suppress informational messages from srun. Errors will still be displayed."
+    },
+    {
+      "short": "-r",
+      "long": "--relative",
+      "description": "Run the job step on nodes at a relative position within the current allocation. Useful for running different steps on different subsets of nodes.",
+      "arguments": "n",
+      "argument_type": "integer",
+      "example": "srun --relative=4 -n 4 ./task_b"
+    },
+    {
+      "long": "--reservation",
+      "description": "Request resources from the specified reservation.",
+      "arguments": "name",
+      "argument_type": "string",
+      "example": "srun --reservation=maintenance ./myapp"
+    },
+    {
+      "long": "--signal",
+      "description": "Signal the job step when approaching time limit. Format: signal[@time]. Time specifies seconds before time limit.",
+      "arguments": "signal[@time]",
+      "argument_type": "string"
+    },
+    {
+      "long": "--slurmd-debug",
+      "description": "Set the slurmd debug level. Higher values produce more verbose logging.",
+      "arguments": "level",
+      "argument_type": "integer"
+    },
+    {
+      "long": "--spread-job",
+      "description": "Spread the job step over as many nodes as possible."
+    },
+    {
+      "long": "--task-epilog",
+      "description": "Execute the specified command after each task terminates.",
+      "arguments": "executable",
+      "argument_type": "path"
+    },
+    {
+      "long": "--task-prolog",
+      "description": "Execute the specified command before each task starts.",
+      "arguments": "executable",
+      "argument_type": "path"
+    },
+    {
+      "short": "-T",
+      "long": "--threads",
+      "description": "Number of threads to use for srun's I/O handling. Higher values may improve performance for jobs with heavy I/O.",
+      "arguments": "num",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-t",
+      "long": "--time",
+      "description": "Set a limit on the total run time of the job step. Formats: minutes, minutes:seconds, hours:minutes:seconds, days-hours, days-hours:minutes, days-hours:minutes:seconds.",
+      "arguments": "time",
+      "argument_type": "string",
+      "example": "srun --time=1:00:00 ./myapp"
+    },
+    {
+      "long": "--time-min",
+      "description": "Set a minimum time limit for the job step.",
+      "arguments": "time",
+      "argument_type": "string"
+    },
+    {
+      "long": "--tres-bind",
+      "description": "Bind tasks to trackable resources.",
+      "arguments": "tres_bind_list",
+      "argument_type": "string"
+    },
+    {
+      "long": "--tres-per-task",
+      "description": "Specify trackable resources required per task.",
+      "arguments": "tres_spec",
+      "argument_type": "string"
+    },
+    {
+      "short": "-u",
+      "long": "--unbuffered",
+      "description": "Do not line-buffer stdout from remote tasks. Output is passed through as soon as it is received.",
+      "example": "srun -u -n 4 ./realtime_app"
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Increase the verbosity of srun's output. Multiple -v options will increase verbosity."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version information and exit."
+    },
+    {
+      "short": "-W",
+      "long": "--wait",
+      "description": "Specify how long to wait after the first task terminates before terminating all remaining tasks. A value of 0 means wait indefinitely.",
+      "arguments": "seconds",
+      "argument_type": "integer",
+      "default": "0",
+      "example": "srun --wait=30 ./myapp"
+    },
+    {
+      "short": "-X",
+      "long": "--disable-status",
+      "description": "Disable the display of task status when Ctrl-C (SIGINT) is pressed. Instead, forward the signal directly to tasks."
+    },
+    {
+      "short": "-C",
+      "long": "--constraint",
+      "description": "Nodes must have all the specified features. Multiple features can be combined with & (AND) or | (OR) operators.",
+      "arguments": "features",
+      "argument_type": "string",
+      "example": "srun --constraint=\"gpu&a100\" ./cuda_app"
+    },
+    {
+      "short": "-m",
+      "long": "--distribution",
+      "description": "Specify alternate distribution methods for tasks across nodes. Options include block, cyclic, arbitrary, plane, and fcyclic.",
+      "arguments": "dist",
+      "argument_type": "string",
+      "example": "srun --distribution=cyclic ./myapp"
+    }
+  ],
+  "output_formats": {
+    "default": "srun displays the combined stdout/stderr from all tasks in real-time. Output ordering may vary based on when tasks produce output.",
+    "labeled": "With -l/--label option, each output line is prefixed with the task number (e.g., '0: output from task 0').",
+    "file_output": "With -o/--output and -e/--error options, output is redirected to files. Filename patterns support %j (job ID), %s (step ID), %t (task ID), etc.",
+    "quiet": "With -Q/--quiet option, informational messages are suppressed.",
+    "verbose": "With -v/--verbose option, additional information about job step execution is displayed.",
+    "unbuffered": "With -u/--unbuffered option, output is not line-buffered and appears immediately."
+  },
+  "environment_variables": [
+    {
+      "name": "SRUN_DEBUG",
+      "description": "Set debug level for srun. Higher values produce more output.",
+      "example": "SRUN_DEBUG=3",
+      "affects_command": "Controls debug output verbosity"
+    },
+    {
+      "name": "SLURM_CPUS_PER_TASK",
+      "description": "Set within job: Number of CPUs per task.",
+      "example": "SLURM_CPUS_PER_TASK=8",
+      "affects_command": "Available within job scripts; srun inherits this for step resource allocation"
+    },
+    {
+      "name": "SLURM_DISTRIBUTION",
+      "description": "Default task distribution method.",
+      "example": "SLURM_DISTRIBUTION=cyclic",
+      "affects_command": "Sets default task distribution for srun"
+    },
+    {
+      "name": "SLURM_GPUS",
+      "description": "Set within job: Total number of GPUs allocated.",
+      "example": "SLURM_GPUS=4",
+      "affects_command": "Available within job scripts; indicates GPU allocation"
+    },
+    {
+      "name": "SLURM_JOB_ID",
+      "description": "The ID of the current job allocation. Set by Slurm within an allocation.",
+      "example": "SLURM_JOB_ID=12345",
+      "affects_command": "srun uses this to identify the parent job when creating steps"
+    },
+    {
+      "name": "SLURM_JOB_NAME",
+      "description": "Name of the current job. Set by Slurm within an allocation.",
+      "example": "SLURM_JOB_NAME=training",
+      "affects_command": "Available within job scripts for identification"
+    },
+    {
+      "name": "SLURM_JOB_NODELIST",
+      "description": "List of nodes allocated to the job. Set by Slurm within an allocation.",
+      "example": "SLURM_JOB_NODELIST=node[001-004]",
+      "affects_command": "srun uses these nodes by default for job steps"
+    },
+    {
+      "name": "SLURM_JOB_NUM_NODES",
+      "description": "Number of nodes allocated to the job. Set by Slurm within an allocation.",
+      "example": "SLURM_JOB_NUM_NODES=4",
+      "affects_command": "Indicates available nodes for steps"
+    },
+    {
+      "name": "SLURM_LOCALID",
+      "description": "Set within step: Node-local task ID (0 to tasks_per_node-1).",
+      "example": "SLURM_LOCALID=0",
+      "affects_command": "Available within running tasks for identification"
+    },
+    {
+      "name": "SLURM_MPI_TYPE",
+      "description": "Default MPI type to use.",
+      "example": "SLURM_MPI_TYPE=pmix",
+      "affects_command": "Sets default MPI launch type for srun"
+    },
+    {
+      "name": "SLURM_NODEID",
+      "description": "Set within step: Relative node ID within the job step (0 to num_nodes-1).",
+      "example": "SLURM_NODEID=0",
+      "affects_command": "Available within running tasks for identification"
+    },
+    {
+      "name": "SLURM_NTASKS",
+      "description": "Number of tasks requested. Set by Slurm within an allocation.",
+      "example": "SLURM_NTASKS=32",
+      "affects_command": "srun inherits this as default task count"
+    },
+    {
+      "name": "SLURM_NTASKS_PER_NODE",
+      "description": "Number of tasks per node requested.",
+      "example": "SLURM_NTASKS_PER_NODE=8",
+      "affects_command": "srun inherits this for step task distribution"
+    },
+    {
+      "name": "SLURM_PROCID",
+      "description": "Set within step: Global task ID (MPI rank) of the current task.",
+      "example": "SLURM_PROCID=0",
+      "affects_command": "Available within running tasks for identification"
+    },
+    {
+      "name": "SLURM_STEP_ID",
+      "description": "Set within step: The step ID within the job.",
+      "example": "SLURM_STEP_ID=0",
+      "affects_command": "Available within running tasks for identification"
+    },
+    {
+      "name": "SLURM_STEP_NODELIST",
+      "description": "Set within step: List of nodes allocated to the step.",
+      "example": "SLURM_STEP_NODELIST=node[001-002]",
+      "affects_command": "Available within running tasks"
+    },
+    {
+      "name": "SLURM_STEP_NUM_NODES",
+      "description": "Set within step: Number of nodes in the step.",
+      "example": "SLURM_STEP_NUM_NODES=2",
+      "affects_command": "Available within running tasks"
+    },
+    {
+      "name": "SLURM_STEP_NUM_TASKS",
+      "description": "Set within step: Total number of tasks in the step.",
+      "example": "SLURM_STEP_NUM_TASKS=16",
+      "affects_command": "Available within running tasks"
+    },
+    {
+      "name": "SLURM_STEP_TASKS_PER_NODE",
+      "description": "Set within step: Number of tasks launched on each node in the step.",
+      "example": "SLURM_STEP_TASKS_PER_NODE=4",
+      "affects_command": "Available within running tasks"
+    },
+    {
+      "name": "SLURM_CONF",
+      "description": "Path to the Slurm configuration file.",
+      "example": "SLURM_CONF=/etc/slurm/slurm.conf",
+      "affects_command": "Specifies which Slurm configuration to use"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - all tasks completed with exit code 0"
+    },
+    {
+      "code": 1,
+      "meaning": "General error - the command failed or a task exited with a non-zero code"
+    },
+    {
+      "code": 2,
+      "meaning": "Invalid command-line options or arguments"
+    },
+    {
+      "code": 126,
+      "meaning": "The specified executable could not be invoked (permission denied or not an executable)"
+    },
+    {
+      "code": 127,
+      "meaning": "The specified executable was not found"
+    },
+    {
+      "code": 128,
+      "meaning": "Invalid exit argument (exit code out of range)"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Run a simple command across all allocated nodes within an existing allocation",
+      "command": "srun hostname",
+      "output_example": "node001\nnode002\nnode003\nnode004"
+    },
+    {
+      "description": "Start an interactive bash session with pseudo-terminal",
+      "command": "srun --pty bash",
+      "output_example": "[user@node001 ~]$"
+    },
+    {
+      "description": "Run an MPI application using PMIx",
+      "command": "srun --mpi=pmix ./mpi_app",
+      "output_example": "MPI initialized with 32 processes"
+    },
+    {
+      "description": "Run a CUDA application with GPUs",
+      "command": "srun --gpus=4 ./cuda_app",
+      "output_example": "Using 4 GPUs: GPU 0, GPU 1, GPU 2, GPU 3"
+    },
+    {
+      "description": "Create a job step within a batch script",
+      "command": "srun -n 16 ./parallel_task",
+      "output_example": "Running 16 parallel tasks"
+    },
+    {
+      "description": "Run with labeled output to identify task sources",
+      "command": "srun -l -n 4 hostname",
+      "output_example": "0: node001\n1: node001\n2: node002\n3: node002"
+    },
+    {
+      "description": "Run a multi-program MPMD job",
+      "command": "srun --multi-prog config.txt",
+      "output_example": "Task 0 running program A\nTask 1 running program B"
+    },
+    {
+      "description": "Request specific resources for standalone srun (outside allocation)",
+      "command": "srun -n 4 -c 8 --mem=32G ./myapp",
+      "output_example": "srun: job 12345 queued and waiting for resources\nsrun: job 12345 has been allocated resources\nApplication output..."
+    },
+    {
+      "description": "Run parallel steps on different node subsets",
+      "command": "srun -N 2 -r 0 ./task_a & srun -N 2 -r 2 ./task_b & wait",
+      "output_example": "Task A running on nodes 0-1\nTask B running on nodes 2-3"
+    },
+    {
+      "description": "Run an interactive GPU job with specific partition",
+      "command": "srun -p gpu --gpus=1 --pty bash",
+      "output_example": "[user@gpu-node001 ~]$"
+    },
+    {
+      "description": "Run with exclusive resources to avoid sharing",
+      "command": "srun --exclusive -N 2 ./myapp",
+      "output_example": "Running exclusively on 2 nodes"
+    },
+    {
+      "description": "Run with unbuffered output for real-time monitoring",
+      "command": "srun -u -n 4 ./streaming_app",
+      "output_example": "Real-time output from tasks..."
+    },
+    {
+      "description": "Run step within existing allocation by job ID",
+      "command": "srun --jobid=12345 hostname",
+      "output_example": "node001"
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "srun: error: Unable to allocate resources: Requested node configuration is not available",
+      "meaning": "The requested resources exceed what is available in the partition",
+      "resolution": "Use 'sinfo' to check available resources. Reduce resource request or try a different partition."
+    },
+    {
+      "message": "srun: error: Unable to create job step: More processors requested than permitted",
+      "meaning": "The number of tasks requested exceeds the available CPUs in the allocation",
+      "resolution": "Reduce -n (ntasks) or use -O (overcommit) if appropriate for the application."
+    },
+    {
+      "message": "srun: error: execve(): No such file or directory",
+      "meaning": "The specified executable does not exist at the given path",
+      "resolution": "Verify the executable path. Ensure the file exists on all nodes or use --bcast."
+    },
+    {
+      "message": "srun: error: Unable to create job step: Invalid node count requested",
+      "meaning": "The requested node count exceeds what is available in the current allocation",
+      "resolution": "Check SLURM_JOB_NUM_NODES for available nodes. Reduce -N option value."
+    },
+    {
+      "message": "srun: error: Unable to contact slurm controller (connect failure)",
+      "meaning": "Cannot connect to the Slurm controller daemon (slurmctld)",
+      "resolution": "Check if slurmctld is running. Verify network connectivity. Ensure SLURM_CONF is correct."
+    },
+    {
+      "message": "srun: error: Job allocation has been revoked",
+      "meaning": "The job allocation was cancelled or has expired",
+      "resolution": "Check job status with squeue. If time limit was reached, request more time for future jobs."
+    },
+    {
+      "message": "srun: error: Memory specification can not be satisfied",
+      "meaning": "The requested memory exceeds what is available on allocated nodes",
+      "resolution": "Reduce --mem request or use --mem-per-cpu instead."
+    },
+    {
+      "message": "srun: error: Batch/Interactive job already complete or completing",
+      "meaning": "The parent job allocation has completed or is in the process of completing",
+      "resolution": "The job has finished. Start a new job allocation to run more commands."
+    },
+    {
+      "message": "srun: error: gpus requested are greater than allowed for the job",
+      "meaning": "Requesting more GPUs than allocated to the parent job",
+      "resolution": "Check SLURM_GPUS for available GPUs. Reduce --gpus option value."
+    },
+    {
+      "message": "srun: error: Invalid partition name specified",
+      "meaning": "The specified partition does not exist or is not available to the user",
+      "resolution": "Use 'sinfo' to list available partitions. Check partition spelling."
+    },
+    {
+      "message": "srun: Job step creation temporarily disabled, retrying",
+      "meaning": "Slurm is temporarily unable to create job steps, often due to cluster maintenance or high load",
+      "resolution": "Wait for the retry. If persistent, contact system administrator."
+    },
+    {
+      "message": "srun: error: Task launch for X.Y failed on node nodeXXX: Cannot allocate memory",
+      "meaning": "The node does not have enough memory available to launch the tasks",
+      "resolution": "Reduce memory per task or use fewer tasks per node."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "sbatch",
+      "salloc",
+      "squeue",
+      "scancel",
+      "scontrol",
+      "sacct",
+      "sstat",
+      "sinfo"
+    ],
+    "notes": "srun is the parallel execution component of Slurm and is typically used within batch scripts submitted by sbatch or within interactive allocations obtained via salloc. When run outside of an allocation, srun combines the functionality of salloc and task launching into a single command. Job steps created by srun are visible in squeue with the format 'jobid.stepid' and can be monitored with sstat for real-time statistics. Multiple srun commands can be executed concurrently within a single allocation to run parallel job steps on different subsets of resources."
+  },
+  "permissions": {
+    "read_operations": "Any user can run commands within their own job allocations",
+    "write_operations": "srun creates job steps within existing allocations or new allocations when run standalone",
+    "notes": "Resource usage is constrained by the parent job allocation when running within an allocation. When run standalone, user access to partitions, accounts, and QoS is controlled by Slurm's account management."
+  },
+  "limitations": [
+    "When run outside an allocation, srun is blocking and waits for resources to become available",
+    "Maximum number of concurrent job steps may be limited by cluster configuration (MaxStepCount)",
+    "Resource requests within an allocation cannot exceed the parent job's allocation",
+    "I/O bandwidth may become a bottleneck with many parallel tasks writing to shared storage",
+    "The --multi-prog configuration file format has specific syntax requirements",
+    "Interactive sessions (--pty) are limited to single-task execution (task 0 only)",
+    "Some MPI implementations may require specific --mpi settings to function correctly",
+    "Task binding and affinity options depend on cluster configuration and may not always be available",
+    "When using --exclusive, step resources cannot be shared even within the same job"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "job_state",
+        "fields": [
+          "job_id",
+          "allocated_nodes",
+          "allocated_cpus",
+          "allocated_gpus",
+          "allocated_memory",
+          "time_remaining"
+        ],
+        "description": "srun reads the current job allocation state to determine available resources for job steps when running within an allocation"
+      },
+      {
+        "state_domain": "partition_state",
+        "fields": [
+          "partition_name",
+          "state",
+          "max_time",
+          "available_nodes",
+          "available_cpus"
+        ],
+        "description": "srun reads partition configuration when requesting new allocations (standalone mode)"
+      },
+      {
+        "state_domain": "node_state",
+        "fields": ["hostname", "state", "cpus", "memory", "gpus", "features"],
+        "description": "srun verifies node availability when creating job steps"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "job_state",
+        "fields": [
+          "step_id",
+          "step_name",
+          "step_state",
+          "step_nodes",
+          "step_tasks",
+          "step_cpus_per_task",
+          "step_start_time"
+        ],
+        "description": "srun creates job step records within an existing job allocation"
+      },
+      {
+        "state_domain": "job_state",
+        "fields": [
+          "job_id",
+          "name",
+          "user",
+          "state",
+          "partition",
+          "account",
+          "nodes_allocated",
+          "start_time"
+        ],
+        "description": "When run outside an allocation, srun creates a new job allocation (like salloc) before executing the command"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "squeue",
+        "shared_state": "Job steps created by srun appear in squeue output with format 'jobid.stepid' showing RUNNING state"
+      },
+      {
+        "command": "sstat",
+        "shared_state": "Real-time statistics for running job steps (CPU usage, memory, I/O) available via sstat"
+      },
+      {
+        "command": "sacct",
+        "shared_state": "Completed job steps recorded in accounting database with resource usage and timing information"
+      },
+      {
+        "command": "scontrol show step",
+        "shared_state": "Full step details available via scontrol during and after execution"
+      }
+    ]
+  }
+}

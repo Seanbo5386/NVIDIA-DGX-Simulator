@@ -1,0 +1,149 @@
+{
+  "command": "nvprof",
+  "category": "cuda_tools",
+  "description": "NVIDIA CUDA profiler. Legacy GPU profiling tool for CUDA applications. Replaced by nsys/ncu but still used on older systems.",
+  "synopsis": "nvprof [options] <application> [args]",
+  "version_documented": "CUDA 11.0 (deprecated)",
+  "source_urls": ["https://docs.nvidia.com/cuda/profiler-users-guide/"],
+  "installation": {
+    "package": "cuda-toolkit",
+    "notes": "Part of CUDA toolkit, deprecated in CUDA 11+."
+  },
+  "global_options": [
+    {
+      "short": "-o",
+      "long": "--output-profile",
+      "description": "Output profile file",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "long": "--print-gpu-trace",
+      "description": "Print GPU trace"
+    },
+    {
+      "long": "--print-api-trace",
+      "description": "Print API trace"
+    },
+    {
+      "long": "--metrics",
+      "description": "Collect metrics",
+      "arguments": "<metrics>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--events",
+      "description": "Collect events",
+      "arguments": "<events>",
+      "argument_type": "string"
+    },
+    {
+      "long": "--analysis-metrics",
+      "description": "Collect analysis metrics"
+    },
+    {
+      "long": "--unified-memory-profiling",
+      "description": "Profile unified memory",
+      "arguments": "<mode>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-f",
+      "long": "--force-overwrite",
+      "description": "Overwrite output file"
+    },
+    {
+      "long": "--cpu-profiling",
+      "description": "Enable CPU profiling",
+      "arguments": "<on|off>",
+      "argument_type": "string"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Basic profiling",
+      "command": "nvprof ./my_cuda_app",
+      "requires_root": false
+    },
+    {
+      "description": "Save profile",
+      "command": "nvprof -o profile.nvvp ./my_app",
+      "requires_root": false
+    },
+    {
+      "description": "GPU trace",
+      "command": "nvprof --print-gpu-trace ./my_app",
+      "requires_root": false
+    },
+    {
+      "description": "Specific metrics",
+      "command": "nvprof --metrics achieved_occupancy,sm_efficiency ./my_app",
+      "requires_root": false
+    },
+    {
+      "description": "With MPI",
+      "command": "mpirun -np 4 nvprof -o profile_%q{OMPI_COMM_WORLD_RANK}.nvvp ./mpi_cuda_app",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "nvprof is not supported on devices with Compute Capability 8.0+",
+      "meaning": "GPU too new for nvprof",
+      "resolution": "Use nsys and ncu instead"
+    },
+    {
+      "message": "CUDA profiler initialization failed",
+      "meaning": "Cannot initialize profiler",
+      "resolution": "Check CUDA installation and GPU access"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["nsys", "ncu", "cuda-gdb"],
+    "notes": "Deprecated - use nsys for timeline, ncu for kernel analysis. Works on older GPUs (pre-Ampere). nvvp can visualize profiles."
+  },
+  "permissions": {
+    "read_operations": "Read GPU performance counters",
+    "write_operations": "Write profile files",
+    "notes": "May need admin mode for some metrics"
+  },
+  "limitations": [
+    "Deprecated in CUDA 11+",
+    "Not supported on Ampere+ GPUs",
+    "Overhead affects results"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "gpu_state",
+        "fields": ["processes", "performance_counters"],
+        "description": "Profiles GPU execution"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "storage_local_state",
+        "fields": ["files"],
+        "description": "Writes profile data",
+        "requires_privilege": "write access"
+      }
+    ],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "Both read GPU state"
+      }
+    ]
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "command": "ss",
+  "category": "networking",
+  "description": "Socket statistics utility. Shows network socket information. Modern replacement for netstat, essential for network debugging on HPC systems.",
+  "synopsis": "ss [options] [filter]",
+  "version_documented": "iproute2 5.10+",
+  "source_urls": ["https://man7.org/linux/man-pages/man8/ss.8.html"],
+  "installation": {
+    "package": "iproute2",
+    "notes": "Part of iproute2, installed by default."
+  },
+  "global_options": [
+    {
+      "short": "-t",
+      "long": "--tcp",
+      "description": "TCP sockets"
+    },
+    {
+      "short": "-u",
+      "long": "--udp",
+      "description": "UDP sockets"
+    },
+    {
+      "short": "-l",
+      "long": "--listening",
+      "description": "Listening sockets"
+    },
+    {
+      "short": "-a",
+      "long": "--all",
+      "description": "All sockets"
+    },
+    {
+      "short": "-n",
+      "long": "--numeric",
+      "description": "Don't resolve names"
+    },
+    {
+      "short": "-p",
+      "long": "--processes",
+      "description": "Show process using socket"
+    },
+    {
+      "short": "-s",
+      "long": "--summary",
+      "description": "Socket summary"
+    },
+    {
+      "short": "-e",
+      "long": "--extended",
+      "description": "Extended info"
+    },
+    {
+      "short": "-m",
+      "long": "--memory",
+      "description": "Socket memory usage"
+    },
+    {
+      "short": "-i",
+      "long": "--info",
+      "description": "TCP internal info"
+    },
+    {
+      "short": "-4",
+      "description": "IPv4 only"
+    },
+    {
+      "short": "-6",
+      "description": "IPv6 only"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 1,
+      "meaning": "Error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "All TCP connections",
+      "command": "ss -t",
+      "requires_root": false
+    },
+    {
+      "description": "Listening ports",
+      "command": "ss -tlnp",
+      "requires_root": true
+    },
+    {
+      "description": "All connections with processes",
+      "command": "ss -tunap",
+      "requires_root": true
+    },
+    {
+      "description": "Socket summary",
+      "command": "ss -s",
+      "requires_root": false
+    },
+    {
+      "description": "Filter by port",
+      "command": "ss -tn 'sport = :22'",
+      "requires_root": false
+    },
+    {
+      "description": "Established connections",
+      "command": "ss -t state established",
+      "requires_root": false
+    },
+    {
+      "description": "TCP with memory info",
+      "command": "ss -tm",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Permission denied",
+      "meaning": "Cannot show process info",
+      "resolution": "Use sudo for -p option"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["netstat", "lsof", "ip"],
+    "notes": "Faster than netstat. -p shows process info. Filter expressions allow complex queries."
+  },
+  "permissions": {
+    "read_operations": "Read socket info",
+    "write_operations": "N/A",
+    "notes": "Process info (-p) needs root"
+  },
+  "limitations": [
+    "Process info requires root",
+    "Complex filter syntax",
+    "Unix socket names truncated"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_eth_state",
+        "fields": ["connections"],
+        "description": "Shows network socket state"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "netstat",
+        "shared_state": "Both show socket information"
+      }
+    ]
+  }
+}

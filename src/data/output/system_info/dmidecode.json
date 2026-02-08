@@ -1,0 +1,317 @@
+{
+  "command": "dmidecode",
+  "category": "system_info",
+  "description": "DMI/SMBIOS table decoder - displays hardware information from BIOS. Dmidecode reads the System Management BIOS (SMBIOS) or Desktop Management Interface (DMI) data from the BIOS and presents it in human-readable format. This includes detailed information about system hardware components such as system manufacturer, model, serial number, BIOS version, processor sockets, memory modules, chassis type, and more. Essential for HPC environments to inventory hardware, verify system configurations, check memory topology, and identify hardware for warranty and support purposes.",
+  "synopsis": "dmidecode [OPTIONS]",
+  "version_documented": "3.3+",
+  "source_urls": [
+    "https://man7.org/linux/man-pages/man8/dmidecode.8.html",
+    "https://www.nongnu.org/dmidecode/"
+  ],
+  "installation": {
+    "package": "dmidecode",
+    "notes": "Part of the dmidecode package, typically available in default repositories. Requires root privileges to access SMBIOS/DMI tables via /dev/mem or /sys/firmware/dmi/tables."
+  },
+  "global_options": [
+    {
+      "short": "-t",
+      "long": "--type",
+      "description": "Only display entries of the specified type. Type can be a keyword (bios, system, baseboard, chassis, processor, memory, cache, connector, slot) or a numeric DMI type (0-42).",
+      "arguments": "TYPE",
+      "argument_type": "string",
+      "example": "dmidecode -t memory"
+    },
+    {
+      "short": "-s",
+      "long": "--string",
+      "description": "Only display the value of the specified DMI string. String must be a keyword like system-manufacturer, system-product-name, bios-version, etc.",
+      "arguments": "KEYWORD",
+      "argument_type": "string",
+      "example": "dmidecode -s system-serial-number"
+    },
+    {
+      "short": "-q",
+      "long": "--quiet",
+      "description": "Be less verbose. Unknown, inactive, and OEM-specific entries are not displayed. Only meaningful information is shown.",
+      "example": "dmidecode -q -t memory"
+    },
+    {
+      "short": "-u",
+      "long": "--dump",
+      "description": "Do not decode the entries, dump their contents as hexadecimal instead. Useful for debugging or when exact binary data is needed."
+    },
+    {
+      "long": "--dump-bin",
+      "description": "Dump the DMI data to a binary file for later processing or debugging.",
+      "arguments": "FILE",
+      "argument_type": "path",
+      "example": "dmidecode --dump-bin /tmp/dmi.bin"
+    },
+    {
+      "long": "--from-dump",
+      "description": "Read the DMI data from a binary dump file instead of from memory. Useful for offline analysis.",
+      "arguments": "FILE",
+      "argument_type": "path",
+      "example": "dmidecode --from-dump /tmp/dmi.bin"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display usage information and exit."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display the version and exit."
+    },
+    {
+      "long": "--no-sysfs",
+      "description": "Do not attempt to read DMI data from sysfs files. Only read from /dev/mem.",
+      "example": "dmidecode --no-sysfs"
+    },
+    {
+      "long": "--oem-string",
+      "description": "Only display the value of the specified OEM string number.",
+      "arguments": "N",
+      "argument_type": "integer",
+      "example": "dmidecode --oem-string 1"
+    },
+    {
+      "short": "-d",
+      "long": "--dev-mem",
+      "description": "Read memory from device FILE (default: /dev/mem). Useful when DMI data is at a non-standard location.",
+      "arguments": "FILE",
+      "argument_type": "path",
+      "default": "/dev/mem"
+    },
+    {
+      "short": "-H",
+      "long": "--handle",
+      "description": "Only display the entry whose handle matches HANDLE. Handles are 16-bit unique identifiers for each DMI structure.",
+      "arguments": "HANDLE",
+      "argument_type": "string",
+      "example": "dmidecode -H 0x0001"
+    }
+  ],
+  "output_formats": {
+    "default": "Human-readable text format with DMI type headers and key-value pairs for each structure.",
+    "string": "Single line output containing only the requested string value (-s option).",
+    "hexdump": "Hexadecimal dump of raw DMI data structures (-u option).",
+    "binary": "Raw binary dump of DMI tables for offline processing (--dump-bin option)."
+  },
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - general failure such as permission denied or DMI data not found"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display all DMI/SMBIOS information",
+      "command": "dmidecode",
+      "requires_root": true
+    },
+    {
+      "description": "Get system manufacturer and model",
+      "command": "dmidecode -t system",
+      "output_example": "# dmidecode 3.3\nGetting SMBIOS data from sysfs.\nSMBIOS 3.2.0 present.\n\nHandle 0x0001, DMI type 1, 27 bytes\nSystem Information\n        Manufacturer: Dell Inc.\n        Product Name: PowerEdge R750\n        Version: Not Specified\n        Serial Number: ABCD123\n        UUID: 12345678-1234-1234-1234-123456789ABC\n        Wake-up Type: Power Switch\n        SKU Number: SKU0001\n        Family: PowerEdge",
+      "requires_root": true
+    },
+    {
+      "description": "Get memory configuration",
+      "command": "dmidecode -t memory",
+      "output_example": "# dmidecode 3.3\nHandle 0x1000, DMI type 16, 23 bytes\nPhysical Memory Array\n        Location: System Board Or Motherboard\n        Use: System Memory\n        Error Correction Type: Multi-bit ECC\n        Maximum Capacity: 6 TB\n        Number Of Devices: 32\n\nHandle 0x1100, DMI type 17, 92 bytes\nMemory Device\n        Array Handle: 0x1000\n        Total Width: 72 bits\n        Data Width: 64 bits\n        Size: 64 GB\n        Form Factor: DIMM\n        Locator: DIMM A1\n        Bank Locator: Not Specified\n        Type: DDR4\n        Speed: 3200 MT/s\n        Manufacturer: Samsung\n        Serial Number: 12345678\n        Part Number: M393A8G40AB2-CWE\n        Configured Memory Speed: 3200 MT/s\n        Configured Voltage: 1.2 V",
+      "requires_root": true
+    },
+    {
+      "description": "Get BIOS version and vendor",
+      "command": "dmidecode -t bios",
+      "output_example": "# dmidecode 3.3\nHandle 0x0000, DMI type 0, 26 bytes\nBIOS Information\n        Vendor: Dell Inc.\n        Version: 1.6.10\n        Release Date: 03/21/2023\n        Address: 0xF0000\n        Runtime Size: 64 kB\n        ROM Size: 32 MB\n        Characteristics:\n                PCI is supported\n                BIOS is upgradeable\n                UEFI is supported\n        BIOS Revision: 1.6",
+      "requires_root": true
+    },
+    {
+      "description": "Get chassis information",
+      "command": "dmidecode -t chassis",
+      "output_example": "# dmidecode 3.3\nHandle 0x0003, DMI type 3, 22 bytes\nChassis Information\n        Manufacturer: Dell Inc.\n        Type: Rack Mount Chassis\n        Lock: Not Present\n        Version: Not Specified\n        Serial Number: ABCD1234\n        Asset Tag: Not Specified\n        Boot-up State: Safe\n        Power Supply State: Safe\n        Thermal State: Safe\n        Security Status: Unknown\n        OEM Information: 0x00000000\n        Height: 2 U\n        Number Of Power Cords: 2",
+      "requires_root": true
+    },
+    {
+      "description": "Get processor information",
+      "command": "dmidecode -t processor",
+      "output_example": "# dmidecode 3.3\nHandle 0x0400, DMI type 4, 48 bytes\nProcessor Information\n        Socket Designation: CPU1\n        Type: Central Processor\n        Family: Xeon\n        Manufacturer: Intel(R) Corporation\n        ID: F8 06 08 00 FF FB EB BF\n        Signature: Type 0, Family 6, Model 143, Stepping 8\n        Version: Intel(R) Xeon(R) Platinum 8480+\n        Voltage: 1.6 V\n        External Clock: 100 MHz\n        Max Speed: 4000 MHz\n        Current Speed: 2000 MHz\n        Status: Populated, Enabled\n        Core Count: 56\n        Core Enabled: 56\n        Thread Count: 112\n        Characteristics:\n                64-bit capable\n                Multi-Core\n                Hardware Thread",
+      "requires_root": true
+    },
+    {
+      "description": "Get system serial number (single value)",
+      "command": "dmidecode -s system-serial-number",
+      "output_example": "ABCD123",
+      "requires_root": true
+    },
+    {
+      "description": "Get BIOS version string (single value)",
+      "command": "dmidecode -s bios-version",
+      "output_example": "1.6.10",
+      "requires_root": true
+    },
+    {
+      "description": "Get system product name",
+      "command": "dmidecode -s system-product-name",
+      "output_example": "PowerEdge R750",
+      "requires_root": true
+    },
+    {
+      "description": "Get baseboard/motherboard information",
+      "command": "dmidecode -t baseboard",
+      "output_example": "# dmidecode 3.3\nHandle 0x0002, DMI type 2, 15 bytes\nBase Board Information\n        Manufacturer: Dell Inc.\n        Product Name: 0YNWKM\n        Version: A00\n        Serial Number: /ABCD123/CNABCD12345/\n        Asset Tag: Not Specified\n        Features:\n                Board is a hosting board\n                Board is replaceable",
+      "requires_root": true
+    },
+    {
+      "description": "Get memory slot information with quiet mode",
+      "command": "dmidecode -q -t memory",
+      "requires_root": true
+    },
+    {
+      "description": "Get cache information",
+      "command": "dmidecode -t cache",
+      "output_example": "# dmidecode 3.3\nHandle 0x0701, DMI type 7, 27 bytes\nCache Information\n        Socket Designation: L1-Cache\n        Configuration: Enabled, Not Socketed, Level 1\n        Operational Mode: Write Back\n        Location: Internal\n        Installed Size: 5376 kB\n        Maximum Size: 5376 kB\n        Supported SRAM Types: Synchronous\n        Installed SRAM Type: Synchronous\n\nHandle 0x0702, DMI type 7, 27 bytes\nCache Information\n        Socket Designation: L2-Cache\n        Configuration: Enabled, Not Socketed, Level 2\n        Operational Mode: Write Back\n        Location: Internal\n        Installed Size: 112 MB\n        Maximum Size: 112 MB",
+      "requires_root": true
+    },
+    {
+      "description": "Get connector (port) information",
+      "command": "dmidecode -t connector",
+      "requires_root": true
+    },
+    {
+      "description": "Get PCIe slot information",
+      "command": "dmidecode -t slot",
+      "output_example": "# dmidecode 3.3\nHandle 0x0900, DMI type 9, 17 bytes\nSystem Slot Information\n        Designation: PCIe Slot 1\n        Type: x16 PCI Express 4\n        Current Usage: In Use\n        Length: Long\n        ID: 1\n        Characteristics:\n                3.3 V is provided\n                PME signal is supported\n        Bus Address: 0000:86:00.0",
+      "requires_root": true
+    },
+    {
+      "description": "Dump DMI data to binary file for later analysis",
+      "command": "dmidecode --dump-bin /tmp/dmi.bin",
+      "requires_root": true
+    },
+    {
+      "description": "Read DMI data from binary dump file",
+      "command": "dmidecode --from-dump /tmp/dmi.bin",
+      "requires_root": false
+    },
+    {
+      "description": "Display raw hexadecimal dump of DMI data",
+      "command": "dmidecode -u -t system",
+      "requires_root": true
+    },
+    {
+      "description": "Count memory DIMMs installed",
+      "command": "dmidecode -t 17 | grep -c 'Size:.*[0-9]'",
+      "requires_root": true
+    },
+    {
+      "description": "Get total installed memory",
+      "command": "dmidecode -t memory | grep 'Size:' | grep -v 'No Module' | awk '{sum += $2} END {print sum \" GB\"}'",
+      "requires_root": true
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "/dev/mem: Permission denied",
+      "meaning": "The command was run without root privileges",
+      "resolution": "Run dmidecode with sudo or as root: sudo dmidecode"
+    },
+    {
+      "message": "Sorry, only SMBIOS 2.1+ present, not 3.0+",
+      "meaning": "The system has an older SMBIOS version that may not contain all expected information",
+      "resolution": "This is informational. Some features may be limited on older systems."
+    },
+    {
+      "message": "No SMBIOS nor DMI entry point found, sorry.",
+      "meaning": "DMI/SMBIOS data could not be found in memory or sysfs",
+      "resolution": "Verify the system has SMBIOS support. On virtual machines, ensure DMI passthrough is enabled. Check if /sys/firmware/dmi/tables exists."
+    },
+    {
+      "message": "Table is unreachable, sorry.",
+      "meaning": "The DMI table address points to inaccessible memory",
+      "resolution": "Try running with --no-sysfs option, or check kernel configuration for DMI support."
+    },
+    {
+      "message": "Invalid entry length (0). DMI table is broken, stop decoding.",
+      "meaning": "Corrupted or malformed DMI table data",
+      "resolution": "This may indicate BIOS issues. Try updating the system BIOS/UEFI firmware."
+    },
+    {
+      "message": "String index out of range",
+      "meaning": "Invalid -s string keyword specified",
+      "resolution": "Use a valid keyword. Common keywords: bios-vendor, bios-version, bios-release-date, system-manufacturer, system-product-name, system-serial-number, baseboard-manufacturer, baseboard-product-name, chassis-type."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "lshw",
+      "lspci",
+      "hwinfo",
+      "lscpu",
+      "free",
+      "biosdecode",
+      "vpddecode",
+      "ownership"
+    ],
+    "uses_library": ["libsmbios"],
+    "notes": "dmidecode reads SMBIOS/DMI tables from /sys/firmware/dmi/tables (preferred) or directly from /dev/mem. The information comes from the system BIOS and may not reflect actual hardware state (e.g., if BIOS is not updated after hardware changes). For real-time hardware information, combine with lshw, lspci, and lscpu. The biosdecode and vpddecode utilities from the same package can extract additional BIOS data."
+  },
+  "permissions": {
+    "read_operations": "Requires root privileges to access /dev/mem or /sys/firmware/dmi/tables. Reading from a dump file does not require root.",
+    "write_operations": "dmidecode is read-only and does not modify any system state.",
+    "notes": "On systems with Secure Boot or restricted /dev/mem access, dmidecode may need kernel module loading or specific kernel parameters. Some containers may not have access to DMI tables."
+  },
+  "limitations": [
+    "Information accuracy depends on BIOS vendor implementation - some fields may be missing or incorrect",
+    "Virtual machines may show hypervisor-defined values rather than physical hardware details",
+    "Cannot detect hardware changes that occurred after BIOS initialization without a reboot",
+    "Memory modules replaced at runtime will not be reflected until next boot",
+    "Container environments typically do not have access to DMI tables",
+    "Some newer hardware features may not be decoded until dmidecode is updated",
+    "OEM-specific fields may not be decoded or may show as raw data"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "system_state",
+        "fields": [
+          "system_manufacturer",
+          "system_model",
+          "system_serial",
+          "bios_version",
+          "bios_date",
+          "chassis_type",
+          "processor_info",
+          "memory_configuration",
+          "pcie_slots"
+        ],
+        "description": "Reads hardware inventory information from SMBIOS/DMI tables stored by the system BIOS. This includes manufacturer details, serial numbers, memory topology, processor specifications, and chassis information."
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "lshw",
+        "shared_state": "System manufacturer, model, serial number, and memory configuration should match between both tools"
+      },
+      {
+        "command": "lscpu",
+        "shared_state": "Processor socket count, core count, and CPU model should be consistent with dmidecode processor output"
+      },
+      {
+        "command": "free",
+        "shared_state": "Total system memory reported should match the sum of installed DIMMs from dmidecode -t memory"
+      },
+      {
+        "command": "lspci",
+        "shared_state": "PCIe slot designations and bus addresses from dmidecode -t slot should correspond to lspci device locations"
+      }
+    ]
+  }
+}

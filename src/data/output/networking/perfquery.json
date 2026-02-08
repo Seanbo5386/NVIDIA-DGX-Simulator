@@ -1,0 +1,380 @@
+{
+  "command": "perfquery",
+  "category": "networking",
+  "description": "Query InfiniBand port performance counters and error statistics. perfquery retrieves performance management (PerfMgt) counters from InfiniBand ports including data transfer statistics (transmit/receive bytes and packets), error counters (symbol errors, link error recovery, link downed, receive errors, etc.), and extended counters for high-speed fabrics. It is essential for monitoring InfiniBand fabric health, diagnosing link problems, and tracking bandwidth utilization in HPC clusters.",
+  "synopsis": "perfquery [options] [lid] [port]",
+  "version_documented": "rdma-core 44.0+",
+  "source_urls": [
+    "https://github.com/linux-rdma/rdma-core",
+    "https://linux.die.net/man/8/perfquery"
+  ],
+  "installation": {
+    "package": "infiniband-diags",
+    "notes": "On RHEL/CentOS: yum install infiniband-diags. On Ubuntu/Debian: apt install infiniband-diags. Part of the InfiniBand diagnostic utilities suite."
+  },
+  "global_options": [
+    {
+      "short": "-x",
+      "long": "--extended",
+      "description": "Show extended port counters (64-bit counters for PortXmitData, PortRcvData, PortXmitPkts, PortRcvPkts, etc.). Required for high-speed links where 32-bit counters overflow quickly."
+    },
+    {
+      "short": "-X",
+      "long": "--xmtsl",
+      "description": "Show all supported counters including extended and additional counters. Provides the most comprehensive view of port statistics."
+    },
+    {
+      "short": "-l",
+      "long": "--loop",
+      "description": "Run in loop mode, continuously querying and displaying counters. Useful for real-time monitoring.",
+      "arguments": "interval",
+      "argument_type": "integer",
+      "example": "perfquery -l 1"
+    },
+    {
+      "short": "-r",
+      "long": "--reset_after_read",
+      "description": "Reset counters after reading. Useful for starting fresh measurements. Requires appropriate permissions."
+    },
+    {
+      "short": "-R",
+      "long": "--Reset_only",
+      "description": "Reset counters without displaying them. Used to clear counters before a test."
+    },
+    {
+      "short": "-C",
+      "long": "--Ca",
+      "description": "Specify the local Channel Adapter (HCA) to use for queries.",
+      "arguments": "CA_name",
+      "argument_type": "string",
+      "default": "First available CA",
+      "example": "perfquery -C mlx5_0"
+    },
+    {
+      "short": "-P",
+      "long": "--Port",
+      "description": "Specify the local port number on the CA to use for sending queries.",
+      "arguments": "port_number",
+      "argument_type": "integer",
+      "default": "1",
+      "example": "perfquery -P 1"
+    },
+    {
+      "short": "-G",
+      "long": "--Guid",
+      "description": "Interpret the lid argument as a GUID instead of a LID.",
+      "example": "perfquery -G 0x506b4b0300ab1234"
+    },
+    {
+      "short": "-a",
+      "long": "--all_ports",
+      "description": "Query all ports on the target device (switch or HCA). Useful for getting a complete view of a multi-port device."
+    },
+    {
+      "short": "-s",
+      "long": "--smkey",
+      "description": "Specify the SM key for authenticated queries.",
+      "arguments": "SM_key",
+      "argument_type": "string",
+      "example": "perfquery -s 0x1234567890abcdef"
+    },
+    {
+      "short": "-t",
+      "long": "--timeout",
+      "description": "Set the timeout for MAD (Management Datagram) responses in milliseconds.",
+      "arguments": "timeout_ms",
+      "argument_type": "integer",
+      "default": "1000",
+      "example": "perfquery -t 5000"
+    },
+    {
+      "short": "-d",
+      "long": "--debug",
+      "description": "Enable debug output. Shows detailed information about MAD requests and responses."
+    },
+    {
+      "short": "-e",
+      "long": "--err_show",
+      "description": "Show only error counters, suppressing data counters. Useful for quick error checks."
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Display usage information and available options."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display the perfquery version information."
+    }
+  ],
+  "output_formats": {
+    "default": "Human-readable format showing counter names and values. Includes PortSelect, CounterSelect, and all requested performance counters such as SymbolErrorCounter, LinkErrorRecoveryCounter, LinkDownedCounter, PortRcvErrors, PortRcvRemotePhysicalErrors, PortRcvSwitchRelayErrors, PortXmitDiscards, PortXmitConstraintErrors, PortRcvConstraintErrors, LocalLinkIntegrityErrors, ExcessiveBufferOverrunErrors, VL15Dropped, PortXmitData, PortRcvData, PortXmitPkts, PortRcvPkts, PortXmitWait.",
+    "extended": "64-bit extended counters format with PortXmitData, PortRcvData, PortXmitPkts, PortRcvPkts, PortUnicastXmitPkts, PortUnicastRcvPkts, PortMulticastXmitPkts, PortMulticastRcvPkts. Enabled with -x flag.",
+    "all_counters": "Comprehensive output showing all supported counters including both standard and extended counters. Enabled with -X flag."
+  },
+  "environment_variables": [
+    {
+      "name": "IBDEBUG",
+      "description": "Enable debug output when set to any value.",
+      "example": "IBDEBUG=1 perfquery",
+      "affects_command": "Produces additional diagnostic output for troubleshooting MAD communication."
+    },
+    {
+      "name": "IBWARN",
+      "description": "Control warning message verbosity.",
+      "example": "IBWARN=1 perfquery",
+      "affects_command": "Shows additional warning messages during operation."
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - query completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - failed to query counters, invalid arguments, or communication failure"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Query performance counters for the local HCA port",
+      "command": "perfquery",
+      "output_example": "# Port counters: Lid 123 port 1\nPortSelect:......................1\nCounterSelect:...................0x0000\nSymbolErrorCounter:..............0\nLinkErrorRecoveryCounter:........0\nLinkDownedCounter:...............0\nPortRcvErrors:...................0\nPortRcvRemotePhysicalErrors:.....0\nPortRcvSwitchRelayErrors:........0\nPortXmitDiscards:................0\nPortXmitConstraintErrors:........0\nPortRcvConstraintErrors:.........0\nLocalLinkIntegrityErrors:........0\nExcessiveBufferOverrunErrors:....0\nVL15Dropped:.....................0\nPortXmitData:....................123456789\nPortRcvData:.....................987654321\nPortXmitPkts:....................1234567\nPortRcvPkts:.....................7654321\nPortXmitWait:....................0",
+      "requires_root": false
+    },
+    {
+      "description": "Query extended 64-bit counters for the local port",
+      "command": "perfquery -x",
+      "output_example": "# Port extended counters: Lid 123 port 1\nPortSelect:......................1\nCounterSelect:...................0x0000\nPortXmitData:....................12345678901234\nPortRcvData:.....................98765432109876\nPortXmitPkts:....................123456789012\nPortRcvPkts:.....................987654321098\nPortUnicastXmitPkts:.............123456789000\nPortUnicastRcvPkts:..............987654321000\nPortMulticastXmitPkts:...........12\nPortMulticastRcvPkts:............98",
+      "requires_root": false
+    },
+    {
+      "description": "Query a specific remote port by LID and port number",
+      "command": "perfquery 15 1",
+      "output_example": "# Port counters: Lid 15 port 1\nPortSelect:......................1\nSymbolErrorCounter:..............0\nLinkErrorRecoveryCounter:........0\nLinkDownedCounter:...............0\nPortRcvErrors:...................0\nPortXmitData:....................5678901234\nPortRcvData:.....................4321098765\nPortXmitPkts:....................56789012\nPortRcvPkts:.....................43210987",
+      "requires_root": false
+    },
+    {
+      "description": "Query all ports on a switch",
+      "command": "perfquery -a 10",
+      "output_example": "# Port counters: Lid 10 port 1\n...\n# Port counters: Lid 10 port 2\n...\n# Port counters: Lid 10 port 36\n...",
+      "requires_root": false
+    },
+    {
+      "description": "Query counters and reset them after reading",
+      "command": "perfquery -r",
+      "output_example": "# Port counters: Lid 123 port 1 (reset after read)\nPortXmitData:....................123456789\nPortRcvData:.....................987654321\n[counters reset to 0]",
+      "requires_root": true
+    },
+    {
+      "description": "Reset all counters on a port without displaying",
+      "command": "perfquery -R 15 1",
+      "output_example": "# Port counters reset: Lid 15 port 1",
+      "requires_root": true
+    },
+    {
+      "description": "Check for errors on a specific port (error counters only)",
+      "command": "perfquery -e 15 1",
+      "output_example": "# Port counters: Lid 15 port 1 (errors only)\nSymbolErrorCounter:..............0\nLinkErrorRecoveryCounter:........0\nLinkDownedCounter:...............0\nPortRcvErrors:...................0\nPortRcvRemotePhysicalErrors:.....0\nPortXmitDiscards:................0\nLocalLinkIntegrityErrors:........0\nExcessiveBufferOverrunErrors:....0",
+      "requires_root": false
+    },
+    {
+      "description": "Query a port by GUID instead of LID",
+      "command": "perfquery -G 0x506b4b0300ab1234 1",
+      "output_example": "# Port counters: Guid 0x506b4b0300ab1234 port 1\nPortXmitData:....................123456789\nPortRcvData:.....................987654321",
+      "requires_root": false
+    },
+    {
+      "description": "Continuous monitoring with 2-second interval",
+      "command": "perfquery -x -l 2",
+      "output_example": "[Timestamp] # Port extended counters: Lid 123 port 1\nPortXmitData:....................12345678901234\nPortRcvData:.....................98765432109876\n[repeats every 2 seconds]",
+      "requires_root": false
+    },
+    {
+      "description": "Query using a specific local HCA and port",
+      "command": "perfquery -C mlx5_1 -P 1 15 1",
+      "output_example": "# Port counters: Lid 15 port 1 (via mlx5_1/1)\nPortXmitData:....................123456789\nPortRcvData:.....................987654321",
+      "requires_root": false
+    },
+    {
+      "description": "Script pattern to detect link errors",
+      "command": "perfquery | grep -E 'Error|Dropped|Discards' | grep -v ':0$'",
+      "output_example": "SymbolErrorCounter:..............5\nLinkErrorRecoveryCounter:........2",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "ibwarn: [pid] umad_send failed: No such file or directory",
+      "meaning": "Unable to communicate with the InfiniBand management interface",
+      "resolution": "Verify RDMA kernel modules are loaded with 'lsmod | grep ib_umad'. Ensure /dev/infiniband/umad* devices exist. Load the ib_umad module with 'modprobe ib_umad' if needed."
+    },
+    {
+      "message": "ibwarn: [pid] mad_rpc: timeout",
+      "meaning": "No response received from the target device within the timeout period",
+      "resolution": "Check if the target LID is correct with 'iblinkinfo'. Verify the target device is reachable. Increase timeout with -t option. Check subnet manager is running."
+    },
+    {
+      "message": "ibwarn: [pid] query failed: Invalid argument",
+      "meaning": "Invalid LID, port number, or other parameter specified",
+      "resolution": "Verify the LID exists with 'ibstat' or 'iblinkinfo'. Ensure port number is valid (typically 1 for HCAs, 1-36 for switches). Check command syntax."
+    },
+    {
+      "message": "Can't resolve destination port",
+      "meaning": "The specified LID or GUID cannot be resolved to a valid port",
+      "resolution": "Use 'ibstat' to find local LIDs. Use 'iblinkinfo' or 'ibnetdiscover' to find remote LIDs. Ensure subnet manager is running and fabric is properly configured."
+    },
+    {
+      "message": "No HCAs or ports found",
+      "meaning": "No InfiniBand devices available for querying",
+      "resolution": "Verify InfiniBand hardware is installed with 'lspci | grep -i mellanox'. Check if RDMA modules are loaded. Use 'ibstat -l' to list available HCAs."
+    },
+    {
+      "message": "perfquery: Reset failed: Permission denied",
+      "meaning": "Insufficient permissions to reset performance counters",
+      "resolution": "Counter reset operations (-r, -R) typically require root privileges. Run as root or with sudo."
+    },
+    {
+      "message": "Extended port counters not supported",
+      "meaning": "The target device does not support extended 64-bit performance counters",
+      "resolution": "Use standard counters without -x flag. Extended counters require newer hardware and firmware. Check device capabilities with 'smpquery portinfo'."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "ibstat",
+      "ibstatus",
+      "iblinkinfo",
+      "ibnetdiscover",
+      "ibdiagnet",
+      "mlxlink",
+      "smpquery",
+      "ibportstate",
+      "ibqueryerrors",
+      "ibclearerrors",
+      "ibclearcounters",
+      "opensm"
+    ],
+    "uses_library": ["libibmad", "libibumad", "libibverbs"],
+    "notes": "perfquery uses the InfiniBand Performance Management (PerfMgt) class to query counters via MAD (Management Datagram) packets. For fabric-wide error checking, ibdiagnet is more comprehensive. ibqueryerrors provides a simpler interface for checking errors across multiple ports. mlxlink offers more detailed vendor-specific diagnostics for NVIDIA/Mellanox adapters. Counter values are cumulative since last reset or device initialization."
+  },
+  "permissions": {
+    "read_operations": "No special permissions required for querying counters. Any user can read performance statistics.",
+    "write_operations": "Root privileges required for counter reset operations (-r, -R flags).",
+    "notes": "Access to /dev/infiniband/umad* devices is required. Group membership in 'infiniband' or 'rdma' may be needed on some systems."
+  },
+  "limitations": [
+    "32-bit counters can overflow quickly on high-speed links (use -x for extended counters)",
+    "Extended counters may not be supported on older hardware",
+    "Query requires a working subnet manager for LID-based addressing",
+    "Cannot query ports that are physically down",
+    "Counter reset is not atomic with counter read",
+    "Some counters may not be implemented on all hardware",
+    "Loop mode (-l) does not calculate rate differences automatically",
+    "Does not provide per-VL (Virtual Lane) statistics in basic mode"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": [
+          "port_xmit_data",
+          "port_rcv_data",
+          "port_xmit_pkts",
+          "port_rcv_pkts",
+          "symbol_error_counter",
+          "link_error_recovery_counter",
+          "link_downed_counter",
+          "port_rcv_errors",
+          "port_rcv_remote_physical_errors",
+          "port_rcv_switch_relay_errors",
+          "port_xmit_discards",
+          "port_xmit_constraint_errors",
+          "port_rcv_constraint_errors",
+          "local_link_integrity_errors",
+          "excessive_buffer_overrun_errors",
+          "vl15_dropped",
+          "port_xmit_wait",
+          "port_unicast_xmit_pkts",
+          "port_unicast_rcv_pkts",
+          "port_multicast_xmit_pkts",
+          "port_multicast_rcv_pkts"
+        ],
+        "description": "perfquery reads InfiniBand performance counters from HCA and switch ports via PerfMgt MAD queries"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "network_ib_state",
+        "fields": [
+          "port_xmit_data",
+          "port_rcv_data",
+          "port_xmit_pkts",
+          "port_rcv_pkts",
+          "symbol_error_counter",
+          "link_error_recovery_counter",
+          "link_downed_counter",
+          "port_rcv_errors",
+          "port_xmit_discards",
+          "local_link_integrity_errors",
+          "excessive_buffer_overrun_errors",
+          "vl15_dropped",
+          "port_xmit_wait"
+        ],
+        "description": "perfquery can reset performance counters to zero when reset flags are used",
+        "requires_flags": ["-r", "-R", "--reset_after_read", "--Reset_only"],
+        "requires_privilege": "root"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Data transmitted or received on the port",
+        "effect": "PortXmitData, PortRcvData, PortXmitPkts, PortRcvPkts counters increment"
+      },
+      {
+        "state_change": "Link errors occur (signal degradation, cable issues)",
+        "effect": "SymbolErrorCounter, LinkErrorRecoveryCounter increment"
+      },
+      {
+        "state_change": "Link goes down and recovers",
+        "effect": "LinkDownedCounter, LinkErrorRecoveryCounter increment"
+      },
+      {
+        "state_change": "Packets are discarded due to congestion",
+        "effect": "PortXmitDiscards counter increments"
+      },
+      {
+        "state_change": "Port waits to transmit due to congestion",
+        "effect": "PortXmitWait counter increments"
+      },
+      {
+        "state_change": "Buffer overrun condition occurs",
+        "effect": "ExcessiveBufferOverrunErrors counter increments"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "ibqueryerrors",
+        "shared_state": "Error counter values (ibqueryerrors queries same counters across multiple ports)"
+      },
+      {
+        "command": "ibdiagnet",
+        "shared_state": "Performance counters and error statistics (ibdiagnet performs comprehensive fabric diagnostics)"
+      },
+      {
+        "command": "mlxlink",
+        "shared_state": "Port statistics and error counters (mlxlink provides vendor-specific detailed diagnostics)"
+      },
+      {
+        "command": "ibclearerrors",
+        "shared_state": "Error counters (ibclearerrors resets error counters fabric-wide)"
+      },
+      {
+        "command": "ibclearcounters",
+        "shared_state": "All performance counters (ibclearcounters resets all counters fabric-wide)"
+      }
+    ]
+  }
+}

@@ -1,0 +1,595 @@
+{
+  "version": "1.0.0",
+  "categories": [
+    {
+      "id": "check-gpu-health",
+      "title": "Check GPU Health",
+      "icon": "🖥️",
+      "decisionGuide": "Quick snapshot → nvidia-smi | Overall health → nvsm show health | Deep diagnostics → dcgmi health",
+      "commands": [
+        {
+          "name": "nvidia-smi",
+          "summary": "Quick GPU status snapshot - memory, utilization, temperature",
+          "commonUsage": [
+            {
+              "command": "nvidia-smi",
+              "description": "Basic status of all GPUs"
+            },
+            {
+              "command": "nvidia-smi -q -i 0",
+              "description": "Detailed query for GPU 0"
+            },
+            {
+              "command": "nvidia-smi --query-gpu=temperature.gpu,utilization.gpu --format=csv",
+              "description": "Custom CSV output"
+            }
+          ],
+          "options": [
+            {
+              "flag": "-i <id>",
+              "description": "Target specific GPU by index"
+            },
+            { "flag": "-q", "description": "Detailed query mode" },
+            { "flag": "-L", "description": "List all GPUs" },
+            {
+              "flag": "-d <type>",
+              "description": "Display specific info (MEMORY, UTILIZATION, ECC, TEMPERATURE)"
+            }
+          ],
+          "related": ["dcgmi discovery", "nvsm show gpu"]
+        },
+        {
+          "name": "dcgmi",
+          "summary": "NVIDIA Data Center GPU Manager - health monitoring and diagnostics",
+          "commonUsage": [
+            {
+              "command": "dcgmi health --check",
+              "description": "Quick health check"
+            },
+            {
+              "command": "dcgmi diag --mode 1",
+              "description": "Short diagnostic (1-2 min)"
+            },
+            {
+              "command": "dcgmi diag --mode 3",
+              "description": "Comprehensive diagnostic (10-15 min)"
+            }
+          ],
+          "options": [
+            {
+              "flag": "--mode 1|2|3",
+              "description": "Diagnostic depth (1=short, 2=medium, 3=long)"
+            },
+            { "flag": "-g <group>", "description": "Target GPU group" },
+            { "flag": "-j", "description": "JSON output format" }
+          ],
+          "related": ["nvidia-smi -q", "nvsm show health"]
+        },
+        {
+          "name": "nvsm",
+          "summary": "NVIDIA System Management - hierarchical system health view",
+          "commonUsage": [
+            {
+              "command": "nvsm show health",
+              "description": "System health summary"
+            },
+            {
+              "command": "nvsm show gpu",
+              "description": "GPU inventory and status"
+            },
+            {
+              "command": "nvsm show alerts",
+              "description": "Active system alerts"
+            }
+          ],
+          "options": [
+            {
+              "flag": "show <component>",
+              "description": "Display component status (health, gpu, fabric, alerts)"
+            },
+            { "flag": "-v", "description": "Verbose output" }
+          ],
+          "related": ["nvidia-smi", "dcgmi health"]
+        }
+      ]
+    },
+    {
+      "id": "diagnose-network",
+      "title": "Diagnose Network Issues",
+      "icon": "🔗",
+      "decisionGuide": "Port status → ibstat | Error counters → perfquery | Fabric-wide → ibdiagnet",
+      "commands": [
+        {
+          "name": "ibstat",
+          "summary": "InfiniBand HCA port status and link information",
+          "commonUsage": [
+            { "command": "ibstat", "description": "All HCA ports status" },
+            { "command": "ibstat mlx5_0", "description": "Specific HCA status" }
+          ],
+          "options": [
+            { "flag": "-p", "description": "Show port GUIDs" },
+            { "flag": "-s", "description": "Short output format" }
+          ],
+          "related": ["iblinkinfo", "perfquery"]
+        },
+        {
+          "name": "ibdiagnet",
+          "summary": "Comprehensive InfiniBand fabric diagnostics",
+          "commonUsage": [
+            {
+              "command": "ibdiagnet",
+              "description": "Full fabric diagnostic scan"
+            },
+            { "command": "ibdiagnet --ls", "description": "Link speed check" },
+            {
+              "command": "ibdiagnet -pc",
+              "description": "Clear port counters after scan"
+            }
+          ],
+          "options": [
+            { "flag": "--ls", "description": "Check link speeds" },
+            { "flag": "-pc", "description": "Clear port counters" },
+            {
+              "flag": "-o <dir>",
+              "description": "Output directory for reports"
+            }
+          ],
+          "related": ["ibstat", "iblinkinfo", "perfquery"]
+        },
+        {
+          "name": "iblinkinfo",
+          "summary": "InfiniBand fabric link topology and status",
+          "commonUsage": [
+            { "command": "iblinkinfo", "description": "All fabric links" },
+            {
+              "command": "iblinkinfo -l",
+              "description": "Show LID information"
+            }
+          ],
+          "options": [
+            { "flag": "-l", "description": "Show LID details" },
+            { "flag": "-R", "description": "Recalculate routing" }
+          ],
+          "related": ["ibstat", "ibdiagnet"]
+        },
+        {
+          "name": "perfquery",
+          "summary": "Query InfiniBand port performance counters",
+          "commonUsage": [
+            { "command": "perfquery", "description": "Local port counters" },
+            { "command": "perfquery -x", "description": "Extended counters" }
+          ],
+          "options": [
+            { "flag": "-x", "description": "Extended 64-bit counters" },
+            { "flag": "-c", "description": "Clear counters after read" }
+          ],
+          "related": ["ibstat", "ibdiagnet"]
+        }
+      ]
+    },
+    {
+      "id": "monitor-performance",
+      "title": "Monitor Performance",
+      "icon": "⚡",
+      "decisionGuide": "Real-time stats → nvidia-smi dmon | Continuous monitoring → dcgmi dmon | Interactive → nvtop",
+      "commands": [
+        {
+          "name": "nvidia-smi dmon",
+          "summary": "Continuous GPU metrics monitoring",
+          "commonUsage": [
+            {
+              "command": "nvidia-smi dmon",
+              "description": "Default monitoring output"
+            },
+            {
+              "command": "nvidia-smi dmon -s pucvmet",
+              "description": "All metric categories"
+            },
+            {
+              "command": "nvidia-smi dmon -d 5",
+              "description": "5-second sample interval"
+            }
+          ],
+          "options": [
+            {
+              "flag": "-s <metrics>",
+              "description": "Metric categories (p=power, u=util, c=clock, v=ecc, m=mem, e=ecc, t=temp)"
+            },
+            { "flag": "-d <sec>", "description": "Sample interval in seconds" },
+            { "flag": "-i <gpu>", "description": "Target specific GPU" }
+          ],
+          "related": ["dcgmi dmon", "nvtop"]
+        },
+        {
+          "name": "nvtop",
+          "summary": "Interactive GPU process monitor (like htop for GPUs)",
+          "commonUsage": [
+            { "command": "nvtop", "description": "Launch interactive monitor" }
+          ],
+          "options": [
+            { "flag": "-d <sec>", "description": "Refresh delay" },
+            {
+              "flag": "-s <sort>",
+              "description": "Sort order (memory, processor)"
+            }
+          ],
+          "related": ["nvidia-smi dmon", "dcgmi dmon"]
+        }
+      ]
+    },
+    {
+      "id": "troubleshoot-gpu",
+      "title": "Troubleshoot GPU Problems",
+      "icon": "🔧",
+      "decisionGuide": "Run diagnostics → dcgmi diag | Collect logs → nvidia-bug-report | Stress test → gpu-burn",
+      "commands": [
+        {
+          "name": "dcgmi diag",
+          "summary": "GPU diagnostic tests at three levels",
+          "commonUsage": [
+            {
+              "command": "dcgmi diag --mode 1",
+              "description": "Quick validation (1-2 min)"
+            },
+            {
+              "command": "dcgmi diag --mode 2",
+              "description": "Standard diagnostics (5 min)"
+            },
+            {
+              "command": "dcgmi diag --mode 3",
+              "description": "Extended stress test (10-15 min)"
+            }
+          ],
+          "options": [
+            { "flag": "--mode 1|2|3", "description": "Test depth level" },
+            { "flag": "-i <gpu>", "description": "Test specific GPU" },
+            { "flag": "-r <test>", "description": "Run specific test" }
+          ],
+          "related": ["nvidia-smi -q", "nvidia-bug-report"]
+        },
+        {
+          "name": "nvidia-bug-report",
+          "summary": "Collect comprehensive system diagnostics for support",
+          "commonUsage": [
+            {
+              "command": "nvidia-bug-report.sh",
+              "description": "Generate full diagnostic bundle"
+            }
+          ],
+          "options": [],
+          "related": ["dcgmi diag", "dmesg"]
+        },
+        {
+          "name": "gpu-burn",
+          "summary": "GPU stress testing and burn-in validation",
+          "commonUsage": [
+            { "command": "gpu-burn 60", "description": "60-second burn test" },
+            {
+              "command": "gpu-burn -d 0 300",
+              "description": "5-minute test on GPU 0"
+            }
+          ],
+          "options": [
+            { "flag": "-d <gpu>", "description": "Target specific GPU" },
+            { "flag": "<seconds>", "description": "Test duration" }
+          ],
+          "related": ["dcgmi diag --mode 3"]
+        }
+      ]
+    },
+    {
+      "id": "manage-cluster",
+      "title": "Manage Cluster Jobs",
+      "icon": "🖧",
+      "decisionGuide": "View resources → sinfo | Check queue → squeue | Job control → scontrol | History → sacct",
+      "commands": [
+        {
+          "name": "sinfo",
+          "summary": "View Slurm cluster partition and node status",
+          "commonUsage": [
+            { "command": "sinfo", "description": "Partition overview" },
+            { "command": "sinfo -N -l", "description": "Node-level details" },
+            {
+              "command": "sinfo --format=\"%P %a %D %t\"",
+              "description": "Custom format"
+            }
+          ],
+          "options": [
+            { "flag": "-N", "description": "Node-centric view" },
+            { "flag": "-l", "description": "Long/detailed format" },
+            { "flag": "-p <partition>", "description": "Filter by partition" }
+          ],
+          "related": ["squeue", "scontrol"]
+        },
+        {
+          "name": "squeue",
+          "summary": "View job queue and running jobs",
+          "commonUsage": [
+            { "command": "squeue", "description": "All queued jobs" },
+            { "command": "squeue -u $USER", "description": "Your jobs only" },
+            {
+              "command": "squeue -j <jobid>",
+              "description": "Specific job details"
+            }
+          ],
+          "options": [
+            { "flag": "-u <user>", "description": "Filter by user" },
+            { "flag": "-p <partition>", "description": "Filter by partition" },
+            {
+              "flag": "-t <state>",
+              "description": "Filter by state (PENDING, RUNNING)"
+            }
+          ],
+          "related": ["sinfo", "scontrol", "scancel"]
+        },
+        {
+          "name": "scontrol",
+          "summary": "Slurm administrative control commands",
+          "commonUsage": [
+            {
+              "command": "scontrol show job <id>",
+              "description": "Job details"
+            },
+            {
+              "command": "scontrol show node <name>",
+              "description": "Node details"
+            },
+            { "command": "scontrol hold <jobid>", "description": "Hold a job" }
+          ],
+          "options": [
+            {
+              "flag": "show job|node|partition",
+              "description": "Display entity details"
+            },
+            {
+              "flag": "hold|release <jobid>",
+              "description": "Job state control"
+            },
+            { "flag": "update", "description": "Modify entity properties" }
+          ],
+          "related": ["sinfo", "squeue"]
+        },
+        {
+          "name": "sacct",
+          "summary": "View historical job accounting data",
+          "commonUsage": [
+            { "command": "sacct", "description": "Recent job history" },
+            {
+              "command": "sacct -j <jobid> --format=JobID,Elapsed,MaxRSS",
+              "description": "Specific job metrics"
+            }
+          ],
+          "options": [
+            { "flag": "-j <jobid>", "description": "Specific job" },
+            { "flag": "-S <date>", "description": "Start date filter" },
+            {
+              "flag": "--format=<fields>",
+              "description": "Custom output fields"
+            }
+          ],
+          "related": ["squeue", "scontrol"]
+        }
+      ]
+    },
+    {
+      "id": "run-containers",
+      "title": "Run Containers",
+      "icon": "📦",
+      "decisionGuide": "Development → docker | HPC workloads → enroot/pyxis | NGC images → ngc",
+      "commands": [
+        {
+          "name": "docker",
+          "summary": "Container runtime for development and testing",
+          "commonUsage": [
+            {
+              "command": "docker run --gpus all nvidia/cuda:12.0-base nvidia-smi",
+              "description": "Run with GPU access"
+            },
+            {
+              "command": "docker ps",
+              "description": "List running containers"
+            },
+            { "command": "docker images", "description": "List local images" }
+          ],
+          "options": [
+            { "flag": "--gpus all", "description": "Enable GPU access" },
+            { "flag": "-v <host>:<container>", "description": "Mount volume" },
+            { "flag": "--rm", "description": "Remove container on exit" }
+          ],
+          "related": ["enroot", "pyxis"]
+        },
+        {
+          "name": "enroot",
+          "summary": "Unprivileged container runtime for HPC",
+          "commonUsage": [
+            {
+              "command": "enroot import docker://nvcr.io#nvidia/pytorch:23.10-py3",
+              "description": "Import NGC container"
+            },
+            {
+              "command": "enroot create nvidia+pytorch+23.10-py3.sqsh",
+              "description": "Create container"
+            },
+            {
+              "command": "enroot start --rw pytorch",
+              "description": "Start container"
+            }
+          ],
+          "options": [
+            { "flag": "import", "description": "Import from registry" },
+            { "flag": "create", "description": "Create from squashfs" },
+            { "flag": "start --rw", "description": "Start read-write" }
+          ],
+          "related": ["docker", "pyxis"]
+        },
+        {
+          "name": "pyxis",
+          "summary": "Slurm plugin for container execution",
+          "commonUsage": [
+            {
+              "command": "srun --container-image=nvcr.io#nvidia/pytorch:23.10-py3 python train.py",
+              "description": "Run in container via Slurm"
+            }
+          ],
+          "options": [
+            {
+              "flag": "--container-image=<uri>",
+              "description": "Container image to use"
+            },
+            {
+              "flag": "--container-mounts=<mounts>",
+              "description": "Volume mounts"
+            }
+          ],
+          "related": ["enroot", "srun"]
+        }
+      ]
+    },
+    {
+      "id": "check-hardware",
+      "title": "Check Hardware Status",
+      "icon": "🌡️",
+      "decisionGuide": "BMC sensors → ipmitool sensor | System events → ipmitool sel | Hardware info → dmidecode",
+      "commands": [
+        {
+          "name": "ipmitool",
+          "summary": "BMC interface for out-of-band management",
+          "commonUsage": [
+            {
+              "command": "ipmitool sensor list",
+              "description": "All sensor readings"
+            },
+            {
+              "command": "ipmitool sel list",
+              "description": "System Event Log"
+            },
+            {
+              "command": "ipmitool chassis status",
+              "description": "Power/chassis state"
+            },
+            { "command": "ipmitool mc info", "description": "BMC information" }
+          ],
+          "options": [
+            { "flag": "sensor list", "description": "Read all sensors" },
+            { "flag": "sel list", "description": "Event log entries" },
+            {
+              "flag": "chassis power <cmd>",
+              "description": "Power control (on/off/cycle)"
+            },
+            {
+              "flag": "-H <host> -U <user> -P <pass>",
+              "description": "Remote BMC access"
+            }
+          ],
+          "related": ["sensors", "dmidecode"]
+        },
+        {
+          "name": "sensors",
+          "summary": "Linux hardware sensor readings",
+          "commonUsage": [
+            { "command": "sensors", "description": "All detected sensors" }
+          ],
+          "options": [
+            { "flag": "-f", "description": "Fahrenheit output" },
+            { "flag": "-u", "description": "Raw output" }
+          ],
+          "related": ["ipmitool sensor"]
+        },
+        {
+          "name": "dmidecode",
+          "summary": "DMI/SMBIOS hardware information",
+          "commonUsage": [
+            {
+              "command": "dmidecode -t memory",
+              "description": "Memory configuration"
+            },
+            {
+              "command": "dmidecode -t processor",
+              "description": "CPU information"
+            },
+            {
+              "command": "dmidecode -t system",
+              "description": "System information"
+            }
+          ],
+          "options": [
+            {
+              "flag": "-t <type>",
+              "description": "Filter by type (memory, processor, system)"
+            },
+            { "flag": "-s <keyword>", "description": "Single value lookup" }
+          ],
+          "related": ["ipmitool", "lspci"]
+        }
+      ]
+    },
+    {
+      "id": "configure-mig",
+      "title": "Configure MIG Partitions",
+      "icon": "🔀",
+      "decisionGuide": "Enable MIG → nvidia-smi -mig 1 | List profiles → nvidia-smi mig -lgip | Create instances → nvidia-smi mig -cgi",
+      "commands": [
+        {
+          "name": "nvidia-smi mig",
+          "summary": "Multi-Instance GPU configuration",
+          "commonUsage": [
+            {
+              "command": "nvidia-smi -i 0 -mig 1",
+              "description": "Enable MIG on GPU 0"
+            },
+            {
+              "command": "nvidia-smi mig -lgip",
+              "description": "List GPU instance profiles"
+            },
+            {
+              "command": "nvidia-smi mig -i 0 -cgi 19,19,19 -C",
+              "description": "Create 3x 3g.20gb instances"
+            },
+            {
+              "command": "nvidia-smi mig -lgi",
+              "description": "List created instances"
+            }
+          ],
+          "options": [
+            { "flag": "-mig 0|1", "description": "Disable/enable MIG mode" },
+            { "flag": "-lgip", "description": "List GPU instance profiles" },
+            {
+              "flag": "-cgi <profiles>",
+              "description": "Create GPU instances"
+            },
+            {
+              "flag": "-C",
+              "description": "Create compute instances automatically"
+            },
+            { "flag": "-dgi", "description": "Destroy GPU instances" }
+          ],
+          "related": ["dcgmi profile"]
+        }
+      ]
+    },
+    {
+      "id": "understand-errors",
+      "title": "Understand Errors",
+      "icon": "⚠️",
+      "decisionGuide": "XID decode → check error table | ECC status → nvidia-smi -q -d ECC | Event log → ipmitool sel",
+      "commands": [
+        {
+          "name": "XID Error Reference",
+          "summary": "NVIDIA GPU error codes and their meanings",
+          "commonUsage": [
+            {
+              "command": "dmesg | grep -i nvrm",
+              "description": "Find XID errors in kernel log"
+            },
+            {
+              "command": "nvidia-smi -q -d ECC",
+              "description": "ECC error counts"
+            }
+          ],
+          "options": [],
+          "related": ["nvidia-smi", "dcgmi health"]
+        }
+      ]
+    }
+  ]
+}

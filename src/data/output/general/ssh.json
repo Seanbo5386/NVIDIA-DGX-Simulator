@@ -1,0 +1,156 @@
+{
+  "command": "ssh",
+  "category": "general",
+  "description": "OpenSSH secure shell client. Provides encrypted remote login and command execution. Essential for accessing HPC compute nodes and transferring data.",
+  "synopsis": "ssh [options] [user@]hostname [command]",
+  "version_documented": "OpenSSH 8.0+",
+  "source_urls": ["https://man.openbsd.org/ssh"],
+  "installation": {
+    "package": "openssh-client",
+    "notes": "Install via: apt install openssh-client or yum install openssh-clients"
+  },
+  "global_options": [
+    {
+      "short": "-i",
+      "description": "Identity file (private key)",
+      "arguments": "<file>",
+      "argument_type": "path"
+    },
+    {
+      "short": "-p",
+      "description": "Port number",
+      "arguments": "<port>",
+      "argument_type": "integer"
+    },
+    {
+      "short": "-l",
+      "description": "Login name",
+      "arguments": "<user>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-X",
+      "description": "Enable X11 forwarding"
+    },
+    {
+      "short": "-A",
+      "description": "Enable agent forwarding"
+    },
+    {
+      "short": "-J",
+      "description": "Jump host (proxy)",
+      "arguments": "<host>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-L",
+      "description": "Local port forward",
+      "arguments": "<port:host:hostport>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-N",
+      "description": "No remote command (for tunnels)"
+    },
+    {
+      "short": "-o",
+      "description": "Set option",
+      "arguments": "<option>",
+      "argument_type": "string"
+    },
+    {
+      "short": "-v",
+      "description": "Verbose mode"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success"
+    },
+    {
+      "code": 255,
+      "meaning": "SSH error"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Connect to node",
+      "command": "ssh user@compute-node01",
+      "requires_root": false
+    },
+    {
+      "description": "Run remote command",
+      "command": "ssh node01 'nvidia-smi'",
+      "requires_root": false
+    },
+    {
+      "description": "Use specific key",
+      "command": "ssh -i ~/.ssh/hpc_key user@cluster",
+      "requires_root": false
+    },
+    {
+      "description": "Jump through login node",
+      "command": "ssh -J login.cluster.edu user@compute01",
+      "requires_root": false
+    },
+    {
+      "description": "Port forwarding for Jupyter",
+      "command": "ssh -L 8888:localhost:8888 user@gpu-node",
+      "requires_root": false
+    },
+    {
+      "description": "X11 forwarding",
+      "command": "ssh -X user@node nvtop",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "Permission denied (publickey)",
+      "meaning": "Key authentication failed",
+      "resolution": "Check key permissions and authorized_keys"
+    },
+    {
+      "message": "Connection refused",
+      "meaning": "SSH server not running or wrong port",
+      "resolution": "Verify sshd is running and port is correct"
+    },
+    {
+      "message": "Host key verification failed",
+      "meaning": "Server key changed",
+      "resolution": "Update known_hosts if expected change"
+    }
+  ],
+  "interoperability": {
+    "related_commands": ["scp", "sftp", "rsync", "ssh-keygen", "ssh-agent"],
+    "notes": "Use ssh-agent for key management. Configure ~/.ssh/config for hosts. HPC clusters often require key-based auth. Agent forwarding (-A) useful for multi-hop access."
+  },
+  "permissions": {
+    "read_operations": "Need valid credentials",
+    "write_operations": "Depends on remote permissions",
+    "notes": "Key files must be chmod 600"
+  },
+  "limitations": [
+    "Requires SSH server running",
+    "Firewall rules may block",
+    "Keys must be properly configured"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "node_state",
+        "fields": ["node_state"],
+        "description": "Connects to compute nodes"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [],
+    "consistent_with": [
+      {
+        "command": "pdsh",
+        "shared_state": "Uses SSH for parallel connections"
+      }
+    ]
+  }
+}

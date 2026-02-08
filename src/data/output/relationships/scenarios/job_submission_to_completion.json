@@ -1,0 +1,108 @@
+{
+  "$schema": "../../schema.json",
+  "scenario_id": "job_submission_to_completion",
+  "scenario_name": "Job Lifecycle: Submit to Complete",
+  "description": "Simulates a complete job lifecycle from submission through pending, running, to completion",
+  "severity": "info",
+  "initial_state_change": {
+    "domain": "job_state",
+    "affected_entity": "Job 12345 submitted by user testuser",
+    "changes": {
+      "job_id": 12345,
+      "state": "PENDING",
+      "user": "testuser",
+      "partition": "gpu",
+      "num_nodes": 2,
+      "gpus_per_node": 4
+    }
+  },
+  "affected_commands": [
+    {
+      "command": "squeue",
+      "category": "cluster_management",
+      "phase": "pending",
+      "output_before": "JOBID  PARTITION  NAME     USER      ST  TIME  NODES  NODELIST(REASON)",
+      "output_after": "JOBID  PARTITION  NAME     USER      ST  TIME  NODES  NODELIST(REASON)\n12345  gpu        train    testuser  PD  0:00  2      (Resources)",
+      "key_differences": [
+        "New job appears with PD (pending) state",
+        "Reason shows (Resources)"
+      ]
+    },
+    {
+      "command": "squeue",
+      "category": "cluster_management",
+      "phase": "running",
+      "output_before": "12345  gpu        train    testuser  PD  0:00  2      (Resources)",
+      "output_after": "12345  gpu        train    testuser  R   5:23  2      dgx-node-[01-02]",
+      "key_differences": [
+        "State changed to R (running)",
+        "Node list populated",
+        "Time incrementing"
+      ]
+    },
+    {
+      "command": "sinfo -N",
+      "category": "cluster_management",
+      "phase": "running",
+      "output_before": "dgx-node-01  gpu  idle\ndgx-node-02  gpu  idle",
+      "output_after": "dgx-node-01  gpu  alloc\ndgx-node-02  gpu  alloc",
+      "key_differences": ["Nodes changed from idle to alloc"]
+    },
+    {
+      "command": "nvidia-smi",
+      "category": "gpu_management",
+      "phase": "running",
+      "output_before": "No running processes found",
+      "output_after": "+-----------------------------------------------------------------------------+\n| Processes:                                                                  |\n|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |\n|        ID   ID                                                   Usage      |\n|=============================================================================|\n|    0   N/A  N/A     45678      C   python                          16384MiB |\n|    1   N/A  N/A     45679      C   python                          16384MiB |",
+      "key_differences": ["GPU processes appear", "Memory allocated"]
+    },
+    {
+      "command": "squeue",
+      "category": "cluster_management",
+      "phase": "completed",
+      "output_before": "12345  gpu        train    testuser  R   2:30:00  2  dgx-node-[01-02]",
+      "output_after": "JOBID  PARTITION  NAME     USER      ST  TIME  NODES  NODELIST(REASON)",
+      "key_differences": ["Job no longer in queue"]
+    },
+    {
+      "command": "sacct -j 12345",
+      "category": "cluster_management",
+      "phase": "completed",
+      "output_before": "JobID    JobName  Partition  State    ExitCode\n12345    train    gpu        RUNNING  0:0",
+      "output_after": "JobID    JobName  Partition  State      ExitCode\n12345    train    gpu        COMPLETED  0:0\n12345.0  python   gpu        COMPLETED  0:0",
+      "key_differences": [
+        "State shows COMPLETED",
+        "ExitCode 0:0 indicates success"
+      ]
+    },
+    {
+      "command": "sinfo -N",
+      "category": "cluster_management",
+      "phase": "completed",
+      "output_before": "dgx-node-01  gpu  alloc\ndgx-node-02  gpu  alloc",
+      "output_after": "dgx-node-01  gpu  idle\ndgx-node-02  gpu  idle",
+      "key_differences": ["Nodes return to idle state"]
+    }
+  ],
+  "recovery_actions": [
+    {
+      "action": "Check job output",
+      "command": "cat slurm-12345.out"
+    },
+    {
+      "action": "View job efficiency",
+      "command": "seff 12345"
+    },
+    {
+      "action": "Check accounting details",
+      "command": "sacct -j 12345 --format=JobID,Elapsed,MaxRSS,MaxVMSize,CPUTime"
+    }
+  ],
+  "simulator_notes": [
+    "Job progresses through states: PENDING -> RUNNING -> COMPLETED",
+    "Node state changes from idle -> alloc -> idle",
+    "GPU processes appear during RUNNING phase",
+    "Resources are released upon completion",
+    "sacct retains job history after completion"
+  ]
+}

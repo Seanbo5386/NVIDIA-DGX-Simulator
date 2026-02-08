@@ -1,0 +1,606 @@
+{
+  "command": "sacct",
+  "category": "cluster_management",
+  "description": "sacct displays accounting data for all jobs and job steps in the Slurm job accounting log or Slurm database. It queries historical job information from the slurmdbd (Slurm Database Daemon) and provides detailed metrics on completed, running, and pending jobs including resource usage, timing, exit codes, and TRES (Trackable Resources) consumption. This command is essential for job accounting, usage reporting, and post-mortem analysis of job performance.",
+  "synopsis": "sacct [OPTIONS]",
+  "version_documented": "Slurm 23.x",
+  "source_urls": ["https://slurm.schedmd.com/sacct.html"],
+  "installation": {
+    "package": "slurm-client or slurm",
+    "notes": "Part of the Slurm workload manager. Requires slurmdbd (Slurm Database Daemon) to be running and properly configured for job accounting."
+  },
+  "global_options": [
+    {
+      "short": "-a",
+      "long": "--allusers",
+      "description": "Display jobs for all users. By default, sacct only shows jobs for the current user. This option requires administrative privileges in some configurations."
+    },
+    {
+      "short": "-A",
+      "long": "--accounts",
+      "description": "Display jobs charged to the specified account(s). Multiple accounts may be comma separated.",
+      "arguments": "account_list",
+      "argument_type": "string",
+      "example": "sacct -A research,development"
+    },
+    {
+      "long": "--array",
+      "description": "Expand job arrays to show individual array tasks on separate lines. Without this option, array elements are summarized."
+    },
+    {
+      "short": "-b",
+      "long": "--brief",
+      "description": "Display only JobID, State, and ExitCode fields. Useful for quick status checks."
+    },
+    {
+      "short": "-B",
+      "long": "--batch-script",
+      "description": "Print the batch script for the specified job."
+    },
+    {
+      "short": "-c",
+      "long": "--completion",
+      "description": "Use job completion data instead of the accounting database. Job completion data is stored locally on each compute node."
+    },
+    {
+      "short": "-C",
+      "long": "--constraints",
+      "description": "Display jobs with the specified constraint(s). Multiple constraints may be comma separated.",
+      "arguments": "constraint_list",
+      "argument_type": "string",
+      "example": "sacct -C gpu,a100"
+    },
+    {
+      "long": "--delimiter",
+      "description": "Specify the field delimiter for parsable output. Default is '|'.",
+      "arguments": "character",
+      "argument_type": "string",
+      "default": "|",
+      "example": "sacct --delimiter=','"
+    },
+    {
+      "short": "-D",
+      "long": "--duplicates",
+      "description": "Return all duplicate job records. When a job is requeued, multiple records exist. By default, only the most recent record is shown."
+    },
+    {
+      "short": "-e",
+      "long": "--helpformat",
+      "description": "Print a list of available format fields and their descriptions."
+    },
+    {
+      "short": "-E",
+      "long": "--endtime",
+      "description": "Select jobs that ended before or at the specified time. Time formats: YYYY-MM-DD[THH:MM[:SS]], now, today, yesterday, midnight.",
+      "arguments": "end_time",
+      "argument_type": "string",
+      "example": "sacct -E 2024-01-31"
+    },
+    {
+      "long": "--env-vars",
+      "description": "Print the environment variables for the specified job."
+    },
+    {
+      "long": "--expand-patterns",
+      "description": "Expand filename patterns in StdOut, StdErr, and StdIn fields to actual filenames."
+    },
+    {
+      "short": "-f",
+      "long": "--file",
+      "description": "Read accounting data from the specified file instead of the database.",
+      "arguments": "file",
+      "argument_type": "path",
+      "example": "sacct -f /var/log/slurm/accounting.log"
+    },
+    {
+      "long": "--federation",
+      "description": "Show jobs from the federation if a member of one."
+    },
+    {
+      "short": "-F",
+      "long": "--flags",
+      "description": "Display jobs with the specified scheduling flags.",
+      "arguments": "flag_list",
+      "argument_type": "string"
+    },
+    {
+      "short": "-g",
+      "long": "--group",
+      "description": "Display jobs owned by the specified group(s). Multiple groups may be comma separated.",
+      "arguments": "group_list",
+      "argument_type": "string",
+      "example": "sacct -g scientists,engineers"
+    },
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Print a help message describing all sacct options."
+    },
+    {
+      "short": "-i",
+      "long": "--nnodes",
+      "description": "Display jobs that used a number of nodes within the specified range.",
+      "arguments": "min[-max]",
+      "argument_type": "string",
+      "example": "sacct -i 4-8"
+    },
+    {
+      "short": "-I",
+      "long": "--ncpus",
+      "description": "Display jobs that used a number of CPUs within the specified range.",
+      "arguments": "min[-max]",
+      "argument_type": "string",
+      "example": "sacct -I 16-64"
+    },
+    {
+      "short": "-j",
+      "long": "--jobs",
+      "description": "Display information about the specified job(s). Multiple job IDs may be comma separated.",
+      "arguments": "job_id_list",
+      "argument_type": "string",
+      "example": "sacct -j 12345,12346,12347"
+    },
+    {
+      "long": "--json",
+      "description": "Produce JSON output. Suitable for programmatic parsing.",
+      "arguments": "parser",
+      "argument_type": "string"
+    },
+    {
+      "short": "-k",
+      "long": "--timelimit-min",
+      "description": "Display jobs with a time limit of at least the specified value.",
+      "arguments": "time",
+      "argument_type": "string",
+      "example": "sacct -k 1:00:00"
+    },
+    {
+      "short": "-K",
+      "long": "--timelimit-max",
+      "description": "Display jobs with a time limit of at most the specified value.",
+      "arguments": "time",
+      "argument_type": "string",
+      "example": "sacct -K 8:00:00"
+    },
+    {
+      "short": "-l",
+      "long": "--long",
+      "description": "Display more detailed information including all available fields. Equivalent to using a comprehensive format specification."
+    },
+    {
+      "short": "-L",
+      "long": "--allclusters",
+      "description": "Display jobs from all clusters in the federation or clusters listed in the config."
+    },
+    {
+      "long": "--local",
+      "description": "Only show jobs local to the current cluster, ignoring federated cluster jobs."
+    },
+    {
+      "short": "-M",
+      "long": "--clusters",
+      "description": "Display jobs from the specified cluster(s). Multiple clusters may be comma separated. Use 'all' for all clusters.",
+      "arguments": "cluster_list",
+      "argument_type": "string",
+      "example": "sacct -M cluster1,cluster2"
+    },
+    {
+      "short": "-n",
+      "long": "--noheader",
+      "description": "Do not print header line in output. Useful for scripting when only raw data is needed."
+    },
+    {
+      "short": "-N",
+      "long": "--nodelist",
+      "description": "Display jobs that ran on the specified node(s). A node range expression may be used.",
+      "arguments": "hostlist",
+      "argument_type": "string",
+      "example": "sacct -N node[001-010]"
+    },
+    {
+      "long": "--name",
+      "description": "Display jobs with the specified name(s). Multiple names may be comma separated.",
+      "arguments": "name_list",
+      "argument_type": "string",
+      "example": "sacct --name=training,inference"
+    },
+    {
+      "long": "--noconvert",
+      "description": "Do not convert units from their original type (e.g., 2048M will not be converted to 2G)."
+    },
+    {
+      "short": "-o",
+      "long": "--format",
+      "description": "Specify the output format using a comma-separated list of field names. Use -e/--helpformat to see all available fields. Common fields: JobID, JobName, Partition, Account, User, State, ExitCode, Start, End, Elapsed, MaxRSS, MaxVMSize, AllocCPUS, AllocTRES.",
+      "arguments": "format_list",
+      "argument_type": "string",
+      "example": "sacct -o JobID,JobName,State,Elapsed,MaxRSS"
+    },
+    {
+      "short": "-p",
+      "long": "--parsable",
+      "description": "Output in parsable format with '|' delimiter. Includes trailing delimiter on each line."
+    },
+    {
+      "short": "-P",
+      "long": "--parsable2",
+      "description": "Output in parsable format with '|' delimiter. Does not include trailing delimiter on each line."
+    },
+    {
+      "short": "-q",
+      "long": "--qos",
+      "description": "Display jobs using the specified Quality of Service (QoS). Multiple QoS names may be comma separated.",
+      "arguments": "qos_list",
+      "argument_type": "string",
+      "example": "sacct -q normal,high"
+    },
+    {
+      "short": "-r",
+      "long": "--partition",
+      "description": "Display jobs in the specified partition(s). Multiple partitions may be comma separated.",
+      "arguments": "partition_list",
+      "argument_type": "string",
+      "example": "sacct -r gpu,compute"
+    },
+    {
+      "short": "-R",
+      "long": "--reason",
+      "description": "Display jobs with the specified scheduling reason.",
+      "arguments": "reason",
+      "argument_type": "string"
+    },
+    {
+      "short": "-s",
+      "long": "--state",
+      "description": "Display jobs with the specified state(s). Multiple states may be comma separated. States: BOOT_FAIL (BF), CANCELLED (CA), COMPLETED (CD), DEADLINE (DL), FAILED (F), NODE_FAIL (NF), OUT_OF_MEMORY (OOM), PENDING (PD), PREEMPTED (PR), RUNNING (R), REQUEUED (RQ), RESIZING (RS), REVOKED (RV), SUSPENDED (S), TIMEOUT (TO).",
+      "arguments": "state_list",
+      "argument_type": "string",
+      "example": "sacct -s COMPLETED,FAILED"
+    },
+    {
+      "short": "-S",
+      "long": "--starttime",
+      "description": "Select jobs that started after or at the specified time. Time formats: YYYY-MM-DD[THH:MM[:SS]], now, today, yesterday, midnight. Default is midnight of current day.",
+      "arguments": "start_time",
+      "argument_type": "string",
+      "example": "sacct -S 2024-01-01"
+    },
+    {
+      "short": "-T",
+      "long": "--truncate",
+      "description": "Truncate time to the specified start/end window. This limits resource usage to only the time within the specified window."
+    },
+    {
+      "short": "-u",
+      "long": "--user",
+      "description": "Display jobs belonging to the specified user(s). Multiple users may be comma separated.",
+      "arguments": "user_list",
+      "argument_type": "string",
+      "example": "sacct -u alice,bob"
+    },
+    {
+      "long": "--units",
+      "description": "Display memory values in specified units: K (kilobytes), M (megabytes), G (gigabytes), T (terabytes), P (petabytes).",
+      "arguments": "unit",
+      "argument_type": "string",
+      "default": "M",
+      "example": "sacct --units=G"
+    },
+    {
+      "long": "--use-local-uid",
+      "description": "Resolve UID to user name via system call instead of using the Slurm database."
+    },
+    {
+      "short": "-v",
+      "long": "--verbose",
+      "description": "Report processing details. Multiple -v options increase verbosity."
+    },
+    {
+      "short": "-V",
+      "long": "--version",
+      "description": "Display version information for sacct and exit."
+    },
+    {
+      "short": "-W",
+      "long": "--wckeys",
+      "description": "Display jobs using the specified workload characterization key(s). Multiple keys may be comma separated.",
+      "arguments": "wckey_list",
+      "argument_type": "string"
+    },
+    {
+      "short": "-x",
+      "long": "--associations",
+      "description": "Display jobs for the specified association ID(s).",
+      "arguments": "assoc_id_list",
+      "argument_type": "string"
+    },
+    {
+      "short": "-X",
+      "long": "--allocations",
+      "description": "Only show job allocation records (no job steps). Useful for summarizing overall job resource usage without step-level detail."
+    },
+    {
+      "long": "--yaml",
+      "description": "Produce YAML output. Human-readable structured format.",
+      "arguments": "parser",
+      "argument_type": "string"
+    }
+  ],
+  "output_formats": {
+    "default": "Tabular format showing: JobID, JobName, Partition, Account, AllocCPUS, State, ExitCode. Job steps are shown as JobID.step_id.",
+    "long": "Extended format (-l) showing comprehensive job information including all timing, resource usage, and accounting fields.",
+    "brief": "Minimal format (-b) showing only JobID, State, and ExitCode.",
+    "parsable": "Pipe-delimited output via -p or -P options. -P omits trailing delimiter for cleaner parsing.",
+    "json": "JSON structured output via --json option. Suitable for programmatic parsing.",
+    "yaml": "YAML structured output via --yaml option. Human-readable structured format.",
+    "format_fields_job_identification": "JobID (unique job identifier), JobIDRaw (numeric job ID), JobName (job name), Cluster (cluster name), Account (account charged), Partition (partition used), User (username), UID (user ID), Group (group name), GID (group ID).",
+    "format_fields_resource_allocation": "AllocCPUS (allocated CPUs), NCPUS (number of CPUs), ReqCPUS (requested CPUs), AllocNodes (allocated nodes), NNodes (number of nodes), ReqNodes (requested nodes), NTasks (number of tasks), AllocTRES (allocated trackable resources), ReqTRES (requested trackable resources).",
+    "format_fields_timing": "Elapsed (wall clock time), ElapsedRaw (elapsed time in seconds), Start (start time), End (end time), Submit (submit time), Eligible (eligible time), Suspended (suspended time), CPUTime (CPU time = AllocCPUS * Elapsed), CPUTimeRAW (CPU time in seconds), TotalCPU (total CPU time used), SystemCPU (system CPU time), UserCPU (user CPU time), Timelimit (time limit), TimelimitRaw (time limit in seconds), Planned (planned start time), PlannedCPU (planned CPU time), PlannedCPURAW (planned CPU time in seconds).",
+    "format_fields_memory": "MaxVMSize (max virtual memory), MaxVMSizeNode (node with max VM), MaxVMSizeTask (task with max VM), AveVMSize (average virtual memory), MaxRSS (max resident set size), MaxRSSNode (node with max RSS), MaxRSSTask (task with max RSS), AveRSS (average RSS), MaxPages (max pages), MaxPagesNode (node with max pages), MaxPagesTask (task with max pages), AvePages (average pages), ReqMem (requested memory).",
+    "format_fields_disk": "MaxDiskRead (max disk read), MaxDiskReadNode (node with max read), MaxDiskReadTask (task with max read), AveDiskRead (average disk read), MaxDiskWrite (max disk write), MaxDiskWriteNode (node with max write), MaxDiskWriteTask (task with max write), AveDiskWrite (average disk write).",
+    "format_fields_cpu_freq": "AveCPU (average CPU time), MinCPU (minimum CPU time), MinCPUNode (node with min CPU), MinCPUTask (task with min CPU), AveCPUFreq (average CPU frequency), ReqCPUFreq (requested CPU frequency), ReqCPUFreqMin (min requested frequency), ReqCPUFreqMax (max requested frequency), ReqCPUFreqGov (requested CPU governor).",
+    "format_fields_tres_usage": "TRESUsageInAve, TRESUsageInMax, TRESUsageInMaxNode, TRESUsageInMaxTask, TRESUsageInMin, TRESUsageInMinNode, TRESUsageInMinTask, TRESUsageInTot, TRESUsageOutAve, TRESUsageOutMax, TRESUsageOutMaxNode, TRESUsageOutMaxTask, TRESUsageOutMin, TRESUsageOutMinNode, TRESUsageOutMinTask, TRESUsageOutTot.",
+    "format_fields_status": "State (job state), ExitCode (exit code), DerivedExitCode (derived exit code from steps), FailedNode (node that caused failure), Reason (pending reason).",
+    "format_fields_additional": "AssocID (association ID), BlockID, Comment (admin comment), AdminComment, SystemComment, ConsumedEnergy (energy consumed), ConsumedEnergyRaw, Container, DBIndex, Extra, Flags, Layout, Licenses, MCSLabel, Priority, QOS, QOSRAW, QOSREQ, ReqReservation, Reservation, ReservationId, Restarts, SegmentSize, SLUID, StdErr, StdIn, StdOut, SubmitLine, WorkDir (working directory).",
+    "job_state_codes": "BF (BOOT_FAIL) - Launch failure due to hardware, CA (CANCELLED) - Explicitly cancelled, CD (COMPLETED) - Completed with exit code 0, DL (DEADLINE) - Terminated on deadline, F (FAILED) - Non-zero exit code, NF (NODE_FAIL) - Node failure, OOM (OUT_OF_MEMORY) - Out of memory, PD (PENDING) - Awaiting resources, PR (PREEMPTED) - Preempted, R (RUNNING) - Currently running, RQ (REQUEUED) - Requeued, RS (RESIZING) - Changing size, RV (REVOKED) - Sibling removed, S (SUSPENDED) - Suspended, TO (TIMEOUT) - Reached time limit."
+  },
+  "environment_variables": [
+    {
+      "name": "SACCT_FORMAT",
+      "description": "Default output format. Equivalent to -o option.",
+      "example": "SACCT_FORMAT=JobID,JobName,State,Elapsed,MaxRSS",
+      "affects_command": "Sets the default output format for all sacct invocations"
+    },
+    {
+      "name": "SLURM_CONF",
+      "description": "Path to the Slurm configuration file.",
+      "example": "SLURM_CONF=/etc/slurm/slurm.conf",
+      "affects_command": "Specifies which Slurm configuration to use"
+    },
+    {
+      "name": "SLURM_TIME_FORMAT",
+      "description": "Specifies the time format for output. Can be 'standard', 'relative', or a strftime format string.",
+      "example": "SLURM_TIME_FORMAT=%Y-%m-%d_%H:%M:%S",
+      "affects_command": "Controls how timestamps are displayed in output"
+    },
+    {
+      "name": "SLURM_CLUSTERS",
+      "description": "Specifies the cluster(s) to use. Equivalent to -M option.",
+      "example": "SLURM_CLUSTERS=cluster1,cluster2",
+      "affects_command": "Sets default clusters for multi-cluster queries"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed successfully"
+    },
+    {
+      "code": 1,
+      "meaning": "Error - general error occurred (e.g., invalid options, database connection failure)"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Display current user's completed jobs since the beginning of the year",
+      "command": "sacct -u $USER -S 2024-01-01",
+      "output_example": "JobID           JobName  Partition    Account  AllocCPUS      State ExitCode \n------------ ---------- ---------- ---------- ---------- ---------- -------- \n12345           training        gpu   research         32  COMPLETED      0:0 \n12345.batch       batch                                32  COMPLETED      0:0 \n12345.0           python                               32  COMPLETED      0:0 \n12346         inference    compute   research         16     FAILED      1:0"
+    },
+    {
+      "description": "Display detailed information for a specific job",
+      "command": "sacct -j 12345 -l",
+      "output_example": "[Long format output with all available fields for job 12345]"
+    },
+    {
+      "description": "Display only failed jobs for the current user",
+      "command": "sacct -s FAILED -u $USER",
+      "output_example": "JobID           JobName  Partition    Account  AllocCPUS      State ExitCode \n------------ ---------- ---------- ---------- ---------- ---------- -------- \n12346         inference    compute   research         16     FAILED      1:0 \n12350             test        gpu   research          8     FAILED    137:0"
+    },
+    {
+      "description": "Display jobs with custom format showing resource usage",
+      "command": "sacct -o JobID,JobName,State,Elapsed,MaxRSS,MaxVMSize -u $USER",
+      "output_example": "JobID           JobName      State    Elapsed     MaxRSS  MaxVMSize \n------------ ---------- ---------- ---------- ---------- ---------- \n12345           training  COMPLETED   04:32:15    15.23G     32.5G \n12345.batch       batch  COMPLETED   04:32:15     0.12G      0.5G \n12345.0           python  COMPLETED   04:30:00    15.23G     32.5G"
+    },
+    {
+      "description": "Display GPU accounting with TRES information",
+      "command": "sacct -o JobID,JobName,AllocTRES,Elapsed,State -u $USER -r gpu",
+      "output_example": "JobID           JobName                      AllocTRES    Elapsed      State \n------------ ---------- ------------------------------ ---------- ---------- \n12345           training  billing=128,cpu=32,gres/gpu=4   04:32:15  COMPLETED \n12346         inference   billing=64,cpu=16,gres/gpu=2   01:15:30     FAILED"
+    },
+    {
+      "description": "Display jobs without showing job steps (allocations only)",
+      "command": "sacct -X -u $USER -S 2024-01-01",
+      "output_example": "JobID           JobName  Partition    Account  AllocCPUS      State ExitCode \n------------ ---------- ---------- ---------- ---------- ---------- -------- \n12345           training        gpu   research         32  COMPLETED      0:0 \n12346         inference    compute   research         16     FAILED      1:0"
+    },
+    {
+      "description": "Display jobs in parsable format for scripting",
+      "command": "sacct -P -o JobID,State,ExitCode -u $USER",
+      "output_example": "JobID|State|ExitCode\n12345|COMPLETED|0:0\n12345.batch|COMPLETED|0:0\n12345.0|COMPLETED|0:0\n12346|FAILED|1:0"
+    },
+    {
+      "description": "Display jobs that ran on specific nodes",
+      "command": "sacct -N node[001-004] -S 2024-01-01",
+      "output_example": "JobID           JobName  Partition    Account  AllocCPUS      State ExitCode \n------------ ---------- ---------- ---------- ---------- ---------- -------- \n12345           training        gpu   research         32  COMPLETED      0:0 \n12348            batch1    compute   research         64  COMPLETED      0:0"
+    },
+    {
+      "description": "Display jobs within a specific time window",
+      "command": "sacct -S 2024-01-01T00:00:00 -E 2024-01-31T23:59:59 -u $USER",
+      "output_example": "JobID           JobName  Partition    Account  AllocCPUS      State ExitCode \n------------ ---------- ---------- ---------- ---------- ---------- -------- \n[Jobs that ran within January 2024]"
+    },
+    {
+      "description": "Display all users' jobs (admin view)",
+      "command": "sacct -a -S today",
+      "output_example": "JobID           JobName  Partition    Account  AllocCPUS      State ExitCode \n------------ ---------- ---------- ---------- ---------- ---------- -------- \n[All jobs from all users submitted today]",
+      "requires_root": false
+    },
+    {
+      "description": "Display job output in JSON format",
+      "command": "sacct -j 12345 --json",
+      "output_example": "{\"meta\":{\"plugin\":{\"type\":\"openapi/slurmctld\"},\"Slurm\":{\"version\":{\"major\":23}}},\"jobs\":[{\"job_id\":12345,\"name\":\"training\",\"state\":{\"current\":[\"COMPLETED\"]},...}]}"
+    },
+    {
+      "description": "Display out-of-memory jobs for debugging",
+      "command": "sacct -s OOM -u $USER -o JobID,JobName,MaxRSS,ReqMem,State",
+      "output_example": "JobID           JobName     MaxRSS     ReqMem      State \n------------ ---------- ---------- ---------- ---------- \n12350             test    31.99G        32G OOM"
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "sacct: error: slurmdbd: Can't locate account",
+      "meaning": "The specified account does not exist in the accounting database",
+      "resolution": "Use 'sacctmgr list account' to view available accounts. Check spelling and case of account name."
+    },
+    {
+      "message": "sacct: error: Problem talking to the database: Connection refused",
+      "meaning": "Cannot connect to the Slurm database daemon (slurmdbd)",
+      "resolution": "Check if slurmdbd is running: 'systemctl status slurmdbd'. Verify database connectivity and credentials."
+    },
+    {
+      "message": "sacct: error: Invalid time specification",
+      "meaning": "The time format provided to -S or -E is invalid",
+      "resolution": "Use valid time formats: YYYY-MM-DD, YYYY-MM-DDTHH:MM:SS, now, today, yesterday, midnight."
+    },
+    {
+      "message": "sacct: error: Invalid job id specified",
+      "meaning": "The specified job ID does not exist in the accounting database",
+      "resolution": "Verify the job ID is correct. The job may be too old and purged from the database. Check AccountingStorageEnforce and MinJobAge settings."
+    },
+    {
+      "message": "sacct: error: Invalid user",
+      "meaning": "The specified user does not exist",
+      "resolution": "Verify the username is correct. Use numeric UID if username resolution fails."
+    },
+    {
+      "message": "sacct: error: Invalid format specification",
+      "meaning": "A format field specified with -o does not exist",
+      "resolution": "Use 'sacct -e' to list all valid format fields. Check spelling and case of field names."
+    },
+    {
+      "message": "sacct: error: Invalid state specified",
+      "meaning": "An invalid job state was provided to the -s option",
+      "resolution": "Use valid states: BOOT_FAIL, CANCELLED, COMPLETED, DEADLINE, FAILED, NODE_FAIL, OUT_OF_MEMORY, PENDING, PREEMPTED, RUNNING, REQUEUED, RESIZING, REVOKED, SUSPENDED, TIMEOUT, or their abbreviations."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "squeue",
+      "sinfo",
+      "sbatch",
+      "srun",
+      "scancel",
+      "scontrol",
+      "sstat",
+      "sreport",
+      "sacctmgr"
+    ],
+    "notes": "sacct queries the slurmdbd (Slurm Database Daemon) for historical job accounting data. For real-time information about running jobs, use squeue or sstat. sacct shows comprehensive post-completion statistics including memory and I/O usage that are not available until the job finishes. The data retention period depends on slurmdbd configuration."
+  },
+  "permissions": {
+    "read_operations": "Users can view their own jobs by default. The -a/--allusers option may require administrative privileges depending on PrivateData configuration.",
+    "notes": "The PrivateData configuration in slurm.conf controls what information users can see. With 'PrivateData=jobs', users can only see their own job information. Administrators (SlurmUser, root, or operators) always have full access."
+  },
+  "limitations": [
+    "Data availability depends on slurmdbd being properly configured and running",
+    "Job step accounting data (MaxRSS, etc.) requires job_acct_gather plugin to be configured",
+    "Historical data retention period is controlled by PurgeJobAfter setting in slurmdbd.conf",
+    "Some fields may be empty if the corresponding data collection was not enabled",
+    "GPU and TRES accounting requires appropriate GRES configuration",
+    "Memory statistics (MaxRSS, MaxVMSize) are only populated after job steps complete",
+    "For very large job histories, queries may be slow; use time filters to limit scope",
+    "Job completion records are not available until the job fully terminates"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "job_state",
+        "fields": [
+          "job_id",
+          "job_name",
+          "user",
+          "group",
+          "account",
+          "partition",
+          "qos",
+          "state",
+          "exit_code",
+          "submit_time",
+          "start_time",
+          "end_time",
+          "elapsed",
+          "time_limit",
+          "node_list",
+          "alloc_cpus",
+          "alloc_nodes",
+          "alloc_tres",
+          "req_cpus",
+          "req_mem",
+          "req_tres",
+          "max_rss",
+          "max_vmsize",
+          "max_disk_read",
+          "max_disk_write",
+          "cpu_time",
+          "user_cpu",
+          "system_cpu",
+          "energy_consumed",
+          "priority",
+          "work_dir",
+          "std_out",
+          "std_err",
+          "comment"
+        ],
+        "description": "sacct reads comprehensive historical job accounting data from the slurmdbd database including all job attributes, resource allocations, usage statistics, and exit information"
+      },
+      {
+        "state_domain": "node_state",
+        "fields": ["hostname"],
+        "description": "sacct reads node allocation information to display which nodes were used for completed jobs"
+      },
+      {
+        "state_domain": "partition_state",
+        "fields": ["partition_name"],
+        "description": "sacct reads partition information for filtering and display purposes"
+      }
+    ],
+    "writes_to": [],
+    "triggered_by": [
+      {
+        "state_change": "Job completion (COMPLETED, FAILED, CANCELLED, TIMEOUT, etc.)",
+        "effect": "New job record with complete accounting data appears in sacct output"
+      },
+      {
+        "state_change": "Job step completion",
+        "effect": "Step-level accounting data (MaxRSS, MaxVMSize, etc.) becomes available"
+      },
+      {
+        "state_change": "Job submission via sbatch/srun",
+        "effect": "New pending job record appears in sacct output (depending on start time filter)"
+      },
+      {
+        "state_change": "Job starts running",
+        "effect": "Job record updates with start time and allocated resources"
+      },
+      {
+        "state_change": "Database purge (PurgeJobAfter)",
+        "effect": "Old job records are removed and no longer appear in sacct output"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "squeue",
+        "shared_state": "Job attributes (job_id, name, user, state) for jobs that are currently in the queue"
+      },
+      {
+        "command": "scontrol show job",
+        "shared_state": "Detailed job information for active jobs; scontrol shows more runtime detail while sacct shows more accounting detail"
+      },
+      {
+        "command": "sstat",
+        "shared_state": "Real-time resource usage (memory, I/O) for currently running job steps; sacct shows final values after completion"
+      },
+      {
+        "command": "sreport",
+        "shared_state": "Aggregated accounting data; sreport provides summary reports while sacct provides job-level detail"
+      }
+    ]
+  }
+}

@@ -1,0 +1,535 @@
+{
+  "command": "enroot",
+  "category": "containers",
+  "description": "Simple yet powerful tool to turn traditional container/OS images into unprivileged sandboxes. Enroot is NVIDIA's lightweight container runtime designed specifically for HPC environments. It enables running containers without requiring root privileges or a daemon, making it ideal for shared HPC clusters. Enroot integrates seamlessly with Slurm through the Pyxis plugin and provides native GPU support through nvidia-container-cli, allowing users to run GPU-accelerated workloads from Docker/OCI images or NGC containers in unprivileged user namespaces.",
+  "synopsis": "enroot [options] <command> [arguments]",
+  "version_documented": "3.4.1",
+  "source_urls": [
+    "https://github.com/NVIDIA/enroot",
+    "https://github.com/NVIDIA/enroot/blob/master/doc/cmd/enroot.md"
+  ],
+  "installation": {
+    "package": "enroot",
+    "notes": "Available as DEB/RPM packages from NVIDIA's GitHub releases. Requires user namespaces enabled in kernel (sysctl user.max_user_namespaces). For GPU support, requires libnvidia-container and nvidia-container-cli. On RHEL/CentOS may require 'echo 10000 > /proc/sys/user/max_user_namespaces'. Integrates with Slurm via the Pyxis plugin for container-native job submission."
+  },
+  "global_options": [
+    {
+      "short": "-h",
+      "long": "--help",
+      "description": "Show help message and exit"
+    },
+    {
+      "short": "-v",
+      "long": "--version",
+      "description": "Show version information and exit"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "import",
+      "description": "Import a container image from a registry or archive and convert it to an enroot squashfs image. Supports Docker Hub, NGC, private registries, and local archives.",
+      "synopsis": "enroot import [options] <image>",
+      "options": [
+        {
+          "short": "-a",
+          "long": "--arch",
+          "description": "Architecture of the image to import",
+          "arguments": "ARCH",
+          "argument_type": "string",
+          "default": "host architecture"
+        },
+        {
+          "short": "-o",
+          "long": "--output",
+          "description": "Output file path for the squashfs image",
+          "arguments": "FILE",
+          "argument_type": "path",
+          "example": "enroot import -o pytorch.sqsh docker://nvcr.io#nvidia/pytorch:23.10-py3"
+        }
+      ]
+    },
+    {
+      "name": "create",
+      "description": "Create a container root filesystem from a squashfs image. This unpacks the image into a directory that can be used to start containers.",
+      "synopsis": "enroot create [options] <image.sqsh>",
+      "options": [
+        {
+          "short": "-n",
+          "long": "--name",
+          "description": "Name for the container root filesystem",
+          "arguments": "NAME",
+          "argument_type": "string",
+          "example": "enroot create --name pytorch pytorch.sqsh"
+        },
+        {
+          "long": "--force",
+          "description": "Overwrite existing container with the same name"
+        }
+      ]
+    },
+    {
+      "name": "start",
+      "description": "Start a container from a previously created root filesystem. Enters an unprivileged sandbox with optional GPU, mount, and environment configurations.",
+      "synopsis": "enroot start [options] <container> [command] [arguments]",
+      "options": [
+        {
+          "short": "-r",
+          "long": "--root",
+          "description": "Run as root inside the container (still unprivileged on host)"
+        },
+        {
+          "short": "-w",
+          "long": "--rw",
+          "description": "Make the container root filesystem writable"
+        },
+        {
+          "short": "-m",
+          "long": "--mount",
+          "description": "Mount a host path into the container (can be specified multiple times)",
+          "arguments": "SRC:DST[:FLAGS]",
+          "argument_type": "string",
+          "example": "enroot start --mount /data:/data:ro pytorch"
+        },
+        {
+          "short": "-e",
+          "long": "--env",
+          "description": "Set an environment variable inside the container",
+          "arguments": "KEY=VALUE",
+          "argument_type": "string",
+          "example": "enroot start --env CUDA_VISIBLE_DEVICES=0 pytorch"
+        },
+        {
+          "short": "-c",
+          "long": "--conf",
+          "description": "Configuration file for container settings",
+          "arguments": "FILE",
+          "argument_type": "path"
+        }
+      ]
+    },
+    {
+      "name": "exec",
+      "description": "Execute a command in a running container. Similar to docker exec, allows running additional processes in an existing container namespace.",
+      "synopsis": "enroot exec [options] <pid> <command> [arguments]",
+      "options": [
+        {
+          "short": "-e",
+          "long": "--env",
+          "description": "Set an environment variable for the command",
+          "arguments": "KEY=VALUE",
+          "argument_type": "string"
+        }
+      ]
+    },
+    {
+      "name": "list",
+      "description": "List available container root filesystems that have been created from imported images.",
+      "synopsis": "enroot list [options]",
+      "options": [
+        {
+          "short": "-f",
+          "long": "--fancy",
+          "description": "Display additional information about each container"
+        }
+      ]
+    },
+    {
+      "name": "remove",
+      "description": "Remove one or more container root filesystems previously created with 'enroot create'.",
+      "synopsis": "enroot remove [options] <container>...",
+      "options": [
+        {
+          "short": "-f",
+          "long": "--force",
+          "description": "Force removal without confirmation"
+        }
+      ]
+    },
+    {
+      "name": "bundle",
+      "description": "Create a self-extracting bundle from a container image. The bundle can be transferred and run on systems without enroot installed.",
+      "synopsis": "enroot bundle [options] <image.sqsh>",
+      "options": [
+        {
+          "short": "-o",
+          "long": "--output",
+          "description": "Output path for the bundle file",
+          "arguments": "FILE",
+          "argument_type": "path"
+        },
+        {
+          "short": "-c",
+          "long": "--checksum",
+          "description": "Include checksum verification in the bundle"
+        },
+        {
+          "short": "-t",
+          "long": "--target",
+          "description": "Target directory for extraction in the bundle",
+          "arguments": "DIR",
+          "argument_type": "path"
+        }
+      ]
+    },
+    {
+      "name": "batch",
+      "description": "Run multiple containers in batch mode from a configuration file. Useful for orchestrating multiple container instances for parallel workloads.",
+      "synopsis": "enroot batch [options] <config>",
+      "options": [
+        {
+          "short": "-c",
+          "long": "--conf",
+          "description": "Configuration file for batch execution",
+          "arguments": "FILE",
+          "argument_type": "path"
+        }
+      ]
+    }
+  ],
+  "output_formats": {
+    "default": "Human-readable text output for list and status commands",
+    "fancy": "Extended information display with additional metadata when using --fancy flag"
+  },
+  "environment_variables": [
+    {
+      "name": "ENROOT_LIBRARY_PATH",
+      "description": "Path to enroot library and helper scripts",
+      "example": "ENROOT_LIBRARY_PATH=/usr/share/enroot",
+      "affects_command": "Specifies location of enroot's runtime components"
+    },
+    {
+      "name": "ENROOT_SYSCONF_PATH",
+      "description": "Path to system-wide enroot configuration",
+      "example": "ENROOT_SYSCONF_PATH=/etc/enroot",
+      "affects_command": "Location of system configuration files and hooks"
+    },
+    {
+      "name": "ENROOT_CONFIG_PATH",
+      "description": "Path to user configuration directory",
+      "example": "ENROOT_CONFIG_PATH=$HOME/.config/enroot",
+      "affects_command": "User-specific configuration overrides"
+    },
+    {
+      "name": "ENROOT_CACHE_PATH",
+      "description": "Path for storing cached images and layers",
+      "example": "ENROOT_CACHE_PATH=/tmp/enroot-cache",
+      "affects_command": "Location where downloaded image layers are cached during import"
+    },
+    {
+      "name": "ENROOT_DATA_PATH",
+      "description": "Path for storing container root filesystems",
+      "example": "ENROOT_DATA_PATH=$HOME/.local/share/enroot",
+      "affects_command": "Location where 'enroot create' stores container filesystems"
+    },
+    {
+      "name": "ENROOT_TEMP_PATH",
+      "description": "Path for temporary files during image operations",
+      "example": "ENROOT_TEMP_PATH=/tmp",
+      "affects_command": "Temporary storage used during import and create operations"
+    },
+    {
+      "name": "ENROOT_RUNTIME_PATH",
+      "description": "Path for runtime state files",
+      "example": "ENROOT_RUNTIME_PATH=/run/user/$(id -u)/enroot",
+      "affects_command": "Location of runtime state and lock files"
+    },
+    {
+      "name": "ENROOT_SQUASH_OPTIONS",
+      "description": "Options passed to mksquashfs when creating images",
+      "example": "ENROOT_SQUASH_OPTIONS=\"-comp zstd -Xcompression-level 3\"",
+      "affects_command": "Controls compression algorithm and level for squashfs images"
+    },
+    {
+      "name": "ENROOT_MOUNT_HOME",
+      "description": "Whether to mount user's home directory into container",
+      "example": "ENROOT_MOUNT_HOME=yes",
+      "affects_command": "When set to 'yes', automatically mounts $HOME into the container"
+    },
+    {
+      "name": "ENROOT_TRANSFER_RETRIES",
+      "description": "Number of retries for image transfers during import",
+      "example": "ENROOT_TRANSFER_RETRIES=3",
+      "affects_command": "Controls retry behavior for network transfers"
+    },
+    {
+      "name": "ENROOT_LOGIN_SHELL",
+      "description": "Use login shell when starting containers",
+      "example": "ENROOT_LOGIN_SHELL=yes",
+      "affects_command": "When set, sources login shell profiles in the container"
+    },
+    {
+      "name": "ENROOT_ROOTFS_WRITABLE",
+      "description": "Make container root filesystem writable by default",
+      "example": "ENROOT_ROOTFS_WRITABLE=yes",
+      "affects_command": "Default writability of container root without --rw flag"
+    },
+    {
+      "name": "NVIDIA_VISIBLE_DEVICES",
+      "description": "GPUs visible to the container (used by nvidia-container-cli hook)",
+      "example": "NVIDIA_VISIBLE_DEVICES=0,1",
+      "affects_command": "Controls which GPUs are exposed inside the container"
+    },
+    {
+      "name": "NVIDIA_DRIVER_CAPABILITIES",
+      "description": "Driver capabilities exposed to the container",
+      "example": "NVIDIA_DRIVER_CAPABILITIES=compute,utility",
+      "affects_command": "Controls which NVIDIA driver features are available"
+    }
+  ],
+  "exit_codes": [
+    {
+      "code": 0,
+      "meaning": "Success - command completed without errors"
+    },
+    {
+      "code": 1,
+      "meaning": "General error - command failed"
+    },
+    {
+      "code": 2,
+      "meaning": "Usage error - invalid arguments or options"
+    },
+    {
+      "code": 125,
+      "meaning": "Container error - failed to start or configure container"
+    },
+    {
+      "code": 126,
+      "meaning": "Command cannot be invoked - permission denied or not executable"
+    },
+    {
+      "code": 127,
+      "meaning": "Command not found in container"
+    }
+  ],
+  "common_usage_patterns": [
+    {
+      "description": "Import NGC PyTorch container as squashfs image",
+      "command": "enroot import 'docker://nvcr.io#nvidia/pytorch:23.10-py3'",
+      "requires_root": false
+    },
+    {
+      "description": "Import Docker Hub image with specific output name",
+      "command": "enroot import -o ubuntu.sqsh docker://ubuntu:22.04",
+      "requires_root": false
+    },
+    {
+      "description": "Create container from imported image",
+      "command": "enroot create --name pytorch nvidia+pytorch+23.10-py3.sqsh",
+      "requires_root": false
+    },
+    {
+      "description": "Start container with GPU access and data mount",
+      "command": "enroot start --mount /datasets:/data pytorch python train.py",
+      "requires_root": false
+    },
+    {
+      "description": "Interactive container session with writable filesystem",
+      "command": "enroot start --rw pytorch bash",
+      "requires_root": false
+    },
+    {
+      "description": "Run as root inside container with environment variable",
+      "command": "enroot start --root --env CUDA_VISIBLE_DEVICES=0,1 pytorch nvidia-smi",
+      "output_example": "+-----------------------------------------------------------------------------+\n| NVIDIA-SMI 535.104.12   Driver Version: 535.104.12   CUDA Version: 12.2     |\n|-------------------------------+----------------------+----------------------+\n| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |\n|                               |                      |               MIG M. |\n|===============================+======================+======================|\n|   0  NVIDIA A100-SXM4...  On  | 00000000:07:00.0 Off |                    0 |\n| N/A   32C    P0    62W / 400W |      0MiB / 81920MiB |      0%      Default |\n|                               |                      |             Disabled |\n+-------------------------------+----------------------+----------------------+",
+      "requires_root": false
+    },
+    {
+      "description": "List available containers",
+      "command": "enroot list",
+      "output_example": "pytorch\ntensorflow\nubuntu",
+      "requires_root": false
+    },
+    {
+      "description": "List containers with detailed information",
+      "command": "enroot list --fancy",
+      "requires_root": false
+    },
+    {
+      "description": "Slurm job with Pyxis/enroot integration",
+      "command": "srun --container-image=nvcr.io#nvidia/pytorch:23.10-py3 --container-mounts=/data:/data python train.py",
+      "requires_root": false
+    },
+    {
+      "description": "Remove a container",
+      "command": "enroot remove pytorch",
+      "requires_root": false
+    },
+    {
+      "description": "Create self-extracting bundle for portable deployment",
+      "command": "enroot bundle -o pytorch-bundle.run pytorch.sqsh",
+      "requires_root": false
+    },
+    {
+      "description": "Import with custom architecture for cross-platform",
+      "command": "enroot import --arch amd64 docker://ubuntu:22.04",
+      "requires_root": false
+    },
+    {
+      "description": "Multi-GPU distributed training with Slurm/Pyxis",
+      "command": "srun -N 2 --gpus-per-node=8 --container-image=nvcr.io#nvidia/pytorch:23.10-py3 torchrun --nnodes=2 train.py",
+      "requires_root": false
+    },
+    {
+      "description": "Mount multiple paths into container",
+      "command": "enroot start --mount /home/$USER:/home/$USER --mount /scratch:/scratch --mount /datasets:/data:ro pytorch bash",
+      "requires_root": false
+    }
+  ],
+  "error_messages": [
+    {
+      "message": "enroot: user namespaces are not enabled or supported",
+      "meaning": "Kernel does not support user namespaces or they are disabled",
+      "resolution": "Enable user namespaces with 'sysctl -w user.max_user_namespaces=15000' or add to /etc/sysctl.conf. On RHEL/CentOS, may also need to set kernel.unprivileged_userns_clone=1."
+    },
+    {
+      "message": "enroot: failed to import image: authentication required",
+      "meaning": "Registry requires authentication but no credentials provided",
+      "resolution": "Create credentials file at $ENROOT_CONFIG_PATH/.credentials with format 'machine <registry> login <user> password <token>'. For NGC, use '$oauthtoken' as login and your NGC API key as password."
+    },
+    {
+      "message": "enroot: failed to create container: no space left on device",
+      "meaning": "Insufficient disk space in ENROOT_DATA_PATH or temporary directory",
+      "resolution": "Free disk space or change ENROOT_DATA_PATH and ENROOT_TEMP_PATH to locations with sufficient storage. GPU containers can be 20-50GB+."
+    },
+    {
+      "message": "enroot: container not found",
+      "meaning": "The specified container name does not exist",
+      "resolution": "Use 'enroot list' to see available containers. Container may need to be created with 'enroot create' first."
+    },
+    {
+      "message": "enroot: failed to setup GPU: nvidia-container-cli not found",
+      "meaning": "nvidia-container-cli is not installed or not in PATH",
+      "resolution": "Install libnvidia-container-tools package which provides nvidia-container-cli. Required for GPU access inside containers."
+    },
+    {
+      "message": "enroot: squashfs-tools not found",
+      "meaning": "mksquashfs utility is not installed",
+      "resolution": "Install squashfs-tools package: 'apt install squashfs-tools' (Debian/Ubuntu) or 'yum install squashfs-tools' (RHEL/CentOS)."
+    },
+    {
+      "message": "nvidia-container-cli: initialization error: nvml error: driver not loaded",
+      "meaning": "NVIDIA driver is not loaded on the host",
+      "resolution": "Load NVIDIA driver with 'modprobe nvidia' or check driver installation with 'nvidia-smi'. May require reboot after driver installation."
+    },
+    {
+      "message": "enroot: failed to mount: operation not permitted",
+      "meaning": "Mount operation failed due to permission restrictions",
+      "resolution": "Check if the mount source exists and is accessible. Some mount types require additional capabilities. Verify user namespace configuration."
+    },
+    {
+      "message": "enroot: image architecture mismatch",
+      "meaning": "Image architecture does not match host architecture",
+      "resolution": "Use --arch flag to specify correct architecture during import, or import a multi-arch image that supports your platform."
+    },
+    {
+      "message": "enroot: runtime path is not accessible",
+      "meaning": "ENROOT_RUNTIME_PATH directory cannot be accessed",
+      "resolution": "Ensure the runtime path exists and is writable. Default is /run/user/$(id -u)/enroot. May need to create directory or adjust permissions."
+    }
+  ],
+  "interoperability": {
+    "related_commands": [
+      "pyxis",
+      "docker",
+      "podman",
+      "nvidia-container-cli",
+      "nvidia-smi",
+      "srun",
+      "sbatch",
+      "singularity"
+    ],
+    "uses_library": [
+      "libnvidia-container",
+      "nvidia-container-cli",
+      "squashfs-tools",
+      "NVML (NVIDIA Management Library)"
+    ],
+    "notes": "Enroot is designed as a lightweight alternative to Docker for HPC environments where unprivileged container execution is required. It integrates with Slurm through the Pyxis plugin (srun --container-image). Unlike Docker, enroot does not require a daemon or root privileges. Container images are stored as squashfs files for efficient storage and fast startup. Supports importing from Docker registries, NGC, and local archives. GPU support provided through nvidia-container-cli hooks. Can coexist with Docker/Podman on the same system. Often used alongside Slurm for batch job container workloads."
+  },
+  "permissions": {
+    "read_operations": "All operations can be performed by unprivileged users. Requires user namespace support in kernel.",
+    "write_operations": "Creating and removing containers only affects user's ENROOT_DATA_PATH. No root privileges required for any operation.",
+    "notes": "Enroot is specifically designed for unprivileged execution in HPC environments. Uses user namespaces to provide container isolation without requiring root access. System administrator may need to enable user namespaces and install GPU support libraries. Users manage their own container images and filesystems in their designated paths."
+  },
+  "limitations": [
+    "Requires kernel support for user namespaces (unprivileged_userns_clone)",
+    "GPU support requires libnvidia-container and nvidia-container-cli to be installed system-wide",
+    "Cannot run privileged containers or operations requiring real root privileges",
+    "Network namespace isolation is limited compared to Docker",
+    "No built-in orchestration; relies on external schedulers like Slurm",
+    "Squashfs images are read-only by default; writable overlay requires additional configuration",
+    "Image import can be slow for large NGC containers due to layer extraction",
+    "Limited multi-platform support compared to Docker BuildKit",
+    "No native support for container networking or port mapping",
+    "Requires squashfs-tools and other dependencies to be pre-installed"
+  ],
+  "state_interactions": {
+    "reads_from": [
+      {
+        "state_domain": "container_state",
+        "fields": [
+          "container_name",
+          "root_filesystem_path",
+          "squashfs_image_path"
+        ],
+        "description": "Reads container metadata from ENROOT_DATA_PATH to list, start, or remove containers"
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["gpu_id", "uuid", "driver_version", "memory_total"],
+        "description": "When starting containers with GPU support, queries GPU state through nvidia-container-cli"
+      }
+    ],
+    "writes_to": [
+      {
+        "state_domain": "container_state",
+        "fields": [
+          "container_name",
+          "root_filesystem_path",
+          "created_timestamp",
+          "pid"
+        ],
+        "description": "Creates container root filesystems and runtime state when using create/start commands",
+        "requires_flags": ["create", "start", "remove"]
+      },
+      {
+        "state_domain": "gpu_state",
+        "fields": ["memory_used"],
+        "description": "GPU containers allocate GPU memory visible in nvidia-smi"
+      }
+    ],
+    "triggered_by": [
+      {
+        "state_change": "Container started with GPU access",
+        "effect": "nvidia-container-cli hooks configure GPU visibility and driver mounting"
+      },
+      {
+        "state_change": "Container process exits",
+        "effect": "GPU resources released, container runtime state cleaned up"
+      },
+      {
+        "state_change": "Image imported from registry",
+        "effect": "Squashfs image created in ENROOT_DATA_PATH"
+      }
+    ],
+    "consistent_with": [
+      {
+        "command": "nvidia-smi",
+        "shared_state": "GPU processes from enroot containers visible in nvidia-smi output"
+      },
+      {
+        "command": "nvidia-container-cli",
+        "shared_state": "GPU device visibility and driver capabilities"
+      },
+      {
+        "command": "pyxis",
+        "shared_state": "Slurm Pyxis plugin uses enroot for container execution"
+      },
+      {
+        "command": "docker",
+        "shared_state": "Can import Docker images; container processes visible to host"
+      }
+    ]
+  }
+}
