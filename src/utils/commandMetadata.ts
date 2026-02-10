@@ -1338,42 +1338,6 @@ export const COMMAND_METADATA: Record<string, CommandMetadata> = {
     commonMistakes: [],
   },
 
-  "explain-json": {
-    name: "explain-json",
-    category: "general",
-    shortDescription: "Get detailed command information from JSON definitions",
-    longDescription:
-      "The explain-json command provides comprehensive command documentation from the JSON-based command definition registry. It includes usage patterns, exit codes, error resolutions, and state interactions that may not be available in the standard explain command.",
-    syntax: "explain-json <command>",
-    difficulty: "beginner",
-    domains: ["domain1", "domain2", "domain3", "domain4", "domain5"],
-
-    examples: [
-      {
-        command: "explain-json nvidia-smi",
-        description:
-          "Show comprehensive documentation for nvidia-smi including exit codes and error resolutions",
-      },
-      {
-        command: "explain-json dcgmi",
-        description:
-          "Show detailed information about dcgmi command and subcommands",
-      },
-      {
-        command: "explain-json sinfo",
-        description:
-          "Show Slurm sinfo command documentation with usage patterns",
-      },
-    ],
-
-    whenToUse:
-      "Use explain-json when you need comprehensive documentation including usage patterns, exit codes, and error resolutions for supported commands.",
-
-    relatedCommands: ["help", "explain", "practice"],
-
-    commonMistakes: [],
-  },
-
   practice: {
     name: "practice",
     category: "general",
@@ -1407,7 +1371,7 @@ export const COMMAND_METADATA: Record<string, CommandMetadata> = {
     whenToUse:
       "Use practice when you want to learn or test your knowledge of Linux and HPC commands with hints and expected answers.",
 
-    relatedCommands: ["help", "explain", "explain-json"],
+    relatedCommands: ["help", "explain"],
 
     commonMistakes: [],
   },

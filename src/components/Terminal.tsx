@@ -346,58 +346,47 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
           }
 
           case "explain": {
-            // explain <command> - detailed explanation with examples
+            // explain <command> [flag|subcommand] - comprehensive documentation with learning aids
             const args = cmdLine.trim().split(/\s+/).slice(1);
             if (args.length === 0) {
-              result.output = `\x1b[33mUsage:\x1b[0m explain <command>\n\nGet detailed information about a specific command.\n\n\x1b[1mExamples:\x1b[0m\n  \x1b[36mexplain nvidia-smi\x1b[0m\n  \x1b[36mexplain dcgmi\x1b[0m\n  \x1b[36mexplain ipmitool\x1b[0m`;
+              result.output =
+                `\x1b[33mUsage:\x1b[0m explain <command> [flag|subcommand]\n\n` +
+                `Comprehensive command documentation with learning aids.\n\n` +
+                `\x1b[1mExamples:\x1b[0m\n` +
+                `  \x1b[36mexplain nvidia-smi\x1b[0m          Full command reference\n` +
+                `  \x1b[36mexplain nvidia-smi --query-gpu\x1b[0m  Flag details\n` +
+                `  \x1b[36mexplain dcgmi diag\x1b[0m          Subcommand details\n`;
               break;
             }
 
-            const commandName = args[0];
-            const metadata = getCommandMetadata(commandName);
-
-            if (metadata) {
-              result.output = formatCommandHelp(metadata);
-            } else {
-              result.output = `\x1b[33mNo information available for '\x1b[36m${commandName}\x1b[33m'.\x1b[0m`;
-
-              // Try to suggest similar commands
-              const suggestion = getDidYouMeanMessage(commandName);
-              if (suggestion) {
-                result.output += "\n\n" + suggestion;
-              }
-            }
-            break;
-          }
-
-          case "explain-json": {
-            // explain-json <command> - detailed explanation using JSON-based registry
-            const args = cmdLine.trim().split(/\s+/).slice(1);
-            if (args.length === 0) {
-              result.output = `Usage: explain-json <command>\n\nProvides detailed command information from JSON definitions.\nIncludes usage patterns, exit codes, error resolutions, and state interactions.\n\nExample: explain-json nvidia-smi`;
-              break;
-            }
-
-            const commandName = args[0];
-
-            // Dynamic import to avoid circular dependencies
             try {
               const { getCommandDefinitionRegistry, generateExplainOutput } =
                 await import("@/cli");
               const registry = await getCommandDefinitionRegistry();
+              const learningMeta = getCommandMetadata(args[0]);
               const output = await generateExplainOutput(
-                commandName,
+                args.join(" "),
                 registry,
                 {
                   includeErrors: true,
                   includeExamples: true,
                   includePermissions: true,
                 },
+                learningMeta,
               );
               result.output = output;
-            } catch (error) {
-              result.output = `Error loading command information: ${error instanceof Error ? error.message : "Unknown error"}`;
-              result.exitCode = 1;
+            } catch {
+              // Fallback: if JSON registry fails, use old metadata alone
+              const metadata = getCommandMetadata(args[0]);
+              if (metadata) {
+                result.output = formatCommandHelp(metadata);
+              } else {
+                result.output = `\x1b[33mNo information available for '\x1b[36m${args[0]}\x1b[33m'.\x1b[0m`;
+                const suggestion = getDidYouMeanMessage(args[0]);
+                if (suggestion) {
+                  result.output += "\n\n" + suggestion;
+                }
+              }
             }
             break;
           }

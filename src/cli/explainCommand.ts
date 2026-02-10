@@ -1,5 +1,6 @@
 import type { CommandDefinitionRegistry } from "./CommandDefinitionRegistry";
 import type { CommandDefinition } from "./types";
+import type { CommandMetadata } from "../utils/commandMetadata";
 
 export interface ExplainOptions {
   includeErrors?: boolean;
@@ -9,12 +10,14 @@ export interface ExplainOptions {
 
 /**
  * Generate rich explanation output for a command
- * Uses the comprehensive JSON definitions for detailed help
+ * Uses the comprehensive JSON definitions for detailed help,
+ * enriched with learning metadata when available.
  */
 export async function generateExplainOutput(
   input: string,
   registry: CommandDefinitionRegistry,
   options: ExplainOptions = {},
+  learningMetadata?: CommandMetadata | null,
 ): Promise<string> {
   const parts = input.trim().split(/\s+/);
   const commandName = parts[0];
@@ -39,12 +42,13 @@ export async function generateExplainOutput(
     return generateSubcommandExplanation(def, flagOrSub);
   }
 
-  return generateCommandExplanation(def, options);
+  return generateCommandExplanation(def, options, learningMetadata);
 }
 
 function generateCommandExplanation(
   def: CommandDefinition,
   options: ExplainOptions,
+  learningMetadata?: CommandMetadata | null,
 ): string {
   let output = "";
 
@@ -143,6 +147,52 @@ function generateCommandExplanation(
   // Source documentation
   if (def.source_urls && def.source_urls.length > 0) {
     output += `\x1b[90mDocumentation: ${def.source_urls[0]}\x1b[0m\n`;
+  }
+
+  // Learning aids from command metadata (when available)
+  if (learningMetadata) {
+    output += `\n\x1b[1;36m━━━ Learning Aids ━━━\x1b[0m\n\n`;
+
+    if (learningMetadata.whenToUse) {
+      output += `\x1b[1mWhen to Use:\x1b[0m\n`;
+      output += `  ${learningMetadata.whenToUse}\n\n`;
+    }
+
+    if (
+      learningMetadata.commonMistakes &&
+      learningMetadata.commonMistakes.length > 0
+    ) {
+      output += `\x1b[1mCommon Mistakes:\x1b[0m\n`;
+      for (const mistake of learningMetadata.commonMistakes) {
+        output += `  \x1b[31m✗\x1b[0m ${mistake}\n`;
+      }
+      output += "\n";
+    }
+
+    if (learningMetadata.difficulty) {
+      const difficultyColors: Record<string, string> = {
+        beginner: "\x1b[32m",
+        intermediate: "\x1b[33m",
+        advanced: "\x1b[31m",
+      };
+      const color = difficultyColors[learningMetadata.difficulty] || "";
+      output += `\x1b[1mDifficulty:\x1b[0m ${color}${learningMetadata.difficulty.charAt(0).toUpperCase() + learningMetadata.difficulty.slice(1)}\x1b[0m\n`;
+    }
+
+    if (learningMetadata.domains && learningMetadata.domains.length > 0) {
+      const domainNames: Record<string, string> = {
+        domain1: "Domain 1 (Systems/Server Bring-Up)",
+        domain2: "Domain 2 (Physical Layer Management)",
+        domain3: "Domain 3 (Control Plane Installation)",
+        domain4: "Domain 4 (Cluster Test/Verification)",
+        domain5: "Domain 5 (Troubleshooting/Optimization)",
+      };
+      output += `\x1b[1mExam Domains:\x1b[0m `;
+      output += learningMetadata.domains
+        .map((d) => domainNames[d] || d)
+        .join(", ");
+      output += "\n";
+    }
   }
 
   return output;
