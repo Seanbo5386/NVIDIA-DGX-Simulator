@@ -295,6 +295,8 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
         commandHistoryRef.current = nextHistory;
         return nextHistory;
       });
+      setHistoryIndex(-1);
+      historyIndexRef.current = -1;
       currentContext.current.history.push(cmdLine);
 
       // Parse command
