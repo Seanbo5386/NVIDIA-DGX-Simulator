@@ -1,11 +1,22 @@
-import type { Scenario, FaultInjectionConfig } from "@/types/scenarios";
+import type {
+  Scenario,
+  FaultInjectionConfig,
+  NarrativeScenario,
+} from "@/types/scenarios";
 import type { ScenarioContext } from "@/store/scenarioContext";
 import { useSimulationStore } from "@/store/simulationStore";
 import { narrativeToScenario } from "./narrativeAdapter";
 import { parseNarrativeScenariosFile } from "./runtimeValidation";
 import narrativeData from "../data/narrativeScenarios.json";
 
-const narrativeScenarios = parseNarrativeScenariosFile(narrativeData);
+let narrativeScenarios: NarrativeScenario[] | null = null;
+
+const getNarrativeScenarios = (): NarrativeScenario[] => {
+  if (!narrativeScenarios) {
+    narrativeScenarios = parseNarrativeScenariosFile(narrativeData);
+  }
+  return narrativeScenarios;
+};
 
 // Cache for loaded scenarios
 let scenarioCache: Map<string, Scenario> | null = null;
@@ -17,7 +28,7 @@ function ensureCache(): Map<string, Scenario> {
   if (scenarioCache) return scenarioCache;
 
   scenarioCache = new Map();
-  for (const narrative of narrativeScenarios) {
+  for (const narrative of getNarrativeScenarios()) {
     const scenario = narrativeToScenario(narrative);
     scenarioCache.set(scenario.id, scenario);
   }
@@ -46,7 +57,7 @@ export async function loadScenarioFromFile(
 export function getAllScenarios(): Record<string, string[]> {
   const result: Record<string, string[]> = {};
 
-  for (const scenario of narrativeScenarios) {
+  for (const scenario of getNarrativeScenarios()) {
     const domainKey = `domain${scenario.domain}`;
     if (!result[domainKey]) {
       result[domainKey] = [];
@@ -63,7 +74,7 @@ export function getAllScenarios(): Record<string, string[]> {
 export function getScenarioMetadata(
   scenarioId: string,
 ): { title: string; difficulty: string; estimatedTime: number } | null {
-  const scenario = narrativeScenarios.find((s) => s.id === scenarioId);
+  const scenario = getNarrativeScenarios().find((s) => s.id === scenarioId);
 
   if (!scenario) return null;
 
