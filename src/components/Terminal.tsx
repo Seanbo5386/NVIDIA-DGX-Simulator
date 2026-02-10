@@ -629,7 +629,7 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
               context,
             );
           default:
-            return { output: "", exitCode: 0 };
+            return { output: `\x1b[31mInternal router error: command '${parsed.command}' not implemented.\x1b[0m`, exitCode: 1 };
         }
       },
     );
