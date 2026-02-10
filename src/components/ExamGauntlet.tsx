@@ -14,10 +14,7 @@ import {
   EXAM_DOMAIN_WEIGHTS,
   type Scenario,
 } from "../utils/tierProgressionEngine";
-import {
-  useLearningProgressStore,
-  type GauntletAttempt,
-} from "../store/learningProgressStore";
+import { useLearningStore, type GauntletAttempt } from "../store/learningStore";
 import {
   getAllScenarios,
   getScenarioMetadata,
@@ -92,13 +89,18 @@ function formatTime(seconds: number): string {
  * Build available scenarios from the scenario loader (synchronous version)
  * For testing and quick selection, we don't need to load full scenarios
  */
-function buildAvailableScenarios(): Scenario[] {
-  const allScenarioIds = getAllScenarios();
+async function buildAvailableScenarios(): Promise<Scenario[]> {
+  const allScenarioIds = await getAllScenarios();
   const scenarios: Scenario[] = [];
 
   for (const [domain, ids] of Object.entries(allScenarioIds)) {
-    for (const id of ids) {
-      const metadata = getScenarioMetadata(id);
+    const metadataList = await Promise.all(
+      ids.map(async (id) => ({
+        id,
+        metadata: await getScenarioMetadata(id),
+      })),
+    );
+    metadataList.forEach(({ id, metadata }) => {
       if (metadata) {
         // Use default tier 2 for gauntlet selection (tier info is only needed for filtering)
         scenarios.push({
@@ -107,7 +109,7 @@ function buildAvailableScenarios(): Scenario[] {
           tier: 2, // Default to tier 2 for gauntlet
         });
       }
-    }
+    });
   }
 
   return scenarios;
@@ -116,20 +118,23 @@ function buildAvailableScenarios(): Scenario[] {
 /**
  * Build selected scenarios with metadata
  */
-function buildSelectedScenariosWithMetadata(
+async function buildSelectedScenariosWithMetadata(
   selectedIds: Scenario[],
-): SelectedScenario[] {
-  return selectedIds.map((scenario) => {
-    const metadata = getScenarioMetadata(scenario.id);
-    return {
-      id: scenario.id,
-      title: metadata?.title ?? scenario.id,
-      domain: scenario.domain,
-      difficulty: metadata?.difficulty ?? "intermediate",
-      estimatedTime: metadata?.estimatedTime ?? 30,
-      completed: false,
-    };
-  });
+): Promise<SelectedScenario[]> {
+  const metadataList = await Promise.all(
+    selectedIds.map(async (scenario) => ({
+      scenario,
+      metadata: await getScenarioMetadata(scenario.id),
+    })),
+  );
+  return metadataList.map(({ scenario, metadata }) => ({
+    id: scenario.id,
+    title: metadata?.title ?? scenario.id,
+    domain: scenario.domain,
+    difficulty: metadata?.difficulty ?? "intermediate",
+    estimatedTime: metadata?.estimatedTime ?? 30,
+    completed: false,
+  }));
 }
 
 // ============================================================================
@@ -153,7 +158,7 @@ export const ExamGauntlet: React.FC<ExamGauntletProps> = ({
   );
 
   // Store
-  const recordGauntletAttempt = useLearningProgressStore(
+  const recordGauntletAttempt = useLearningStore(
     (state) => state.recordGauntletAttempt,
   );
 
@@ -206,10 +211,10 @@ export const ExamGauntlet: React.FC<ExamGauntletProps> = ({
   }, [gauntletState, timeRemaining]);
 
   // Handlers
-  const handleStartExam = useCallback(() => {
+  const handleStartExam = useCallback(async () => {
     setIsLoading(true);
     try {
-      const availableScenarios = buildAvailableScenarios();
+      const availableScenarios = await buildAvailableScenarios();
       const selected = selectGauntletScenarios(
         EXAM_DOMAIN_WEIGHTS,
         availableScenarios,
@@ -225,7 +230,7 @@ export const ExamGauntlet: React.FC<ExamGauntletProps> = ({
       }
 
       const scenariosWithMetadata =
-        buildSelectedScenariosWithMetadata(selected);
+        await buildSelectedScenariosWithMetadata(selected);
       setScenarios(scenariosWithMetadata);
       setTimeRemaining(selectedTime * 60);
       setStartTime(Date.now());

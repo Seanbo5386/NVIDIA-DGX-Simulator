@@ -27,6 +27,10 @@ export {
 } from "./CommandDefinitionRegistry";
 export type { ValidationResult } from "./CommandDefinitionRegistry";
 
+// Command Router
+export { CommandRouter } from "./commandRouter";
+export type { CommandHandler } from "./commandRouter";
+
 // Explain Command
 export { generateExplainOutput } from "./explainCommand";
 export type { ExplainOptions } from "./explainCommand";
@@ -39,6 +43,7 @@ export type { CommandExercise } from "./CommandExerciseGenerator";
 export {
   ANSI,
   formatCommandHelp,
+  formatCommandList,
   formatFlagHelp,
   formatErrorMessage,
   formatExitCode,

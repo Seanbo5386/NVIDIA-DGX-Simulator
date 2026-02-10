@@ -80,6 +80,13 @@ export class CommandDefinitionLoader {
   }
 
   /**
+   * Get all loaded command definitions
+   */
+  getDefinitions(): CommandDefinition[] {
+    return Array.from(this.definitions.values());
+  }
+
+  /**
    * Get all loaded command names
    */
   getCommandNames(): string[] {
