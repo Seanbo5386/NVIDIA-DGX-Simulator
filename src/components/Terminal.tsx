@@ -107,6 +107,7 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
     mode: "bash",
     prompt: "",
   });
+  const activeScenario = useSimulationStore((state) => state.activeScenario);
   const selectedNode = useSimulationStore((state) => state.selectedNode);
   const cluster = useSimulationStore((state) => state.cluster);
   const initialNode = selectedNode || cluster.nodes[0]?.id || "dgx-00";
@@ -180,21 +181,20 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
 
   // Manage scenario context when scenario changes
   useEffect(() => {
-    const store = useSimulationStore.getState();
-    if (store.activeScenario) {
+    if (activeScenario) {
       // Create or get scenario context
       const context = scenarioContextManager.getOrCreateContext(
-        store.activeScenario.id,
+        activeScenario.id,
         cluster,
       );
-      scenarioContextManager.setActiveContext(store.activeScenario.id);
+      scenarioContextManager.setActiveContext(activeScenario.id);
 
       // Add to command context
       currentContext.current.scenarioContext = context;
       currentContext.current.cluster = context.getCluster();
 
       console.log(
-        `Terminal: Using scenario context for ${store.activeScenario.id}`,
+        `Terminal: Using scenario context for ${activeScenario.id}`,
       );
     } else {
       // Clear scenario context when no active scenario
@@ -204,7 +204,15 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
 
       console.log("Terminal: Cleared scenario context");
     }
-  }, [cluster]);
+  }, [activeScenario, cluster]);
+
+  useEffect(() => {
+    commandHistoryRef.current = commandHistory;
+  }, [commandHistory]);
+
+  useEffect(() => {
+    historyIndexRef.current = historyIndex;
+  }, [historyIndex]);
 
   useEffect(() => {
     if (!terminalRef.current) return;
@@ -276,17 +284,34 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
     const commandRouter = new CommandRouter();
     commandRouterRef.current = commandRouter;
 
-    const handleHistoryChange = (index: number) => {
-      setHistoryIndex(index);
-      historyIndexRef.current = index;
-    };
-
     const appendCommandToHistory = (cmdLine: string) => {
+      // Keep both React state and mutable refs in sync so the onData handler
+      // (registered once at terminal startup) always sees latest history.
       setCommandHistory((prev) => {
         const nextHistory = [...prev, cmdLine];
         commandHistoryRef.current = nextHistory;
         return nextHistory;
       });
+
+      // Reset history navigation after executing a command.
+      setHistoryIndex(-1);
+      historyIndexRef.current = -1;
+    };
+
+    const executeCommand = async (cmdLine: string) => {
+      if (!cmdLine.trim()) {
+        prompt();
+        return;
+      }
+
+      // Add to history
+      setCommandHistory((prev) => {
+        const nextHistory = [...prev, cmdLine];
+        commandHistoryRef.current = nextHistory;
+        return nextHistory;
+      });
+      handleHistoryChange(-1);
+      currentContext.current.history.push(cmdLine);
 
       handleHistoryChange(-1);
     };
@@ -335,14 +360,153 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
 
       const commandName = args[0];
       try {
-        const { getCommandDefinitionRegistry, formatCommandHelp } =
-          await import("@/cli");
-        const registry = await getCommandDefinitionRegistry();
-        const def = registry.getDefinition(commandName);
+        switch (command) {
+          case "help": {
+            // Enhanced help - show organized command list
+            const args = cmdLine.trim().split(/\s+/).slice(1);
+            try {
+              const {
+                getCommandDefinitionRegistry,
+                formatCommandHelp,
+                formatCommandList,
+              } = await import("@/cli");
+              const registry = await getCommandDefinitionRegistry();
 
-        if (def) {
-          return { output: formatCommandHelp(def), exitCode: 0 };
-        }
+              if (args.length > 0) {
+                // help <command> - show detailed help for specific command
+                const commandName = args[0];
+                const def = registry.getDefinition(commandName);
+                if (def) {
+                  result.output = formatCommandHelp(def);
+                } else {
+                  result.output = `\x1b[33mNo help available for '\x1b[36m${commandName}\x1b[33m'.\x1b[0m\n\nType \x1b[36mhelp\x1b[0m to see all available commands.`;
+                }
+              } else {
+                // General help - show organized list
+                const definitions = registry.getAllDefinitions();
+                result.output = formatCommandList(definitions);
+              }
+            } catch (error) {
+              result.output = `Error loading command information: ${error instanceof Error ? error.message : "Unknown error"}`;
+              result.exitCode = 1;
+            }
+            break;
+          }
+
+          case "explain": {
+            // explain <command> - detailed explanation with examples
+            const args = cmdLine.trim().split(/\s+/).slice(1);
+            if (args.length === 0) {
+              result.output = `\x1b[33mUsage:\x1b[0m explain <command>\n\nGet detailed information about a specific command.\n\n\x1b[1mExamples:\x1b[0m\n  \x1b[36mexplain nvidia-smi\x1b[0m\n  \x1b[36mexplain dcgmi\x1b[0m\n  \x1b[36mexplain ipmitool\x1b[0m`;
+              break;
+            }
+
+            const commandName = args[0];
+            try {
+              const { getCommandDefinitionRegistry, formatCommandHelp } =
+                await import("@/cli");
+              const registry = await getCommandDefinitionRegistry();
+              const def = registry.getDefinition(commandName);
+
+              if (def) {
+                result.output = formatCommandHelp(def);
+              } else {
+                result.output = `\x1b[33mNo information available for '\x1b[36m${commandName}\x1b[33m'.\x1b[0m`;
+
+                // Try to suggest similar commands
+                const suggestion = getDidYouMeanMessage(commandName);
+                if (suggestion) {
+                  result.output += "\n\n" + suggestion;
+                }
+              }
+            } catch (error) {
+              result.output = `Error loading command information: ${error instanceof Error ? error.message : "Unknown error"}`;
+              result.exitCode = 1;
+            }
+            break;
+          }
+
+          case "explain-json": {
+            // explain-json <command> - detailed explanation using JSON-based registry
+            const args = cmdLine.trim().split(/\s+/).slice(1);
+            if (args.length === 0) {
+              result.output = `Usage: explain-json <command>\n\nProvides detailed command information from JSON definitions.\nIncludes usage patterns, exit codes, error resolutions, and state interactions.\n\nExample: explain-json nvidia-smi`;
+              break;
+            }
+
+            const commandName = args[0];
+
+            // Dynamic import to avoid circular dependencies
+            try {
+              const { getCommandDefinitionRegistry, generateExplainOutput } =
+                await import("@/cli");
+              const registry = await getCommandDefinitionRegistry();
+              const output = await generateExplainOutput(
+                commandName,
+                registry,
+                {
+                  includeErrors: true,
+                  includeExamples: true,
+                  includePermissions: true,
+                },
+              );
+              result.output = output;
+            } catch (error) {
+              result.output = `Error loading command information: ${error instanceof Error ? error.message : "Unknown error"}`;
+              result.exitCode = 1;
+            }
+            break;
+          }
+
+          case "practice": {
+            // practice - generate command learning exercises
+            const args = cmdLine.trim().split(/\s+/).slice(1);
+
+            try {
+              const { getCommandDefinitionRegistry, CommandExerciseGenerator } =
+                await import("@/cli");
+              const registry = await getCommandDefinitionRegistry();
+              const generator = new CommandExerciseGenerator(registry);
+
+              // Parse subcommand
+              const subcommand = args[0];
+
+              if (!subcommand || subcommand === "random") {
+                // Get 3 random exercises
+                const exercises = generator.getRandomExercises(3);
+                result.output = formatPracticeExercises(exercises);
+              } else if (
+                subcommand === "beginner" ||
+                subcommand === "intermediate" ||
+                subcommand === "advanced"
+              ) {
+                const exercises = generator.generateByDifficulty(subcommand, 3);
+                result.output = formatPracticeExercises(exercises);
+              } else if (subcommand === "category") {
+                const category = args[1];
+                if (!category) {
+                  result.output = `Usage: practice category <category>\n\nAvailable categories: gpu_management, diagnostics, cluster_management, networking, containers, storage`;
+                  break;
+                }
+                const exercises = generator.generateForCategory(category, 3);
+                result.output = formatPracticeExercises(exercises);
+              } else {
+                // Assume it's a command name
+                const exercises = generator.generateForCommand(subcommand);
+                if (exercises.length === 0) {
+                  result.output = `No exercises found for command: ${subcommand}\n\nTry: practice random, practice beginner, or practice category gpu_management`;
+                } else {
+                  result.output = formatPracticeExercises(
+                    exercises.slice(0, 3),
+                  );
+                }
+              }
+            } catch (error) {
+              result.output = `Error generating exercises: ${error instanceof Error ? error.message : "Unknown error"}`;
+              result.exitCode = 1;
+            }
+            break;
+          }
 
         let output = `\x1b[33mNo information available for '\x1b[36m${commandName}\x1b[33m'.\x1b[0m`;
         const suggestion = getDidYouMeanMessage(commandName);
@@ -922,6 +1086,11 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
 
     // Store executeCommand ref for external access (auto-SSH on node selection)
     executeCommandRef.current = executeCommand;
+
+    const handleHistoryChange = (index: number) => {
+      historyIndexRef.current = index;
+      setHistoryIndex(index);
+    };
 
     term.onData((data) => {
       const result = handleKeyboardInput(data, {
