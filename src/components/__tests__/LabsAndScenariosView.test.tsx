@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  within,
+  waitFor,
+} from "@testing-library/react";
 
 // ============================================================================
 // Mocks
@@ -88,8 +94,9 @@ const mockMetadata: Record<
 };
 
 vi.mock("@/utils/scenarioLoader", () => ({
-  getAllScenarios: () => mockScenariosByDomain,
-  getScenarioMetadata: (id: string) => mockMetadata[id] || null,
+  getAllScenarios: () => Promise.resolve(mockScenariosByDomain),
+  getScenarioMetadata: (id: string) =>
+    Promise.resolve(mockMetadata[id] || null),
 }));
 
 // Mock simulationStore - default: no completed scenarios
@@ -152,12 +159,14 @@ describe("LabsAndScenariosView", () => {
   // 2. Shows scenario cards (titles visible)
   // --------------------------------------------------------------------------
 
-  it("shows scenario titles from loaded data", () => {
+  it("shows scenario titles from loaded data", async () => {
     const props = defaultProps();
     render(<LabsAndScenariosView {...props} />);
-    expect(screen.getByText("The Midnight Deployment")).toBeInTheDocument();
-    expect(screen.getByText("The NVLink Mystery")).toBeInTheDocument();
-    expect(screen.getByText("The Slurm Setup")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("The Midnight Deployment")).toBeInTheDocument();
+      expect(screen.getByText("The NVLink Mystery")).toBeInTheDocument();
+      expect(screen.getByText("The Slurm Setup")).toBeInTheDocument();
+    });
   });
 
   // --------------------------------------------------------------------------
@@ -194,42 +203,48 @@ describe("LabsAndScenariosView", () => {
   // 5. Scenario card shows title within its domain card
   // --------------------------------------------------------------------------
 
-  it("displays individual scenario titles within domain cards", () => {
+  it("displays individual scenario titles within domain cards", async () => {
     const props = defaultProps();
     render(<LabsAndScenariosView {...props} />);
-    const domain1Card = screen.getByTestId("domain-1-card");
-    expect(
-      within(domain1Card).getByText("The Midnight Deployment"),
-    ).toBeInTheDocument();
-    expect(
-      within(domain1Card).getByText("The Rack Expansion"),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      const domain1Card = screen.getByTestId("domain-1-card");
+      expect(
+        within(domain1Card).getByText("The Midnight Deployment"),
+      ).toBeInTheDocument();
+      expect(
+        within(domain1Card).getByText("The Rack Expansion"),
+      ).toBeInTheDocument();
+    });
   });
 
   // --------------------------------------------------------------------------
   // 6. Scenario card shows difficulty badge
   // --------------------------------------------------------------------------
 
-  it("displays difficulty badges on scenario cards", () => {
+  it("displays difficulty badges on scenario cards", async () => {
     const props = defaultProps();
     render(<LabsAndScenariosView {...props} />);
-    expect(screen.getAllByText("beginner").length).toBeGreaterThanOrEqual(2);
-    expect(screen.getAllByText("intermediate").length).toBeGreaterThanOrEqual(
-      2,
-    );
-    expect(screen.getAllByText("advanced").length).toBeGreaterThanOrEqual(2);
+    await waitFor(() => {
+      expect(screen.getAllByText("beginner").length).toBeGreaterThanOrEqual(2);
+      expect(screen.getAllByText("intermediate").length).toBeGreaterThanOrEqual(
+        2,
+      );
+      expect(screen.getAllByText("advanced").length).toBeGreaterThanOrEqual(2);
+    });
   });
 
   // --------------------------------------------------------------------------
   // 7. Scenario card shows estimated time
   // --------------------------------------------------------------------------
 
-  it("displays estimated time on scenario cards", () => {
+  it("displays estimated time on scenario cards", async () => {
     const props = defaultProps();
     render(<LabsAndScenariosView {...props} />);
-    expect(screen.getByText("28m")).toBeInTheDocument();
-    expect(screen.getByText("23m")).toBeInTheDocument();
-    expect(screen.getByText("24m")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("28m")).toBeInTheDocument();
+      expect(screen.getByText("23m")).toBeInTheDocument();
+      expect(screen.getByText("24m")).toBeInTheDocument();
+    });
   });
 
   // --------------------------------------------------------------------------
@@ -249,9 +264,12 @@ describe("LabsAndScenariosView", () => {
   // 9. Clicking scenario button calls onStartScenario with correct ID
   // --------------------------------------------------------------------------
 
-  it("calls onStartScenario with the correct scenario ID when clicked", () => {
+  it("calls onStartScenario with the correct scenario ID when clicked", async () => {
     const props = defaultProps();
     render(<LabsAndScenariosView {...props} />);
+    await waitFor(() => {
+      expect(screen.getByText("The Midnight Deployment")).toBeInTheDocument();
+    });
     const button = screen
       .getByText("The Midnight Deployment")
       .closest("button")!;
@@ -404,21 +422,23 @@ describe("LabsAndScenariosView", () => {
   // 18. All domains display their scenarios
   // --------------------------------------------------------------------------
 
-  it("shows scenarios for all domains", () => {
+  it("shows scenarios for all domains", async () => {
     const props = defaultProps();
     render(<LabsAndScenariosView {...props} />);
-    // Domain 1
-    expect(screen.getByText("The Midnight Deployment")).toBeInTheDocument();
-    expect(screen.getByText("The Rack Expansion")).toBeInTheDocument();
-    // Domain 2
-    expect(screen.getByText("The NVLink Mystery")).toBeInTheDocument();
-    // Domain 3
-    expect(screen.getByText("The Slurm Setup")).toBeInTheDocument();
-    // Domain 4
-    expect(screen.getByText("The Silent Cluster")).toBeInTheDocument();
-    expect(screen.getByText("The Bandwidth Bottleneck")).toBeInTheDocument();
-    // Domain 5
-    expect(screen.getByText("The XID Investigation")).toBeInTheDocument();
+    await waitFor(() => {
+      // Domain 1
+      expect(screen.getByText("The Midnight Deployment")).toBeInTheDocument();
+      expect(screen.getByText("The Rack Expansion")).toBeInTheDocument();
+      // Domain 2
+      expect(screen.getByText("The NVLink Mystery")).toBeInTheDocument();
+      // Domain 3
+      expect(screen.getByText("The Slurm Setup")).toBeInTheDocument();
+      // Domain 4
+      expect(screen.getByText("The Silent Cluster")).toBeInTheDocument();
+      expect(screen.getByText("The Bandwidth Bottleneck")).toBeInTheDocument();
+      // Domain 5
+      expect(screen.getByText("The XID Investigation")).toBeInTheDocument();
+    });
   });
 
   // --------------------------------------------------------------------------
@@ -476,9 +496,13 @@ describe("LabsAndScenariosView", () => {
   // 22. Clicking different scenario buttons sends correct IDs
   // --------------------------------------------------------------------------
 
-  it("calls onStartScenario with different IDs for different scenarios", () => {
+  it("calls onStartScenario with different IDs for different scenarios", async () => {
     const props = defaultProps();
     render(<LabsAndScenariosView {...props} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("The NVLink Mystery")).toBeInTheDocument();
+    });
 
     const nvlinkButton = screen
       .getByText("The NVLink Mystery")

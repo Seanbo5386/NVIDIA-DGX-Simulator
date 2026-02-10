@@ -12,11 +12,22 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { LearningPaths } from "../LearningPaths";
 
-// Mock the learningStore
+// Mock the learningStore via path alias (used by LearningPaths and other components)
+// Note: vi.mock is hoisted, so the factory runs lazily and mockRecordGauntletAttempt is available
 vi.mock("@/store/learningStore", () => ({
-  useLearningStore: () => ({
-    trackCommand: vi.fn(),
-  }),
+  useLearningStore: vi.fn(
+    (selector?: (state: Record<string, unknown>) => unknown) => {
+      const state = {
+        trackCommand: vi.fn(),
+        recordGauntletAttempt: vi.fn(),
+        gauntletAttempts: [] as never[],
+      };
+      if (selector && typeof selector === "function") {
+        return selector(state);
+      }
+      return state;
+    },
+  ),
 }));
 
 // Mock the quiz questions data
@@ -95,13 +106,14 @@ vi.mock("../../data/quizQuestions.json", () => ({
 
 // Mock scenario loader for ExamGauntlet
 vi.mock("../../utils/scenarioLoader", () => ({
-  getAllScenarios: () => ({
-    domain1: ["domain1-hw-inventory"],
-    domain2: ["domain2-mig-setup"],
-    domain3: ["domain3-slurm-config"],
-    domain4: ["domain4-dcgmi-diag"],
-    domain5: ["domain5-xid-errors"],
-  }),
+  getAllScenarios: () =>
+    Promise.resolve({
+      domain1: ["domain1-hw-inventory"],
+      domain2: ["domain2-mig-setup"],
+      domain3: ["domain3-slurm-config"],
+      domain4: ["domain4-dcgmi-diag"],
+      domain5: ["domain5-xid-errors"],
+    }),
   getScenarioMetadata: (id: string) => {
     const metadata: Record<
       string,
@@ -133,7 +145,7 @@ vi.mock("../../utils/scenarioLoader", () => ({
         estimatedTime: 65,
       },
     };
-    return metadata[id] || null;
+    return Promise.resolve(metadata[id] || null);
   },
   loadScenarioFromFile: () =>
     Promise.resolve({
@@ -169,12 +181,9 @@ vi.mock("../../utils/tierProgressionEngine", async () => {
 });
 
 // Mock the learning progress store
-const mockRecordGauntletAttempt = vi.fn();
 const mockLearningProgressState = {
-  recordGauntletAttempt: mockRecordGauntletAttempt,
   familyQuizScores: {},
   reviewSchedule: {},
-  gauntletAttempts: [],
   toolsUsed: {},
   unlockedTiers: {},
   tierProgress: {},
@@ -193,11 +202,29 @@ const mockLearningProgressState = {
 vi.mock("../../store/learningProgressStore", () => ({
   useLearningProgressStore: vi.fn(
     (selector?: (state: typeof mockLearningProgressState) => unknown) => {
-      // If selector is provided, use it; otherwise return the full state
       if (selector && typeof selector === "function") {
         return selector(mockLearningProgressState);
       }
       return mockLearningProgressState;
+    },
+  ),
+}));
+
+// Mock the learning store (gauntlet moved here)
+const mockRecordGauntletAttempt = vi.fn();
+const mockLearningStoreState = {
+  recordGauntletAttempt: mockRecordGauntletAttempt,
+  gauntletAttempts: [],
+  trackCommand: vi.fn(),
+};
+
+vi.mock("../../store/learningStore", () => ({
+  useLearningStore: vi.fn(
+    (selector?: (state: typeof mockLearningStoreState) => unknown) => {
+      if (selector && typeof selector === "function") {
+        return selector(mockLearningStoreState);
+      }
+      return mockLearningStoreState;
     },
   ),
 }));

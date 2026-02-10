@@ -1,10 +1,11 @@
 import React, { useMemo } from "react";
 import { useLearningProgressStore } from "@/store/learningProgressStore";
+import { useLearningStore } from "@/store/learningStore";
 import { ProgressRing } from "./ProgressRing";
 
 export const OverallProgressDashboard: React.FC = () => {
-  const { familyQuizScores, reviewSchedule, gauntletAttempts } =
-    useLearningProgressStore();
+  const { familyQuizScores, reviewSchedule } = useLearningProgressStore();
+  const gauntletAttempts = useLearningStore((state) => state.gauntletAttempts);
 
   // Calculate quiz statistics
   const quizStats = useMemo(() => {

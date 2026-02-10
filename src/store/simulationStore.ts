@@ -683,7 +683,18 @@ export const useSimulationStore = create<SimulationState>()(
       partialize: (state) => ({
         cluster: state.cluster,
         simulationSpeed: state.simulationSpeed,
-        scenarioProgress: state.scenarioProgress,
+        scenarioProgress: Object.fromEntries(
+          Object.entries(state.scenarioProgress).map(([id, progress]) => [
+            id,
+            {
+              ...progress,
+              steps: progress.steps.map((step) => ({
+                ...step,
+                commandsExecuted: step.commandsExecuted.slice(-5),
+              })),
+            },
+          ]),
+        ),
         completedScenarios: state.completedScenarios,
       }),
     },

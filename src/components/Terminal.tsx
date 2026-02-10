@@ -44,6 +44,7 @@ import {
   getDidYouMeanMessage,
 } from "@/utils/commandSuggestions";
 import { applyPipeFilters, hasPipes } from "@/utils/pipeHandler";
+import { CommandRouter } from "@/cli/commandRouter";
 
 // Helper function to format practice exercises
 function formatPracticeExercises(
@@ -276,6 +277,350 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
 
     let currentLine = "";
 
+    // ----- Build command router (once per mount) -----
+    const router = new CommandRouter();
+
+    // Built-in commands
+    router.register("help", (cl) => {
+      const args = cl.trim().split(/\s+/).slice(1);
+      if (args.length > 0) {
+        const metadata = getCommandMetadata(args[0]);
+        if (metadata) {
+          return { output: formatCommandHelp(metadata), exitCode: 0 };
+        }
+        return {
+          output: `\x1b[33mNo help available for '\x1b[36m${args[0]}\x1b[33m'.\x1b[0m\n\nType \x1b[36mhelp\x1b[0m to see all available commands.`,
+          exitCode: 0,
+        };
+      }
+      return { output: formatCommandList(), exitCode: 0 };
+    });
+
+    router.register("explain", async (cl) => {
+      const args = cl.trim().split(/\s+/).slice(1);
+      if (args.length === 0) {
+        return {
+          output:
+            `\x1b[33mUsage:\x1b[0m explain <command> [flag|subcommand]\n\n` +
+            `Comprehensive command documentation with learning aids.\n\n` +
+            `\x1b[1mExamples:\x1b[0m\n` +
+            `  \x1b[36mexplain nvidia-smi\x1b[0m          Full command reference\n` +
+            `  \x1b[36mexplain nvidia-smi --query-gpu\x1b[0m  Flag details\n` +
+            `  \x1b[36mexplain dcgmi diag\x1b[0m          Subcommand details\n`,
+          exitCode: 0,
+        };
+      }
+      try {
+        const { getCommandDefinitionRegistry, generateExplainOutput } =
+          await import("@/cli");
+        const registry = await getCommandDefinitionRegistry();
+        const learningMeta = getCommandMetadata(args[0]);
+        const output = await generateExplainOutput(
+          args.join(" "),
+          registry,
+          {
+            includeErrors: true,
+            includeExamples: true,
+            includePermissions: true,
+          },
+          learningMeta,
+        );
+        return { output, exitCode: 0 };
+      } catch {
+        const metadata = getCommandMetadata(args[0]);
+        if (metadata) {
+          return { output: formatCommandHelp(metadata), exitCode: 0 };
+        }
+        let output = `\x1b[33mNo information available for '\x1b[36m${args[0]}\x1b[33m'.\x1b[0m`;
+        const suggestion = getDidYouMeanMessage(args[0]);
+        if (suggestion) output += "\n\n" + suggestion;
+        return { output, exitCode: 0 };
+      }
+    });
+
+    router.register("practice", async (cl) => {
+      const args = cl.trim().split(/\s+/).slice(1);
+      try {
+        const { getCommandDefinitionRegistry, CommandExerciseGenerator } =
+          await import("@/cli");
+        const registry = await getCommandDefinitionRegistry();
+        const generator = new CommandExerciseGenerator(registry);
+        const subcommand = args[0];
+
+        if (!subcommand || subcommand === "random") {
+          return {
+            output: formatPracticeExercises(generator.getRandomExercises(3)),
+            exitCode: 0,
+          };
+        } else if (
+          subcommand === "beginner" ||
+          subcommand === "intermediate" ||
+          subcommand === "advanced"
+        ) {
+          return {
+            output: formatPracticeExercises(
+              generator.generateByDifficulty(subcommand, 3),
+            ),
+            exitCode: 0,
+          };
+        } else if (subcommand === "category") {
+          const category = args[1];
+          if (!category) {
+            return {
+              output: `Usage: practice category <category>\n\nAvailable categories: gpu_management, diagnostics, cluster_management, networking, containers, storage`,
+              exitCode: 0,
+            };
+          }
+          return {
+            output: formatPracticeExercises(
+              generator.generateForCategory(category, 3),
+            ),
+            exitCode: 0,
+          };
+        } else {
+          const exercises = generator.generateForCommand(subcommand);
+          if (exercises.length === 0) {
+            return {
+              output: `No exercises found for command: ${subcommand}\n\nTry: practice random, practice beginner, or practice category gpu_management`,
+              exitCode: 0,
+            };
+          }
+          return {
+            output: formatPracticeExercises(exercises.slice(0, 3)),
+            exitCode: 0,
+          };
+        }
+      } catch (error) {
+        return {
+          output: `Error generating exercises: ${error instanceof Error ? error.message : "Unknown error"}`,
+          exitCode: 1,
+        };
+      }
+    });
+
+    router.register("ssh", (cl) => {
+      const args = cl.trim().split(/\s+/).slice(1);
+      if (args.length === 0) {
+        return {
+          output:
+            "\x1b[33mUsage: ssh <hostname>\x1b[0m\n\nAvailable nodes:\n" +
+            cluster.nodes
+              .map((n) => `  \x1b[36m${n.id}\x1b[0m - ${n.systemType}`)
+              .join("\n"),
+          exitCode: 0,
+        };
+      }
+      const targetNode = args[0];
+      const nodeExists = cluster.nodes.some((n) => n.id === targetNode);
+      if (!nodeExists) {
+        return {
+          output: `\x1b[31mssh: Could not resolve hostname ${targetNode}: Name or service not known\x1b[0m`,
+          exitCode: 1,
+        };
+      }
+      if (targetNode === currentContext.current.currentNode) {
+        return {
+          output: `\x1b[33mAlready connected to ${targetNode}\x1b[0m`,
+          exitCode: 0,
+        };
+      }
+      const oldNode = currentContext.current.currentNode;
+      currentContext.current.currentNode = targetNode;
+      setConnectedNode(targetNode);
+      useSimulationStore.getState().selectNode(targetNode);
+      return {
+        output:
+          `\x1b[32mConnecting to ${targetNode}...\x1b[0m\n` +
+          `\x1b[90mThe authenticity of host '${targetNode} (10.0.0.${cluster.nodes.findIndex((n) => n.id === targetNode) + 1})' was established.\x1b[0m\n` +
+          `\x1b[32mConnection established.\x1b[0m\n` +
+          `\x1b[90mLast login: ${new Date().toLocaleString()} from ${oldNode}\x1b[0m`,
+        exitCode: 0,
+      };
+    });
+
+    router.register("hint", () => {
+      const store = useSimulationStore.getState();
+      const { activeScenario, scenarioProgress, revealHint } = store;
+      if (!activeScenario) {
+        return {
+          output:
+            "\x1b[33mNo active lab scenario. Hints are only available during lab exercises.\x1b[0m\n\nStart a lab from the sidebar to access hints.",
+          exitCode: 0,
+        };
+      }
+      const progress = scenarioProgress[activeScenario.id];
+      if (!progress) {
+        return {
+          output: "\x1b[31mError: Could not load scenario progress.\x1b[0m",
+          exitCode: 1,
+        };
+      }
+      const currentStep = activeScenario.steps[progress.currentStepIndex];
+      const stepProgress = progress.steps[progress.currentStepIndex];
+      if (!currentStep || !stepProgress) {
+        return {
+          output: "\x1b[31mError: Could not determine current step.\x1b[0m",
+          exitCode: 1,
+        };
+      }
+      const hintEvaluation = HintManager.getAvailableHints(
+        currentStep,
+        stepProgress,
+      );
+      if (hintEvaluation.nextHint) {
+        const hint = hintEvaluation.nextHint;
+        revealHint(activeScenario.id, currentStep.id, hint.id);
+        return {
+          output: HintManager.formatHint(
+            hint,
+            hintEvaluation.revealedCount + 1,
+            hintEvaluation.totalCount,
+          ),
+          exitCode: 0,
+        };
+      }
+      return {
+        output: HintManager.getNoHintMessage(hintEvaluation),
+        exitCode: 0,
+      };
+    });
+
+    // Simulator handlers
+    const simHandler =
+      (sim: {
+        execute: (
+          parsed: ReturnType<typeof parseCommand>,
+          ctx: CommandContext,
+        ) => import("@/types/commands").CommandResult;
+      }) =>
+      (cl: string, ctx: CommandContext) =>
+        sim.execute(parseCommand(cl), ctx);
+
+    router.register("nvidia-smi", simHandler(nvidiaSmiSimulator.current));
+    router.register("dcgmi", simHandler(dcgmiSimulator.current));
+    router.register("ipmitool", simHandler(ipmitoolSimulator.current));
+
+    // nvsm and cmsh need interactive mode checks (handled post-execution below)
+    router.register("nvsm", simHandler(nvsmSimulator.current));
+    router.register("cmsh", simHandler(cmshSimulator.current));
+
+    // InfiniBand tools
+    router.register("ibstat", (cl, ctx) =>
+      infinibandSimulator.current.executeIbstat(parseCommand(cl), ctx),
+    );
+    router.register("ibportstate", (cl, ctx) =>
+      infinibandSimulator.current.executeIbportstate(parseCommand(cl), ctx),
+    );
+    router.register("ibporterrors", (cl, ctx) =>
+      infinibandSimulator.current.executeIbporterrors(parseCommand(cl), ctx),
+    );
+    router.register("iblinkinfo", (cl, ctx) =>
+      infinibandSimulator.current.executeIblinkinfo(parseCommand(cl), ctx),
+    );
+    router.register("perfquery", (cl, ctx) =>
+      infinibandSimulator.current.executePerfquery(parseCommand(cl), ctx),
+    );
+    router.register("ibdiagnet", (cl, ctx) =>
+      infinibandSimulator.current.executeIbdiagnet(parseCommand(cl), ctx),
+    );
+    router.register("ibdev2netdev", (cl, ctx) =>
+      infinibandSimulator.current.executeIbdev2netdev(parseCommand(cl), ctx),
+    );
+    router.register("ibnetdiscover", (cl, ctx) =>
+      infinibandSimulator.current.executeIbnetdiscover(parseCommand(cl), ctx),
+    );
+
+    // Slurm tools
+    router.register("sinfo", (cl, ctx) =>
+      slurmSimulator.current.executeSinfo(parseCommand(cl), ctx),
+    );
+    router.register("squeue", (cl, ctx) =>
+      slurmSimulator.current.executeSqueue(parseCommand(cl), ctx),
+    );
+    router.register("scontrol", (cl, ctx) =>
+      slurmSimulator.current.executeScontrol(parseCommand(cl), ctx),
+    );
+    router.register("sbatch", (cl, ctx) =>
+      slurmSimulator.current.executeSbatch(parseCommand(cl), ctx),
+    );
+    router.register("srun", (cl, ctx) =>
+      slurmSimulator.current.executeSrun(parseCommand(cl), ctx),
+    );
+    router.register("scancel", (cl, ctx) =>
+      slurmSimulator.current.executeScancel(parseCommand(cl), ctx),
+    );
+    router.register("sacct", (cl, ctx) =>
+      slurmSimulator.current.executeSacct(parseCommand(cl), ctx),
+    );
+
+    // Container tools
+    router.registerMany(
+      ["docker", "ngc", "enroot"],
+      simHandler(containerSimulator.current),
+    );
+
+    // Mellanox tools
+    router.registerMany(
+      ["mst", "mlxconfig", "mlxlink", "mlxcables", "mlxup", "mlxfwmanager"],
+      simHandler(mellanoxSimulator.current),
+    );
+
+    // BCM tools
+    router.registerMany(
+      ["bcm", "bcm-node", "crm"],
+      simHandler(bcmSimulator.current),
+    );
+
+    // Basic Linux commands
+    router.registerMany(
+      [
+        "lscpu",
+        "free",
+        "dmidecode",
+        "dmesg",
+        "systemctl",
+        "hostnamectl",
+        "timedatectl",
+        "lsmod",
+        "modinfo",
+        "top",
+        "ps",
+        "numactl",
+        "uptime",
+        "uname",
+        "hostname",
+        "sensors",
+      ],
+      simHandler(basicSystemSimulator.current),
+    );
+
+    // PCI / journalctl
+    router.registerMany(
+      ["lspci", "journalctl"],
+      simHandler(pciToolsSimulator.current),
+    );
+
+    // Other simulators
+    router.register("nvlink-audit", simHandler(nvlinkAuditSimulator.current));
+    router.register(
+      "nv-fabricmanager",
+      simHandler(fabricManagerSimulator.current),
+    );
+    router.register(
+      "nvidia-bug-report.sh",
+      simHandler(nvidiaBugReportSimulator.current),
+    );
+    router.registerMany(
+      ["hpl", "nccl-test", "gpu-burn"],
+      simHandler(benchmarkSimulator.current),
+    );
+    router.registerMany(
+      ["df", "mount", "lfs"],
+      simHandler(storageSimulator.current),
+    );
+    router.register("clusterkit", simHandler(clusterKitSimulator.current));
+    router.register("nemo", simHandler(nemoSimulator.current));
+
     const executeCommand = async (cmdLine: string) => {
       if (!cmdLine.trim()) {
         prompt();
@@ -296,7 +641,6 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
       };
 
       // INTERACTIVE SHELL MODE INTERCEPT
-      // When in an interactive shell (nvsm, cmsh), route commands through that shell
       if (shellState.mode === "nvsm") {
         const newState = handleInteractiveShellInput(
           nvsmSimulator.current,
@@ -310,7 +654,6 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
         return;
       }
 
-      // cmsh interactive mode intercept
       if (shellState.mode === "cmsh") {
         const newState = handleInteractiveShellInput(
           cmshSimulator.current,
@@ -325,609 +668,35 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
       }
 
       try {
-        switch (command) {
-          case "help": {
-            // Enhanced help - show organized command list
-            const args = cmdLine.trim().split(/\s+/).slice(1);
-            if (args.length > 0) {
-              // help <command> - show detailed help for specific command
-              const commandName = args[0];
-              const metadata = getCommandMetadata(commandName);
-              if (metadata) {
-                result.output = formatCommandHelp(metadata);
-              } else {
-                result.output = `\x1b[33mNo help available for '\x1b[36m${commandName}\x1b[33m'.\x1b[0m\n\nType \x1b[36mhelp\x1b[0m to see all available commands.`;
-              }
-            } else {
-              // General help - show organized list
-              result.output = formatCommandList();
-            }
-            break;
+        // Handle "clear" before router (early return)
+        if (command === "clear") {
+          term.clear();
+          prompt();
+          return;
+        }
+
+        const handler = router.resolve(command);
+        if (handler) {
+          result = await handler(cmdLine, currentContext.current);
+        } else {
+          result.output = `\x1b[31mbash: ${command}: command not found\x1b[0m`;
+          result.exitCode = 127;
+          const suggestion = getDidYouMeanMessage(command);
+          if (suggestion) {
+            result.output += "\n\n" + suggestion;
+          } else {
+            result.output +=
+              "\n\nType \x1b[36mhelp\x1b[0m to see available commands.";
           }
+        }
 
-          case "explain": {
-            // explain <command> [flag|subcommand] - comprehensive documentation with learning aids
-            const args = cmdLine.trim().split(/\s+/).slice(1);
-            if (args.length === 0) {
-              result.output =
-                `\x1b[33mUsage:\x1b[0m explain <command> [flag|subcommand]\n\n` +
-                `Comprehensive command documentation with learning aids.\n\n` +
-                `\x1b[1mExamples:\x1b[0m\n` +
-                `  \x1b[36mexplain nvidia-smi\x1b[0m          Full command reference\n` +
-                `  \x1b[36mexplain nvidia-smi --query-gpu\x1b[0m  Flag details\n` +
-                `  \x1b[36mexplain dcgmi diag\x1b[0m          Subcommand details\n`;
-              break;
-            }
-
-            try {
-              const { getCommandDefinitionRegistry, generateExplainOutput } =
-                await import("@/cli");
-              const registry = await getCommandDefinitionRegistry();
-              const learningMeta = getCommandMetadata(args[0]);
-              const output = await generateExplainOutput(
-                args.join(" "),
-                registry,
-                {
-                  includeErrors: true,
-                  includeExamples: true,
-                  includePermissions: true,
-                },
-                learningMeta,
-              );
-              result.output = output;
-            } catch {
-              // Fallback: if JSON registry fails, use old metadata alone
-              const metadata = getCommandMetadata(args[0]);
-              if (metadata) {
-                result.output = formatCommandHelp(metadata);
-              } else {
-                result.output = `\x1b[33mNo information available for '\x1b[36m${args[0]}\x1b[33m'.\x1b[0m`;
-                const suggestion = getDidYouMeanMessage(args[0]);
-                if (suggestion) {
-                  result.output += "\n\n" + suggestion;
-                }
-              }
-            }
-            break;
-          }
-
-          case "practice": {
-            // practice - generate command learning exercises
-            const args = cmdLine.trim().split(/\s+/).slice(1);
-
-            try {
-              const { getCommandDefinitionRegistry, CommandExerciseGenerator } =
-                await import("@/cli");
-              const registry = await getCommandDefinitionRegistry();
-              const generator = new CommandExerciseGenerator(registry);
-
-              // Parse subcommand
-              const subcommand = args[0];
-
-              if (!subcommand || subcommand === "random") {
-                // Get 3 random exercises
-                const exercises = generator.getRandomExercises(3);
-                result.output = formatPracticeExercises(exercises);
-              } else if (
-                subcommand === "beginner" ||
-                subcommand === "intermediate" ||
-                subcommand === "advanced"
-              ) {
-                const exercises = generator.generateByDifficulty(subcommand, 3);
-                result.output = formatPracticeExercises(exercises);
-              } else if (subcommand === "category") {
-                const category = args[1];
-                if (!category) {
-                  result.output = `Usage: practice category <category>\n\nAvailable categories: gpu_management, diagnostics, cluster_management, networking, containers, storage`;
-                  break;
-                }
-                const exercises = generator.generateForCategory(category, 3);
-                result.output = formatPracticeExercises(exercises);
-              } else {
-                // Assume it's a command name
-                const exercises = generator.generateForCommand(subcommand);
-                if (exercises.length === 0) {
-                  result.output = `No exercises found for command: ${subcommand}\n\nTry: practice random, practice beginner, or practice category gpu_management`;
-                } else {
-                  result.output = formatPracticeExercises(
-                    exercises.slice(0, 3),
-                  );
-                }
-              }
-            } catch (error) {
-              result.output = `Error generating exercises: ${error instanceof Error ? error.message : "Unknown error"}`;
-              result.exitCode = 1;
-            }
-            break;
-          }
-
-          case "clear":
-            term.clear();
-            prompt();
-            return;
-
-          case "ssh": {
-            // Simulated SSH connection to cluster nodes
-            const args = cmdLine.trim().split(/\s+/).slice(1);
-            if (args.length === 0) {
-              result.output =
-                "\x1b[33mUsage: ssh <hostname>\x1b[0m\n\nAvailable nodes:\n" +
-                cluster.nodes
-                  .map((n) => `  \x1b[36m${n.id}\x1b[0m - ${n.systemType}`)
-                  .join("\n");
-              break;
-            }
-
-            const targetNode = args[0];
-            // Check if target node exists in cluster
-            const nodeExists = cluster.nodes.some((n) => n.id === targetNode);
-
-            if (!nodeExists) {
-              result.output = `\x1b[31mssh: Could not resolve hostname ${targetNode}: Name or service not known\x1b[0m`;
-              result.exitCode = 1;
-              break;
-            }
-
-            if (targetNode === currentContext.current.currentNode) {
-              result.output = `\x1b[33mAlready connected to ${targetNode}\x1b[0m`;
-              break;
-            }
-
-            // Simulate SSH connection
-            const oldNode = currentContext.current.currentNode;
-            currentContext.current.currentNode = targetNode;
-            setConnectedNode(targetNode);
-
-            // Update the store's selected node to keep Dashboard in sync
-            useSimulationStore.getState().selectNode(targetNode);
-
-            result.output =
-              `\x1b[32mConnecting to ${targetNode}...\x1b[0m\n` +
-              `\x1b[90mThe authenticity of host '${targetNode} (10.0.0.${cluster.nodes.findIndex((n) => n.id === targetNode) + 1})' was established.\x1b[0m\n` +
-              `\x1b[32mConnection established.\x1b[0m\n` +
-              `\x1b[90mLast login: ${new Date().toLocaleString()} from ${oldNode}\x1b[0m`;
-            break;
-          }
-
-          case "hint": {
-            // Get state from store
-            const store = useSimulationStore.getState();
-            const { activeScenario, scenarioProgress, revealHint } = store;
-
-            // Check if there's an active scenario
-            if (!activeScenario) {
-              result.output =
-                "\x1b[33mNo active lab scenario. Hints are only available during lab exercises.\x1b[0m\n\nStart a lab from the sidebar to access hints.";
-              break;
-            }
-
-            const progress = scenarioProgress[activeScenario.id];
-            if (!progress) {
-              result.output =
-                "\x1b[31mError: Could not load scenario progress.\x1b[0m";
-              break;
-            }
-
-            const currentStep = activeScenario.steps[progress.currentStepIndex];
-            const stepProgress = progress.steps[progress.currentStepIndex];
-
-            if (!currentStep || !stepProgress) {
-              result.output =
-                "\x1b[31mError: Could not determine current step.\x1b[0m";
-              break;
-            }
-
-            // Evaluate available hints
-            const hintEvaluation = HintManager.getAvailableHints(
-              currentStep,
-              stepProgress,
-            );
-
-            if (hintEvaluation.nextHint) {
-              // Reveal the next hint
-              const hint = hintEvaluation.nextHint;
-              revealHint(activeScenario.id, currentStep.id, hint.id);
-
-              // Format and display the hint
-              const formattedHint = HintManager.formatHint(
-                hint,
-                hintEvaluation.revealedCount + 1,
-                hintEvaluation.totalCount,
-              );
-
-              result.output = formattedHint;
-            } else {
-              // No hints available
-              result.output = HintManager.getNoHintMessage(hintEvaluation);
-            }
-            break;
-          }
-
-          case "nvidia-smi": {
-            const parsed = parseCommand(cmdLine);
-            result = nvidiaSmiSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "dcgmi": {
-            // Use new command parser for dcgmi
-            const parsed = parseCommand(cmdLine);
-            result = dcgmiSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "nvsm": {
-            const parsed = parseCommand(cmdLine);
-            result = nvsmSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            // Check if entering interactive mode
-            if (
-              shouldEnterInteractiveMode(
-                result,
-                parsed.subcommands.length === 0,
-              )
-            ) {
-              setShellState({ mode: "nvsm", prompt: result.prompt || "" });
-            }
-            break;
-          }
-
-          case "ipmitool": {
-            const parsed = parseCommand(cmdLine);
-            result = ipmitoolSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "ibstat": {
-            const parsed = parseCommand(cmdLine);
-            result = infinibandSimulator.current.executeIbstat(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "ibportstate": {
-            const parsed = parseCommand(cmdLine);
-            result = infinibandSimulator.current.executeIbportstate(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "ibporterrors": {
-            const parsed = parseCommand(cmdLine);
-            result = infinibandSimulator.current.executeIbporterrors(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "iblinkinfo": {
-            const parsed = parseCommand(cmdLine);
-            result = infinibandSimulator.current.executeIblinkinfo(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "perfquery": {
-            const parsed = parseCommand(cmdLine);
-            result = infinibandSimulator.current.executePerfquery(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "ibdiagnet": {
-            const parsed = parseCommand(cmdLine);
-            result = infinibandSimulator.current.executeIbdiagnet(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "ibdev2netdev": {
-            const parsed = parseCommand(cmdLine);
-            result = infinibandSimulator.current.executeIbdev2netdev(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "ibnetdiscover": {
-            const parsed = parseCommand(cmdLine);
-            result = infinibandSimulator.current.executeIbnetdiscover(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "sinfo": {
-            const parsed = parseCommand(cmdLine);
-            result = slurmSimulator.current.executeSinfo(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "squeue": {
-            const parsed = parseCommand(cmdLine);
-            result = slurmSimulator.current.executeSqueue(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "scontrol": {
-            const parsed = parseCommand(cmdLine);
-            result = slurmSimulator.current.executeScontrol(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "sbatch": {
-            const parsed = parseCommand(cmdLine);
-            result = slurmSimulator.current.executeSbatch(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "srun": {
-            const parsed = parseCommand(cmdLine);
-            result = slurmSimulator.current.executeSrun(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "scancel": {
-            const parsed = parseCommand(cmdLine);
-            result = slurmSimulator.current.executeScancel(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "sacct": {
-            const parsed = parseCommand(cmdLine);
-            result = slurmSimulator.current.executeSacct(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          // Container tools
-          case "docker":
-          case "ngc":
-          case "enroot": {
-            const parsed = parseCommand(cmdLine);
-            result = containerSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          // Mellanox tools
-          case "mst":
-          case "mlxconfig":
-          case "mlxlink":
-          case "mlxcables":
-          case "mlxup":
-          case "mlxfwmanager": {
-            const parsed = parseCommand(cmdLine);
-            result = mellanoxSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          // BCM
-          case "bcm":
-          case "bcm-node":
-          case "crm": {
-            const parsed = parseCommand(cmdLine);
-            result = bcmSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "cmsh": {
-            const parsed = parseCommand(cmdLine);
-            result = cmshSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            // Check if entering interactive mode
-            if (
-              shouldEnterInteractiveMode(
-                result,
-                parsed.subcommands.length === 0,
-              )
-            ) {
-              setShellState({ mode: "cmsh", prompt: result.prompt || "" });
-            }
-            break;
-          }
-
-          // Basic Linux commands for labs
-          case "lscpu":
-          case "free":
-          case "dmidecode":
-          case "dmesg":
-          case "systemctl":
-          case "hostnamectl":
-          case "timedatectl":
-          case "lsmod":
-          case "modinfo":
-          case "top":
-          case "ps":
-          case "numactl":
-          case "uptime":
-          case "uname":
-          case "hostname":
-          case "sensors": {
-            const parsed = parseCommand(cmdLine);
-            result = basicSystemSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "lspci":
-          case "journalctl": {
-            const parsed = parseCommand(cmdLine);
-            result = pciToolsSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "nvlink-audit": {
-            const parsed = parseCommand(cmdLine);
-            result = nvlinkAuditSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "nv-fabricmanager": {
-            const parsed = parseCommand(cmdLine);
-            result = fabricManagerSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "nvidia-bug-report.sh": {
-            const parsed = parseCommand(cmdLine);
-            result = nvidiaBugReportSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "hpl": {
-            const parsed = parseCommand(cmdLine);
-            result = benchmarkSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "nccl-test": {
-            const parsed = parseCommand(cmdLine);
-            result = benchmarkSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "gpu-burn": {
-            const parsed = parseCommand(cmdLine);
-            result = benchmarkSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "df": {
-            const parsed = parseCommand(cmdLine);
-            result = storageSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "mount": {
-            const parsed = parseCommand(cmdLine);
-            result = storageSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "lfs": {
-            const parsed = parseCommand(cmdLine);
-            result = storageSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "clusterkit": {
-            const parsed = parseCommand(cmdLine);
-            result = clusterKitSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          case "nemo": {
-            const parsed = parseCommand(cmdLine);
-            result = nemoSimulator.current.execute(
-              parsed,
-              currentContext.current,
-            );
-            break;
-          }
-
-          default: {
-            result.output = `\x1b[31mbash: ${command}: command not found\x1b[0m`;
-            result.exitCode = 127;
-
-            // Add "Did you mean?" suggestions
-            const suggestion = getDidYouMeanMessage(command);
-            if (suggestion) {
-              result.output += "\n\n" + suggestion;
-            } else {
-              result.output +=
-                "\n\nType \x1b[36mhelp\x1b[0m to see available commands.";
-            }
-            break;
+        // Post-handler: check for interactive mode entry (nvsm/cmsh)
+        if (command === "nvsm" || command === "cmsh") {
+          const parsed = parseCommand(cmdLine);
+          if (
+            shouldEnterInteractiveMode(result, parsed.subcommands.length === 0)
+          ) {
+            setShellState({ mode: command, prompt: result.prompt || "" });
           }
         }
 

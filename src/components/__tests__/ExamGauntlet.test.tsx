@@ -10,13 +10,14 @@ import { ExamGauntlet } from "../ExamGauntlet";
 
 // Mock the entire module
 vi.mock("../../utils/scenarioLoader", () => ({
-  getAllScenarios: () => ({
-    domain1: ["domain1-hw-inventory", "domain1-server-post"],
-    domain2: ["domain2-mig-setup"],
-    domain3: ["domain3-slurm-config"],
-    domain4: ["domain4-dcgmi-diag"],
-    domain5: ["domain5-xid-errors"],
-  }),
+  getAllScenarios: () =>
+    Promise.resolve({
+      domain1: ["domain1-hw-inventory", "domain1-server-post"],
+      domain2: ["domain2-mig-setup"],
+      domain3: ["domain3-slurm-config"],
+      domain4: ["domain4-dcgmi-diag"],
+      domain5: ["domain5-xid-errors"],
+    }),
   getScenarioMetadata: (id: string) => {
     const metadata: Record<
       string,
@@ -53,7 +54,7 @@ vi.mock("../../utils/scenarioLoader", () => ({
         estimatedTime: 65,
       },
     };
-    return metadata[id] || null;
+    return Promise.resolve(metadata[id] || null);
   },
   loadScenarioFromFile: () =>
     Promise.resolve({
@@ -103,10 +104,10 @@ vi.mock("../../utils/tierProgressionEngine", async () => {
   };
 });
 
-// Mock the learning progress store
+// Mock the learning store
 const mockRecordGauntletAttempt = vi.fn();
-vi.mock("../../store/learningProgressStore", () => ({
-  useLearningProgressStore: (
+vi.mock("../../store/learningStore", () => ({
+  useLearningStore: (
     selector: (state: { recordGauntletAttempt: () => void }) => unknown,
   ) => {
     const state = {
@@ -193,35 +194,41 @@ describe("ExamGauntlet", () => {
   });
 
   describe("Starting Exam", () => {
-    it("should start exam and show active state when start button is clicked", () => {
+    it("should start exam and show active state when start button is clicked", async () => {
       render(<ExamGauntlet onExit={mockOnExit} />);
 
       fireEvent.click(screen.getByText("Start Exam"));
 
-      expect(screen.getByText("0 / 5 completed")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText("0 / 5 completed")).toBeInTheDocument();
+      });
     });
 
-    it("should display timer with correct initial time", () => {
+    it("should display timer with correct initial time", async () => {
       render(<ExamGauntlet onExit={mockOnExit} />);
 
       fireEvent.click(screen.getByText("Start Exam"));
 
-      expect(screen.getByText("60:00")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText("60:00")).toBeInTheDocument();
+      });
     });
 
-    it("should display scenarios list after starting", () => {
+    it("should display scenarios list after starting", async () => {
       render(<ExamGauntlet onExit={mockOnExit} />);
 
       fireEvent.click(screen.getByText("Start Exam"));
 
-      expect(
-        screen.getByText(/Hardware Inventory Validation/),
-      ).toBeInTheDocument();
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Hardware Inventory Validation/),
+        ).toBeInTheDocument();
+      });
     });
   });
 
   describe("Active Exam", () => {
-    function startExam() {
+    async function startExam() {
       render(
         <ExamGauntlet
           onExit={mockOnExit}
@@ -229,20 +236,23 @@ describe("ExamGauntlet", () => {
         />,
       );
       fireEvent.click(screen.getByText("Start Exam"));
+      await waitFor(() => {
+        expect(screen.getByText("0 / 5 completed")).toBeInTheDocument();
+      });
     }
 
-    it("should show progress indicator", () => {
-      startExam();
+    it("should show progress indicator", async () => {
+      await startExam();
       expect(screen.getByText("0 / 5 completed")).toBeInTheDocument();
     });
 
-    it("should have finish exam button", () => {
-      startExam();
+    it("should have finish exam button", async () => {
+      await startExam();
       expect(screen.getByText("Finish Exam")).toBeInTheDocument();
     });
 
-    it("should show launch and mark complete buttons for scenarios", () => {
-      startExam();
+    it("should show launch and mark complete buttons for scenarios", async () => {
+      await startExam();
 
       const launchButtons = screen.getAllByText("Launch");
       const markCompleteButtons = screen.getAllByText("Mark Complete");
@@ -251,8 +261,8 @@ describe("ExamGauntlet", () => {
       expect(markCompleteButtons.length).toBeGreaterThan(0);
     });
 
-    it("should mark scenario as complete when mark complete is clicked", () => {
-      startExam();
+    it("should mark scenario as complete when mark complete is clicked", async () => {
+      await startExam();
 
       const markCompleteButtons = screen.getAllByText("Mark Complete");
       fireEvent.click(markCompleteButtons[0]);
@@ -261,20 +271,20 @@ describe("ExamGauntlet", () => {
       expect(screen.getByText("Done")).toBeInTheDocument();
     });
 
-    it("should show domain badges on scenario cards", () => {
-      startExam();
+    it("should show domain badges on scenario cards", async () => {
+      await startExam();
       expect(screen.getAllByText("Platform Bring-Up").length).toBeGreaterThan(
         0,
       );
     });
 
-    it("should show estimated time on scenario cards", () => {
-      startExam();
+    it("should show estimated time on scenario cards", async () => {
+      await startExam();
       expect(screen.getAllByText(/\d+ min/).length).toBeGreaterThan(0);
     });
 
-    it("should call onLaunchScenario when provided and launch is clicked", () => {
-      startExam();
+    it("should call onLaunchScenario when provided and launch is clicked", async () => {
+      await startExam();
 
       const launchButtons = screen.getAllByText("Launch");
       fireEvent.click(launchButtons[0]);
@@ -285,39 +295,43 @@ describe("ExamGauntlet", () => {
 
   describe("Timer Functionality", () => {
     beforeEach(() => {
-      vi.useFakeTimers();
+      vi.useFakeTimers({ shouldAdvanceTime: true });
     });
 
     afterEach(() => {
       vi.useRealTimers();
     });
 
-    it("should countdown the timer", () => {
+    it("should countdown the timer", async () => {
       render(<ExamGauntlet onExit={mockOnExit} />);
 
       fireEvent.click(screen.getByText("Start Exam"));
 
-      expect(screen.getByText("60:00")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText("60:00")).toBeInTheDocument();
+      });
 
       // Advance time by 5 seconds
-      act(() => {
+      await act(async () => {
         vi.advanceTimersByTime(5000);
       });
 
       expect(screen.getByText("59:55")).toBeInTheDocument();
     });
 
-    it("should show red timer when time is low", () => {
+    it("should show red timer when time is low", async () => {
       render(<ExamGauntlet onExit={mockOnExit} />);
 
       // Select 30 min
       fireEvent.click(screen.getByText("30 min"));
       fireEvent.click(screen.getByText("Start Exam"));
 
-      expect(screen.getByText("30:00")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText("30:00")).toBeInTheDocument();
+      });
 
       // Fast forward to under 5 minutes remaining (26 minutes)
-      act(() => {
+      await act(async () => {
         vi.advanceTimersByTime(26 * 60 * 1000);
       });
 
@@ -327,10 +341,14 @@ describe("ExamGauntlet", () => {
   });
 
   describe("Results Screen", () => {
-    function startAndFinishExam(completeScenarios: number = 0) {
+    async function startAndFinishExam(completeScenarios: number = 0) {
       render(<ExamGauntlet onExit={mockOnExit} />);
 
       fireEvent.click(screen.getByText("Start Exam"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Finish Exam")).toBeInTheDocument();
+      });
 
       // Mark some scenarios complete
       for (let i = 0; i < completeScenarios; i++) {
@@ -344,46 +362,46 @@ describe("ExamGauntlet", () => {
       fireEvent.click(screen.getByText("Finish Exam"));
     }
 
-    it("should show results screen when finish exam is clicked", () => {
-      startAndFinishExam();
+    it("should show results screen when finish exam is clicked", async () => {
+      await startAndFinishExam();
       expect(screen.getByText("Exam Complete")).toBeInTheDocument();
     });
 
-    it("should display score percentage", () => {
-      startAndFinishExam(2);
+    it("should display score percentage", async () => {
+      await startAndFinishExam(2);
       expect(screen.getByText("40%")).toBeInTheDocument();
     });
 
-    it("should show passing message when score >= 70%", () => {
-      startAndFinishExam(4);
+    it("should show passing message when score >= 70%", async () => {
+      await startAndFinishExam(4);
       expect(screen.getByText("Exam Passed!")).toBeInTheDocument();
     });
 
-    it("should show domain breakdown", () => {
-      startAndFinishExam();
+    it("should show domain breakdown", async () => {
+      await startAndFinishExam();
       expect(screen.getByText("Domain Breakdown")).toBeInTheDocument();
     });
 
-    it("should show scenario results", () => {
-      startAndFinishExam(1);
+    it("should show scenario results", async () => {
+      await startAndFinishExam(1);
 
       expect(screen.getByText("Scenario Results")).toBeInTheDocument();
       expect(screen.getByText("Completed")).toBeInTheDocument();
       expect(screen.getAllByText("Incomplete").length).toBeGreaterThan(0);
     });
 
-    it("should have try again button", () => {
-      startAndFinishExam();
+    it("should have try again button", async () => {
+      await startAndFinishExam();
       expect(screen.getByText("Try Again")).toBeInTheDocument();
     });
 
-    it("should have exit button", () => {
-      startAndFinishExam();
+    it("should have exit button", async () => {
+      await startAndFinishExam();
       expect(screen.getByText("Exit")).toBeInTheDocument();
     });
 
-    it("should reset to setup screen when try again is clicked", () => {
-      startAndFinishExam();
+    it("should reset to setup screen when try again is clicked", async () => {
+      await startAndFinishExam();
 
       fireEvent.click(screen.getByText("Try Again"));
 
@@ -391,26 +409,26 @@ describe("ExamGauntlet", () => {
       expect(screen.getByText("Start Exam")).toBeInTheDocument();
     });
 
-    it("should call onExit when exit button is clicked", () => {
-      startAndFinishExam();
+    it("should call onExit when exit button is clicked", async () => {
+      await startAndFinishExam();
 
       fireEvent.click(screen.getByText("Exit"));
 
       expect(mockOnExit).toHaveBeenCalled();
     });
 
-    it("should show time taken", () => {
-      startAndFinishExam();
+    it("should show time taken", async () => {
+      await startAndFinishExam();
       expect(screen.getByText(/Time:/)).toBeInTheDocument();
     });
 
-    it("should show passing score requirement", () => {
-      startAndFinishExam();
+    it("should show passing score requirement", async () => {
+      await startAndFinishExam();
       expect(screen.getByText(/Passing: 70%/)).toBeInTheDocument();
     });
 
-    it("should record gauntlet attempt when finishing exam", () => {
-      startAndFinishExam(2);
+    it("should record gauntlet attempt when finishing exam", async () => {
+      await startAndFinishExam(2);
 
       expect(mockRecordGauntletAttempt).toHaveBeenCalled();
       expect(mockRecordGauntletAttempt).toHaveBeenCalledWith(
@@ -429,6 +447,11 @@ describe("ExamGauntlet", () => {
 
       fireEvent.click(screen.getByText("Start Exam"));
 
+      // Wait for async start
+      await waitFor(() => {
+        expect(screen.getByText("Finish Exam")).toBeInTheDocument();
+      });
+
       // Click launch button
       const launchButtons = screen.getAllByText("Launch");
       fireEvent.click(launchButtons[0]);
@@ -445,6 +468,10 @@ describe("ExamGauntlet", () => {
 
       fireEvent.click(screen.getByText("Start Exam"));
 
+      await waitFor(() => {
+        expect(screen.getByText("Finish Exam")).toBeInTheDocument();
+      });
+
       const launchButtons = screen.getAllByText("Launch");
       fireEvent.click(launchButtons[0]);
 
@@ -459,6 +486,10 @@ describe("ExamGauntlet", () => {
 
       fireEvent.click(screen.getByText("Start Exam"));
 
+      await waitFor(() => {
+        expect(screen.getByText("Finish Exam")).toBeInTheDocument();
+      });
+
       const launchButtons = screen.getAllByText("Launch");
       fireEvent.click(launchButtons[0]);
 
@@ -471,6 +502,10 @@ describe("ExamGauntlet", () => {
       render(<ExamGauntlet onExit={mockOnExit} />);
 
       fireEvent.click(screen.getByText("Start Exam"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Finish Exam")).toBeInTheDocument();
+      });
 
       const launchButtons = screen.getAllByText("Launch");
       fireEvent.click(launchButtons[0]);
@@ -489,6 +524,10 @@ describe("ExamGauntlet", () => {
       render(<ExamGauntlet onExit={mockOnExit} />);
 
       fireEvent.click(screen.getByText("Start Exam"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Finish Exam")).toBeInTheDocument();
+      });
 
       const launchButtons = screen.getAllByText("Launch");
       fireEvent.click(launchButtons[0]);
@@ -511,10 +550,14 @@ describe("ExamGauntlet", () => {
   });
 
   describe("ExamGauntlet Integration", () => {
-    it("should calculate correct score with scenario completion", () => {
+    it("should calculate correct score with scenario completion", async () => {
       render(<ExamGauntlet onExit={mockOnExit} />);
 
       fireEvent.click(screen.getByText("Start Exam"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Finish Exam")).toBeInTheDocument();
+      });
 
       // Complete 3 out of 5 scenarios
       const markCompleteButtons = screen.getAllByText("Mark Complete");
@@ -531,10 +574,14 @@ describe("ExamGauntlet", () => {
       expect(screen.getByText("60%")).toBeInTheDocument();
     });
 
-    it("should record gauntlet attempt with correct domain breakdown", () => {
+    it("should record gauntlet attempt with correct domain breakdown", async () => {
       render(<ExamGauntlet onExit={mockOnExit} />);
 
       fireEvent.click(screen.getByText("Start Exam"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Finish Exam")).toBeInTheDocument();
+      });
 
       // Mark all scenarios complete
       const markCompleteButtons = screen.getAllByText("Mark Complete");
@@ -559,6 +606,10 @@ describe("ExamGauntlet", () => {
 
       fireEvent.click(screen.getByText("Start Exam"));
 
+      await waitFor(() => {
+        expect(screen.getByText("Finish Exam")).toBeInTheDocument();
+      });
+
       // Mark one scenario complete
       const markCompleteButtons = screen.getAllByText("Mark Complete");
       fireEvent.click(markCompleteButtons[0]);
@@ -580,10 +631,14 @@ describe("ExamGauntlet", () => {
       expect(screen.getByText("1 / 5 completed")).toBeInTheDocument();
     });
 
-    it("should display domain distribution in results", () => {
+    it("should display domain distribution in results", async () => {
       render(<ExamGauntlet onExit={mockOnExit} />);
 
       fireEvent.click(screen.getByText("Start Exam"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Finish Exam")).toBeInTheDocument();
+      });
 
       // Complete some scenarios and finish
       const markCompleteButtons = screen.getAllByText("Mark Complete");
@@ -595,10 +650,14 @@ describe("ExamGauntlet", () => {
       expect(screen.getByText("Domain Breakdown")).toBeInTheDocument();
     });
 
-    it("should calculate passing status correctly at 70% threshold", () => {
+    it("should calculate passing status correctly at 70% threshold", async () => {
       render(<ExamGauntlet onExit={mockOnExit} />);
 
       fireEvent.click(screen.getByText("Start Exam"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Finish Exam")).toBeInTheDocument();
+      });
 
       // Complete 4 out of 5 scenarios (80%)
       const markCompleteButtons = screen.getAllByText("Mark Complete");

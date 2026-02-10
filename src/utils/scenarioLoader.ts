@@ -6,22 +6,31 @@ import type {
 import type { ScenarioContext } from "@/store/scenarioContext";
 import { useSimulationStore } from "@/store/simulationStore";
 import { narrativeToScenario } from "./narrativeAdapter";
-import narrativeData from "../data/narrativeScenarios.json";
-
-const narrativeScenarios =
-  narrativeData.scenarios as unknown as NarrativeScenario[];
 
 // Cache for loaded scenarios
 let scenarioCache: Map<string, Scenario> | null = null;
+// Cache for raw narrative data
+let narrativeScenarios: NarrativeScenario[] | null = null;
+
+/**
+ * Lazily load narrative scenario data via dynamic import.
+ */
+async function ensureNarratives(): Promise<NarrativeScenario[]> {
+  if (narrativeScenarios) return narrativeScenarios;
+  const mod = await import("../data/narrativeScenarios.json");
+  narrativeScenarios = mod.default.scenarios as unknown as NarrativeScenario[];
+  return narrativeScenarios;
+}
 
 /**
  * Build the scenario cache from narrative scenarios.
  */
-function ensureCache(): Map<string, Scenario> {
+async function ensureCache(): Promise<Map<string, Scenario>> {
   if (scenarioCache) return scenarioCache;
 
+  const narratives = await ensureNarratives();
   scenarioCache = new Map();
-  for (const narrative of narrativeScenarios) {
+  for (const narrative of narratives) {
     const scenario = narrativeToScenario(narrative);
     scenarioCache.set(scenario.id, scenario);
   }
@@ -36,7 +45,7 @@ export async function loadScenarioFromFile(
   scenarioId: string,
 ): Promise<Scenario | null> {
   try {
-    const cache = ensureCache();
+    const cache = await ensureCache();
     return cache.get(scenarioId) || null;
   } catch (error) {
     console.error("Error loading scenario:", error);
@@ -47,10 +56,11 @@ export async function loadScenarioFromFile(
 /**
  * Gets all available scenarios grouped by domain.
  */
-export function getAllScenarios(): Record<string, string[]> {
+export async function getAllScenarios(): Promise<Record<string, string[]>> {
+  const narratives = await ensureNarratives();
   const result: Record<string, string[]> = {};
 
-  for (const scenario of narrativeScenarios) {
+  for (const scenario of narratives) {
     const domainKey = `domain${scenario.domain}`;
     if (!result[domainKey]) {
       result[domainKey] = [];
@@ -64,10 +74,15 @@ export function getAllScenarios(): Record<string, string[]> {
 /**
  * Gets scenario metadata without loading full content.
  */
-export function getScenarioMetadata(
+export async function getScenarioMetadata(
   scenarioId: string,
-): { title: string; difficulty: string; estimatedTime: number } | null {
-  const scenario = narrativeScenarios.find((s) => s.id === scenarioId);
+): Promise<{
+  title: string;
+  difficulty: string;
+  estimatedTime: number;
+} | null> {
+  const narratives = await ensureNarratives();
+  const scenario = narratives.find((s) => s.id === scenarioId);
 
   if (!scenario) return null;
 
@@ -81,8 +96,10 @@ export function getScenarioMetadata(
 /**
  * Get scenarios filtered by domain.
  */
-export function getScenariosByDomain(domain: number): Scenario[] {
-  const cache = ensureCache();
+export async function getScenariosByDomain(
+  domain: number,
+): Promise<Scenario[]> {
+  const cache = await ensureCache();
   const domainStr = `domain${domain}`;
   return Array.from(cache.values()).filter((s) => s.domain === domainStr);
 }

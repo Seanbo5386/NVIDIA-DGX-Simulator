@@ -4,23 +4,28 @@
  * Uses Zustand for state management with localStorage persistence.
  */
 
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import type { DomainId, ExamBreakdown } from '@/types/scenarios';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import type { DomainId, ExamBreakdown } from "@/types/scenarios";
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export type MasteryLevel = 'novice' | 'beginner' | 'intermediate' | 'proficient' | 'expert';
+export type MasteryLevel =
+  | "novice"
+  | "beginner"
+  | "intermediate"
+  | "proficient"
+  | "expert";
 
 export interface CommandProficiency {
   command: string;
   successCount: number;
   failureCount: number;
-  lastUsed: number;  // timestamp
+  lastUsed: number; // timestamp
   masteryLevel: MasteryLevel;
-  streakCount: number;  // consecutive successes
+  streakCount: number; // consecutive successes
 }
 
 export interface DomainProgress {
@@ -29,7 +34,7 @@ export interface DomainProgress {
   questionsCorrect: number;
   labsCompleted: number;
   labsTotal: number;
-  lastStudied: number;  // timestamp
+  lastStudied: number; // timestamp
   studyTimeSeconds: number;
 }
 
@@ -46,6 +51,17 @@ export interface StudySessionRecord {
   score?: number;
 }
 
+/**
+ * Record of an exam gauntlet attempt
+ */
+export interface GauntletAttempt {
+  timestamp: number;
+  score: number;
+  totalQuestions: number;
+  timeSpentSeconds: number;
+  domainBreakdown: Record<string, { correct: number; total: number }>;
+}
+
 export interface LearnerProfile {
   // Command proficiency tracking
   commandProficiency: Record<string, CommandProficiency>;
@@ -59,12 +75,15 @@ export interface LearnerProfile {
   // Overall stats
   totalStudyTimeSeconds: number;
   totalSessions: number;
-  currentStreak: number;  // days in a row
+  currentStreak: number; // days in a row
   longestStreak: number;
-  lastStudyDate: string;  // YYYY-MM-DD format
+  lastStudyDate: string; // YYYY-MM-DD format
 
   // Exam history
   examAttempts: ExamBreakdown[];
+
+  // Gauntlet attempts
+  gauntletAttempts: GauntletAttempt[];
 
   // Achievements
   achievements: string[];
@@ -76,13 +95,21 @@ export interface LearningState extends LearnerProfile {
 
   // Actions
   startSession: (mode: string, domain?: DomainId) => string;
-  endSession: (questionsAnswered: number, questionsCorrect: number, commandsExecuted: number, score?: number) => void;
+  endSession: (
+    questionsAnswered: number,
+    questionsCorrect: number,
+    commandsExecuted: number,
+    score?: number,
+  ) => void;
 
   trackCommand: (command: string, success: boolean) => void;
   trackQuestion: (domainId: DomainId, correct: boolean) => void;
   trackLabCompletion: (domainId: DomainId) => void;
 
   addExamAttempt: (breakdown: ExamBreakdown) => void;
+
+  // Gauntlet
+  recordGauntletAttempt: (result: GauntletAttempt) => void;
 
   getWeakDomains: (threshold?: number) => DomainId[];
   getRecommendedCommands: () => string[];
@@ -98,7 +125,7 @@ export interface LearningState extends LearnerProfile {
 
 const createInitialDomainProgress = (): Record<DomainId, DomainProgress> => ({
   domain1: {
-    domainId: 'domain1',
+    domainId: "domain1",
     questionsAttempted: 0,
     questionsCorrect: 0,
     labsCompleted: 0,
@@ -107,7 +134,7 @@ const createInitialDomainProgress = (): Record<DomainId, DomainProgress> => ({
     studyTimeSeconds: 0,
   },
   domain2: {
-    domainId: 'domain2',
+    domainId: "domain2",
     questionsAttempted: 0,
     questionsCorrect: 0,
     labsCompleted: 0,
@@ -116,7 +143,7 @@ const createInitialDomainProgress = (): Record<DomainId, DomainProgress> => ({
     studyTimeSeconds: 0,
   },
   domain3: {
-    domainId: 'domain3',
+    domainId: "domain3",
     questionsAttempted: 0,
     questionsCorrect: 0,
     labsCompleted: 0,
@@ -125,7 +152,7 @@ const createInitialDomainProgress = (): Record<DomainId, DomainProgress> => ({
     studyTimeSeconds: 0,
   },
   domain4: {
-    domainId: 'domain4',
+    domainId: "domain4",
     questionsAttempted: 0,
     questionsCorrect: 0,
     labsCompleted: 0,
@@ -134,7 +161,7 @@ const createInitialDomainProgress = (): Record<DomainId, DomainProgress> => ({
     studyTimeSeconds: 0,
   },
   domain5: {
-    domainId: 'domain5',
+    domainId: "domain5",
     questionsAttempted: 0,
     questionsCorrect: 0,
     labsCompleted: 0,
@@ -144,7 +171,21 @@ const createInitialDomainProgress = (): Record<DomainId, DomainProgress> => ({
   },
 });
 
-const initialState: Omit<LearningState, 'startSession' | 'endSession' | 'trackCommand' | 'trackQuestion' | 'trackLabCompletion' | 'addExamAttempt' | 'getWeakDomains' | 'getRecommendedCommands' | 'getReadinessScore' | 'getMasteryLevel' | 'resetProgress'> = {
+const initialState: Omit<
+  LearningState,
+  | "startSession"
+  | "endSession"
+  | "trackCommand"
+  | "trackQuestion"
+  | "trackLabCompletion"
+  | "addExamAttempt"
+  | "recordGauntletAttempt"
+  | "getWeakDomains"
+  | "getRecommendedCommands"
+  | "getReadinessScore"
+  | "getMasteryLevel"
+  | "resetProgress"
+> = {
   commandProficiency: {},
   domainProgress: createInitialDomainProgress(),
   sessionHistory: [],
@@ -152,8 +193,9 @@ const initialState: Omit<LearningState, 'startSession' | 'endSession' | 'trackCo
   totalSessions: 0,
   currentStreak: 0,
   longestStreak: 0,
-  lastStudyDate: '',
+  lastStudyDate: "",
   examAttempts: [],
+  gauntletAttempts: [],
   achievements: [],
   activeSession: null,
 };
@@ -162,12 +204,15 @@ const initialState: Omit<LearningState, 'startSession' | 'endSession' | 'trackCo
 // HELPER FUNCTIONS
 // ============================================================================
 
-function calculateMasteryLevel(successRate: number, attemptCount: number): MasteryLevel {
-  if (attemptCount < 3) return 'novice';
-  if (successRate < 0.4) return 'beginner';
-  if (successRate < 0.6) return 'intermediate';
-  if (successRate < 0.8) return 'proficient';
-  return 'expert';
+function calculateMasteryLevel(
+  successRate: number,
+  attemptCount: number,
+): MasteryLevel {
+  if (attemptCount < 3) return "novice";
+  if (successRate < 0.4) return "beginner";
+  if (successRate < 0.6) return "intermediate";
+  if (successRate < 0.8) return "proficient";
+  return "expert";
 }
 
 function generateSessionId(): string {
@@ -175,10 +220,13 @@ function generateSessionId(): string {
 }
 
 function getTodayString(): string {
-  return new Date().toISOString().split('T')[0];
+  return new Date().toISOString().split("T")[0];
 }
 
-function updateStreak(lastDate: string, currentStreak: number): { streak: number; isNewDay: boolean } {
+function updateStreak(
+  lastDate: string,
+  currentStreak: number,
+): { streak: number; isNewDay: boolean } {
   const today = getTodayString();
   if (lastDate === today) {
     return { streak: currentStreak, isNewDay: false };
@@ -186,7 +234,7 @@ function updateStreak(lastDate: string, currentStreak: number): { streak: number
 
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  const yesterdayStr = yesterday.toISOString().split("T")[0];
 
   if (lastDate === yesterdayStr) {
     return { streak: currentStreak + 1, isNewDay: true };
@@ -222,14 +270,22 @@ export const useLearningStore = create<LearningState>()(
         return sessionId;
       },
 
-      endSession: (questionsAnswered: number, questionsCorrect: number, commandsExecuted: number, score?: number): void => {
+      endSession: (
+        questionsAnswered: number,
+        questionsCorrect: number,
+        commandsExecuted: number,
+        score?: number,
+      ): void => {
         const state = get();
-        const { activeSession, lastStudyDate, currentStreak, longestStreak } = state;
+        const { activeSession, lastStudyDate, currentStreak, longestStreak } =
+          state;
 
         if (!activeSession) return;
 
         const endTime = Date.now();
-        const durationSeconds = Math.floor((endTime - activeSession.startTime) / 1000);
+        const durationSeconds = Math.floor(
+          (endTime - activeSession.startTime) / 1000,
+        );
 
         const completedSession: StudySessionRecord = {
           ...activeSession,
@@ -244,9 +300,12 @@ export const useLearningStore = create<LearningState>()(
         // Update streak
         const { streak } = updateStreak(lastStudyDate, currentStreak);
 
-        set(state => ({
+        set((state) => ({
           activeSession: null,
-          sessionHistory: [...state.sessionHistory.slice(-99), completedSession], // Keep last 100
+          sessionHistory: [
+            ...state.sessionHistory.slice(-99),
+            completedSession,
+          ], // Keep last 100
           totalStudyTimeSeconds: state.totalStudyTimeSeconds + durationSeconds,
           totalSessions: state.totalSessions + 1,
           currentStreak: streak,
@@ -256,20 +315,21 @@ export const useLearningStore = create<LearningState>()(
       },
 
       trackCommand: (command: string, success: boolean): void => {
-        set(state => {
+        set((state) => {
           const existing = state.commandProficiency[command] || {
             command,
             successCount: 0,
             failureCount: 0,
             lastUsed: 0,
-            masteryLevel: 'novice' as MasteryLevel,
+            masteryLevel: "novice" as MasteryLevel,
             streakCount: 0,
           };
 
           const successCount = existing.successCount + (success ? 1 : 0);
           const failureCount = existing.failureCount + (success ? 0 : 1);
           const totalAttempts = successCount + failureCount;
-          const successRate = totalAttempts > 0 ? successCount / totalAttempts : 0;
+          const successRate =
+            totalAttempts > 0 ? successCount / totalAttempts : 0;
 
           const updated: CommandProficiency = {
             ...existing,
@@ -290,7 +350,7 @@ export const useLearningStore = create<LearningState>()(
       },
 
       trackQuestion: (domainId: DomainId, correct: boolean): void => {
-        set(state => {
+        set((state) => {
           const domain = state.domainProgress[domainId];
           return {
             domainProgress: {
@@ -307,7 +367,7 @@ export const useLearningStore = create<LearningState>()(
       },
 
       trackLabCompletion: (domainId: DomainId): void => {
-        set(state => {
+        set((state) => {
           const domain = state.domainProgress[domainId];
           return {
             domainProgress: {
@@ -323,8 +383,14 @@ export const useLearningStore = create<LearningState>()(
       },
 
       addExamAttempt: (breakdown: ExamBreakdown): void => {
-        set(state => ({
+        set((state) => ({
           examAttempts: [...state.examAttempts.slice(-19), breakdown], // Keep last 20
+        }));
+      },
+
+      recordGauntletAttempt: (result: GauntletAttempt): void => {
+        set((state) => ({
+          gauntletAttempts: [...state.gauntletAttempts.slice(-49), result], // Keep last 50
         }));
       },
 
@@ -332,18 +398,21 @@ export const useLearningStore = create<LearningState>()(
         const state = get();
         const weakDomains: DomainId[] = [];
 
-        (Object.keys(state.domainProgress) as DomainId[]).forEach(domainId => {
-          const domain = state.domainProgress[domainId];
-          if (domain.questionsAttempted >= 3) {
-            const percentage = (domain.questionsCorrect / domain.questionsAttempted) * 100;
-            if (percentage < threshold) {
+        (Object.keys(state.domainProgress) as DomainId[]).forEach(
+          (domainId) => {
+            const domain = state.domainProgress[domainId];
+            if (domain.questionsAttempted >= 3) {
+              const percentage =
+                (domain.questionsCorrect / domain.questionsAttempted) * 100;
+              if (percentage < threshold) {
+                weakDomains.push(domainId);
+              }
+            } else {
+              // Not enough data - consider it weak
               weakDomains.push(domainId);
             }
-          } else {
-            // Not enough data - consider it weak
-            weakDomains.push(domainId);
-          }
-        });
+          },
+        );
 
         return weakDomains;
       },
@@ -357,18 +426,25 @@ export const useLearningStore = create<LearningState>()(
         const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
 
         const needsPractice = commands
-          .filter(c =>
-            c.masteryLevel !== 'expert' ||
-            c.lastUsed < oneWeekAgo ||
-            c.streakCount < 3
+          .filter(
+            (c) =>
+              c.masteryLevel !== "expert" ||
+              c.lastUsed < oneWeekAgo ||
+              c.streakCount < 3,
           )
           .sort((a, b) => {
             // Prioritize lower mastery levels
-            const levelOrder = { novice: 0, beginner: 1, intermediate: 2, proficient: 3, expert: 4 };
+            const levelOrder = {
+              novice: 0,
+              beginner: 1,
+              intermediate: 2,
+              proficient: 3,
+              expert: 4,
+            };
             return levelOrder[a.masteryLevel] - levelOrder[b.masteryLevel];
           })
           .slice(0, 5)
-          .map(c => c.command);
+          .map((c) => c.command);
 
         return needsPractice;
       },
@@ -386,29 +462,33 @@ export const useLearningStore = create<LearningState>()(
           domain5: 12,
         };
 
-        (Object.keys(state.domainProgress) as DomainId[]).forEach(domainId => {
-          const domain = state.domainProgress[domainId];
-          const weight = domainWeights[domainId];
-          totalWeight += weight;
+        (Object.keys(state.domainProgress) as DomainId[]).forEach(
+          (domainId) => {
+            const domain = state.domainProgress[domainId];
+            const weight = domainWeights[domainId];
+            totalWeight += weight;
 
-          if (domain.questionsAttempted > 0) {
-            const questionScore = (domain.questionsCorrect / domain.questionsAttempted) * 100;
-            const labScore = domain.labsTotal > 0
-              ? (domain.labsCompleted / domain.labsTotal) * 100
-              : 0;
+            if (domain.questionsAttempted > 0) {
+              const questionScore =
+                (domain.questionsCorrect / domain.questionsAttempted) * 100;
+              const labScore =
+                domain.labsTotal > 0
+                  ? (domain.labsCompleted / domain.labsTotal) * 100
+                  : 0;
 
-            // Weight questions 70%, labs 30%
-            const domainScore = questionScore * 0.7 + labScore * 0.3;
-            weightedScore += domainScore * weight;
-          }
-        });
+              // Weight questions 70%, labs 30%
+              const domainScore = questionScore * 0.7 + labScore * 0.3;
+              weightedScore += domainScore * weight;
+            }
+          },
+        );
 
         return totalWeight > 0 ? Math.round(weightedScore / totalWeight) : 0;
       },
 
       getMasteryLevel: (command: string): MasteryLevel => {
         const state = get();
-        return state.commandProficiency[command]?.masteryLevel || 'novice';
+        return state.commandProficiency[command]?.masteryLevel || "novice";
       },
 
       resetProgress: (): void => {
@@ -419,7 +499,7 @@ export const useLearningStore = create<LearningState>()(
       },
     }),
     {
-      name: 'ncp-aii-learning-progress',
+      name: "ncp-aii-learning-progress",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         commandProficiency: state.commandProficiency,
@@ -431,8 +511,28 @@ export const useLearningStore = create<LearningState>()(
         longestStreak: state.longestStreak,
         lastStudyDate: state.lastStudyDate,
         examAttempts: state.examAttempts,
+        gauntletAttempts: state.gauntletAttempts,
         achievements: state.achievements,
       }),
-    }
-  )
+      onRehydrateStorage: () => (state) => {
+        // Migrate gauntletAttempts from old learningProgressStore if needed
+        if (state && state.gauntletAttempts.length === 0) {
+          try {
+            const oldData = localStorage.getItem(
+              "ncp-aii-learning-progress-v2",
+            );
+            if (oldData) {
+              const parsed = JSON.parse(oldData);
+              const oldAttempts = parsed?.state?.gauntletAttempts;
+              if (Array.isArray(oldAttempts) && oldAttempts.length > 0) {
+                state.gauntletAttempts = oldAttempts;
+              }
+            }
+          } catch {
+            // Ignore migration errors
+          }
+        }
+      },
+    },
+  ),
 );

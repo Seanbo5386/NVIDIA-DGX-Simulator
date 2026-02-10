@@ -48,3 +48,7 @@ export {
 // State Engine
 export { StateEngine } from "./StateEngine";
 export type { ExecutionContext, CanExecuteResult } from "./StateEngine";
+
+// Command Router
+export { CommandRouter } from "./commandRouter";
+export type { CommandHandler } from "./commandRouter";

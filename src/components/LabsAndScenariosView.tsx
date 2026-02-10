@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { FaultInjection } from "./FaultInjection";
 import {
   Trophy,
@@ -61,37 +61,65 @@ export function LabsAndScenariosView({
   );
   const freeModeUnlocked = completedCount >= 3;
 
-  const scenariosByDomain = useMemo(() => getAllScenarios(), []);
-
-  const domainScenarios = useMemo(() => {
-    const result: Record<
+  const [domainScenarios, setDomainScenarios] = useState<
+    Record<
       string,
       { id: string; title: string; difficulty: string; estimatedTime: number }[]
-    > = {};
-    for (const [domain, ids] of Object.entries(scenariosByDomain)) {
-      result[domain] = ids
-        .map((id) => {
-          const meta = getScenarioMetadata(id);
-          return meta ? { id, ...meta } : null;
-        })
-        .filter(
-          (
-            s,
-          ): s is {
-            id: string;
-            title: string;
-            difficulty: string;
-            estimatedTime: number;
-          } => s !== null,
-        )
-        .sort(
-          (a, b) =>
-            (DIFFICULTY_ORDER[a.difficulty] ?? 99) -
-            (DIFFICULTY_ORDER[b.difficulty] ?? 99),
+    >
+  >({});
+  const [loadingScenarios, setLoadingScenarios] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      const scenariosByDomain = await getAllScenarios();
+      const result: Record<
+        string,
+        {
+          id: string;
+          title: string;
+          difficulty: string;
+          estimatedTime: number;
+        }[]
+      > = {};
+
+      for (const [domain, ids] of Object.entries(scenariosByDomain)) {
+        const entries = await Promise.all(
+          ids.map(async (id) => {
+            const meta = await getScenarioMetadata(id);
+            return meta ? { id, ...meta } : null;
+          }),
         );
+        result[domain] = entries
+          .filter(
+            (
+              s,
+            ): s is {
+              id: string;
+              title: string;
+              difficulty: string;
+              estimatedTime: number;
+            } => s !== null,
+          )
+          .sort(
+            (a, b) =>
+              (DIFFICULTY_ORDER[a.difficulty] ?? 99) -
+              (DIFFICULTY_ORDER[b.difficulty] ?? 99),
+          );
+      }
+
+      if (!cancelled) {
+        setDomainScenarios(result);
+        setLoadingScenarios(false);
+      }
     }
-    return result;
-  }, [scenariosByDomain]);
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div data-testid="labs-list" className="p-6 h-full overflow-auto">
@@ -101,6 +129,11 @@ export function LabsAndScenariosView({
 
         {/* Narrative Missions */}
         <div className="mt-8">
+          {loadingScenarios && (
+            <div className="text-gray-400 text-sm mb-4">
+              Loading scenarios...
+            </div>
+          )}
           <h2 className="text-2xl font-bold text-nvidia-green mb-2">
             Missions
           </h2>
