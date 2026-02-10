@@ -58,6 +58,8 @@ const toolFamilyMap: Record<string, string> = {
   "gpu-burn": "diagnostics",
 };
 
+const MAX_PERSISTED_COMMAND_HISTORY = 5;
+
 interface SimulationState {
   // Cluster state
   cluster: ClusterConfig;
@@ -683,7 +685,20 @@ export const useSimulationStore = create<SimulationState>()(
       partialize: (state) => ({
         cluster: state.cluster,
         simulationSpeed: state.simulationSpeed,
-        scenarioProgress: state.scenarioProgress,
+        scenarioProgress: Object.fromEntries(
+          Object.entries(state.scenarioProgress).map(([scenarioId, progress]) => [
+            scenarioId,
+            {
+              ...progress,
+              steps: progress.steps.map((step) => ({
+                ...step,
+                commandsExecuted: (step.commandsExecuted ?? []).slice(
+                  -MAX_PERSISTED_COMMAND_HISTORY,
+                ),
+              })),
+            },
+          ]),
+        ),
         completedScenarios: state.completedScenarios,
       }),
     },
