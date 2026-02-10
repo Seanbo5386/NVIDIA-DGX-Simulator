@@ -304,7 +304,12 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
       }
 
       // Add to history
-      appendCommandToHistory(cmdLine);
+      setCommandHistory((prev) => {
+        const nextHistory = [...prev, cmdLine];
+        commandHistoryRef.current = nextHistory;
+        return nextHistory;
+      });
+      handleHistoryChange(-1);
       currentContext.current.history.push(cmdLine);
 
       // Parse command
