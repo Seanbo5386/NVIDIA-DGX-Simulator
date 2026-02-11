@@ -5,6 +5,7 @@ import { LabWorkspace } from "./components/LabWorkspace";
 import { ExamWorkspace } from "./components/ExamWorkspace";
 import { WelcomeScreen } from "./components/WelcomeScreen";
 import { Documentation } from "./components/Documentation";
+import { About } from "./components/About";
 import { StudyDashboard } from "./components/StudyDashboard";
 import { SpacedReviewDrill } from "./components/SpacedReviewDrill";
 import { TierUnlockNotificationContainer } from "./components/TierUnlockNotification";
@@ -21,11 +22,12 @@ import {
   Pause,
   RotateCcw,
   HelpCircle,
+  Info,
 } from "lucide-react";
 import { SpotlightTour } from "./components/SpotlightTour";
 import { TOUR_STEPS, type TourId } from "./data/tourSteps";
 
-type View = "simulator" | "labs" | "reference";
+type View = "simulator" | "labs" | "reference" | "about";
 
 function App() {
   const [currentView, setCurrentView] = useState<View>("simulator");
@@ -63,12 +65,13 @@ function App() {
 
   // Start tour for the current tab (called by Tour button)
   const handleStartTour = useCallback(() => {
-    const tourIdMap: Record<View, TourId> = {
+    const tourIdMap: Partial<Record<View, TourId>> = {
       simulator: "simulator",
       labs: "labs",
       reference: "docs",
     };
-    setActiveTour(tourIdMap[currentView]);
+    const tourId = tourIdMap[currentView];
+    if (tourId) setActiveTour(tourId);
   }, [currentView]);
 
   const handleTourComplete = useCallback(() => {
@@ -251,6 +254,21 @@ function App() {
             <BookOpen className="w-4 h-4" />
             <span className="font-medium">Documentation</span>
           </button>
+          <button
+            role="tab"
+            id="tab-about"
+            aria-selected={currentView === "about"}
+            aria-controls="panel-about"
+            onClick={() => setCurrentView("about")}
+            className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
+              currentView === "about"
+                ? "border-nvidia-green text-nvidia-green"
+                : "border-transparent text-gray-400 hover:text-gray-200"
+            }`}
+          >
+            <Info className="w-4 h-4" />
+            <span className="font-medium">About</span>
+          </button>
         </div>
       </nav>
 
@@ -275,6 +293,8 @@ function App() {
         )}
 
         {currentView === "reference" && <Documentation />}
+
+        {currentView === "about" && <About />}
       </main>
 
       {/* Footer */}
@@ -282,7 +302,7 @@ function App() {
         className={`bg-black border-t border-gray-800 px-6 py-3 transition-all duration-300 ${showLabWorkspace ? "ml-[600px]" : ""}`}
       >
         <div className="flex items-center justify-between text-xs text-gray-400">
-          <div>NVIDIA AI Infrastructure Certification Simulator v1.0</div>
+          <div>NVIDIA AI Infrastructure Certification Simulator v0.9.0</div>
           <div className="flex items-center gap-4">
             <span>Status: {isRunning ? "🟢 Running" : "🔴 Paused"}</span>
             <span>•</span>
