@@ -2,6 +2,7 @@
 
 <div align="center">
 
+![Version](https://img.shields.io/badge/version-0.9.0-blue?style=for-the-badge)
 ![NVIDIA](https://img.shields.io/badge/NVIDIA-76B900?style=for-the-badge&logo=nvidia&logoColor=white)
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
@@ -41,7 +42,7 @@ The NVIDIA AI Infrastructure Certification Simulator provides realistic, hands-o
 
 ### Narrative Scenario Engine
 
-30 story-driven scenarios across all 5 NCP-AII exam domains. Each scenario puts you in the role of a datacenter engineer responding to real-world situations:
+32 story-driven scenarios across all 5 NCP-AII exam domains. Each scenario puts you in the role of a datacenter engineer responding to real-world situations:
 
 - **Mission briefing** with narrative hook, setting, and stakes
 - **SITUATION/TASK framing** per step — what's happening and what you need to do
@@ -58,9 +59,20 @@ Each scenario runs in its own isolated sandbox — faults and mutations never le
 - All 19 simulators route through sandbox-aware resolve helpers
 - Clean exit discards the sandbox entirely; global state stays pristine
 
-### Free Mode
+### Multi-Architecture Support
 
-A standalone sandbox environment that unlocks after completing 3 missions. Provides full FaultInjection controls and Terminal without any scenario structure — for open-ended experimentation and practice.
+Switch between four DGX system types from the dashboard:
+
+- **DGX A100** — 8x A100 80GB, NVLink 3rd-gen (12 links), HDR InfiniBand (200Gb/s)
+- **DGX H100** — 8x H100 SXM, NVLink 4th-gen (18 links), NDR InfiniBand (400Gb/s)
+- **DGX H200** — 8x H200 SXM (141GB HBM3e), NVLink 4th-gen, NDR InfiniBand
+- **DGX B200** — 8x B200, NVLink 5th-gen (18 links), NDR InfiniBand (400Gb/s)
+
+All simulators, visualizations, and metrics dynamically adapt to the selected architecture.
+
+### Spotlight Tour
+
+Built-in guided tours for each tab (Simulator, Labs, Documentation) that walk new users through key UI elements with highlighted overlays and step-by-step explanations.
 
 ### Learning System
 
@@ -149,9 +161,10 @@ A tiered progression system built on spaced repetition:
 - Domain breakdown in results
 - Passing score tracking
 
-### Documentation Reference
+### Documentation & Reference
 
 - System architecture overview with node layout and hardware specs
+- Architecture comparison across DGX A100, H100, H200, and B200
 - Searchable CLI tool reference with collapsible categories
 - Troubleshooting playbooks with 4 diagnostic scenarios
 - XID error reference with severity filtering
@@ -195,8 +208,9 @@ npm run preview
 ### Getting Started
 
 1. **Simulator**: Terminal and dashboard for hands-on command practice
-2. **Labs & Scenarios**: 30 narrative missions with guided exercises across all 5 exam domains
+2. **Labs & Scenarios**: 32 narrative missions with guided exercises across all 5 exam domains
 3. **Documentation**: Reference materials, command guides, troubleshooting playbooks, and XID error lookup
+4. **About**: Project background, changelog, and contribution info
 
 ### Your First Commands
 
@@ -297,7 +311,7 @@ practice nvidia-smi
 
 ## Narrative Scenarios
 
-The simulator includes **30 narrative scenarios** covering all 5 NCP-AII exam domains:
+The simulator includes **32 narrative scenarios** covering all 5 NCP-AII exam domains:
 
 ### Domain 1: Systems and Server Bring-Up (31%)
 
@@ -330,7 +344,8 @@ Scenarios for XID error investigation, thermal troubleshooting, network diagnost
 - **Icons**: Lucide React
 - **Build Tool**: Vite
 - **Visualization**: Recharts (metrics), D3.js (topology and network maps)
-- **Testing**: Vitest, React Testing Library, Playwright (E2E)
+- **Testing**: Vitest, React Testing Library
+- **CI/CD**: GitHub Actions (lint, test, build)
 
 ### Project Structure
 
@@ -342,10 +357,12 @@ src/
 │   ├── LabWorkspace.tsx  # Scenario execution workspace
 │   ├── LabsAndScenariosView.tsx # Mission browser with domain cards
 │   ├── Documentation.tsx # Tabbed reference (Architecture, Commands, XID, Exam Guide)
-│   ├── FreeMode.tsx      # Standalone sandbox environment
+│   ├── About.tsx         # Project info, changelog, and links
 │   ├── FaultInjection.tsx # Fault injection controls
 │   ├── NarrativeIntro.tsx # Mission briefing screen
+│   ├── SpotlightTour.tsx # Guided tour overlay
 │   ├── ExamWorkspace.tsx  # Timed practice exam
+│   ├── ArchitectureComparison.tsx # Side-by-side DGX spec comparison
 │   ├── ClusterHeatmap.tsx # GPU utilization heatmap
 │   ├── TopologyGraph.tsx  # D3.js NVLink visualization
 │   └── ...
@@ -364,12 +381,13 @@ src/
 │   ├── CommandDefinitionRegistry.ts
 │   └── CommandExerciseGenerator.ts
 ├── data/                # Static data
-│   ├── narrativeScenarios.json  # 30 narrative scenarios
+│   ├── narrativeScenarios.json  # 32 narrative scenarios
 │   ├── examQuestions.json       # 168 practice exam questions
 │   ├── commandFamilies.json     # 6 command family definitions
 │   ├── quizQuestions.json       # Tool selection quizzes
 │   ├── explanationGates.json    # 56 post-scenario knowledge checks
-│   └── commands/                # 150+ JSON command definitions
+│   ├── hardwareSpecs.ts         # DGX A100/H100/H200/B200 spec registry
+│   └── output/                  # 229 JSON command definitions
 ├── store/               # Zustand state management
 │   ├── simulationStore.ts       # Cluster state, GPU metrics, exam state
 │   ├── scenarioContext.ts       # Per-scenario sandbox isolation
@@ -385,18 +403,18 @@ src/
 │   ├── examEngine.ts            # Exam question selection and scoring
 │   ├── clusterFactory.ts        # DGX cluster generation
 │   └── tabCompletion.ts         # Terminal tab completion
-└── App.tsx              # Main application (3-tab layout)
+└── App.tsx              # Main application (4-tab layout)
 ```
 
 ### Hardware Models
 
 The simulator accurately models:
 
-- **DGX Systems**: A100, H100, H200, B200, GB200 NVL72
-- **GPUs**: A100 (80GB), H100 SXM, H200 SXM with full specs and accurate power limits
+- **DGX Systems**: A100, H100, H200, B200 with switchable architecture
+- **GPUs**: A100 (80GB HBM2e), H100 SXM (80GB HBM3), H200 SXM (141GB HBM3e), B200 (192GB HBM3e)
 - **MIG Profiles**: All 6 standard profiles (1g.5gb through 7g.40gb)
-- **NVLink**: 12 links (A100) / 18 links (H100) with error tracking
-- **InfiniBand**: HDR (200Gb/s) and NDR (400Gb/s) with error counters
+- **NVLink**: 12 links (A100) / 18 links (H100/H200/B200) with error tracking
+- **InfiniBand**: HDR (200Gb/s) for A100, NDR (400Gb/s) for H100/H200/B200
 - **BMC**: Sensor readings, power management, firmware info
 - **NVSwitch**: UUID format, power ranges, diagnostic modes
 
@@ -419,7 +437,7 @@ Common GPU XID errors you'll encounter:
 
 ### Unit Tests
 
-The project has **2,956 unit tests** across 126 test files covering simulators, stores, utilities, components, and data validation:
+The project has **2,905 unit tests** across 127 test files covering simulators, stores, utilities, components, and data validation:
 
 ```bash
 npm run test           # Watch mode
@@ -427,34 +445,30 @@ npm run test:run       # Single run
 npm run test:coverage  # With coverage report
 ```
 
-### E2E Tests
+### CI/CD
 
-Playwright is configured for end-to-end testing:
-
-```bash
-npm run test:e2e          # All E2E tests
-npm run test:e2e:ui       # Interactive mode
-npm run test:e2e:report   # View HTML report
-```
+GitHub Actions runs lint, unit tests, and production build on every push.
 
 ## Roadmap
 
 ### Completed
 
 - [x] 19 command simulators with realistic output validated against real tools
-- [x] 30 narrative scenarios with story-driven learning across all 5 domains
+- [x] 32 narrative scenarios with story-driven learning across all 5 domains
 - [x] Sandbox isolation (per-scenario deep-cloned state)
 - [x] AutoFaults system for automatic per-step fault injection
-- [x] Free Mode sandbox (unlocks at 3 completed missions)
+- [x] Multi-architecture support (DGX A100, H100, H200, B200)
+- [x] Spotlight tour for guided onboarding
 - [x] 3-tier learning progression with spaced repetition
 - [x] Practice exam with 168 timed questions
 - [x] D3.js topology visualization (NVLink and InfiniBand fabric maps)
 - [x] Tab completion and readline shortcuts
-- [x] Data-driven CLI framework with 150+ JSON command definitions
+- [x] Data-driven CLI framework with 229 JSON command definitions
 - [x] `explain-json` and `practice` terminal commands
 - [x] Fault injection system for troubleshooting practice
 - [x] Study dashboard with progress analytics
-- [x] 2,956 unit tests with 0 TypeScript errors
+- [x] CI/CD pipeline (lint, test, build)
+- [x] 2,905 unit tests with 0 TypeScript errors
 
 ### Future Enhancements
 
@@ -482,6 +496,7 @@ This project is provided for educational purposes. NVIDIA, DGX, A100, H100, and 
 
 ## Acknowledgments
 
+- [Claude Code](https://www.anthropic.com/claude-code) (Anthropic's Claude Opus 4.6) — AI pair-programming partner throughout development
 - NVIDIA for comprehensive datacenter documentation
 - The open-source community for amazing tools (xterm.js, React, Vite)
 - All engineers preparing for NCP-AII certification
@@ -491,15 +506,15 @@ This project is provided for educational purposes. NVIDIA, DGX, A100, H100, and 
 If you encounter issues or have questions:
 
 - Check the Documentation tab in the simulator
-- Review the [Issues](../../issues) page
-- Consult the official [NVIDIA Certification resources](https://www.nvidia.com/en-us/training/certification/)
+- Review the [Issues](https://github.com/Seanbo5386/NVIDIA-Certification-Simulator/issues) page
+- Consult the official [NVIDIA Certification resources](https://www.nvidia.com/en-us/learn/certification/)
 
 ---
 
 <div align="center">
 
-**Built for AI Infrastructure Engineers**
+**Built for AI Infrastructure Engineers by [Sean Woods](https://www.linkedin.com/in/sean-m-woods/)**
 
-[Get Started](#quick-start) · [View Scenarios](#narrative-scenarios) · [Report Bug](../../issues)
+[Get Started](#quick-start) · [View Scenarios](#narrative-scenarios) · [Report Bug](https://github.com/Seanbo5386/NVIDIA-Certification-Simulator/issues)
 
 </div>
