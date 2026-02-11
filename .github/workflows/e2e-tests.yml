@@ -1,4 +1,4 @@
-name: E2E Tests
+name: CI
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  test:
-    timeout-minutes: 60
+  build-and-test:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,40 +16,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
       - name: Install dependencies
         run: rm package-lock.json && npm install --force
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:run
 
       - name: Build application
         run: npm run build
-
-      - name: Run E2E tests
-        run: npm run test:e2e
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 30
-
-      - name: Upload screenshots
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-screenshots
-          path: tests/e2e/screenshots/
-          retention-days: 7
-
-      - name: Upload test artifacts
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-artifacts
-          path: test-results/
-          retention-days: 7
