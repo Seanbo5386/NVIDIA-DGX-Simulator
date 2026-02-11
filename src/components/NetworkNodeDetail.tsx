@@ -23,6 +23,7 @@ import type {
   HealthStatus,
   NVLinkConnection,
 } from "@/types/hardware";
+import { getIBStandardName } from "@/simulators/infinibandSimulator";
 
 export type NetworkNodeType =
   | { type: "gpu"; data: GPU }
@@ -59,6 +60,37 @@ export type NetworkNodeType =
         hostname: string;
         hcas: InfiniBandHCA[];
         gpuCount: number;
+      };
+    }
+  | {
+      type: "nvlink";
+      data: {
+        sourceGpuId: number;
+        targetGpuId: number;
+        status: "Active" | "Down" | "Errors";
+        sourceLinks: NVLinkConnection[];
+        targetLinks: NVLinkConnection[];
+      };
+    }
+  | {
+      type: "iblink";
+      data: {
+        sourceLabel: string;
+        targetLabel: string;
+        speed: string;
+        status: "active" | "down";
+        totalErrors: number;
+        ports: Array<{
+          portNumber: number;
+          state: string;
+          rate: number;
+          errors: {
+            symbolErrors: number;
+            linkDowned: number;
+            portRcvErrors: number;
+            portXmitDiscards: number;
+          };
+        }>;
       };
     };
 
@@ -189,6 +221,10 @@ export const NetworkNodeDetail: React.FC<NetworkNodeDetailProps> = ({
           {node.type === "switch" &&
             `${node.data.switchType === "spine" ? "Spine" : "Leaf"} Switch`}
           {node.type === "host" && node.data.hostname}
+          {node.type === "nvlink" &&
+            `NVLink: GPU ${node.data.sourceGpuId} ↔ GPU ${node.data.targetGpuId}`}
+          {node.type === "iblink" &&
+            `IB Link: ${node.data.sourceLabel} → ${node.data.targetLabel}`}
         </h3>
         <button
           onClick={onClose}
@@ -445,100 +481,111 @@ export const NetworkNodeDetail: React.FC<NetworkNodeDetailProps> = ({
             <div className="mt-3 pt-3 border-t border-gray-700">
               <div className="text-xs text-gray-400 mb-2">InfiniBand HCAs</div>
               <div className="space-y-3 max-h-64 overflow-y-auto">
-                {node.data.hcas.map((hca, hcaIdx) => (
-                  <div key={hcaIdx} className="bg-gray-800 rounded p-2">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-nvidia-green text-xs font-medium">
-                        HCA {hcaIdx}: {hca.caType}
-                      </span>
-                      <span className="text-gray-500 text-xs">
-                        FW: {hca.firmwareVersion}
-                      </span>
-                    </div>
+                {node.data.hcas.map((hca, hcaIdx) => {
+                  const hcaDeviceId = hca.caType.includes("ConnectX-7")
+                    ? "MT4129"
+                    : "MT4123";
+                  const ibStandard = getIBStandardName(
+                    hca.ports[0]?.rate || 400,
+                  );
+                  return (
+                    <div key={hcaIdx} className="bg-gray-800 rounded p-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-nvidia-green text-xs font-medium">
+                          HCA {hcaIdx} (Rail {hcaIdx}): {hca.caType} (
+                          {hcaDeviceId}) - {ibStandard}
+                        </span>
+                        <span className="text-gray-500 text-xs">
+                          FW: {hca.firmwareVersion}
+                        </span>
+                      </div>
 
-                    {hca.ports.map((port) => {
-                      const hasErrors =
-                        port.errors.symbolErrors > 0 ||
-                        port.errors.portRcvErrors > 0 ||
-                        port.errors.linkDowned > 0;
-                      const portColor =
-                        port.state !== "Active"
-                          ? "text-red-500"
-                          : hasErrors
-                            ? "text-yellow-500"
-                            : "text-green-500";
+                      {hca.ports.map((port) => {
+                        const hasErrors =
+                          port.errors.symbolErrors > 0 ||
+                          port.errors.portRcvErrors > 0 ||
+                          port.errors.linkDowned > 0;
+                        const portColor =
+                          port.state !== "Active"
+                            ? "text-red-500"
+                            : hasErrors
+                              ? "text-yellow-500"
+                              : "text-green-500";
 
-                      return (
-                        <div
-                          key={port.portNumber}
-                          className="mt-2 pt-2 border-t border-gray-700"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-gray-300 text-xs">
-                              Port {port.portNumber}
-                            </span>
-                            <span className={`text-xs ${portColor}`}>
-                              {port.state} @ {port.rate} Gb/s
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-1 mt-1 text-xs">
-                            <div className="text-gray-500">
-                              LID:{" "}
-                              <span className="text-gray-300">{port.lid}</span>
-                            </div>
-                            <div className="text-gray-500">
-                              GUID:{" "}
-                              <span className="text-gray-300 font-mono text-xs">
-                                {port.guid.slice(0, 10)}...
+                        return (
+                          <div
+                            key={port.portNumber}
+                            className="mt-2 pt-2 border-t border-gray-700"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-300 text-xs">
+                                Port {port.portNumber}
+                              </span>
+                              <span className={`text-xs ${portColor}`}>
+                                {port.state} @ {port.rate} Gb/s
                               </span>
                             </div>
-                          </div>
 
-                          {/* Error Counters */}
-                          <div className="grid grid-cols-4 gap-1 mt-2 text-xs">
-                            <div
-                              className={
-                                port.errors.symbolErrors > 0
-                                  ? "text-yellow-500"
-                                  : "text-gray-500"
-                              }
-                            >
-                              Sym: {port.errors.symbolErrors}
+                            <div className="grid grid-cols-2 gap-1 mt-1 text-xs">
+                              <div className="text-gray-500">
+                                LID:{" "}
+                                <span className="text-gray-300">
+                                  {port.lid}
+                                </span>
+                              </div>
+                              <div className="text-gray-500">
+                                GUID:{" "}
+                                <span className="text-gray-300 font-mono text-xs">
+                                  {port.guid.slice(0, 10)}...
+                                </span>
+                              </div>
                             </div>
-                            <div
-                              className={
-                                port.errors.linkDowned > 0
-                                  ? "text-red-500"
-                                  : "text-gray-500"
-                              }
-                            >
-                              Dwn: {port.errors.linkDowned}
-                            </div>
-                            <div
-                              className={
-                                port.errors.portRcvErrors > 0
-                                  ? "text-yellow-500"
-                                  : "text-gray-500"
-                              }
-                            >
-                              Rcv: {port.errors.portRcvErrors}
-                            </div>
-                            <div
-                              className={
-                                port.errors.portXmitDiscards > 0
-                                  ? "text-orange-500"
-                                  : "text-gray-500"
-                              }
-                            >
-                              Dsc: {port.errors.portXmitDiscards}
+
+                            {/* Error Counters */}
+                            <div className="grid grid-cols-4 gap-1 mt-2 text-xs">
+                              <div
+                                className={
+                                  port.errors.symbolErrors > 0
+                                    ? "text-yellow-500"
+                                    : "text-gray-500"
+                                }
+                              >
+                                Sym: {port.errors.symbolErrors}
+                              </div>
+                              <div
+                                className={
+                                  port.errors.linkDowned > 0
+                                    ? "text-red-500"
+                                    : "text-gray-500"
+                                }
+                              >
+                                Dwn: {port.errors.linkDowned}
+                              </div>
+                              <div
+                                className={
+                                  port.errors.portRcvErrors > 0
+                                    ? "text-yellow-500"
+                                    : "text-gray-500"
+                                }
+                              >
+                                Rcv: {port.errors.portRcvErrors}
+                              </div>
+                              <div
+                                className={
+                                  port.errors.portXmitDiscards > 0
+                                    ? "text-orange-500"
+                                    : "text-gray-500"
+                                }
+                              >
+                                Dsc: {port.errors.portXmitDiscards}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
+                        );
+                      })}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -556,6 +603,208 @@ export const NetworkNodeDetail: React.FC<NetworkNodeDetailProps> = ({
                 </code>
                 <code className="px-1.5 py-0.5 bg-gray-900 rounded text-xs text-nvidia-green">
                   ibdiagnet
+                </code>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {node.type === "nvlink" && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-gray-400 text-xs">NVLink Connection</span>
+              <HealthBadge
+                status={
+                  node.data.status === "Active"
+                    ? "active"
+                    : node.data.status === "Errors"
+                      ? "Warning"
+                      : "down"
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-gray-800 rounded p-2">
+                <div className="text-gray-400">Source</div>
+                <div className="text-white font-medium">
+                  GPU {node.data.sourceGpuId}
+                </div>
+              </div>
+              <div className="bg-gray-800 rounded p-2">
+                <div className="text-gray-400">Target</div>
+                <div className="text-white font-medium">
+                  GPU {node.data.targetGpuId}
+                </div>
+              </div>
+            </div>
+
+            {/* Source GPU NVLinks */}
+            <div className="mt-3 pt-3 border-t border-gray-700">
+              <div className="text-xs text-gray-400 mb-2">
+                GPU {node.data.sourceGpuId} NVLinks
+              </div>
+              <NVLinkTable links={node.data.sourceLinks} />
+            </div>
+
+            {/* Target GPU NVLinks */}
+            <div className="mt-3 pt-3 border-t border-gray-700">
+              <div className="text-xs text-gray-400 mb-2">
+                GPU {node.data.targetGpuId} NVLinks
+              </div>
+              <NVLinkTable links={node.data.targetLinks} />
+            </div>
+
+            {/* Diagnostic Commands */}
+            <div className="mt-3 pt-3 border-t border-gray-700">
+              <div className="text-xs text-gray-400 mb-1">
+                Diagnostic Commands
+              </div>
+              <div className="flex flex-wrap gap-1">
+                <code className="px-1.5 py-0.5 bg-gray-900 rounded text-xs text-nvidia-green">
+                  nvidia-smi nvlink --status
+                </code>
+                <code className="px-1.5 py-0.5 bg-gray-900 rounded text-xs text-nvidia-green">
+                  nvidia-smi nvlink -e
+                </code>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {node.type === "iblink" && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-gray-400 text-xs">InfiniBand Link</span>
+              <HealthBadge
+                status={
+                  node.data.status === "active"
+                    ? node.data.totalErrors > 0
+                      ? "Warning"
+                      : "active"
+                    : "down"
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-gray-800 rounded p-2">
+                <div className="text-gray-400">Source</div>
+                <div className="text-white font-medium">
+                  {node.data.sourceLabel}
+                </div>
+              </div>
+              <div className="bg-gray-800 rounded p-2">
+                <div className="text-gray-400">Target</div>
+                <div className="text-white font-medium">
+                  {node.data.targetLabel}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-800 rounded p-2 text-xs">
+              <div className="flex justify-between mb-1">
+                <span className="text-gray-500">Speed:</span>
+                <span className="text-gray-300">{node.data.speed}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Total Errors:</span>
+                <span
+                  className={
+                    node.data.totalErrors > 0
+                      ? "text-yellow-500"
+                      : "text-gray-300"
+                  }
+                >
+                  {node.data.totalErrors}
+                </span>
+              </div>
+            </div>
+
+            {/* Port Details */}
+            {node.data.ports.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-gray-700">
+                <div className="text-xs text-gray-400 mb-2">
+                  Host Port Details
+                </div>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {node.data.ports.map((port) => (
+                    <div
+                      key={port.portNumber}
+                      className="bg-gray-800 rounded p-2 text-xs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-300">
+                          Port {port.portNumber}
+                        </span>
+                        <span
+                          className={
+                            port.state === "Active"
+                              ? "text-green-500"
+                              : "text-red-500"
+                          }
+                        >
+                          {port.state} @ {port.rate} Gb/s
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-1 mt-1 text-xs">
+                        <div
+                          className={
+                            port.errors.symbolErrors > 0
+                              ? "text-yellow-500"
+                              : "text-gray-500"
+                          }
+                        >
+                          Sym: {port.errors.symbolErrors}
+                        </div>
+                        <div
+                          className={
+                            port.errors.linkDowned > 0
+                              ? "text-red-500"
+                              : "text-gray-500"
+                          }
+                        >
+                          Dwn: {port.errors.linkDowned}
+                        </div>
+                        <div
+                          className={
+                            port.errors.portRcvErrors > 0
+                              ? "text-yellow-500"
+                              : "text-gray-500"
+                          }
+                        >
+                          Rcv: {port.errors.portRcvErrors}
+                        </div>
+                        <div
+                          className={
+                            port.errors.portXmitDiscards > 0
+                              ? "text-orange-500"
+                              : "text-gray-500"
+                          }
+                        >
+                          Dsc: {port.errors.portXmitDiscards}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Diagnostic Commands */}
+            <div className="mt-3 pt-3 border-t border-gray-700">
+              <div className="text-xs text-gray-400 mb-1">
+                Diagnostic Commands
+              </div>
+              <div className="flex flex-wrap gap-1">
+                <code className="px-1.5 py-0.5 bg-gray-900 rounded text-xs text-nvidia-green">
+                  ibdiagnet
+                </code>
+                <code className="px-1.5 py-0.5 bg-gray-900 rounded text-xs text-nvidia-green">
+                  iblinkinfo
+                </code>
+                <code className="px-1.5 py-0.5 bg-gray-900 rounded text-xs text-nvidia-green">
+                  perfquery
                 </code>
               </div>
             </div>

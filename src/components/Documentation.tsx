@@ -37,7 +37,10 @@ import {
   type XIDError,
   type XIDSeverity,
 } from "@/data/xidErrors";
+import { ArchitectureComparison } from "./ArchitectureComparison";
 import taskCategoriesData from "@/data/taskCategories.json";
+import { useSimulationStore } from "@/store/simulationStore";
+import { getHardwareSpecs } from "@/data/hardwareSpecs";
 
 type DocTab = "architecture" | "commands" | "troubleshooting" | "xid" | "exam";
 
@@ -124,111 +127,145 @@ export const Documentation: React.FC = () => {
 // TAB CONTENT COMPONENTS
 // ============================================================================
 
-const ArchitectureContent: React.FC = () => (
-  <div className="space-y-6">
-    <SectionTitle
-      title="Cluster Topology: DGX SuperPOD"
-      icon={<Network className="w-5 h-5 text-nvidia-green" />}
-    />
+const ArchitectureContent: React.FC = () => {
+  const systemType = useSimulationStore((state) => state.systemType);
+  const specs = getHardwareSpecs(systemType);
+  const displayName = systemType.replace("-", " ");
+  const isAMD = specs.system.cpu.model.includes("AMD");
+  const memType = isAMD ? "DDR4" : "DDR5";
+  const storageNet =
+    specs.network.portRateGbs >= 400
+      ? `2x BlueField-3 DPU ${specs.network.portRateGbs}Gb/s`
+      : `2x BlueField-2 DPU ${specs.network.portRateGbs}Gb/s`;
 
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card title="Node Layout" icon={<Server className="w-4 h-4" />}>
-        <div className="space-y-4">
-          <p className="text-gray-300 text-sm">
-            The simulated cluster consists of{" "}
-            <strong className="text-nvidia-green">8x NVIDIA DGX A100</strong>{" "}
-            nodes connected via a high-performance FatTree InfiniBand fabric.
-          </p>
-          <div className="bg-black rounded-lg p-4 font-mono text-sm overflow-x-auto">
-            <div className="grid grid-cols-3 gap-4 text-gray-500 border-b border-gray-800 pb-2 mb-2 min-w-[300px]">
-              <span>Hostname</span>
-              <span>Mgmt IP</span>
-              <span>BMC IP</span>
-            </div>
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={i}
-                className="grid grid-cols-3 gap-4 min-w-[300px] py-1 hover:bg-gray-900/50 rounded transition-colors"
-              >
-                <span className="text-nvidia-green">
-                  dgx-{i.toString().padStart(2, "0")}
-                </span>
-                <span className="text-gray-300">10.0.0.{i + 10}</span>
-                <span className="text-gray-300">192.168.0.{i + 100}</span>
+  return (
+    <div className="space-y-6">
+      <SectionTitle
+        title="Cluster Topology: DGX SuperPOD"
+        icon={<Network className="w-5 h-5 text-nvidia-green" />}
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card title="Node Layout" icon={<Server className="w-4 h-4" />}>
+          <div className="space-y-4">
+            <p className="text-gray-300 text-sm">
+              The simulated cluster consists of{" "}
+              <strong className="text-nvidia-green">
+                8x NVIDIA {displayName}
+              </strong>{" "}
+              nodes connected via a high-performance FatTree InfiniBand fabric.
+            </p>
+            <div className="bg-black rounded-lg p-4 font-mono text-sm overflow-x-auto">
+              <div className="grid grid-cols-3 gap-4 text-gray-500 border-b border-gray-800 pb-2 mb-2 min-w-[300px]">
+                <span>Hostname</span>
+                <span>Mgmt IP</span>
+                <span>BMC IP</span>
               </div>
-            ))}
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="grid grid-cols-3 gap-4 min-w-[300px] py-1 hover:bg-gray-900/50 rounded transition-colors"
+                >
+                  <span className="text-nvidia-green">
+                    dgx-{i.toString().padStart(2, "0")}
+                  </span>
+                  <span className="text-gray-300">10.0.0.{i + 10}</span>
+                  <span className="text-gray-300">192.168.0.{i + 100}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+
+        <Card
+          title="Hardware Specifications (Per Node)"
+          icon={<Cpu className="w-4 h-4" />}
+        >
+          <div className="space-y-1">
+            <SpecItem
+              label="GPU"
+              value={`${specs.gpu.count}x ${specs.gpu.model}`}
+            />
+            <SpecItem
+              label="GPU Memory"
+              value={`${specs.gpu.memoryGB} GB ${specs.gpu.memoryType} per GPU`}
+            />
+            <SpecItem
+              label="CPU"
+              value={`${specs.system.cpu.sockets}x ${specs.system.cpu.model} (${specs.system.cpu.coresPerSocket}-Core)`}
+            />
+            <SpecItem
+              label="System Memory"
+              value={`${specs.system.systemMemoryGB} GB ${memType}`}
+            />
+            <SpecItem
+              label="Network (Compute)"
+              value={`${specs.network.hcaCount}x ${specs.network.hcaModel} ${specs.network.protocol} ${specs.network.portRateGbs}Gb/s IB`}
+            />
+            <SpecItem label="Network (Storage)" value={storageNet} />
+            <SpecItem
+              label="NVSwitch"
+              value={`${specs.nvlink.nvSwitchCount}x NVSwitch ${specs.nvlink.totalBandwidthGBs}GB/s Fabric`}
+            />
+            <SpecItem
+              label="Storage"
+              value={`${specs.storage.totalCapacityTB} TB NVMe SSD`}
+            />
+          </div>
+        </Card>
+      </div>
 
       <Card
-        title="Hardware Specifications (Per Node)"
-        icon={<Cpu className="w-4 h-4" />}
+        title="Network Fabric Architecture"
+        icon={<Wifi className="w-4 h-4" />}
       >
-        <div className="space-y-1">
-          <SpecItem label="GPU" value="8x NVIDIA A100-SXM4-80GB" />
-          <SpecItem label="GPU Memory" value="80 GB HBM2e per GPU" />
-          <SpecItem label="CPU" value="2x AMD EPYC 7742 (64-Core)" />
-          <SpecItem label="System Memory" value="1024 GB DDR4" />
-          <SpecItem
-            label="Network (Compute)"
-            value="8x ConnectX-6 HDR 200Gb/s IB"
-          />
-          <SpecItem
-            label="Network (Storage)"
-            value="2x BlueField-2 DPU 200Gb/s"
-          />
-          <SpecItem label="NVSwitch" value="6x NVSwitch 600GB/s Fabric" />
-          <SpecItem label="Storage" value="30 TB NVMe SSD" />
+        <div className="space-y-4">
+          <p className="text-gray-300 text-sm">
+            The simulator emulates a rail-optimized 2-tier Fat Tree topology for
+            AI workloads with full bisection bandwidth.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+              <h5 className="font-semibold text-nvidia-green mb-2 flex items-center gap-2">
+                <Network className="w-4 h-4" />
+                Compute Fabric
+              </h5>
+              <p className="text-xs text-gray-400">
+                Dedicated InfiniBand {specs.network.protocol} (
+                {specs.network.portRateGbs}Gb/s) rails for GPU-Direct RDMA and
+                NCCL collective operations.
+              </p>
+            </div>
+            <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+              <h5 className="font-semibold text-blue-400 mb-2 flex items-center gap-2">
+                <HardDrive className="w-4 h-4" />
+                Storage Fabric
+              </h5>
+              <p className="text-xs text-gray-400">
+                Separate ethernet-based storage network for parallel file system
+                and checkpoint I/O.
+              </p>
+            </div>
+            <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+              <h5 className="font-semibold text-purple-400 mb-2 flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                Management Network
+              </h5>
+              <p className="text-xs text-gray-400">
+                1GbE Out-of-Band (OOB) connectivity for BMC/IPMI access and
+                cluster management.
+              </p>
+            </div>
+          </div>
         </div>
       </Card>
-    </div>
 
-    <Card
-      title="Network Fabric Architecture"
-      icon={<Wifi className="w-4 h-4" />}
-    >
-      <div className="space-y-4">
-        <p className="text-gray-300 text-sm">
-          The simulator emulates a simplified 2-tier Fat Tree topology optimized
-          for AI workloads with full bisection bandwidth.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-            <h5 className="font-semibold text-nvidia-green mb-2 flex items-center gap-2">
-              <Network className="w-4 h-4" />
-              Compute Fabric
-            </h5>
-            <p className="text-xs text-gray-400">
-              Dedicated InfiniBand HDR (200Gb/s) rails for GPU-Direct RDMA and
-              NCCL collective operations.
-            </p>
-          </div>
-          <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-            <h5 className="font-semibold text-blue-400 mb-2 flex items-center gap-2">
-              <HardDrive className="w-4 h-4" />
-              Storage Fabric
-            </h5>
-            <p className="text-xs text-gray-400">
-              Separate ethernet-based storage network for parallel file system
-              and checkpoint I/O.
-            </p>
-          </div>
-          <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-            <h5 className="font-semibold text-purple-400 mb-2 flex items-center gap-2">
-              <Shield className="w-4 h-4" />
-              Management Network
-            </h5>
-            <p className="text-xs text-gray-400">
-              1GbE Out-of-Band (OOB) connectivity for BMC/IPMI access and
-              cluster management.
-            </p>
-          </div>
-        </div>
+      <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-6 border border-gray-700">
+        <ArchitectureComparison />
       </div>
-    </Card>
-  </div>
-);
+    </div>
+  );
+};
 
 interface TaskCategory {
   id: string;

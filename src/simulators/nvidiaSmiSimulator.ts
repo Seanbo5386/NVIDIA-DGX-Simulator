@@ -7,6 +7,7 @@ import {
 } from "@/simulators/BaseSimulator";
 import { MIG_PROFILES } from "@/utils/clusterFactory";
 import { generateTimestamp } from "@/utils/outputTemplates";
+import { getHardwareSpecs } from "@/data/hardwareSpecs";
 
 function getArchitecture(gpuName: string): string {
   if (gpuName.includes("B200") || gpuName.includes("GB200")) return "Blackwell";
@@ -866,7 +867,7 @@ export class NvidiaSmiSimulator extends BaseSimulator {
       for (const dtype of displayTypes) {
         switch (dtype) {
           case "MEMORY":
-            output += this.formatDisplayMemory(gpu);
+            output += this.formatDisplayMemory(gpu, node);
             break;
           case "UTILIZATION":
             output += this.formatDisplayUtilization(gpu);
@@ -929,16 +930,18 @@ export class NvidiaSmiSimulator extends BaseSimulator {
     return this.createSuccess(output);
   }
 
-  private formatDisplayMemory(gpu: GPU): string {
+  private formatDisplayMemory(gpu: GPU, node?: DGXNode): string {
+    const specs = getHardwareSpecs(node?.systemType || "DGX-A100");
+    const bar1Total = specs.gpu.bar1MemoryMiB;
     let output = `    FB Memory Usage\n`;
     output += `        Total                             : ${gpu.memoryTotal} MiB\n`;
     output += `        Reserved                          : ${Math.round(gpu.memoryTotal * 0.02)} MiB\n`;
     output += `        Used                              : ${gpu.memoryUsed} MiB\n`;
     output += `        Free                              : ${gpu.memoryTotal - gpu.memoryUsed} MiB\n`;
     output += `    BAR1 Memory Usage\n`;
-    output += `        Total                             : 131072 MiB\n`;
+    output += `        Total                             : ${bar1Total} MiB\n`;
     output += `        Used                              : 1 MiB\n`;
-    output += `        Free                              : 131071 MiB\n`;
+    output += `        Free                              : ${bar1Total - 1} MiB\n`;
     output += `    Conf Compute Protected Memory Usage\n`;
     output += `        Total                             : 0 MiB\n`;
     output += `        Used                              : 0 MiB\n`;
@@ -1368,17 +1371,9 @@ export class NvidiaSmiSimulator extends BaseSimulator {
     }
 
     if (this.hasAnyFlag(parsed, ["m", "matrix"])) {
-      // Determine NVLink count based on system type
-      // In DGX systems with NVSwitch, all GPU pairs connect uniformly
-      const systemType = node.systemType || "H100";
-      let nvLinkLabel: string;
-      if (systemType.includes("B200") || systemType.includes("GB200")) {
-        nvLinkLabel = "NV72"; // Blackwell NVLink count
-      } else if (systemType.includes("H100") || systemType.includes("H200")) {
-        nvLinkLabel = "NV18"; // Hopper NVLink count
-      } else {
-        nvLinkLabel = "NV12"; // A100 default
-      }
+      // Use hardware specs registry for NVLink label
+      const specs = getHardwareSpecs(node.systemType || "DGX-A100");
+      const nvLinkLabel = specs.nvlink.nvLinkLabel;
 
       let output =
         "\tGPU0\tGPU1\tGPU2\tGPU3\tGPU4\tGPU5\tGPU6\tGPU7\tmlx5_0\tmlx5_1\tCPU Affinity\tNUMA Affinity\n";
@@ -1692,6 +1687,7 @@ export class NvidiaSmiSimulator extends BaseSimulator {
   }
 
   private formatQuery(gpus: GPU[], node: DGXNode, gpu?: number): string {
+    const specs = getHardwareSpecs(node.systemType || "DGX-A100");
     const selectedGPUs =
       gpu !== undefined ? gpus.filter((g) => g.id === gpu) : gpus;
 
@@ -1743,7 +1739,7 @@ export class NvidiaSmiSimulator extends BaseSimulator {
       output += `    Bus                                   : 0x${g.pciAddress.split(":")[1]}\n`;
       output += `    Device                                : 0x${g.pciAddress.split(":")[2].split(".")[0]}\n`;
       output += `    Domain                                : 0x0000\n`;
-      output += `    Device Id                             : 0x20B010DE\n`;
+      output += `    Device Id                             : 0x${specs.gpu.pciDeviceId}10DE\n`;
       output += `    Bus Id                                : ${g.pciAddress}\n`;
       output += `    Sub System Id                         : 0x138F10DE\n`;
       output += `    GPU Link Info\n`;
@@ -1774,9 +1770,9 @@ export class NvidiaSmiSimulator extends BaseSimulator {
       output += `    Free                                  : ${g.memoryTotal - g.memoryUsed} MiB\n\n`;
 
       output += `BAR1 Memory Usage\n`;
-      output += `    Total                                 : 131072 MiB\n`;
+      output += `    Total                                 : ${specs.gpu.bar1MemoryMiB} MiB\n`;
       output += `    Used                                  : 1 MiB\n`;
-      output += `    Free                                  : 131071 MiB\n\n`;
+      output += `    Free                                  : ${specs.gpu.bar1MemoryMiB - 1} MiB\n\n`;
 
       output += `Compute Mode                              : Default\n\n`;
 

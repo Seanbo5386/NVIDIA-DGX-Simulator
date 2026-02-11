@@ -10,6 +10,7 @@ import type {
   NVLinkConnection,
   XIDError,
 } from "@/types/hardware";
+import { getHardwareSpecs } from "@/data/hardwareSpecs";
 
 /**
  * Generate a deterministic 8-character hex string from a seed.
@@ -148,7 +149,8 @@ export class FabricManagerSimulator extends BaseSimulator {
     }
 
     const gpuCount = node.gpus.length;
-    const nvswitchCount = gpuCount >= 8 ? 6 : gpuCount >= 4 ? 2 : 0;
+    const nvswitchCount = getHardwareSpecs(node.systemType || "DGX-A100").nvlink
+      .nvSwitchCount;
     const healthyNvlinks = node.gpus.reduce(
       (sum, g) => sum + g.nvlinks.filter((l) => l.status === "Active").length,
       0,
@@ -224,8 +226,8 @@ export class FabricManagerSimulator extends BaseSimulator {
       return this.createError("Error: Unable to determine current node");
     }
 
-    const nvswitchCount =
-      node.gpus.length >= 8 ? 6 : node.gpus.length >= 4 ? 2 : 0;
+    const nvswitchCount = getHardwareSpecs(node.systemType || "DGX-A100").nvlink
+      .nvSwitchCount;
 
     let output = `\x1b[1mNVSwitch Status\x1b[0m\n`;
     output += `${"─".repeat(60)}\n\n`;
@@ -277,7 +279,8 @@ export class FabricManagerSimulator extends BaseSimulator {
     output += `\n`;
 
     // NVSwitch connectivity
-    const nvswitchCount = node.gpus.length >= 8 ? 6 : 0;
+    const nvswitchCount = getHardwareSpecs(node.systemType || "DGX-A100").nvlink
+      .nvSwitchCount;
     if (nvswitchCount > 0) {
       output += `NVSwitch Connectivity:\n`;
       for (let sw = 0; sw < nvswitchCount; sw++) {
@@ -303,17 +306,20 @@ export class FabricManagerSimulator extends BaseSimulator {
     output += `GPU | Link | State   | Speed     | Remote GPU | Bandwidth\n`;
     output += `${"─".repeat(70)}\n`;
 
+    const specs = getHardwareSpecs(node.systemType || "DGX-A100");
+    const nvlinkVersionLabel = `NVLink${specs.nvlink.version.split(".")[0]}`;
     node.gpus.forEach((gpu) => {
       gpu.nvlinks.forEach((link, linkIdx) => {
         const state =
           link.status === "Active"
             ? "\x1b[32mActive\x1b[0m "
             : "\x1b[31mInactive\x1b[0m";
-        const speed = "NVLink4";
         const bandwidth =
-          link.status === "Active" ? `${link.speed}GB/s` : "N/A";
+          link.status === "Active"
+            ? `${specs.nvlink.perLinkBandwidthGBs}GB/s`
+            : "N/A";
         const remoteGpu = "NVSwitch";
-        output += `  ${gpu.id} |   ${linkIdx}  | ${state} | ${speed.padEnd(9)} | ${String(remoteGpu).padEnd(10)} | ${bandwidth}\n`;
+        output += `  ${gpu.id} |   ${linkIdx}  | ${state} | ${nvlinkVersionLabel.padEnd(9)} | ${String(remoteGpu).padEnd(10)} | ${bandwidth}\n`;
       });
     });
 
@@ -439,7 +445,8 @@ export class FabricManagerSimulator extends BaseSimulator {
 
     // Check NVSwitch
     output += `\x1b[1m[2/5] Checking NVSwitch Devices\x1b[0m\n`;
-    const nvswitchCount = node.gpus.length >= 8 ? 6 : 0;
+    const nvswitchCount = getHardwareSpecs(node.systemType || "DGX-A100").nvlink
+      .nvSwitchCount;
     if (nvswitchCount > 0) {
       output += `  Detected: ${nvswitchCount} NVSwitches\n`;
       output += `  Status: \x1b[32mAll Operational\x1b[0m\n\n`;
@@ -459,9 +466,10 @@ export class FabricManagerSimulator extends BaseSimulator {
     output += `  Status: ${activeLinks === totalLinks ? "\x1b[32mAll Links Active\x1b[0m" : "\x1b[33mSome Links Inactive\x1b[0m"}\n\n`;
 
     // Check bandwidth
+    const quickSpecs = getHardwareSpecs(node.systemType || "DGX-A100");
     output += `\x1b[1m[4/5] Testing NVLink Bandwidth\x1b[0m\n`;
-    output += `  Aggregate Bandwidth: ${activeLinks * 50}GB/s\n`;
-    output += `  Per-Link Bandwidth: ~50GB/s\n`;
+    output += `  Aggregate Bandwidth: ${activeLinks * quickSpecs.nvlink.perLinkBandwidthGBs}GB/s\n`;
+    output += `  Per-Link Bandwidth: ~${quickSpecs.nvlink.perLinkBandwidthGBs}GB/s\n`;
     output += `  Status: \x1b[32mWithin Expected Range\x1b[0m\n\n`;
 
     // Check errors
@@ -493,7 +501,8 @@ export class FabricManagerSimulator extends BaseSimulator {
     let output = `\x1b[1mQuick Fabric Health Check\x1b[0m\n`;
     output += `${"─".repeat(50)}\n\n`;
 
-    const nvswitchCount = node.gpus.length >= 8 ? 6 : 0;
+    const nvswitchCount = getHardwareSpecs(node.systemType || "DGX-A100").nvlink
+      .nvSwitchCount;
     const totalLinks = node.gpus.reduce(
       (sum: number, g: GPU) => sum + g.nvlinks.length,
       0,
@@ -524,7 +533,8 @@ export class FabricManagerSimulator extends BaseSimulator {
     let output = `\x1b[1mFull Fabric Diagnostic Suite\x1b[0m\n`;
     output += `${"─".repeat(70)}\n\n`;
 
-    const nvswitchCount = node.gpus.length >= 8 ? 6 : 0;
+    const nvswitchCount = getHardwareSpecs(node.systemType || "DGX-A100").nvlink
+      .nvSwitchCount;
 
     // Phase 1: Service checks
     output += `\x1b[1mPhase 1: Service Verification\x1b[0m\n`;
@@ -536,7 +546,8 @@ export class FabricManagerSimulator extends BaseSimulator {
     output += `\x1b[1mPhase 2: Hardware Detection\x1b[0m\n`;
     output += `  GPUs detected:             ${node.gpus.length}\n`;
     output += `  NVSwitches detected:       ${nvswitchCount}\n`;
-    output += `  NVLink version:            NVLink 4.0\n`;
+    const fullSpecs = getHardwareSpecs(node.systemType || "DGX-A100");
+    output += `  NVLink version:            NVLink ${fullSpecs.nvlink.version}\n`;
     output += `  Topology type:             ${nvswitchCount > 0 ? "NVSwitch Full Mesh" : "Direct NVLink"}\n\n`;
 
     // Phase 3: Link validation
@@ -550,7 +561,7 @@ export class FabricManagerSimulator extends BaseSimulator {
       const total = gpu.nvlinks.length;
       const status =
         active === total ? "\x1b[32mOK\x1b[0m" : "\x1b[33mDegraded\x1b[0m";
-      output += `   ${gpu.id}   |   ${total}   |   ${active}    | 50GB/s   | ${status}\n`;
+      output += `   ${gpu.id}   |   ${total}   |   ${active}    | ${fullSpecs.nvlink.perLinkBandwidthGBs}GB/s   | ${status}\n`;
     });
     output += `\n`;
 
@@ -566,7 +577,7 @@ export class FabricManagerSimulator extends BaseSimulator {
         g.nvlinks.filter((l: NVLinkConnection) => l.status === "Active").length,
       0,
     );
-    const expectedBw = activeLinks * 50;
+    const expectedBw = activeLinks * fullSpecs.nvlink.perLinkBandwidthGBs;
     const measuredBw = expectedBw * (0.95 + Math.random() * 0.05);
     output += `  Expected aggregate:        ${expectedBw} GB/s\n`;
     output += `  Measured aggregate:        ${measuredBw.toFixed(1)} GB/s\n`;
@@ -692,7 +703,8 @@ export class FabricManagerSimulator extends BaseSimulator {
     let output = `\x1b[1mPort-Level Diagnostics\x1b[0m\n`;
     output += `${"─".repeat(80)}\n\n`;
 
-    const nvswitchCount = node.gpus.length >= 8 ? 6 : 0;
+    const nvswitchCount = getHardwareSpecs(node.systemType || "DGX-A100").nvlink
+      .nvSwitchCount;
 
     if (nvswitchCount === 0) {
       output += `No NVSwitch devices detected. Showing direct NVLink port status.\n\n`;
@@ -771,7 +783,8 @@ export class FabricManagerSimulator extends BaseSimulator {
     }
 
     const gpuCount = node.gpus.length;
-    const nvswitchCount = gpuCount >= 8 ? 6 : 0;
+    const nvswitchCount = getHardwareSpecs(node.systemType || "DGX-A100").nvlink
+      .nvSwitchCount;
 
     let output = `\x1b[1mNVSwitch Fabric Topology Map\x1b[0m\n`;
     output += `${"─".repeat(60)}\n\n`;
@@ -818,7 +831,8 @@ export class FabricManagerSimulator extends BaseSimulator {
     output += `  Connectivity:\n`;
     output += `    - Each GPU connected to all ${nvswitchCount} NVSwitches\n`;
     output += `    - Full mesh GPU-to-GPU via NVSwitch\n`;
-    output += `    - Aggregate bandwidth: ${nvswitchCount * 50 * gpuCount}GB/s\n`;
+    const topoSpecs = getHardwareSpecs(node.systemType || "DGX-A100");
+    output += `    - Aggregate bandwidth: ${topoSpecs.nvlink.totalBandwidthGBs * gpuCount}GB/s\n`;
 
     return this.createSuccess(output);
   }

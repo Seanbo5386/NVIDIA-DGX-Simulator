@@ -13,7 +13,7 @@ vi.mock("@/store/simulationStore", () => ({
           {
             id: "dgx-00",
             hostname: "dgx-node01",
-            systemType: "H100",
+            systemType: "DGX-H100",
             healthStatus: "OK",
             nvidiaDriverVersion: "535.129.03",
             cudaVersion: "12.2",
@@ -250,7 +250,7 @@ describe("NvidiaSmiSimulator", () => {
             {
               id: "dgx-00",
               hostname: "dgx-node01",
-              systemType: "H100",
+              systemType: "DGX-H100",
               healthStatus: "OK",
               nvidiaDriverVersion: "535.129.03",
               cudaVersion: "12.2",

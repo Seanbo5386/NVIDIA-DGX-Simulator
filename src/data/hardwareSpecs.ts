@@ -1,0 +1,314 @@
+/**
+ * Hardware Spec Registry
+ *
+ * Single source of truth for all DGX system specifications.
+ * Sourced from official NVIDIA Reference Architecture documents.
+ *
+ * Supported systems:
+ * - DGX A100: Ampere generation, 8x A100 80GB, NVLink 3.0
+ * - DGX H100: Hopper generation, 8x H100 80GB, NVLink 4.0
+ * - DGX H200: Hopper generation, 8x H200 141GB, NVLink 4.0
+ * - DGX B200: Blackwell generation, 8x B200 192GB, NVLink 5.0
+ */
+
+export type SystemType = "DGX-A100" | "DGX-H100" | "DGX-H200" | "DGX-B200";
+
+export interface HardwareSpec {
+  system: {
+    type: SystemType;
+    generation: string;
+    cpu: { model: string; sockets: number; coresPerSocket: number };
+    systemMemoryGB: number;
+    totalGpuMemoryGB: number;
+  };
+  gpu: {
+    model: string;
+    count: number;
+    memoryGB: number;
+    memoryMiB: number;
+    memoryType: string;
+    memoryBandwidthTBs: number;
+    tdpWatts: number;
+    fp16Tflops: number;
+    tf32Tflops: number;
+    fp64Tflops: number;
+    pciDeviceId: string;
+    baseClockMHz: number;
+    boostClockMHz: number;
+    memoryClockMHz: number;
+    smCount: number;
+    architecture: string;
+    computeCapability: string;
+    bar1MemoryMiB: number;
+  };
+  nvlink: {
+    version: string;
+    linksPerGpu: number;
+    perLinkBandwidthGBs: number;
+    totalBandwidthGBs: number;
+    nvSwitchCount: number;
+    nvSwitchGeneration: string;
+    nvLinkLabel: string;
+  };
+  network: {
+    hcaModel: string;
+    hcaCount: number;
+    protocol: string;
+    portRateGbs: number;
+    hcasPerGpu: number;
+  };
+  storage: {
+    osDrives: string;
+    dataDrives: string;
+    totalCapacityTB: number;
+  };
+}
+
+export const HARDWARE_SPECS: Record<SystemType, HardwareSpec> = {
+  "DGX-A100": {
+    system: {
+      type: "DGX-A100",
+      generation: "Ampere",
+      cpu: { model: "AMD EPYC 7742", sockets: 2, coresPerSocket: 64 },
+      systemMemoryGB: 1024,
+      totalGpuMemoryGB: 640,
+    },
+    gpu: {
+      model: "NVIDIA A100-SXM4-80GB",
+      count: 8,
+      memoryGB: 80,
+      memoryMiB: 81920,
+      memoryType: "HBM2e",
+      memoryBandwidthTBs: 2.0,
+      tdpWatts: 400,
+      fp16Tflops: 312,
+      tf32Tflops: 156,
+      fp64Tflops: 19.5,
+      pciDeviceId: "20B2",
+      baseClockMHz: 1095,
+      boostClockMHz: 1410,
+      memoryClockMHz: 1215,
+      smCount: 108,
+      architecture: "ga100",
+      computeCapability: "8.0",
+      bar1MemoryMiB: 131072,
+    },
+    nvlink: {
+      version: "3.0",
+      linksPerGpu: 12,
+      perLinkBandwidthGBs: 25,
+      totalBandwidthGBs: 600,
+      nvSwitchCount: 6,
+      nvSwitchGeneration: "2nd Gen",
+      nvLinkLabel: "NV12",
+    },
+    network: {
+      hcaModel: "ConnectX-6",
+      hcaCount: 8,
+      protocol: "HDR",
+      portRateGbs: 200,
+      hcasPerGpu: 1,
+    },
+    storage: {
+      osDrives: "2x 1.92TB NVMe",
+      dataDrives: "4x 3.84TB NVMe",
+      totalCapacityTB: 19.2,
+    },
+  },
+
+  "DGX-H100": {
+    system: {
+      type: "DGX-H100",
+      generation: "Hopper",
+      cpu: { model: "Intel Xeon 8480C", sockets: 2, coresPerSocket: 56 },
+      systemMemoryGB: 2048,
+      totalGpuMemoryGB: 640,
+    },
+    gpu: {
+      model: "NVIDIA H100-SXM5-80GB",
+      count: 8,
+      memoryGB: 80,
+      memoryMiB: 81920,
+      memoryType: "HBM3",
+      memoryBandwidthTBs: 3.35,
+      tdpWatts: 700,
+      fp16Tflops: 989,
+      tf32Tflops: 495,
+      fp64Tflops: 34,
+      pciDeviceId: "2330",
+      baseClockMHz: 1095,
+      boostClockMHz: 1830,
+      memoryClockMHz: 2619,
+      smCount: 132,
+      architecture: "gh100",
+      computeCapability: "9.0",
+      bar1MemoryMiB: 131072,
+    },
+    nvlink: {
+      version: "4.0",
+      linksPerGpu: 18,
+      perLinkBandwidthGBs: 25,
+      totalBandwidthGBs: 900,
+      nvSwitchCount: 4,
+      nvSwitchGeneration: "4th Gen",
+      nvLinkLabel: "NV18",
+    },
+    network: {
+      hcaModel: "ConnectX-7",
+      hcaCount: 8,
+      protocol: "NDR",
+      portRateGbs: 400,
+      hcasPerGpu: 1,
+    },
+    storage: {
+      osDrives: "2x 1.92TB NVMe",
+      dataDrives: "8x 3.84TB NVMe",
+      totalCapacityTB: 34.56,
+    },
+  },
+
+  "DGX-H200": {
+    system: {
+      type: "DGX-H200",
+      generation: "Hopper",
+      cpu: { model: "Intel Xeon 8480C", sockets: 2, coresPerSocket: 56 },
+      systemMemoryGB: 2048,
+      totalGpuMemoryGB: 1128,
+    },
+    gpu: {
+      model: "NVIDIA H200-SXM-141GB",
+      count: 8,
+      memoryGB: 141,
+      memoryMiB: 144384,
+      memoryType: "HBM3e",
+      memoryBandwidthTBs: 4.8,
+      tdpWatts: 700,
+      fp16Tflops: 989,
+      tf32Tflops: 495,
+      fp64Tflops: 34,
+      pciDeviceId: "2335",
+      baseClockMHz: 1095,
+      boostClockMHz: 1830,
+      memoryClockMHz: 2619,
+      smCount: 132,
+      architecture: "gh100",
+      computeCapability: "9.0",
+      bar1MemoryMiB: 131072,
+    },
+    nvlink: {
+      version: "4.0",
+      linksPerGpu: 18,
+      perLinkBandwidthGBs: 25,
+      totalBandwidthGBs: 900,
+      nvSwitchCount: 4,
+      nvSwitchGeneration: "4th Gen",
+      nvLinkLabel: "NV18",
+    },
+    network: {
+      hcaModel: "ConnectX-7",
+      hcaCount: 8,
+      protocol: "NDR",
+      portRateGbs: 400,
+      hcasPerGpu: 1,
+    },
+    storage: {
+      osDrives: "2x 1.92TB NVMe",
+      dataDrives: "8x 3.84TB NVMe",
+      totalCapacityTB: 34.56,
+    },
+  },
+
+  "DGX-B200": {
+    system: {
+      type: "DGX-B200",
+      generation: "Blackwell",
+      cpu: { model: "Intel Xeon 8570", sockets: 2, coresPerSocket: 56 },
+      systemMemoryGB: 2048,
+      totalGpuMemoryGB: 1536,
+    },
+    gpu: {
+      model: "NVIDIA B200-SXM-192GB",
+      count: 8,
+      memoryGB: 192,
+      memoryMiB: 196608,
+      memoryType: "HBM3e",
+      memoryBandwidthTBs: 8.0,
+      tdpWatts: 1000,
+      fp16Tflops: 1800,
+      tf32Tflops: 900,
+      fp64Tflops: 45,
+      pciDeviceId: "2900",
+      baseClockMHz: 1295,
+      boostClockMHz: 2100,
+      memoryClockMHz: 3200,
+      smCount: 192,
+      architecture: "gb100",
+      computeCapability: "10.0",
+      bar1MemoryMiB: 262144,
+    },
+    nvlink: {
+      version: "5.0",
+      linksPerGpu: 18,
+      perLinkBandwidthGBs: 50,
+      totalBandwidthGBs: 1800,
+      nvSwitchCount: 2,
+      nvSwitchGeneration: "5th Gen",
+      nvLinkLabel: "NV18",
+    },
+    network: {
+      hcaModel: "ConnectX-7",
+      hcaCount: 8,
+      protocol: "NDR",
+      portRateGbs: 400,
+      hcasPerGpu: 1,
+    },
+    storage: {
+      osDrives: "2x 1.92TB NVMe",
+      dataDrives: "8x 3.84TB NVMe",
+      totalCapacityTB: 34.56,
+    },
+  },
+};
+
+export const ALL_SYSTEM_TYPES: SystemType[] = [
+  "DGX-A100",
+  "DGX-H100",
+  "DGX-H200",
+  "DGX-B200",
+];
+
+/**
+ * Get hardware specs for a given system type.
+ * Defaults to DGX-A100 if the type is not recognized.
+ */
+export function getHardwareSpecs(systemType: string): HardwareSpec {
+  if (systemType in HARDWARE_SPECS) {
+    return HARDWARE_SPECS[systemType as SystemType];
+  }
+  return HARDWARE_SPECS["DGX-A100"];
+}
+
+/**
+ * Get a short display name for a system type.
+ */
+export function getSystemDisplayName(systemType: SystemType): string {
+  switch (systemType) {
+    case "DGX-A100":
+      return "DGX A100";
+    case "DGX-H100":
+      return "DGX H100";
+    case "DGX-H200":
+      return "DGX H200";
+    case "DGX-B200":
+      return "DGX B200";
+    default:
+      return systemType;
+  }
+}
+
+/**
+ * Get the generation name for a system type.
+ */
+export function getGenerationName(systemType: SystemType): string {
+  return HARDWARE_SPECS[systemType].system.generation;
+}

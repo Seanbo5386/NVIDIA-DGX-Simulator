@@ -6,6 +6,7 @@ import type {
 } from "@/types/commands";
 import { BaseSimulator } from "./BaseSimulator";
 import type { GPU, DGXNode, XIDError } from "@/types/hardware";
+import { getHardwareSpecs } from "@/data/hardwareSpecs";
 
 // Extended node type for NVSwitch support (not in base DGXNode type)
 interface ExtendedDGXNode extends DGXNode {
@@ -112,12 +113,14 @@ export class NvlinkAuditSimulator extends BaseSimulator {
       "================================================================================\n\n";
 
     // System Overview
+    const specs = getHardwareSpecs(node.systemType || "DGX-A100");
+    const sxmVersion = node.systemType?.includes("A100") ? "SXM4" : "SXM5";
     output += "=== System Overview ===\n";
     output += `Total GPUs: ${node.gpus.length}\n`;
-    output += `NVSwitches: ${(node as ExtendedDGXNode).nvswitches?.length || 0}\n`;
-    output += `Architecture: DGX A100 (SXM4)\n`;
-    output += `NVLink Version: 3.0\n`;
-    output += `Links per GPU: 12\n\n`;
+    output += `NVSwitches: ${(node as ExtendedDGXNode).nvswitches?.length || specs.nvlink.nvSwitchCount}\n`;
+    output += `Architecture: ${node.systemType || "DGX-A100"} (${sxmVersion})\n`;
+    output += `NVLink Version: ${specs.nvlink.version}\n`;
+    output += `Links per GPU: ${specs.nvlink.linksPerGpu}\n\n`;
 
     // Per-GPU NVLink Status
     output += "=== NVLink Status Per GPU ===\n";
@@ -134,7 +137,7 @@ export class NvlinkAuditSimulator extends BaseSimulator {
 
       if (verbose || checkAll) {
         output += "\n  Link Details:\n";
-        for (let link = 0; link < 12; link++) {
+        for (let link = 0; link < specs.nvlink.linksPerGpu; link++) {
           const linkState = gpuStatus.links[link];
           const statusIcon = linkState.active
             ? "\x1b[32m✓\x1b[0m"
@@ -155,7 +158,7 @@ export class NvlinkAuditSimulator extends BaseSimulator {
       }
 
       // Link Summary
-      output += `  Active Links: ${gpuStatus.activeLinks}/12\n`;
+      output += `  Active Links: ${gpuStatus.activeLinks}/${specs.nvlink.linksPerGpu}\n`;
       output += `  Total Errors: ${gpuStatus.totalErrors}\n`;
 
       if (gpuStatus.totalErrors > 0) {

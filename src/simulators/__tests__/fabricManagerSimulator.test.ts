@@ -4,6 +4,7 @@ import { parse } from "@/utils/commandParser";
 import type { CommandContext } from "@/types/commands";
 import { useSimulationStore } from "@/store/simulationStore";
 import type { NVLinkConnection, XIDError } from "@/types/hardware";
+import * as hardwareSpecsModule from "@/data/hardwareSpecs";
 
 // Mock the store
 vi.mock("@/store/simulationStore");
@@ -96,7 +97,7 @@ describe("FabricManagerSimulator", () => {
           {
             id: "dgx-00",
             hostname: "dgx-node01",
-            systemType: "DGX H100",
+            systemType: "DGX-H100",
             healthStatus: "OK",
             nvidiaDriverVersion: "535.129.03",
             cudaVersion: "12.2",
@@ -183,14 +184,14 @@ describe("FabricManagerSimulator", () => {
       expect(result.output).toContain("Healthy");
     });
 
-    it("should show NVSwitch count of 6 for 8-GPU system", () => {
+    it("should show NVSwitch count from hardware registry for 8-GPU system", () => {
       const result = simulator.execute(
         parse("nv-fabricmanager status"),
         context,
       );
       expect(result.exitCode).toBe(0);
       expect(result.output).toContain("NVSwitches:");
-      expect(result.output).toMatch(/NVSwitches:\s+6/);
+      expect(result.output).toMatch(/NVSwitches:\s+4/); // DGX-H100 has 4 NVSwitches
     });
 
     it("should show fabric version/driver info", () => {
@@ -199,7 +200,7 @@ describe("FabricManagerSimulator", () => {
         context,
       );
       expect(result.exitCode).toBe(0);
-      expect(result.output).toContain("DGX H100");
+      expect(result.output).toContain("DGX-H100");
     });
 
     it("should show config file path", () => {
@@ -253,7 +254,7 @@ describe("FabricManagerSimulator", () => {
         /NVSwitch-[0-9a-f]{8}-[0-9a-f]{8}-[0-9a-f]{8}-[0-9a-f]{8}/;
       const matches = result.output.match(new RegExp(uuidPattern, "g"));
       expect(matches).not.toBeNull();
-      expect(matches!.length).toBe(6); // 6 NVSwitches for 8-GPU system
+      expect(matches!.length).toBe(4); // DGX-H100 has 4 NVSwitches
     });
 
     it("should have NVSwitch power values within 60-120W range", () => {
@@ -280,17 +281,28 @@ describe("FabricManagerSimulator", () => {
         context,
       );
       expect(result.exitCode).toBe(0);
-      expect(result.output).toContain("Total NVSwitches: 6");
+      expect(result.output).toContain("Total NVSwitches: 4"); // DGX-H100 has 4 NVSwitches
     });
 
-    it("should show 'No NVSwitches detected' for systems with few GPUs", () => {
+    it("should show 'No NVSwitches detected' for systems without NVSwitch", () => {
       setupMock(2);
+      // Mock getHardwareSpecs to return a spec with 0 NVSwitches
+      const spy = vi
+        .spyOn(hardwareSpecsModule, "getHardwareSpecs")
+        .mockReturnValue({
+          ...hardwareSpecsModule.HARDWARE_SPECS["DGX-H100"],
+          nvlink: {
+            ...hardwareSpecsModule.HARDWARE_SPECS["DGX-H100"].nvlink,
+            nvSwitchCount: 0,
+          },
+        });
       const result = simulator.execute(
         parse("nv-fabricmanager query nvswitch"),
         context,
       );
       expect(result.exitCode).toBe(0);
       expect(result.output).toContain("No NVSwitches detected");
+      spy.mockRestore();
     });
 
     it("should generate deterministic UUIDs for same switch index", () => {
@@ -318,7 +330,7 @@ describe("FabricManagerSimulator", () => {
       );
       expect(result.exitCode).toBe(0);
       expect(result.output).toContain("Fabric Topology");
-      expect(result.output).toContain("DGX H100");
+      expect(result.output).toContain("DGX-H100");
       expect(result.output).toContain("dgx-node01");
     });
 
@@ -553,7 +565,7 @@ describe("FabricManagerSimulator", () => {
       expect(result.output).toContain("GPUs detected:");
       expect(result.output).toMatch(/GPUs detected:\s+8/);
       expect(result.output).toContain("NVSwitches detected:");
-      expect(result.output).toMatch(/NVSwitches detected:\s+6/);
+      expect(result.output).toMatch(/NVSwitches detected:\s+4/); // DGX-H100 has 4 NVSwitches
     });
 
     it("should report ALL TESTS PASSED when healthy", () => {
@@ -695,12 +707,23 @@ describe("FabricManagerSimulator", () => {
 
     it("should show direct NVLink message for systems without NVSwitch", () => {
       setupMock(2);
+      // Mock getHardwareSpecs to return a spec with 0 NVSwitches
+      const spy = vi
+        .spyOn(hardwareSpecsModule, "getHardwareSpecs")
+        .mockReturnValue({
+          ...hardwareSpecsModule.HARDWARE_SPECS["DGX-H100"],
+          nvlink: {
+            ...hardwareSpecsModule.HARDWARE_SPECS["DGX-H100"].nvlink,
+            nvSwitchCount: 0,
+          },
+        });
       const result = simulator.execute(
         parse("nv-fabricmanager diag ports"),
         context,
       );
       expect(result.exitCode).toBe(0);
       expect(result.output).toContain("No NVSwitch devices detected");
+      spy.mockRestore();
     });
   });
 
@@ -731,12 +754,23 @@ describe("FabricManagerSimulator", () => {
       expect(result.output).toContain("Full mesh GPU-to-GPU via NVSwitch");
     });
 
-    it("should show no NVSwitch message for small systems", () => {
+    it("should show no NVSwitch message for systems without NVSwitch", () => {
       setupMock(4);
+      // Mock getHardwareSpecs to return a spec with 0 NVSwitches
+      const spy = vi
+        .spyOn(hardwareSpecsModule, "getHardwareSpecs")
+        .mockReturnValue({
+          ...hardwareSpecsModule.HARDWARE_SPECS["DGX-H100"],
+          nvlink: {
+            ...hardwareSpecsModule.HARDWARE_SPECS["DGX-H100"].nvlink,
+            nvSwitchCount: 0,
+          },
+        });
       const result = simulator.execute(parse("nv-fabricmanager topo"), context);
       expect(result.exitCode).toBe(0);
       expect(result.output).toContain("No NVSwitch fabric detected");
       expect(result.output).toContain("direct GPU-to-GPU NVLink");
+      spy.mockRestore();
     });
   });
 

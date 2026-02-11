@@ -30,6 +30,8 @@ import {
   getVisualizationContext,
   VisualizationContext,
 } from "@/utils/scenarioVisualizationMap";
+import { ALL_SYSTEM_TYPES, getSystemDisplayName } from "@/data/hardwareSpecs";
+import type { SystemType } from "@/data/hardwareSpecs";
 
 /**
  * Hook that returns the effective cluster for Dashboard components.
@@ -315,6 +317,39 @@ const NodeSelector: React.FC = () => {
   );
 };
 
+const SystemTypeSelector: React.FC = () => {
+  const systemType = useSimulationStore((state) => state.systemType);
+  const setSystemType = useSimulationStore((state) => state.setSystemType);
+  const activeScenario = useSimulationStore((state) => state.activeScenario);
+
+  return (
+    <div className="flex items-center gap-2">
+      <label htmlFor="system-type-select" className="text-xs text-gray-400">
+        Architecture:
+      </label>
+      <select
+        id="system-type-select"
+        value={systemType}
+        onChange={(e) => setSystemType(e.target.value as SystemType)}
+        disabled={!!activeScenario}
+        className="bg-gray-700 text-sm text-gray-200 border border-gray-600 rounded px-2 py-1
+                   focus:outline-none focus:border-nvidia-green disabled:opacity-50 disabled:cursor-not-allowed"
+        title={
+          activeScenario
+            ? "Cannot change architecture during an active scenario"
+            : "Select DGX system architecture"
+        }
+      >
+        {ALL_SYSTEM_TYPES.map((type) => (
+          <option key={type} value={type}>
+            {getSystemDisplayName(type)}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+};
+
 const ClusterHealthSummary: React.FC = () => {
   const effectiveCluster = useEffectiveCluster();
   const selectNode = useSimulationStore((state) => state.selectNode);
@@ -359,7 +394,12 @@ const ClusterHealthSummary: React.FC = () => {
   return (
     <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-6 border border-gray-700">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-nvidia-green">Cluster Health</h2>
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-bold text-nvidia-green">
+            Cluster Health
+          </h2>
+          <SystemTypeSelector />
+        </div>
         <HealthIndicator status={overallHealth} />
       </div>
 

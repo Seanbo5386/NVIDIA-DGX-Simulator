@@ -7,8 +7,8 @@
 
 export interface GPULayoutPosition {
   gpuIndex: number;
-  x: number;      // Relative X position (0-1)
-  y: number;      // Relative Y position (0-1)
+  x: number; // Relative X position (0-1)
+  y: number; // Relative Y position (0-1)
   nvSwitchGroup: number; // Which NVSwitch group this GPU connects to
 }
 
@@ -31,55 +31,67 @@ export interface DGXLayout {
 /**
  * DGX A100 Layout
  *
- * 8 GPUs arranged in 2 rows of 4, connected via 6 NVSwitches.
- * GPUs 0-3 form one group, GPUs 4-7 form another.
- * NVSwitches 0-2 connect the left group, NVSwitches 3-5 connect the right group.
- * Cross-group connections via direct NVLink (GPU 1-2, GPU 5-6).
+ * 8 GPUs arranged in 2 rows of 4, connected via 6 NVSwitch 2.0 chips.
+ * Each GPU has 2 NVLinks per NVSwitch = 12 NVLinks total per GPU.
+ * All 6 NVSwitches connect to all 8 GPUs, providing all-to-all
+ * non-blocking connectivity (28 unique GPU pairs, C(8,2)).
+ * 600 GB/s bidirectional per GPU. Matches nvidia-smi topo -m (NV12 between all pairs).
  */
 export const DGX_A100_LAYOUT: DGXLayout = {
-  systemType: 'DGX-A100',
+  systemType: "DGX-A100",
   gpuCount: 8,
   nvSwitchCount: 6,
   gpuPositions: [
     // Top row (GPUs 0-3)
     { gpuIndex: 0, x: 0.15, y: 0.25, nvSwitchGroup: 0 },
     { gpuIndex: 1, x: 0.38, y: 0.25, nvSwitchGroup: 0 },
-    { gpuIndex: 2, x: 0.62, y: 0.25, nvSwitchGroup: 1 },
-    { gpuIndex: 3, x: 0.85, y: 0.25, nvSwitchGroup: 1 },
+    { gpuIndex: 2, x: 0.62, y: 0.25, nvSwitchGroup: 0 },
+    { gpuIndex: 3, x: 0.85, y: 0.25, nvSwitchGroup: 0 },
     // Bottom row (GPUs 4-7)
     { gpuIndex: 4, x: 0.15, y: 0.75, nvSwitchGroup: 0 },
     { gpuIndex: 5, x: 0.38, y: 0.75, nvSwitchGroup: 0 },
-    { gpuIndex: 6, x: 0.62, y: 0.75, nvSwitchGroup: 1 },
-    { gpuIndex: 7, x: 0.85, y: 0.75, nvSwitchGroup: 1 },
+    { gpuIndex: 6, x: 0.62, y: 0.75, nvSwitchGroup: 0 },
+    { gpuIndex: 7, x: 0.85, y: 0.75, nvSwitchGroup: 0 },
   ],
   nvSwitchPositions: [
-    // Left NVSwitch group (0-2)
-    { id: 0, x: 0.26, y: 0.4, connectedGPUs: [0, 1, 4, 5] },
-    { id: 1, x: 0.26, y: 0.5, connectedGPUs: [0, 1, 4, 5] },
-    { id: 2, x: 0.26, y: 0.6, connectedGPUs: [0, 1, 4, 5] },
-    // Right NVSwitch group (3-5)
-    { id: 3, x: 0.74, y: 0.4, connectedGPUs: [2, 3, 6, 7] },
-    { id: 4, x: 0.74, y: 0.5, connectedGPUs: [2, 3, 6, 7] },
-    { id: 5, x: 0.74, y: 0.6, connectedGPUs: [2, 3, 6, 7] },
+    // All 6 NVSwitches connect to all 8 GPUs (2x3 grid centered between GPU rows)
+    { id: 0, x: 0.3, y: 0.42, connectedGPUs: [0, 1, 2, 3, 4, 5, 6, 7] },
+    { id: 1, x: 0.5, y: 0.42, connectedGPUs: [0, 1, 2, 3, 4, 5, 6, 7] },
+    { id: 2, x: 0.7, y: 0.42, connectedGPUs: [0, 1, 2, 3, 4, 5, 6, 7] },
+    { id: 3, x: 0.3, y: 0.58, connectedGPUs: [0, 1, 2, 3, 4, 5, 6, 7] },
+    { id: 4, x: 0.5, y: 0.58, connectedGPUs: [0, 1, 2, 3, 4, 5, 6, 7] },
+    { id: 5, x: 0.7, y: 0.58, connectedGPUs: [0, 1, 2, 3, 4, 5, 6, 7] },
   ],
   nvLinkConnections: [
-    // Within left group (full mesh via NVSwitch)
-    { from: 0, to: 1, nvSwitchId: 0 },
-    { from: 0, to: 4, nvSwitchId: 1 },
-    { from: 0, to: 5, nvSwitchId: 2 },
-    { from: 1, to: 4, nvSwitchId: 0 },
-    { from: 1, to: 5, nvSwitchId: 1 },
-    { from: 4, to: 5, nvSwitchId: 2 },
-    // Within right group
-    { from: 2, to: 3, nvSwitchId: 3 },
-    { from: 2, to: 6, nvSwitchId: 4 },
-    { from: 2, to: 7, nvSwitchId: 5 },
-    { from: 3, to: 6, nvSwitchId: 3 },
-    { from: 3, to: 7, nvSwitchId: 4 },
-    { from: 6, to: 7, nvSwitchId: 5 },
-    // Cross-group connections (GPU-to-GPU NVLink)
+    // All-to-all via NVSwitch fabric (28 unique pairs, C(8,2))
+    { from: 0, to: 1 },
+    { from: 0, to: 2 },
+    { from: 0, to: 3 },
+    { from: 0, to: 4 },
+    { from: 0, to: 5 },
+    { from: 0, to: 6 },
+    { from: 0, to: 7 },
     { from: 1, to: 2 },
+    { from: 1, to: 3 },
+    { from: 1, to: 4 },
+    { from: 1, to: 5 },
+    { from: 1, to: 6 },
+    { from: 1, to: 7 },
+    { from: 2, to: 3 },
+    { from: 2, to: 4 },
+    { from: 2, to: 5 },
+    { from: 2, to: 6 },
+    { from: 2, to: 7 },
+    { from: 3, to: 4 },
+    { from: 3, to: 5 },
+    { from: 3, to: 6 },
+    { from: 3, to: 7 },
+    { from: 4, to: 5 },
+    { from: 4, to: 6 },
+    { from: 4, to: 7 },
     { from: 5, to: 6 },
+    { from: 5, to: 7 },
+    { from: 6, to: 7 },
   ],
 };
 
@@ -90,7 +102,7 @@ export const DGX_A100_LAYOUT: DGXLayout = {
  * All-to-all connectivity through the NVSwitch fabric.
  */
 export const DGX_H100_LAYOUT: DGXLayout = {
-  systemType: 'DGX-H100',
+  systemType: "DGX-H100",
   gpuCount: 8,
   nvSwitchCount: 4,
   gpuPositions: [
@@ -112,15 +124,94 @@ export const DGX_H100_LAYOUT: DGXLayout = {
   ],
   nvLinkConnections: [
     // Full mesh through NVSwitch (all-to-all)
-    { from: 0, to: 1 }, { from: 0, to: 2 }, { from: 0, to: 3 }, { from: 0, to: 4 },
-    { from: 0, to: 5 }, { from: 0, to: 6 }, { from: 0, to: 7 },
-    { from: 1, to: 2 }, { from: 1, to: 3 }, { from: 1, to: 4 },
-    { from: 1, to: 5 }, { from: 1, to: 6 }, { from: 1, to: 7 },
-    { from: 2, to: 3 }, { from: 2, to: 4 }, { from: 2, to: 5 },
-    { from: 2, to: 6 }, { from: 2, to: 7 },
-    { from: 3, to: 4 }, { from: 3, to: 5 }, { from: 3, to: 6 }, { from: 3, to: 7 },
-    { from: 4, to: 5 }, { from: 4, to: 6 }, { from: 4, to: 7 },
-    { from: 5, to: 6 }, { from: 5, to: 7 },
+    { from: 0, to: 1 },
+    { from: 0, to: 2 },
+    { from: 0, to: 3 },
+    { from: 0, to: 4 },
+    { from: 0, to: 5 },
+    { from: 0, to: 6 },
+    { from: 0, to: 7 },
+    { from: 1, to: 2 },
+    { from: 1, to: 3 },
+    { from: 1, to: 4 },
+    { from: 1, to: 5 },
+    { from: 1, to: 6 },
+    { from: 1, to: 7 },
+    { from: 2, to: 3 },
+    { from: 2, to: 4 },
+    { from: 2, to: 5 },
+    { from: 2, to: 6 },
+    { from: 2, to: 7 },
+    { from: 3, to: 4 },
+    { from: 3, to: 5 },
+    { from: 3, to: 6 },
+    { from: 3, to: 7 },
+    { from: 4, to: 5 },
+    { from: 4, to: 6 },
+    { from: 4, to: 7 },
+    { from: 5, to: 6 },
+    { from: 5, to: 7 },
+    { from: 6, to: 7 },
+  ],
+};
+
+/**
+ * DGX B200 Layout
+ *
+ * 8 GPUs arranged in 2 rows of 4, connected via 2 NVSwitch 5th-gen chips.
+ * NVLink 5.0 with 18 links per GPU at 50 GB/s each = 1800 GB/s total per GPU.
+ * All-to-all non-blocking connectivity through the 2 NVSwitch chips.
+ */
+export const DGX_B200_LAYOUT: DGXLayout = {
+  systemType: "DGX-B200",
+  gpuCount: 8,
+  nvSwitchCount: 2,
+  gpuPositions: [
+    // Top row (GPUs 0-3)
+    { gpuIndex: 0, x: 0.15, y: 0.2, nvSwitchGroup: 0 },
+    { gpuIndex: 1, x: 0.38, y: 0.2, nvSwitchGroup: 0 },
+    { gpuIndex: 2, x: 0.62, y: 0.2, nvSwitchGroup: 0 },
+    { gpuIndex: 3, x: 0.85, y: 0.2, nvSwitchGroup: 0 },
+    // Bottom row (GPUs 4-7)
+    { gpuIndex: 4, x: 0.15, y: 0.8, nvSwitchGroup: 0 },
+    { gpuIndex: 5, x: 0.38, y: 0.8, nvSwitchGroup: 0 },
+    { gpuIndex: 6, x: 0.62, y: 0.8, nvSwitchGroup: 0 },
+    { gpuIndex: 7, x: 0.85, y: 0.8, nvSwitchGroup: 0 },
+  ],
+  nvSwitchPositions: [
+    // 2 NVSwitches centered between GPU rows
+    { id: 0, x: 0.38, y: 0.5, connectedGPUs: [0, 1, 2, 3, 4, 5, 6, 7] },
+    { id: 1, x: 0.62, y: 0.5, connectedGPUs: [0, 1, 2, 3, 4, 5, 6, 7] },
+  ],
+  nvLinkConnections: [
+    // All-to-all via NVSwitch fabric (28 unique pairs, C(8,2))
+    { from: 0, to: 1 },
+    { from: 0, to: 2 },
+    { from: 0, to: 3 },
+    { from: 0, to: 4 },
+    { from: 0, to: 5 },
+    { from: 0, to: 6 },
+    { from: 0, to: 7 },
+    { from: 1, to: 2 },
+    { from: 1, to: 3 },
+    { from: 1, to: 4 },
+    { from: 1, to: 5 },
+    { from: 1, to: 6 },
+    { from: 1, to: 7 },
+    { from: 2, to: 3 },
+    { from: 2, to: 4 },
+    { from: 2, to: 5 },
+    { from: 2, to: 6 },
+    { from: 2, to: 7 },
+    { from: 3, to: 4 },
+    { from: 3, to: 5 },
+    { from: 3, to: 6 },
+    { from: 3, to: 7 },
+    { from: 4, to: 5 },
+    { from: 4, to: 6 },
+    { from: 4, to: 7 },
+    { from: 5, to: 6 },
+    { from: 5, to: 7 },
     { from: 6, to: 7 },
   ],
 };
@@ -131,10 +222,12 @@ export const DGX_H100_LAYOUT: DGXLayout = {
  */
 export function getLayoutForSystem(systemType: string): DGXLayout {
   switch (systemType) {
-    case 'DGX-H100':
-    case 'DGX-H200':
+    case "DGX-H100":
+    case "DGX-H200":
       return DGX_H100_LAYOUT;
-    case 'DGX-A100':
+    case "DGX-B200":
+      return DGX_B200_LAYOUT;
+    case "DGX-A100":
     default:
       return DGX_A100_LAYOUT;
   }
@@ -147,7 +240,7 @@ export function calculateGPUPositions(
   layout: DGXLayout,
   width: number,
   height: number,
-  padding: number = 50
+  padding: number = 50,
 ): Array<{ gpuIndex: number; x: number; y: number }> {
   const usableWidth = width - padding * 2;
   const usableHeight = height - padding * 2;
@@ -166,7 +259,7 @@ export function calculateNVSwitchPositions(
   layout: DGXLayout,
   width: number,
   height: number,
-  padding: number = 50
+  padding: number = 50,
 ): Array<{ id: number; x: number; y: number; connectedGPUs: number[] }> {
   const usableWidth = width - padding * 2;
   const usableHeight = height - padding * 2;

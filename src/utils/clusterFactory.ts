@@ -2,56 +2,115 @@ import type {
   ClusterConfig,
   DGXNode,
   GPU,
+  GPUType,
   BlueFieldDPU,
   InfiniBandHCA,
   BMC,
   NVLinkConnection,
   InfiniBandPort,
   BMCSensor,
-} from '@/types/hardware';
+} from "@/types/hardware";
+import {
+  getHardwareSpecs,
+  type SystemType,
+  type HardwareSpec,
+} from "@/data/hardwareSpecs";
+
+const GPU_TYPE_MAP: Record<SystemType, GPUType> = {
+  "DGX-A100": "A100-80GB",
+  "DGX-H100": "H100-SXM",
+  "DGX-H200": "H200-SXM",
+  "DGX-B200": "B200",
+};
 
 // MIG profiles for A100/H100
 export const MIG_PROFILES = [
-  { id: 19, name: '1g.5gb', memory: 4.75, computeSlices: 14, gpuInstances: 1, maxInstances: 7 },
-  { id: 20, name: '1g.10gb', memory: 9.62, computeSlices: 14, gpuInstances: 1, maxInstances: 4 },
-  { id: 14, name: '2g.10gb', memory: 9.62, computeSlices: 28, gpuInstances: 2, maxInstances: 3 },
-  { id: 9, name: '3g.20gb', memory: 19.50, computeSlices: 42, gpuInstances: 3, maxInstances: 2 },
-  { id: 5, name: '4g.20gb', memory: 19.50, computeSlices: 56, gpuInstances: 4, maxInstances: 1 },
-  { id: 0, name: '7g.40gb', memory: 39.25, computeSlices: 98, gpuInstances: 7, maxInstances: 1 },
+  {
+    id: 19,
+    name: "1g.5gb",
+    memory: 4.75,
+    computeSlices: 14,
+    gpuInstances: 1,
+    maxInstances: 7,
+  },
+  {
+    id: 20,
+    name: "1g.10gb",
+    memory: 9.62,
+    computeSlices: 14,
+    gpuInstances: 1,
+    maxInstances: 4,
+  },
+  {
+    id: 14,
+    name: "2g.10gb",
+    memory: 9.62,
+    computeSlices: 28,
+    gpuInstances: 2,
+    maxInstances: 3,
+  },
+  {
+    id: 9,
+    name: "3g.20gb",
+    memory: 19.5,
+    computeSlices: 42,
+    gpuInstances: 3,
+    maxInstances: 2,
+  },
+  {
+    id: 5,
+    name: "4g.20gb",
+    memory: 19.5,
+    computeSlices: 56,
+    gpuInstances: 4,
+    maxInstances: 1,
+  },
+  {
+    id: 0,
+    name: "7g.40gb",
+    memory: 39.25,
+    computeSlices: 98,
+    gpuInstances: 7,
+    maxInstances: 1,
+  },
 ];
 
 function generateUUID(): string {
-  return 'GPU-' + Array.from({ length: 8 }, () =>
-    Math.floor(Math.random() * 16).toString(16)
-  ).join('').toUpperCase();
+  return (
+    "GPU-" +
+    Array.from({ length: 8 }, () => Math.floor(Math.random() * 16).toString(16))
+      .join("")
+      .toUpperCase()
+  );
 }
 
-function createNVLinkConnections(count: number): NVLinkConnection[] {
-  return Array.from({ length: count }, (_, i) => ({
+function createNVLinkConnections(specs: HardwareSpec): NVLinkConnection[] {
+  return Array.from({ length: specs.nvlink.linksPerGpu }, (_, i) => ({
     linkId: i,
-    status: 'Active' as const,
-    speed: 600, // GB/s for A100
+    status: "Active" as const,
+    speed: specs.nvlink.totalBandwidthGBs,
     txErrors: 0,
     rxErrors: 0,
     replayErrors: 0,
   }));
 }
 
-function createGPU(id: number): GPU {
+function createGPU(id: number, specs: HardwareSpec): GPU {
   return {
     id,
     uuid: generateUUID(),
-    name: 'NVIDIA A100-SXM4-80GB',
-    type: 'A100-80GB',
-    pciAddress: `00000000:${(0x10 + id).toString(16).padStart(2, '0')}:00.0`,
+    name: specs.gpu.model,
+    type: GPU_TYPE_MAP[specs.system.type] || "A100-80GB",
+    pciAddress: `00000000:${(0x10 + id).toString(16).padStart(2, "0")}:00.0`,
     temperature: 30 + Math.random() * 10,
-    powerDraw: 250 + Math.random() * 100,
-    powerLimit: 400,
-    memoryTotal: 81920,
+    powerDraw:
+      specs.gpu.tdpWatts * 0.6 + Math.random() * specs.gpu.tdpWatts * 0.2,
+    powerLimit: specs.gpu.tdpWatts,
+    memoryTotal: specs.gpu.memoryMiB,
     memoryUsed: 0,
     utilization: 0,
-    clocksSM: 1410,
-    clocksMem: 1215,
+    clocksSM: specs.gpu.boostClockMHz,
+    clocksMem: specs.gpu.memoryClockMHz,
     eccEnabled: true,
     eccErrors: {
       singleBit: 0,
@@ -63,8 +122,8 @@ function createGPU(id: number): GPU {
     },
     migMode: false,
     migInstances: [],
-    nvlinks: createNVLinkConnections(12),
-    healthStatus: 'OK',
+    nvlinks: createNVLinkConnections(specs),
+    healthStatus: "OK",
     xidErrors: [],
     persistenceMode: true,
   };
@@ -75,28 +134,33 @@ function createBlueFieldDPU(id: number): BlueFieldDPU {
     id,
     pciAddress: `0000:${(0xa0 + id).toString(16)}:00.0`,
     devicePath: `/dev/mst/mt41692_pciconf${id}`,
-    firmwareVersion: '24.35.2000',
+    firmwareVersion: "24.35.2000",
     mode: {
-      mode: 'DPU',
+      mode: "DPU",
       internalCpuModel: 1,
-      description: 'DPU mode - Arm cores own NIC resources',
+      description: "DPU mode - Arm cores own NIC resources",
     },
     ipAddress: `192.168.100.${10 + id}`,
-    armOS: 'Ubuntu 22.04.3 LTS',
+    armOS: "Ubuntu 22.04.3 LTS",
     ovsConfigured: true,
     rshimAvailable: true,
   };
 }
 
-function createInfiniBandPort(portNum: number): InfiniBandPort {
+function createInfiniBandPort(
+  portNum: number,
+  specs: HardwareSpec,
+): InfiniBandPort {
   return {
     portNumber: portNum,
-    state: 'Active',
-    physicalState: 'LinkUp',
-    rate: 200,
+    state: "Active",
+    physicalState: "LinkUp",
+    rate: specs.network.portRateGbs as 100 | 200 | 400 | 800,
     lid: 100 + portNum,
-    guid: `0x${Math.floor(Math.random() * 0xffffffffffff).toString(16).padStart(12, '0')}`,
-    linkLayer: 'InfiniBand',
+    guid: `0x${Math.floor(Math.random() * 0xffffffffffff)
+      .toString(16)
+      .padStart(12, "0")}`,
+    linkLayer: "InfiniBand",
     errors: {
       symbolErrors: 0,
       linkDowned: 0,
@@ -107,117 +171,210 @@ function createInfiniBandPort(portNum: number): InfiniBandPort {
   };
 }
 
-function createInfiniBandHCA(id: number): InfiniBandHCA {
+function createInfiniBandHCA(id: number, specs: HardwareSpec): InfiniBandHCA {
+  const hcaDeviceIds: Record<string, string> = {
+    "ConnectX-6": "mt4123",
+    "ConnectX-7": "mt4129",
+  };
+  const deviceId = hcaDeviceIds[specs.network.hcaModel] || "mt4123";
   return {
     id,
-    devicePath: `/dev/mst/mt4123_pciconf${id}`,
-    caType: 'ConnectX-6 HCA',
-    firmwareVersion: '20.35.1012',
-    ports: [createInfiniBandPort(1)],
+    devicePath: `/dev/mst/${deviceId}_pciconf${id}`,
+    caType: `${specs.network.hcaModel} HCA`,
+    firmwareVersion:
+      specs.network.hcaModel === "ConnectX-7" ? "28.39.1002" : "20.35.1012",
+    ports: [createInfiniBandPort(1, specs)],
   };
 }
 
 function createBMCSensors(): BMCSensor[] {
   return [
-    { name: 'CPU1 Temp', reading: 45, unit: '°C', status: 'OK', upperCritical: 95, upperWarning: 85 },
-    { name: 'CPU2 Temp', reading: 47, unit: '°C', status: 'OK', upperCritical: 95, upperWarning: 85 },
-    { name: 'Inlet Temp', reading: 22, unit: '°C', status: 'OK', upperCritical: 45, upperWarning: 40 },
-    { name: 'Exhaust Temp', reading: 35, unit: '°C', status: 'OK', upperCritical: 70, upperWarning: 65 },
-    { name: 'PSU1 Input', reading: 230, unit: 'V', status: 'OK', lowerCritical: 180, upperCritical: 264 },
-    { name: 'PSU2 Input', reading: 229, unit: 'V', status: 'OK', lowerCritical: 180, upperCritical: 264 },
-    { name: 'PSU1 Power', reading: 850, unit: 'W', status: 'OK', upperCritical: 3000 },
-    { name: 'PSU2 Power', reading: 840, unit: 'W', status: 'OK', upperCritical: 3000 },
-    { name: 'Fan1', reading: 5200, unit: 'RPM', status: 'OK', lowerCritical: 1000 },
-    { name: 'Fan2', reading: 5150, unit: 'RPM', status: 'OK', lowerCritical: 1000 },
-    { name: 'Fan3', reading: 5300, unit: 'RPM', status: 'OK', lowerCritical: 1000 },
-    { name: 'Fan4', reading: 5180, unit: 'RPM', status: 'OK', lowerCritical: 1000 },
+    {
+      name: "CPU1 Temp",
+      reading: 45,
+      unit: "°C",
+      status: "OK",
+      upperCritical: 95,
+      upperWarning: 85,
+    },
+    {
+      name: "CPU2 Temp",
+      reading: 47,
+      unit: "°C",
+      status: "OK",
+      upperCritical: 95,
+      upperWarning: 85,
+    },
+    {
+      name: "Inlet Temp",
+      reading: 22,
+      unit: "°C",
+      status: "OK",
+      upperCritical: 45,
+      upperWarning: 40,
+    },
+    {
+      name: "Exhaust Temp",
+      reading: 35,
+      unit: "°C",
+      status: "OK",
+      upperCritical: 70,
+      upperWarning: 65,
+    },
+    {
+      name: "PSU1 Input",
+      reading: 230,
+      unit: "V",
+      status: "OK",
+      lowerCritical: 180,
+      upperCritical: 264,
+    },
+    {
+      name: "PSU2 Input",
+      reading: 229,
+      unit: "V",
+      status: "OK",
+      lowerCritical: 180,
+      upperCritical: 264,
+    },
+    {
+      name: "PSU1 Power",
+      reading: 850,
+      unit: "W",
+      status: "OK",
+      upperCritical: 3000,
+    },
+    {
+      name: "PSU2 Power",
+      reading: 840,
+      unit: "W",
+      status: "OK",
+      upperCritical: 3000,
+    },
+    {
+      name: "Fan1",
+      reading: 5200,
+      unit: "RPM",
+      status: "OK",
+      lowerCritical: 1000,
+    },
+    {
+      name: "Fan2",
+      reading: 5150,
+      unit: "RPM",
+      status: "OK",
+      lowerCritical: 1000,
+    },
+    {
+      name: "Fan3",
+      reading: 5300,
+      unit: "RPM",
+      status: "OK",
+      lowerCritical: 1000,
+    },
+    {
+      name: "Fan4",
+      reading: 5180,
+      unit: "RPM",
+      status: "OK",
+      lowerCritical: 1000,
+    },
   ];
 }
 
 function createBMC(nodeId: number): BMC {
   return {
     ipAddress: `192.168.0.${100 + nodeId}`,
-    macAddress: `00:0a:f7:${nodeId.toString(16).padStart(2, '0')}:00:01`,
-    firmwareVersion: '3.47.00',
-    manufacturer: 'NVIDIA',
+    macAddress: `00:0a:f7:${nodeId.toString(16).padStart(2, "0")}:00:01`,
+    firmwareVersion: "3.47.00",
+    manufacturer: "NVIDIA",
     sensors: createBMCSensors(),
-    powerState: 'On',
+    powerState: "On",
   };
 }
 
-function createDGXNode(id: number): DGXNode {
+function createDGXNode(
+  id: number,
+  systemType: SystemType = "DGX-A100",
+): DGXNode {
+  const specs = getHardwareSpecs(systemType);
+  const cpu = specs.system.cpu;
+
+  // Driver/CUDA versions appropriate to generation
+  const driverVersions: Record<string, { driver: string; cuda: string }> = {
+    Ampere: { driver: "535.129.03", cuda: "12.2" },
+    Hopper: { driver: "550.54.15", cuda: "12.4" },
+    Blackwell: { driver: "560.35.03", cuda: "12.6" },
+  };
+  const versions =
+    driverVersions[specs.system.generation] || driverVersions["Ampere"];
+
   return {
-    id: `dgx-${id.toString().padStart(2, '0')}`,
-    hostname: `dgx-${id.toString().padStart(2, '0')}.cluster.local`,
-    systemType: 'DGX-A100',
-    gpus: Array.from({ length: 8 }, (_, i) => createGPU(i)),
+    id: `dgx-${id.toString().padStart(2, "0")}`,
+    hostname: `dgx-${id.toString().padStart(2, "0")}.cluster.local`,
+    systemType,
+    gpus: Array.from({ length: specs.gpu.count }, (_, i) =>
+      createGPU(i, specs),
+    ),
     dpus: Array.from({ length: 2 }, (_, i) => createBlueFieldDPU(i)),
-    hcas: Array.from({ length: 8 }, (_, i) => createInfiniBandHCA(i)),
+    hcas: Array.from({ length: specs.network.hcaCount }, (_, i) =>
+      createInfiniBandHCA(i, specs),
+    ),
     bmc: createBMC(id),
-    cpuModel: 'AMD EPYC 7742 64-Core Processor',
-    cpuCount: 2,
-    ramTotal: 1024,
+    cpuModel: `${cpu.model} ${cpu.coresPerSocket}-Core Processor`,
+    cpuCount: cpu.sockets,
+    ramTotal: specs.system.systemMemoryGB,
     ramUsed: 128,
-    osVersion: 'Ubuntu 22.04.3 LTS',
-    kernelVersion: '5.15.0-91-generic',
-    nvidiaDriverVersion: '535.129.03',
-    cudaVersion: '12.2',
-    healthStatus: 'OK',
-    slurmState: 'idle',
+    osVersion: "Ubuntu 22.04.3 LTS",
+    kernelVersion: "5.15.0-91-generic",
+    nvidiaDriverVersion: versions.driver,
+    cudaVersion: versions.cuda,
+    healthStatus: "OK",
+    slurmState: "idle",
   };
 }
 
 export function createDefaultCluster(): ClusterConfig {
   return {
-    name: 'DGX SuperPOD',
+    name: "DGX SuperPOD",
     nodes: Array.from({ length: 8 }, (_, i) => createDGXNode(i)),
-    fabricTopology: 'FatTree',
+    fabricTopology: "FatTree",
     bcmHA: {
       enabled: true,
-      primary: 'mgmt-node0',
-      secondary: 'mgmt-node1',
-      state: 'Active',
+      primary: "mgmt-node0",
+      secondary: "mgmt-node1",
+      state: "Active",
     },
     slurmConfig: {
-      controlMachine: 'mgmt-node0',
-      partitions: ['batch', 'interactive', 'gpu'],
+      controlMachine: "mgmt-node0",
+      partitions: ["batch", "interactive", "gpu"],
     },
   };
 }
 
-export function createCustomCluster(nodeCount: number, systemType: 'DGX-A100' | 'DGX-H100'): ClusterConfig {
-  const nodes = Array.from({ length: nodeCount }, (_, i) => {
-    const node = createDGXNode(i);
-    node.systemType = systemType;
-
-    if (systemType === 'DGX-H100') {
-      node.gpus = node.gpus.map((gpu) => ({
-        ...gpu,
-        name: 'NVIDIA H100-SXM5-80GB',
-        type: 'H100-SXM',
-        powerLimit: 700,
-        clocksSM: 1830,
-        clocksMem: 2619,
-        nvlinks: createNVLinkConnections(18), // H100 has 18 NVLinks
-      }));
-    }
-
-    return node;
-  });
+export function createCustomCluster(
+  nodeCount: number,
+  systemType: SystemType,
+): ClusterConfig {
+  const nodes = Array.from({ length: nodeCount }, (_, i) =>
+    createDGXNode(i, systemType),
+  );
 
   return {
     name: `${systemType} Cluster`,
     nodes,
-    fabricTopology: 'FatTree',
+    fabricTopology: "FatTree",
     bcmHA: {
       enabled: true,
-      primary: 'mgmt-node0',
-      secondary: 'mgmt-node1',
-      state: 'Active',
+      primary: "mgmt-node0",
+      secondary: "mgmt-node1",
+      state: "Active",
     },
     slurmConfig: {
-      controlMachine: 'mgmt-node0',
-      partitions: ['batch', 'interactive', 'gpu'],
+      controlMachine: "mgmt-node0",
+      partitions: ["batch", "interactive", "gpu"],
     },
   };
 }
+
+export type { SystemType };

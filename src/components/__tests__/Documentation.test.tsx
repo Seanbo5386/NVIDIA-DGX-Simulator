@@ -79,7 +79,10 @@ describe("Documentation", () => {
 
   it("renders all five tab labels in the tab bar", () => {
     render(<Documentation />);
-    expect(screen.getByText("Architecture")).toBeInTheDocument();
+    // Use getAllByText for "Architecture" since it also appears in the ArchitectureComparison table
+    expect(screen.getAllByText("Architecture").length).toBeGreaterThanOrEqual(
+      1,
+    );
     expect(screen.getByText("Commands")).toBeInTheDocument();
     expect(screen.getByText("Troubleshooting")).toBeInTheDocument();
     expect(screen.getByText("XID Reference")).toBeInTheDocument();
@@ -108,8 +111,12 @@ describe("Documentation", () => {
 
   it("applies active styling to the Architecture tab by default", () => {
     render(<Documentation />);
-    const archLabel = screen.getByText("Architecture");
-    const archButton = archLabel.closest("button")!;
+    // "Architecture" appears in both the tab bar and the ArchitectureComparison table;
+    // find the one inside a button (the tab label)
+    const archLabels = screen.getAllByText("Architecture");
+    const archButton = archLabels
+      .map((el) => el.closest("button"))
+      .find((btn) => btn !== null)!;
     expect(archButton.className).toContain("border-nvidia-green");
     expect(archButton.className).toContain("text-nvidia-green");
   });

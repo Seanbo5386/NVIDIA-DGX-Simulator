@@ -6,6 +6,7 @@ import type {
 } from "@/types/commands";
 import { BaseSimulator } from "./BaseSimulator";
 import type { GPU, InfiniBandHCA } from "@/types/hardware";
+import { getHardwareSpecs } from "@/data/hardwareSpecs";
 
 /**
  * BasicSystemSimulator
@@ -232,33 +233,51 @@ export class BasicSystemSimulator extends BaseSimulator {
    */
   private handleLscpu(
     _parsed: ParsedCommand,
-    _context: CommandContext,
+    context: CommandContext,
   ): CommandResult {
+    const node = this.resolveNode(context);
+    const specs = getHardwareSpecs(node?.systemType || "DGX-A100");
+    const cpu = specs.system.cpu;
+    const isAMD = cpu.model.includes("AMD");
+    const totalCPUs = cpu.sockets * cpu.coresPerSocket * 2;
+    const halfCPUs = cpu.coresPerSocket;
+    const vendorId = isAMD ? "AuthenticAMD" : "GenuineIntel";
+    const cpuFamily = isAMD ? "25" : "6";
+    const model = isAMD ? "1" : "143";
+    const maxMHz = isAMD ? "3400.0000" : "3800.0000";
+    const minMHz = isAMD ? "1500.0000" : "800.0000";
+    const curMHz = isAMD ? "2245.781" : "2000.000";
+    const bogomips = isAMD ? "4491.56" : "4000.00";
+    const virt = isAMD ? "AMD-V" : "VT-x";
+    const numaHalf = halfCPUs - 1;
+    const numaHigh0 = totalCPUs / 2;
+    const numaHigh1 = totalCPUs - 1;
+
     const output = `Architecture:        x86_64
 CPU op-mode(s):      32-bit, 64-bit
 Byte Order:          Little Endian
-CPU(s):              128
-On-line CPU(s) list: 0-127
+CPU(s):              ${totalCPUs}
+On-line CPU(s) list: 0-${totalCPUs - 1}
 Thread(s) per core:  2
-Core(s) per socket:  32
-Socket(s):           2
-NUMA node(s):        2
-Vendor ID:           AuthenticAMD
-CPU family:          25
-Model:               1
-Model name:          AMD EPYC 7742 64-Core Processor
+Core(s) per socket:  ${cpu.coresPerSocket}
+Socket(s):           ${cpu.sockets}
+NUMA node(s):        ${cpu.sockets}
+Vendor ID:           ${vendorId}
+CPU family:          ${cpuFamily}
+Model:               ${model}
+Model name:          ${cpu.model}
 Stepping:            1
-CPU MHz:             2245.781
-CPU max MHz:         3400.0000
-CPU min MHz:         1500.0000
-BogoMIPS:            4491.56
-Virtualization:      AMD-V
+CPU MHz:             ${curMHz}
+CPU max MHz:         ${maxMHz}
+CPU min MHz:         ${minMHz}
+BogoMIPS:            ${bogomips}
+Virtualization:      ${virt}
 L1d cache:           32K
 L1i cache:           32K
-L2 cache:            512K
-L3 cache:            16384K
-NUMA node0 CPU(s):   0-31,64-95
-NUMA node1 CPU(s):   32-63,96-127`;
+L2 cache:            ${isAMD ? "512K" : "2048K"}
+L3 cache:            ${isAMD ? "16384K" : "107520K"}
+NUMA node0 CPU(s):   0-${numaHalf},${numaHigh0}-${numaHigh0 + numaHalf}
+NUMA node1 CPU(s):   ${halfCPUs}-${halfCPUs + numaHalf},${numaHigh0 + halfCPUs}-${numaHigh1}`;
 
     return this.createSuccess(output);
   }
@@ -270,18 +289,30 @@ NUMA node1 CPU(s):   32-63,96-127`;
    */
   private handleFree(
     parsed: ParsedCommand,
-    _context: CommandContext,
+    context: CommandContext,
   ): CommandResult {
     const showHuman = this.hasAnyFlag(parsed, ["h", "human"]);
+    const node = this.resolveNode(context);
+    const specs = getHardwareSpecs(node?.systemType || "DGX-A100");
+    const totalGB = specs.system.systemMemoryGB;
+    const totalKB = totalGB * 1024 * 1024; // KB
+    const usedKB = Math.round(totalKB * 0.0625); // ~6.25% used
+    const buffCacheKB = Math.round(totalKB * 0.088);
+    const freeKB = totalKB - usedKB - buffCacheKB;
+    const availableKB = totalKB - usedKB;
 
     let output: string;
     if (showHuman) {
+      const totalHuman =
+        totalGB >= 1024 ? `${(totalGB / 1024).toFixed(1)}T` : `${totalGB}G`;
+      const freeHuman = `${(freeKB / 1024 / 1024).toFixed(1)}T`;
+      const availHuman = `${(availableKB / 1024 / 1024).toFixed(1)}T`;
       output = `              total        used        free      shared  buff/cache   available
-Mem:           2.0T        128G        1.7T        4.0G        180G        1.8T
+Mem:           ${totalHuman.padStart(4)}        128G        ${freeHuman}        4.0G        ${Math.round(buffCacheKB / 1024 / 1024)}G        ${availHuman}
 Swap:           32G          0B         32G`;
     } else {
       output = `              total        used        free      shared  buff/cache   available
-Mem:      2147483648   134217728  1879048192     4194304   188743680  1946157056
+Mem:      ${totalKB}   ${usedKB}  ${freeKB}     4194304   ${buffCacheKB}  ${availableKB}
 Swap:       33554432           0    33554432`;
     }
 
@@ -300,6 +331,10 @@ Swap:       33554432           0    33554432`;
     const hasTypeFlag = this.hasAnyFlag(parsed, ["t"]);
     const type = parsed.flags.get("t") || parsed.positionalArgs[0]; // Get the value of -t flag or positional arg
     const hostname = context.currentNode || "dgx-00";
+    const node = this.resolveNode(context);
+    const specs = getHardwareSpecs(node?.systemType || "DGX-A100");
+    const displayName = (node?.systemType || "DGX-A100").replace("-", " ");
+    const serialPrefix = (node?.systemType || "DGX-A100").replace("-", "");
 
     // No flag - show full system summary
     if (!hasTypeFlag && !type) {
@@ -310,9 +345,9 @@ SMBIOS 3.2.0 present.
 Handle 0x0001, DMI type 1, 27 bytes
 System Information
         Manufacturer: NVIDIA
-        Product Name: DGX A100
+        Product Name: ${displayName}
         Version: Not Specified
-        Serial Number: DGXA100-${hostname.toUpperCase()}-SN001
+        Serial Number: ${serialPrefix}-${hostname.toUpperCase()}-SN001
         UUID: 12345678-1234-1234-1234-123456789abc
         Wake-up Type: Power Switch
         SKU Number: 920-23687-2512-000
@@ -321,9 +356,9 @@ System Information
 Handle 0x0002, DMI type 2, 15 bytes
 Base Board Information
         Manufacturer: NVIDIA
-        Product Name: DGX A100 Baseboard
+        Product Name: ${displayName} Baseboard
         Version: Rev 1.0
-        Serial Number: DGXA100-BB-${hostname.toUpperCase()}-001`;
+        Serial Number: ${serialPrefix}-BB-${hostname.toUpperCase()}-001`;
       return this.createSuccess(output);
     }
 
@@ -335,9 +370,9 @@ SMBIOS 3.2.0 present.
 Handle 0x0001, DMI type 1, 27 bytes
 System Information
         Manufacturer: NVIDIA
-        Product Name: DGX A100
+        Product Name: ${displayName}
         Version: Not Specified
-        Serial Number: DGXA100-${hostname.toUpperCase()}-SN001
+        Serial Number: ${serialPrefix}-${hostname.toUpperCase()}-SN001
         UUID: 12345678-1234-1234-1234-123456789abc
         Wake-up Type: Power Switch
         SKU Number: 920-23687-2512-000
@@ -375,6 +410,20 @@ BIOS Information
     }
 
     if (type === "processor" || type === "4") {
+      const cpuModel = specs.system.cpu.model;
+      const cores = specs.system.cpu.coresPerSocket;
+      const threads = cores * 2;
+      const isAMD = cpuModel.includes("AMD");
+      const manufacturer = isAMD ? "AMD" : "Intel";
+      const family = isAMD ? "Zen" : "Sapphire Rapids";
+      const maxSpeed = isAMD ? "3400 MHz" : "3800 MHz";
+      const currentSpeed = isAMD ? "2250 MHz" : "2000 MHz";
+      const voltage = isAMD ? "1.1 V" : "1.0 V";
+      const vendorId = isAMD ? "FF FB 8B 17" : "6A 06 06 00";
+      const signature = isAMD
+        ? "Family 23, Model 49, Stepping 0"
+        : "Family 6, Model 143, Stepping 8";
+
       const output = `# dmidecode 3.2
 Getting SMBIOS data from sysfs.
 SMBIOS 3.2.0 present.
@@ -383,19 +432,19 @@ Handle 0x0040, DMI type 4, 48 bytes
 Processor Information
         Socket Designation: CPU0
         Type: Central Processor
-        Family: Zen
-        Manufacturer: AMD
-        ID: 10 0F 83 00 FF FB 8B 17
-        Signature: Family 23, Model 49, Stepping 0
-        Version: AMD EPYC 7742 64-Core Processor
-        Voltage: 1.1 V
+        Family: ${family}
+        Manufacturer: ${manufacturer}
+        ID: 10 0F 83 00 ${vendorId}
+        Signature: ${signature}
+        Version: ${cpuModel}
+        Voltage: ${voltage}
         External Clock: 100 MHz
-        Max Speed: 3400 MHz
-        Current Speed: 2250 MHz
+        Max Speed: ${maxSpeed}
+        Current Speed: ${currentSpeed}
         Status: Populated, Enabled
-        Core Count: 64
-        Core Enabled: 64
-        Thread Count: 128
+        Core Count: ${cores}
+        Core Enabled: ${cores}
+        Thread Count: ${threads}
         Characteristics:
                 64-bit capable
                 Multi-Core
@@ -405,19 +454,28 @@ Handle 0x0041, DMI type 4, 48 bytes
 Processor Information
         Socket Designation: CPU1
         Type: Central Processor
-        Family: Zen
-        Manufacturer: AMD
-        Version: AMD EPYC 7742 64-Core Processor
-        Max Speed: 3400 MHz
-        Current Speed: 2250 MHz
+        Family: ${family}
+        Manufacturer: ${manufacturer}
+        Version: ${cpuModel}
+        Max Speed: ${maxSpeed}
+        Current Speed: ${currentSpeed}
         Status: Populated, Enabled
-        Core Count: 64
-        Core Enabled: 64
-        Thread Count: 128`;
+        Core Count: ${cores}
+        Core Enabled: ${cores}
+        Thread Count: ${threads}`;
       return this.createSuccess(output);
     }
 
     if (type === "memory" || type === "17") {
+      const totalMemGB = specs.system.systemMemoryGB;
+      const dimmSizeGB = 64;
+      const totalDimms = totalMemGB / dimmSizeGB;
+      const remainingDimms = totalDimms - 2;
+      const isAMD = specs.system.cpu.model.includes("AMD");
+      const memType = isAMD ? "DDR4" : "DDR5";
+      const memSpeed = isAMD ? "3200 MT/s" : "4800 MT/s";
+      const partNumber = isAMD ? "M393A8G40AB2-CWE" : "M393A8G40DB2-CVF";
+
       const output = `# dmidecode 3.2
 Getting SMBIOS data from sysfs.
 SMBIOS 3.2.0 present.
@@ -428,36 +486,36 @@ Memory Device
         Error Information Handle: Not Provided
         Total Width: 72 bits
         Data Width: 64 bits
-        Size: 64 GB
+        Size: ${dimmSizeGB} GB
         Form Factor: DIMM
         Set: None
         Locator: DIMM_A1
         Bank Locator: P0_Node0_Channel0_Dimm0
-        Type: DDR4
+        Type: ${memType}
         Type Detail: Synchronous Registered (Buffered)
-        Speed: 3200 MT/s
+        Speed: ${memSpeed}
         Manufacturer: Samsung
         Serial Number: 12345678
         Asset Tag: DIMM_A1_AssetTag
-        Part Number: M393A8G40AB2-CWE
+        Part Number: ${partNumber}
         Rank: 2
-        Configured Memory Speed: 3200 MT/s
+        Configured Memory Speed: ${memSpeed}
 
 Handle 0x003D, DMI type 17, 84 bytes
 Memory Device
         Array Handle: 0x0039
         Total Width: 72 bits
         Data Width: 64 bits
-        Size: 64 GB
+        Size: ${dimmSizeGB} GB
         Form Factor: DIMM
         Locator: DIMM_A2
         Bank Locator: P0_Node0_Channel0_Dimm1
-        Type: DDR4
-        Speed: 3200 MT/s
+        Type: ${memType}
+        Speed: ${memSpeed}
         Manufacturer: Samsung
-        Part Number: M393A8G40AB2-CWE
+        Part Number: ${partNumber}
 
-[... 14 more DIMMs totaling 1024 GB ...]`;
+[... ${remainingDimms} more DIMMs totaling ${totalMemGB} GB ...]`;
       return this.createSuccess(output);
     }
 
@@ -469,9 +527,9 @@ SMBIOS 3.2.0 present.
 Handle 0x0002, DMI type 2, 15 bytes
 Base Board Information
         Manufacturer: NVIDIA
-        Product Name: DGX A100 Baseboard
+        Product Name: ${displayName} Baseboard
         Version: Rev 1.0
-        Serial Number: DGXA100-BB-${hostname.toUpperCase()}-001
+        Serial Number: ${serialPrefix}-BB-${hostname.toUpperCase()}-001
         Asset Tag: Not Specified
         Features:
                 Board is a hosting board
@@ -493,8 +551,8 @@ Chassis Information
         Manufacturer: NVIDIA
         Type: Rack Mount Chassis
         Lock: Not Present
-        Version: DGX A100
-        Serial Number: DGXA100-CH-${hostname.toUpperCase()}-001
+        Version: ${displayName}
+        Serial Number: ${serialPrefix}-CH-${hostname.toUpperCase()}-001
         Asset Tag: Not Specified
         Boot-up State: Safe
         Power Supply State: Safe
@@ -766,6 +824,11 @@ ${formatTimestamp(3.789012)} ACPI Warning: SystemIO range conflicts with OpRegio
     const hostname = context.currentNode || "dgx-00";
 
     if (action === "status" || action === undefined) {
+      const hctlNode = this.resolveNode(context);
+      const hctlDisplayName = (hctlNode?.systemType || "DGX-A100").replace(
+        "-",
+        " ",
+      );
       const output = `   Static hostname: ${hostname}
          Icon name: computer-server
            Chassis: server
@@ -775,7 +838,7 @@ ${formatTimestamp(3.789012)} ACPI Warning: SystemIO range conflicts with OpRegio
             Kernel: Linux 5.15.0-91-generic
       Architecture: x86-64
    Hardware Vendor: NVIDIA
-    Hardware Model: DGX A100
+    Hardware Model: ${hctlDisplayName}
   Firmware Version: 1.2.3`;
       return this.createSuccess(output);
     }

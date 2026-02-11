@@ -26,11 +26,38 @@ export interface FabricTierConfig {
 }
 
 const DEFAULT_FABRIC_CONFIG: FabricTierConfig = {
-  spineCount: 2,
-  leafCount: 4,
+  spineCount: 4,
+  leafCount: 8,
   spineToLeafBandwidth: 400, // NDR
-  leafToHostBandwidth: 200, // HDR
+  leafToHostBandwidth: 400, // NDR
 };
+
+/**
+ * Derive fabric config from the cluster's actual HCA port rates.
+ * All switches in a DGX SuperPOD match the host HCA speed.
+ */
+function deriveFabricConfig(cluster: ClusterConfig): FabricTierConfig {
+  // Read port rate from first node's first HCA
+  const firstPort = cluster.nodes[0]?.hcas?.[0]?.ports?.[0];
+  const portRate = (firstPort?.rate || 400) as 100 | 200 | 400 | 800;
+  const hcaCount = cluster.nodes[0]?.hcas?.length || 8;
+  return {
+    spineCount: DEFAULT_FABRIC_CONFIG.spineCount,
+    leafCount: hcaCount,
+    spineToLeafBandwidth: portRate,
+    leafToHostBandwidth: portRate,
+  };
+}
+
+/**
+ * Get the correct switch model name for a given IB speed.
+ */
+function getSwitchModel(bandwidth: number): string {
+  if (bandwidth >= 800) return "NVIDIA QM9790 (XDR)";
+  if (bandwidth >= 400) return "NVIDIA QM9700 (NDR)";
+  if (bandwidth >= 200) return "NVIDIA QM8790 (HDR)";
+  return "NVIDIA QM8700 (EDR)";
+}
 
 // Helper to convert bandwidth to line width
 const bandwidthToWidth = (bandwidth: number): number => {
@@ -105,10 +132,11 @@ const EMPTY_SWITCH_ARRAY: string[] = [];
 
 export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
   cluster,
-  fabricConfig = DEFAULT_FABRIC_CONFIG,
+  fabricConfig: fabricConfigProp,
   highlightedNodes,
   highlightedSwitches,
 }) => {
+  const fabricConfig = fabricConfigProp || deriveFabricConfig(cluster);
   // Use stable references for empty arrays to prevent D3 useEffect re-runs
   const stableHighlightedNodes = highlightedNodes?.length
     ? highlightedNodes
@@ -199,13 +227,9 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
       });
     });
 
-    // Leaf to Host links
-    hostNodes.forEach((host, idx) => {
-      const leafIdx = Math.floor(
-        idx / Math.ceil(hostNodes.length / leafNodes.length),
-      );
-      const leaf = leafNodes[Math.min(leafIdx, leafNodes.length - 1)];
-      if (leaf) {
+    // Leaf to Host links (rail-optimized: each host connects to ALL leafs)
+    hostNodes.forEach((host) => {
+      leafNodes.forEach((leaf) => {
         links.push({
           id: `${leaf.id}-${host.id}`,
           sourceX: leaf.x,
@@ -216,7 +240,7 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
           utilization: host.active ? host.utilization : 0,
           bidirectional: true,
         });
-      }
+      });
     });
 
     return links;
@@ -266,7 +290,7 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
       nodes.push({
         id: `leaf-${i}`,
         type: "leaf",
-        label: `Leaf Switch ${i + 1}`,
+        label: `R${i}`,
         status: "active",
         x: (width / (leafCount + 1)) * (i + 1),
         y: 250,
@@ -306,20 +330,16 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
       });
     });
 
-    // Create links: Leaf to Hosts
-    hostNodes.forEach((host, idx) => {
-      const leafIdx = Math.floor(
-        idx / Math.ceil(hostNodes.length / leafNodes.length),
-      );
-      const leaf = leafNodes[Math.min(leafIdx, leafNodes.length - 1)];
-      if (leaf) {
+    // Create links: Leaf to Hosts (rail-optimized: each host connects to ALL leafs)
+    hostNodes.forEach((host) => {
+      leafNodes.forEach((leaf) => {
         links.push({
           source: leaf,
           target: host,
           status: host.status === "active" ? "active" : "down",
           speed: bandwidthLabel(fabricConfig.leafToHostBandwidth),
         });
-      }
+      });
     });
 
     // Draw links with error-based coloring
@@ -330,6 +350,8 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
       .data(links)
       .enter()
       .append("line")
+      .attr("data-link-source", (d) => d.source.id)
+      .attr("data-link-target", (d) => d.target.id)
       .attr("x1", (d) => d.source.x)
       .attr("y1", (d) => d.source.y)
       .attr("x2", (d) => d.target.x)
@@ -346,31 +368,30 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
       .attr("stroke-width", (d) => {
         const isBackbone =
           d.source.type === "spine" || d.target.type === "spine";
-        return isBackbone
-          ? bandwidthToWidth(fabricConfig.spineToLeafBandwidth)
-          : bandwidthToWidth(fabricConfig.leafToHostBandwidth);
+        if (isBackbone)
+          return bandwidthToWidth(fabricConfig.spineToLeafBandwidth);
+        return 1.5;
       })
       .attr("stroke-dasharray", (d) => (d.status === "active" ? "0" : "5,5"))
       .attr("opacity", (d) => {
-        // Highlight degraded links slightly
-        if (d.target.type === "host") {
-          const hostNode = cluster.nodes.find((n) => n.id === d.target.id);
-          const totalErrors =
-            hostNode?.hcas.reduce(
-              (sum, hca) =>
-                sum +
-                hca.ports.reduce(
-                  (portSum, port) =>
-                    portSum +
-                    port.errors.symbolErrors +
-                    port.errors.portRcvErrors,
-                  0,
-                ),
-              0,
-            ) || 0;
-          return totalErrors > 0 ? 0.8 : 0.5;
-        }
-        return 0.5;
+        const isHostLink = d.target.type === "host";
+        if (!isHostLink) return 0.7;
+        const hostNode = cluster.nodes.find((n) => n.id === d.target.id);
+        const totalErrors =
+          hostNode?.hcas.reduce(
+            (sum, hca) =>
+              sum +
+              hca.ports.reduce(
+                (portSum, port) =>
+                  portSum +
+                  port.errors.symbolErrors +
+                  port.errors.portRcvErrors,
+                0,
+              ),
+            0,
+          ) || 0;
+        if (totalErrors > 0) return 0.6;
+        return 0.15;
       })
       .append("title")
       .text((d) => {
@@ -396,6 +417,72 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
         return tooltip;
       });
 
+    // Invisible wider lines for click detection on IB links
+    const clickGroup = svg.append("g").attr("class", "link-click-targets");
+
+    clickGroup
+      .selectAll("line")
+      .data(links)
+      .enter()
+      .append("line")
+      .attr("x1", (d) => d.source.x)
+      .attr("y1", (d) => d.source.y)
+      .attr("x2", (d) => d.target.x)
+      .attr("y2", (d) => d.target.y)
+      .attr("stroke", "transparent")
+      .attr("stroke-width", 12)
+      .style("cursor", "pointer")
+      .on("click", function (event, d) {
+        event.stopPropagation();
+        const hostNode = clusterRef.current.nodes.find(
+          (n) => n.id === d.target.id,
+        );
+
+        // Collect port info from host (if target is a host)
+        const ports = hostNode
+          ? hostNode.hcas.flatMap((hca) =>
+              hca.ports.map((p) => ({
+                portNumber: p.portNumber,
+                state: p.state,
+                rate: p.rate,
+                errors: {
+                  symbolErrors: p.errors.symbolErrors,
+                  linkDowned: p.errors.linkDowned,
+                  portRcvErrors: p.errors.portRcvErrors,
+                  portXmitDiscards: p.errors.portXmitDiscards,
+                },
+              })),
+            )
+          : [];
+
+        const totalErrors = ports.reduce(
+          (sum, p) =>
+            sum +
+            p.errors.symbolErrors +
+            p.errors.portRcvErrors +
+            p.errors.linkDowned,
+          0,
+        );
+
+        setSelectedNode({
+          type: "iblink",
+          data: {
+            sourceLabel: d.source.label,
+            targetLabel: d.target.label,
+            speed: d.speed,
+            status: d.status,
+            totalErrors,
+            ports,
+          },
+        });
+      })
+      .on("mouseover", function () {
+        d3.select(this).attr("stroke", "rgba(118, 185, 0, 0.15)");
+      })
+      .on("mouseout", function () {
+        d3.select(this).attr("stroke", "transparent");
+      });
+
     // Draw nodes
     const nodeGroup = svg.append("g").attr("class", "nodes");
 
@@ -404,6 +491,7 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
       .data(nodes)
       .enter()
       .append("g")
+      .attr("data-node-id", (d) => d.id)
       .attr("transform", (d) => `translate(${d.x}, ${d.y})`)
       .style("cursor", "pointer");
 
@@ -514,13 +602,75 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
       .append("title")
       .text((d) => `${d.label}\nType: ${d.type}\nStatus: ${d.status}`);
 
+    // Error badge for host nodes (hidden by default, shown by dynamic update effect)
+    nodeGroups
+      .filter((d) => d.type === "host")
+      .append("circle")
+      .attr("class", "error-badge")
+      .attr("cx", 18)
+      .attr("cy", -18)
+      .attr("r", 8)
+      .attr("fill", "#EF4444")
+      .attr("stroke", "#1F2937")
+      .attr("stroke-width", 1.5)
+      .attr("display", "none");
+
+    nodeGroups
+      .filter((d) => d.type === "host")
+      .append("text")
+      .attr("class", "error-badge-text")
+      .attr("x", 18)
+      .attr("y", -18)
+      .attr("text-anchor", "middle")
+      .attr("dy", "0.35em")
+      .attr("fill", "#fff")
+      .attr("font-size", "8px")
+      .attr("font-weight", "bold")
+      .attr("pointer-events", "none")
+      .attr("display", "none")
+      .text("");
+
     // Add hover effects and click handlers
     nodeGroups
-      .on("mouseover", function () {
+      .on("mouseover", function (_event, d) {
         d3.select(this).select("rect,circle,polygon").attr("opacity", 1);
+        if (d.type === "leaf" || d.type === "host") {
+          svg
+            .selectAll("line")
+            .filter(function () {
+              const src = d3.select(this).attr("data-link-source");
+              const tgt = d3.select(this).attr("data-link-target");
+              return src === d.id || tgt === d.id;
+            })
+            .attr("opacity", 0.7)
+            .attr("stroke-width", 3);
+        }
       })
-      .on("mouseout", function () {
+      .on("mouseout", function (_event, d) {
         d3.select(this).select("rect,circle,polygon").attr("opacity", 0.9);
+        if (d.type === "leaf" || d.type === "host") {
+          svg
+            .selectAll("line")
+            .filter(function () {
+              const tgt = d3.select(this).attr("data-link-target");
+              return (
+                tgt?.startsWith("dgx-") || tgt?.startsWith("node-") || false
+              );
+            })
+            .attr("opacity", 0.15)
+            .attr("stroke-width", 1.5);
+          svg
+            .selectAll("line")
+            .filter(function () {
+              const tgt = d3.select(this).attr("data-link-target");
+              return tgt?.startsWith("leaf-") || false;
+            })
+            .attr("opacity", 0.7)
+            .attr(
+              "stroke-width",
+              bandwidthToWidth(fabricConfig.spineToLeafBandwidth),
+            );
+        }
       })
       .on("click", function (event, d) {
         event.stopPropagation();
@@ -538,24 +688,58 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
               connectedNodes.push(`Leaf ${i + 1}`);
             }
           } else {
-            // Leaf connects to hosts and spines
-            const hostsPerLeaf = Math.ceil(hostNodes.length / leafNodes.length);
-            const leafIdx = parseInt(d.id.split("-")[1]);
-            const startHost = leafIdx * hostsPerLeaf;
-            const endHost = Math.min(
-              startHost + hostsPerLeaf,
-              hostNodes.length,
-            );
-
-            portCount = spineCount + hostsPerLeaf; // Uplinks to spines + downlinks to hosts
+            // Leaf (Rail) connects to ALL hosts + spines
+            portCount = spineCount + hostNodes.length;
             bandwidth = bandwidthLabel(fabricConfig.leafToHostBandwidth);
 
-            for (let i = startHost; i < endHost; i++) {
-              if (hostNodes[i]) {
-                connectedNodes.push(hostNodes[i].label.replace("dgx-", ""));
-              }
-            }
+            hostNodes.forEach((h) => {
+              connectedNodes.push(h.label.replace("dgx-", ""));
+            });
           }
+
+          // Deterministic switch metrics
+          const switchIdx = parseInt(d.id.split("-")[1]);
+          const baseTemp = d.type === "spine" ? 52 : 48;
+          const switchTemp = baseTemp + ((switchIdx * 3) % 10);
+
+          // Calculate active port count from connected hosts' HCA state
+          let computedActivePortCount = 0;
+          if (d.type === "spine") {
+            // Spine: all leaf ports assumed active when spine is active
+            computedActivePortCount = d.status === "active" ? portCount : 0;
+          } else {
+            // Leaf (Rail): count hosts with active HCA for this rail
+            const leafIdx = parseInt(d.id.split("-")[1]);
+            let activeHosts = 0;
+            clusterRef.current.nodes.forEach((host) => {
+              const hca = host.hcas[leafIdx];
+              if (hca?.ports.some((p) => p.state === "Active")) {
+                activeHosts++;
+              }
+            });
+            computedActivePortCount = spineCount + activeHosts;
+          }
+
+          // Derive throughput from connected hosts' HCA port rates
+          const connectedHosts =
+            d.type === "spine"
+              ? clusterRef.current.nodes
+              : clusterRef.current.nodes; // Rail connects to ALL hosts
+          const activePortRate = connectedHosts.reduce(
+            (sum, host) =>
+              sum +
+              host.hcas.reduce(
+                (hcaSum, hca) =>
+                  hcaSum +
+                  hca.ports
+                    .filter((p) => p.state === "Active")
+                    .reduce((portSum, p) => portSum + p.rate, 0),
+                0,
+              ),
+            0,
+          );
+          // Convert Gb/s to GB/s (divide by 8)
+          const throughput = Math.round(activePortRate / 8);
 
           setSelectedNode({
             type: "switch",
@@ -564,18 +748,16 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
               switchType: d.type,
               status: d.status === "active" ? "active" : "down",
               portCount,
-              activePortCount: d.status === "active" ? portCount : 0,
+              activePortCount: computedActivePortCount,
               bandwidth,
               connectedNodes,
-              throughput:
+              throughput,
+              temperature: switchTemp,
+              model: getSwitchModel(
                 d.type === "spine"
-                  ? 800 + Math.floor(Math.random() * 400) // Spine: 800-1200 GB/s
-                  : 200 + Math.floor(Math.random() * 200), // Leaf: 200-400 GB/s
-              temperature: 45 + Math.floor(Math.random() * 15), // 45-60°C
-              model:
-                d.type === "spine"
-                  ? "NVIDIA QM9700 (NDR)"
-                  : "NVIDIA QM8700 (HDR)",
+                  ? fabricConfig.spineToLeafBandwidth
+                  : fabricConfig.leafToHostBandwidth,
+              ),
               firmwareVersion: "29.2008.1234",
             },
           });
@@ -618,7 +800,7 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
       .attr("fill", "#9CA3AF")
       .attr("font-size", "14px")
       .attr("font-weight", "bold")
-      .text("Leaf Tier");
+      .text("Leaf Tier (Rails)");
 
     svg
       .append("text")
@@ -670,6 +852,99 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
     particleSelection.exit().remove();
   }, [particles]);
 
+  // Dynamic update effect: update link/node colors when HCA state changes
+  useEffect(() => {
+    if (!svgRef.current) return;
+
+    const svg = d3.select(svgRef.current);
+    const linkGroup = svg.select("g.links");
+    const nodeGroup = svg.select("g.nodes");
+
+    // Update host-link colors based on current HCA state
+    linkGroup.selectAll("line").each(function () {
+      const line = d3.select(this);
+      const targetId = line.attr("data-link-target");
+      if (!targetId) return;
+
+      // Only update host links (target is a host node id, not spine/leaf)
+      const hostNode = cluster.nodes.find((n) => n.id === targetId);
+      if (!hostNode) return;
+
+      const hasActivePort = hostNode.hcas.some((hca) =>
+        hca.ports.some((p) => p.state === "Active"),
+      );
+      const baseStatus: "active" | "down" = hasActivePort ? "active" : "down";
+      const color = getLinkColor(hostNode, baseStatus);
+
+      line
+        .attr("stroke", color)
+        .attr("stroke-dasharray", hasActivePort ? "0" : "5,5");
+
+      // Update tooltip
+      const totalErrors = hostNode.hcas.reduce(
+        (sum, hca) =>
+          sum +
+          hca.ports.reduce(
+            (portSum, port) =>
+              portSum +
+              port.errors.symbolErrors +
+              port.errors.portRcvErrors +
+              port.errors.linkDowned,
+            0,
+          ),
+        0,
+      );
+      line.select("title").text((d) => {
+        const data = d as FabricLink;
+        return `${data.source.label} → ${data.target.label}\nStatus: ${baseStatus}\nPort Errors: ${totalErrors}`;
+      });
+    });
+
+    // Update host node circle fill and error badges based on HCA state
+    nodeGroup.selectAll("g").each(function () {
+      const group = d3.select(this);
+      const nodeId = group.attr("data-node-id");
+      if (!nodeId) return;
+
+      const hostNode = cluster.nodes.find((n) => n.id === nodeId);
+      if (!hostNode) return; // Skip spine/leaf switches
+
+      const hasActivePort = hostNode.hcas.some((hca) =>
+        hca.ports.some((p) => p.state === "Active"),
+      );
+      group
+        .select("circle:not(.error-badge)")
+        .attr("fill", hasActivePort ? "#10B981" : "#EF4444");
+
+      // Update error badge
+      const totalErrors = hostNode.hcas.reduce(
+        (sum, hca) =>
+          sum +
+          hca.ports.reduce(
+            (portSum, port) =>
+              portSum +
+              port.errors.symbolErrors +
+              port.errors.portRcvErrors +
+              port.errors.linkDowned,
+            0,
+          ),
+        0,
+      );
+      const badge = group.select("circle.error-badge");
+      const badgeText = group.select("text.error-badge-text");
+
+      if (totalErrors > 0) {
+        badge.attr("display", null);
+        badgeText
+          .attr("display", null)
+          .text(totalErrors > 99 ? "99+" : String(totalErrors));
+      } else {
+        badge.attr("display", "none");
+        badgeText.attr("display", "none");
+      }
+    });
+  }, [cluster.nodes]);
+
   const totalLinks = cluster.nodes.length;
   const activeLinks = cluster.nodes.filter((n) =>
     n.hcas.some((hca) => hca.ports.some((port) => port.state === "Active")),
@@ -718,7 +993,7 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
         )}
       </div>
 
-      <div className="mt-4 grid grid-cols-2 md:grid-cols-6 gap-3 text-sm">
+      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-blue-500 rounded" />
           <span className="text-gray-300">Spine</span>
@@ -743,7 +1018,11 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-0.5 bg-yellow-500" />
-          <span className="text-gray-300">Errors</span>
+          <span className="text-gray-300">Minor Errors</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-0.5 bg-orange-500" />
+          <span className="text-gray-300">High Errors</span>
         </div>
         <div className="flex items-center gap-2">
           <div
@@ -752,17 +1031,33 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
           />
           <span className="text-gray-300">Down</span>
         </div>
+        <div className="flex items-center gap-2">
+          <div
+            className="w-3 h-3 bg-red-500 rounded-full text-white text-center"
+            style={{ fontSize: "7px", lineHeight: "12px" }}
+          >
+            !
+          </div>
+          <span className="text-gray-300">Error Badge</span>
+        </div>
       </div>
 
       <div className="mt-3 text-xs text-gray-400">
-        <p>• Click on any node to see detailed information</p>
         <p>
-          • Fat-tree topology: {fabricConfig.spineCount} spine,{" "}
-          {Math.min(cluster.nodes.length, fabricConfig.leafCount)} leaf switches
+          • Click on any node or link for details. Hover to highlight
+          connections.
+        </p>
+        <p>
+          • Rail-optimized fat-tree: {fabricConfig.spineCount} spine,{" "}
+          {fabricConfig.leafCount} rail (leaf) switches
+        </p>
+        <p>
+          • Each host connects to all {fabricConfig.leafCount} rails (HCA N →
+          Rail N)
         </p>
         <p>
           • Spine↔Leaf: {bandwidthLabel(fabricConfig.spineToLeafBandwidth)} |
-          Leaf↔Host: {bandwidthLabel(fabricConfig.leafToHostBandwidth)}
+          Rail↔Host: {bandwidthLabel(fabricConfig.leafToHostBandwidth)}
         </p>
       </div>
     </div>

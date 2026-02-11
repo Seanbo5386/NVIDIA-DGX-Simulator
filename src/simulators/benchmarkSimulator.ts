@@ -11,6 +11,7 @@ import { BaseSimulator } from "./BaseSimulator";
 import type { CommandContext, CommandResult } from "@/types/commands";
 import type { ParsedCommand } from "@/utils/commandParser";
 import type { GPU, DGXNode } from "@/types/hardware";
+import { getHardwareSpecs } from "@/data/hardwareSpecs";
 
 export class BenchmarkSimulator extends BaseSimulator {
   constructor() {
@@ -229,13 +230,9 @@ export class BenchmarkSimulator extends BaseSimulator {
       return this.createError("No node selected");
     }
 
-    // Calculate theoretical peak performance (TFLOPS)
-    // H100 SXM: ~60 TFLOPS FP64, ~990 TFLOPS FP16 Tensor
-    // A100 SXM: ~19.5 TFLOPS FP64, ~312 TFLOPS FP16 Tensor
-    let tflopsPerGPU = 60; // H100 FP64
-    if (node.systemType.includes("A100")) {
-      tflopsPerGPU = 19.5;
-    }
+    // Calculate theoretical peak performance (TFLOPS) from hardware specs
+    const hplSpecs = getHardwareSpecs(node.systemType || "DGX-A100");
+    const tflopsPerGPU = hplSpecs.gpu.fp64Tflops;
 
     const theoreticalPeak = tflopsPerGPU * totalGPUs;
 

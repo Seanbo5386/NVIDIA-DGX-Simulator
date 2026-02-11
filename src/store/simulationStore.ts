@@ -16,7 +16,11 @@ import type {
   ExamBreakdown,
 } from "@/types/scenarios";
 import type { ValidationResult, ValidationConfig } from "@/types/validation";
-import { createDefaultCluster } from "@/utils/clusterFactory";
+import {
+  createDefaultCluster,
+  createCustomCluster,
+} from "@/utils/clusterFactory";
+import type { SystemType } from "@/data/hardwareSpecs";
 import { useLearningProgressStore } from "./learningProgressStore";
 // isTierUnlocked will be used in isScenarioAccessible once scenarios have tiers
 // import { isTierUnlocked } from '@/utils/tierProgressionEngine';
@@ -61,6 +65,7 @@ const toolFamilyMap: Record<string, string> = {
 interface SimulationState {
   // Cluster state
   cluster: ClusterConfig;
+  systemType: SystemType;
   selectedNode: string | null;
 
   // Simulation control
@@ -89,6 +94,7 @@ interface SimulationState {
 
   // Actions
   setCluster: (cluster: ClusterConfig) => void;
+  setSystemType: (systemType: SystemType) => void;
   selectNode: (nodeId: string) => void;
   updateGPU: (nodeId: string, gpuId: number, updates: Partial<GPU>) => void;
   updateHCAs: (nodeId: string, hcas: InfiniBandHCA[]) => void;
@@ -168,6 +174,7 @@ export const useSimulationStore = create<SimulationState>()(
     immer((set, get) => ({
       // Initial state
       cluster: createDefaultCluster(),
+      systemType: "DGX-A100" as SystemType,
       selectedNode: null,
       isRunning: false,
       simulationSpeed: 1.0,
@@ -199,6 +206,13 @@ export const useSimulationStore = create<SimulationState>()(
 
       // Actions
       setCluster: (cluster) => set({ cluster }),
+
+      setSystemType: (systemType) =>
+        set({
+          systemType,
+          cluster: createCustomCluster(8, systemType),
+          selectedNode: null,
+        }),
 
       selectNode: (nodeId) => set({ selectedNode: nodeId }),
 
@@ -639,11 +653,11 @@ export const useSimulationStore = create<SimulationState>()(
       stopSimulation: () => set({ isRunning: false }),
 
       resetSimulation: () =>
-        set({
-          cluster: createDefaultCluster(),
-          selectedNode: null,
-          isRunning: false,
-          simulationSpeed: 1.0,
+        set((state) => {
+          state.cluster = createCustomCluster(8, state.systemType);
+          state.selectedNode = null;
+          state.isRunning = false;
+          state.simulationSpeed = 1.0;
         }),
 
       setSimulationSpeed: (speed) => set({ simulationSpeed: speed }),
@@ -682,6 +696,7 @@ export const useSimulationStore = create<SimulationState>()(
       storage: createJSONStorage(() => createDebouncedStorage(2000)),
       partialize: (state) => ({
         cluster: state.cluster,
+        systemType: state.systemType,
         simulationSpeed: state.simulationSpeed,
         scenarioProgress: Object.fromEntries(
           Object.entries(state.scenarioProgress).map(([id, progress]) => [

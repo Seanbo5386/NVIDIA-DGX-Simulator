@@ -66,16 +66,21 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
   const particleGroupRef = useRef<SVGGElement | null>(null);
   const detailPanelRef = useRef<HTMLDivElement>(null);
   const nodeDataRef = useRef(node); // Ref to access current node data in click handlers
+  const highlightedLinksRef = useRef(stableHighlightedLinks);
   const isRunning = useSimulationStore((state) => state.isRunning);
   const reducedMotion = useReducedMotion();
   const [selectedNode, setSelectedNode] = useState<NetworkNodeType | null>(
     null,
   );
 
-  // Keep ref updated with latest node data
+  // Keep refs updated with latest data
   useEffect(() => {
     nodeDataRef.current = node;
   }, [node]);
+
+  useEffect(() => {
+    highlightedLinksRef.current = stableHighlightedLinks;
+  }, [stableHighlightedLinks]);
 
   // Close panel when clicking anywhere outside of it
   useEffect(() => {
@@ -215,6 +220,7 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
       .data(links)
       .enter()
       .append("line")
+      .attr("data-link-id", (d) => `${d.source.id}-${d.target.id}`)
       .attr("x1", (d) => d.source.x)
       .attr("y1", (d) => d.source.y)
       .attr("x2", (d) => d.target.x)
@@ -245,7 +251,7 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
         const isHighlighted =
           stableHighlightedLinks.includes(linkId1) ||
           stableHighlightedLinks.includes(linkId2);
-        return isHighlighted ? 0.9 : 0.6;
+        return isHighlighted ? 0.7 : 0.3;
       })
       .attr("class", (d) => {
         const linkId1 = `${d.source.id}-${d.target.id}`;
@@ -260,6 +266,63 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
         (d) =>
           `${d.source.name} ↔ ${d.target.name}\nStatus: ${d.status}\nBandwidth: ${d.bandwidth}`,
       );
+
+    // Invisible wider lines for click detection on NVLinks
+    const clickGroup = svg.append("g").attr("class", "link-click-targets");
+
+    clickGroup
+      .selectAll("line")
+      .data(links)
+      .enter()
+      .append("line")
+      .attr("x1", (d) => d.source.x)
+      .attr("y1", (d) => d.source.y)
+      .attr("x2", (d) => d.target.x)
+      .attr("y2", (d) => d.target.y)
+      .attr("stroke", "transparent")
+      .attr("stroke-width", 12)
+      .style("cursor", "pointer")
+      .on("click", function (event, d) {
+        event.stopPropagation();
+        const currentNode = nodeDataRef.current;
+        const sourceGpu = currentNode.gpus.find((g) => g.id === d.source.id);
+        const targetGpu = currentNode.gpus.find((g) => g.id === d.target.id);
+        if (!sourceGpu || !targetGpu) return;
+
+        const sourceHasDown = sourceGpu.nvlinks.some(
+          (l) => l.status !== "Active",
+        );
+        const targetHasDown = targetGpu.nvlinks.some(
+          (l) => l.status !== "Active",
+        );
+        const totalErrors =
+          sourceGpu.nvlinks.reduce(
+            (sum, l) => sum + l.txErrors + l.rxErrors + l.replayErrors,
+            0,
+          ) +
+          targetGpu.nvlinks.reduce(
+            (sum, l) => sum + l.txErrors + l.rxErrors + l.replayErrors,
+            0,
+          );
+        const linkDown = sourceHasDown || targetHasDown;
+
+        setSelectedNode({
+          type: "nvlink",
+          data: {
+            sourceGpuId: d.source.id,
+            targetGpuId: d.target.id,
+            status: linkDown ? "Down" : totalErrors > 0 ? "Errors" : "Active",
+            sourceLinks: sourceGpu.nvlinks,
+            targetLinks: targetGpu.nvlinks,
+          },
+        });
+      })
+      .on("mouseover", function () {
+        d3.select(this).attr("stroke", "rgba(118, 185, 0, 0.15)");
+      })
+      .on("mouseout", function () {
+        d3.select(this).attr("stroke", "transparent");
+      });
 
     // Draw NVSwitch nodes
     const nvSwitchGroup = svg.append("g").attr("class", "nvswitches");
@@ -416,6 +479,32 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
           `${d.name}\nHealth: ${d.health}\nUtilization: ${Math.round(d.utilization)}%\nTemperature: ${Math.round(d.temperature)}°C`,
       );
 
+    // Error badge (hidden by default, shown by dynamic update effect)
+    nodeGroups
+      .append("circle")
+      .attr("class", "error-badge")
+      .attr("cx", 24)
+      .attr("cy", -24)
+      .attr("r", 10)
+      .attr("fill", "#EF4444")
+      .attr("stroke", "#1F2937")
+      .attr("stroke-width", 1.5)
+      .attr("display", "none");
+
+    nodeGroups
+      .append("text")
+      .attr("class", "error-badge-text")
+      .attr("x", 24)
+      .attr("y", -24)
+      .attr("text-anchor", "middle")
+      .attr("dy", "0.35em")
+      .attr("fill", "#fff")
+      .attr("font-size", "9px")
+      .attr("font-weight", "bold")
+      .attr("pointer-events", "none")
+      .attr("display", "none")
+      .text("");
+
     // Add hover effects and click handlers
     nodeGroups
       .on("mouseover", function () {
@@ -522,6 +611,92 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
         .text(
           `GPU ${i}\nHealth: ${gpu.healthStatus}\nUtilization: ${Math.round(gpu.utilization)}%\nTemperature: ${Math.round(gpu.temperature)}°C`,
         );
+
+      // Update error badge
+      const linkErrors = gpu.nvlinks.reduce(
+        (sum, l) => sum + l.txErrors + l.rxErrors + l.replayErrors,
+        0,
+      );
+      const xidCount = gpu.xidErrors.length;
+      const totalErrors = linkErrors + xidCount;
+      const badge = group.select("circle.error-badge");
+      const badgeText = group.select("text.error-badge-text");
+
+      if (totalErrors > 0) {
+        badge
+          .attr("display", null)
+          .attr("fill", xidCount > 0 ? "#EF4444" : "#EAB308"); // red for XID, yellow for link errors
+        badgeText
+          .attr("display", null)
+          .text(totalErrors > 99 ? "99+" : String(totalErrors));
+      } else {
+        badge.attr("display", "none");
+        badgeText.attr("display", "none");
+      }
+    });
+
+    // Update link colors based on current NVLink state
+    const linkGroup = svg.select("g.links");
+    linkGroup.selectAll("line").each(function () {
+      const line = d3.select(this);
+      const linkId = line.attr("data-link-id");
+      if (!linkId) return;
+
+      const [sourceIdStr, targetIdStr] = linkId.split("-");
+      const sourceId = parseInt(sourceIdStr);
+      const targetId = parseInt(targetIdStr);
+      const sourceGpu = node.gpus[sourceId];
+      const targetGpu = node.gpus[targetId];
+      if (!sourceGpu || !targetGpu) return;
+
+      // Check if this link is highlighted by scenario
+      const highlighted = highlightedLinksRef.current;
+      const isHighlighted =
+        highlighted.includes(linkId) ||
+        highlighted.includes(`${targetId}-${sourceId}`);
+      if (isHighlighted) return; // Don't override scenario highlights
+
+      // Determine link status from both endpoints' nvlinks
+      const sourceHasDown = sourceGpu.nvlinks.some(
+        (l) => l.status !== "Active",
+      );
+      const targetHasDown = targetGpu.nvlinks.some(
+        (l) => l.status !== "Active",
+      );
+      const linkDown = sourceHasDown || targetHasDown;
+
+      // Sum errors from both endpoints
+      const totalErrors =
+        sourceGpu.nvlinks.reduce(
+          (sum, l) => sum + l.txErrors + l.rxErrors + l.replayErrors,
+          0,
+        ) +
+        targetGpu.nvlinks.reduce(
+          (sum, l) => sum + l.txErrors + l.rxErrors + l.replayErrors,
+          0,
+        );
+
+      // Determine color: red (down), yellow (errors), green (healthy)
+      let color = "#10B981"; // green
+      if (linkDown) {
+        color = "#EF4444"; // red
+      } else if (totalErrors > 0) {
+        color = "#EAB308"; // yellow
+      }
+
+      line
+        .attr("stroke", color)
+        .attr("stroke-width", linkDown ? 1 : 3)
+        .attr("stroke-dasharray", linkDown ? "5,5" : "0")
+        .attr("opacity", linkDown || totalErrors > 0 ? 0.7 : 0.3);
+
+      // Update tooltip
+      const status = linkDown ? "Down" : totalErrors > 0 ? "Errors" : "Active";
+      line
+        .select("title")
+        .text(
+          `GPU ${sourceId} ↔ GPU ${targetId}\nStatus: ${status}\nErrors: ${totalErrors}`,
+        );
     });
   }, [node.gpus]);
 
@@ -561,7 +736,7 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
         )}
       </div>
 
-      <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-green-500 rounded-full" />
           <span className="text-gray-300">Healthy GPU</span>
@@ -582,11 +757,31 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
           <div className="w-3 h-0.5 bg-green-500" />
           <span className="text-gray-300">Active NVLink</span>
         </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-0.5 bg-yellow-500" />
+          <span className="text-gray-300">NVLink Errors</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div
+            className="w-3 h-0.5 bg-red-500"
+            style={{ borderTop: "2px dashed" }}
+          />
+          <span className="text-gray-300">NVLink Down</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div
+            className="w-3 h-3 bg-red-500 rounded-full text-white text-center"
+            style={{ fontSize: "7px", lineHeight: "12px" }}
+          >
+            !
+          </div>
+          <span className="text-gray-300">Error Badge</span>
+        </div>
       </div>
 
       <div className="mt-3 text-xs text-gray-400">
         <p>• Green ring around GPU = Utilization level</p>
-        <p>• Click on a GPU or NVSwitch to see detailed information</p>
+        <p>• Click on any GPU, NVSwitch, or link for details</p>
         <p>• Active NVLinks shown as solid green lines</p>
       </div>
     </div>
