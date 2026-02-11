@@ -1,4 +1,13 @@
 import type { GPU, InfiniBandHCA } from "@/types/hardware";
+import { HARDWARE_SPECS } from "@/data/hardwareSpecs";
+
+/** Look up the boost clock for a GPU by its model name. Falls back to A100's 1410 MHz. */
+function getBoostClock(gpuName: string): number {
+  for (const spec of Object.values(HARDWARE_SPECS)) {
+    if (spec.gpu.model === gpuName) return spec.gpu.boostClockMHz;
+  }
+  return 1410;
+}
 
 export interface MetricsUpdate {
   gpus: GPU[];
@@ -63,43 +72,57 @@ export class MetricsSimulator {
 
   private updateGpuMetrics(gpus: GPU[]): GPU[] {
     return gpus.map((gpu) => {
-      // Simulate realistic GPU utilization changes
-      const utilizationChange = (Math.random() - 0.5) * 10;
-      const newUtilization = Math.max(
-        0,
-        Math.min(100, gpu.utilization + utilizationChange),
-      );
+      const isActive = gpu.allocatedJobId != null;
 
-      // Memory usage tends to be more stable
-      const memoryChange = (Math.random() - 0.5) * 512; // MB
-      const newMemoryUsed = Math.max(
-        0,
-        Math.min(gpu.memoryTotal, gpu.memoryUsed + memoryChange),
-      );
+      // Utilization: stable under load, near-zero when idle
+      const newUtilization = isActive
+        ? Math.max(
+            5,
+            Math.min(100, gpu.utilization + (Math.random() - 0.5) * 1.0),
+          )
+        : Math.random() * 2;
 
-      // Temperature correlates with utilization
-      const targetTemp = 30 + (newUtilization / 100) * 50; // 30-80°C range
-      const tempChange = (targetTemp - gpu.temperature) * 0.1; // Gradual change
-      const newTemp = gpu.temperature + tempChange;
+      // Memory: static per job allocation, driver overhead when idle
+      const newMemoryUsed = isActive
+        ? Math.max(
+            0,
+            Math.min(
+              gpu.memoryTotal,
+              gpu.memoryUsed + (Math.random() - 0.5) * 20,
+            ),
+          )
+        : 50 + Math.random() * 150;
 
-      // Power draw correlates with utilization
-      const targetPower = 100 + (newUtilization / 100) * (gpu.powerLimit - 100);
+      // Power: correlates with utilization (15% TDP idle floor)
+      const idlePower = gpu.powerLimit * 0.15;
+      const targetPower =
+        idlePower + (newUtilization / 100) * (gpu.powerLimit - idlePower);
       const powerChange = (targetPower - gpu.powerDraw) * 0.15;
       const newPower = Math.max(
-        50,
+        idlePower * 0.8,
         Math.min(gpu.powerLimit, gpu.powerDraw + powerChange),
       );
 
-      // Clock speeds adjust based on load
-      const targetSMClock = 1410 - (newTemp > 70 ? (newTemp - 70) * 10 : 0); // Thermal throttling
+      // Temperature: derives from power draw, not utilization directly
+      const ambientTemp = 32;
+      const tempRange = 48;
+      const targetTemp = ambientTemp + (newPower / gpu.powerLimit) * tempRange;
+      const tempChange = (targetTemp - gpu.temperature) * 0.1;
+      const newTemp = gpu.temperature + tempChange;
+
+      // SM clock: architecture-aware boost with thermal throttling
+      const boostClock = getBoostClock(gpu.name);
+      const targetSMClock =
+        boostClock - (newTemp > 70 ? (newTemp - 70) * 10 : 0);
       const smClockChange = (targetSMClock - gpu.clocksSM) * 0.2;
       const newSMClock = Math.round(
         Math.max(300, gpu.clocksSM + smClockChange),
       );
 
-      // Occasionally increment ECC errors (very rarely)
-      const eccSingleBitIncrement = Math.random() < 0.001 ? 1 : 0;
-      const eccDoubleBitIncrement = Math.random() < 0.00001 ? 1 : 0;
+      // ECC errors: only accumulate under load, at realistic rates
+      const eccSingleBitIncrement = isActive && Math.random() < 0.00005 ? 1 : 0;
+      const eccDoubleBitIncrement =
+        isActive && Math.random() < 0.0000005 ? 1 : 0;
 
       return {
         ...gpu,
@@ -179,9 +202,11 @@ export class MetricsSimulator {
         };
 
       case "thermal": {
-        // Apply thermal throttling immediately - same formula as updateMetrics
         const thermalTemp = 85;
-        const throttledClocks = Math.round(1410 - (thermalTemp - 70) * 10); // 1260 MHz
+        const boostClock = getBoostClock(gpu.name);
+        const throttledClocks = Math.round(
+          boostClock - (thermalTemp - 70) * 10,
+        );
         return {
           ...gpu,
           temperature: thermalTemp,

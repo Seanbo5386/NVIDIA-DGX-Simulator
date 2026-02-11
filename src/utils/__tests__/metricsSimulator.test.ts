@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { MetricsSimulator } from "../metricsSimulator";
 import type { GPU } from "@/types/hardware";
 
@@ -96,6 +96,18 @@ describe("MetricsSimulator", () => {
       expect(result.healthStatus).toBe("Warning");
     });
 
+    it("should use architecture-appropriate boost clock for thermal throttle", () => {
+      const h100Gpu = createMockGPU({
+        name: "NVIDIA H100-SXM5-80GB",
+        clocksSM: 1830,
+      });
+      const result = simulator.injectFault(h100Gpu, "thermal");
+
+      // H100 boost is 1830 MHz; at 85°C: 1830 - (85-70)*10 = 1680
+      expect(result.clocksSM).toBe(1680);
+      expect(result.clocksSM).toBeLessThan(1830);
+    });
+
     it("should inject NVLink failure", () => {
       const gpu = createMockGPU({
         nvlinks: [
@@ -154,6 +166,143 @@ describe("MetricsSimulator", () => {
       simulator.stop();
       // Should not throw when stopping again
       simulator.stop();
+    });
+  });
+
+  describe("job-aware GPU metrics", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    /** Run one metrics update tick via startGpuOnly + fake timer */
+    function tickMetrics(gpus: GPU[]): GPU[] {
+      let result: GPU[] = gpus;
+      const sim = new MetricsSimulator();
+      sim.startGpuOnly((updater) => {
+        result = updater(gpus);
+      }, 1000);
+      vi.advanceTimersByTime(1000);
+      sim.stop();
+      return result;
+    }
+
+    it("should keep idle GPU utilization near 0%", () => {
+      const idleGpu = createMockGPU({ utilization: 0 });
+      expect(idleGpu.allocatedJobId).toBeUndefined();
+
+      let gpu = idleGpu;
+      for (let i = 0; i < 50; i++) {
+        gpu = tickMetrics([gpu])[0];
+      }
+      expect(gpu.utilization).toBeLessThan(3);
+    });
+
+    it("should keep active GPU utilization stable around its value", () => {
+      const activeGpu = createMockGPU({
+        utilization: 85,
+        allocatedJobId: 1001,
+      });
+
+      let gpu = activeGpu;
+      for (let i = 0; i < 50; i++) {
+        gpu = tickMetrics([gpu])[0];
+      }
+      // Should stay within ±10% of original 85%
+      expect(gpu.utilization).toBeGreaterThan(75);
+      expect(gpu.utilization).toBeLessThan(95);
+    });
+
+    it("should keep idle GPU memory near zero (driver overhead only)", () => {
+      const idleGpu = createMockGPU({ memoryUsed: 0, memoryTotal: 81920 });
+
+      let gpu = idleGpu;
+      for (let i = 0; i < 20; i++) {
+        gpu = tickMetrics([gpu])[0];
+      }
+      // Idle memory: 50-200 MB driver overhead
+      expect(gpu.memoryUsed).toBeLessThan(250);
+    });
+
+    it("should keep active GPU memory stable around allocated value", () => {
+      const activeGpu = createMockGPU({
+        memoryUsed: 60000,
+        memoryTotal: 81920,
+        allocatedJobId: 1001,
+      });
+
+      let gpu = activeGpu;
+      for (let i = 0; i < 50; i++) {
+        gpu = tickMetrics([gpu])[0];
+      }
+      // Memory jitter is ±10 MB/tick, should stay close
+      expect(gpu.memoryUsed).toBeGreaterThan(59000);
+      expect(gpu.memoryUsed).toBeLessThan(61000);
+    });
+
+    it("should derive temperature from power draw, not utilization", () => {
+      // Both GPUs have same low utilization but different power draws
+      const highPowerGpu = createMockGPU({
+        powerDraw: 380,
+        powerLimit: 400,
+        temperature: 32,
+        utilization: 10,
+      });
+      const lowPowerGpu = createMockGPU({
+        powerDraw: 60,
+        powerLimit: 400,
+        temperature: 32,
+        utilization: 10,
+      });
+
+      let highP = highPowerGpu;
+      let lowP = lowPowerGpu;
+      for (let i = 0; i < 30; i++) {
+        highP = tickMetrics([highP])[0];
+        lowP = tickMetrics([lowP])[0];
+      }
+      // High power GPU should be warmer despite same utilization
+      expect(highP.temperature).toBeGreaterThan(lowP.temperature);
+    });
+
+    it("should not accumulate ECC errors on idle GPUs", () => {
+      const idleGpu = createMockGPU({
+        eccErrors: {
+          singleBit: 0,
+          doubleBit: 0,
+          aggregated: { singleBit: 0, doubleBit: 0 },
+        },
+      });
+
+      let gpu = idleGpu;
+      for (let i = 0; i < 100; i++) {
+        gpu = tickMetrics([gpu])[0];
+      }
+      expect(gpu.eccErrors.singleBit).toBe(0);
+      expect(gpu.eccErrors.doubleBit).toBe(0);
+    });
+
+    it("should use architecture-appropriate SM clock for H100", () => {
+      const h100Gpu = createMockGPU({
+        name: "NVIDIA H100-SXM5-80GB",
+        clocksSM: 1830,
+        temperature: 50,
+        powerDraw: 200,
+        powerLimit: 700,
+        allocatedJobId: 1001,
+        utilization: 50,
+      });
+
+      let gpu = h100Gpu;
+      for (let i = 0; i < 20; i++) {
+        gpu = tickMetrics([gpu])[0];
+      }
+      // H100 boost is 1830 MHz; at moderate temp (<70°C) should stay near boost
+      expect(gpu.clocksSM).toBeGreaterThan(1600);
+      expect(gpu.clocksSM).toBeLessThanOrEqual(1830);
     });
   });
 });
