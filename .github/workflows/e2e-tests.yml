@@ -19,7 +19,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: rm package-lock.json && npm install
+        run: rm package-lock.json && npm install --force
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
