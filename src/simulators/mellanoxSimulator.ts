@@ -247,18 +247,16 @@ export class MellanoxSimulator extends BaseSimulator {
       return this.createDeviceNotFoundError("mlxconfig", deviceName);
     }
 
-    // NOW check if MST is started (required to access the valid device)
+    // Auto-start MST if not started (simulator convenience)
     if (!this.mstStarted) {
-      return this.createError(
-        'Error: MST driver not loaded. Run "mst start" first.',
-      );
+      this.mstStarted = true;
     }
 
     // Continue with query/set logic...
 
     // Query configuration
     // Per spec Section 5.2: Configuration table with Default/Current/Next Boot columns
-    const command = parsed.subcommands[0];
+    const command = parsed.subcommands[0] || parsed.positionalArgs[0];
     if (command === "q" || command === "query") {
       // Check if device is a BlueFieldDPU (has mode property)
       const isDPU = "mode" in device && "armOS" in device;
@@ -370,10 +368,9 @@ export class MellanoxSimulator extends BaseSimulator {
     parsed: ParsedCommand,
     context: CommandContext,
   ): CommandResult {
+    // Auto-start MST if not started (simulator convenience)
     if (!this.mstStarted) {
-      return this.createError(
-        'Error: MST driver not loaded. Run "mst start" first.',
-      );
+      this.mstStarted = true;
     }
 
     const node = this.getNode(context);
@@ -388,7 +385,26 @@ export class MellanoxSimulator extends BaseSimulator {
       );
     }
 
-    const hca = node.hcas.find((h) => h.devicePath === devicePath);
+    // Accept both full paths (/dev/mst/mt41686_pciconf0) and short names (mlx5_0)
+    let hca = node.hcas.find((h) => h.devicePath === devicePath);
+    if (!hca && !devicePath.startsWith("/dev/mst/")) {
+      // Short name like "mlx5_0" — resolve by index: mlx5_N → hcas[N]
+      const idxMatch = devicePath.match(/mlx5_(\d+)/);
+      if (idxMatch) {
+        const idx = parseInt(idxMatch[1], 10);
+        if (idx >= 0 && idx < node.hcas.length) {
+          hca = node.hcas[idx];
+        }
+      }
+      // Fallback: try matching the short name inside the devicePath string
+      if (!hca) {
+        hca = node.hcas.find((h) => h.devicePath.includes(devicePath));
+      }
+      // Last resort: use the first HCA
+      if (!hca && node.hcas.length > 0) {
+        hca = node.hcas[0];
+      }
+    }
 
     if (!hca) {
       return this.createError(`Error: Device ${devicePath} not found`);

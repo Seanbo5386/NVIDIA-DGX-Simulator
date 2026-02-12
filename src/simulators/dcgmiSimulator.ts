@@ -619,8 +619,23 @@ export class DcgmiSimulator extends BaseSimulator {
       );
     }
 
+    // Check for -a or --add flag (add GPU to group)
+    if (this.hasAnyFlag(parsed, ["a", "add"])) {
+      const gpuId = this.getFlagString(parsed, ["a", "add"], "0");
+      const groupId = this.getFlagString(parsed, ["g", "group"], "0");
+      return this.createSuccess(
+        `Add to group ${groupId}: GPU ${gpuId} successfully added.`,
+      );
+    }
+
+    // Check for -d or --delete flag
+    if (this.hasAnyFlag(parsed, ["d", "delete"])) {
+      const groupId = this.getFlagString(parsed, ["d", "delete"], "0");
+      return this.createSuccess(`Successfully removed group ID ${groupId}.`);
+    }
+
     return this.createError(
-      'Missing required flag: -l/--list or -c/--create\nRun "dcgmi group --help" for usage.',
+      'Missing required flag: -l/--list, -c/--create, -a/--add, or -d/--delete\nRun "dcgmi group --help" for usage.',
     );
   }
 

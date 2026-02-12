@@ -75,11 +75,21 @@ function parseCommand(command: string): {
 /**
  * Validates a command execution against expected commands with improved matching
  */
+/**
+ * Expand $(command) shell substitutions to fixed values so that
+ * both expected and actual commands normalize to the same form.
+ */
+function expandShellSubstitutions(cmd: string): string {
+  return cmd.replace(/\$\([^)]+\)/g, "12345");
+}
+
 export function validateCommandExecuted(
   executedCommand: string,
   expectedCommands: string[],
 ): boolean {
-  const normalizedExecuted = executedCommand.trim().toLowerCase();
+  const normalizedExecuted = expandShellSubstitutions(
+    executedCommand.trim().toLowerCase(),
+  );
 
   // Check for common invalid patterns first
   const invalidPatterns = [
@@ -99,7 +109,9 @@ export function validateCommandExecuted(
   const executedParsed = parseCommand(normalizedExecuted);
 
   return expectedCommands.some((expected) => {
-    const normalizedExpected = expected.trim().toLowerCase();
+    const normalizedExpected = expandShellSubstitutions(
+      expected.trim().toLowerCase(),
+    );
     const expectedParsed = parseCommand(normalizedExpected);
 
     // Strategy 1: Exact match

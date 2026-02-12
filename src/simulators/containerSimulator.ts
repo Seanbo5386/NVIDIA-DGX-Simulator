@@ -87,6 +87,12 @@ export class ContainerSimulator extends BaseSimulator {
             "enroot start container-name",
           ],
         },
+        {
+          name: "nvidia-container-cli",
+          description: "NVIDIA container CLI for GPU container support",
+          usage: "nvidia-container-cli [COMMAND]",
+          examples: ["nvidia-container-cli info", "nvidia-container-cli list"],
+        },
       ],
     };
   }
@@ -112,6 +118,8 @@ export class ContainerSimulator extends BaseSimulator {
         return this.handleNGC(parsed, context);
       case "enroot":
         return this.handleEnroot(parsed, context);
+      case "nvidia-container-cli":
+        return this.handleNvidiaContainerCli(parsed, context);
       default:
         return this.createError(`Unknown container tool: ${tool}`);
     }
@@ -149,6 +157,53 @@ export class ContainerSimulator extends BaseSimulator {
     }
 
     const command = parsed.subcommands[0];
+
+    if (command === "info") {
+      const node = this.getNode(context);
+      return this.createSuccess(`Client: Docker Engine - Community
+ Version:           24.0.7
+ Context:           default
+ Debug Mode:        false
+
+Server: Docker Engine - Community
+ Containers: ${this.containers.length}
+  Running: ${this.containers.filter((c) => c.status.startsWith("Up")).length}
+  Paused: 0
+  Stopped: ${this.containers.filter((c) => !c.status.startsWith("Up")).length}
+ Images: ${this.images.length}
+ Server Version: 24.0.7
+ Storage Driver: overlay2
+ Default Runtime: nvidia
+ Runtimes: io.containerd.runc.v2 nvidia runc
+ Operating System: Ubuntu 22.04.3 LTS
+ Architecture: x86_64
+ CPUs: ${node ? 128 : 64}
+ Total Memory: ${node ? "2.0TiB" : "512GiB"}
+ Docker Root Dir: /var/lib/docker
+ NVIDIA Container Runtime: nvidia-container-runtime 3.14.0`);
+    }
+
+    if (command === "container") {
+      const subCmd = parsed.subcommands[1] || parsed.positionalArgs[0];
+      if (subCmd === "prune") {
+        const removed = this.containers.filter(
+          (c) => !c.status.startsWith("Up"),
+        );
+        this.containers = this.containers.filter((c) =>
+          c.status.startsWith("Up"),
+        );
+        let output = "";
+        if (removed.length > 0) {
+          output += "Deleted Containers:\n";
+          removed.forEach((c) => (output += `  ${c.id}\n`));
+        }
+        output += `\nTotal reclaimed space: ${removed.length * 256}MB`;
+        return this.createSuccess(output);
+      }
+      return this.createError(
+        "Usage: docker container <prune|ls|rm> [options]",
+      );
+    }
 
     if (command === "run") {
       // Check for --gpus flag
@@ -525,8 +580,80 @@ export class ContainerSimulator extends BaseSimulator {
       );
     }
 
+    if (command === "version") {
+      return this.createSuccess("enroot version 3.4.1+5");
+    }
+
     return this.createError(
-      "Usage: enroot <import|create|list|start> [options]",
+      "Usage: enroot <import|create|list|start|version> [options]",
+    );
+  }
+
+  // nvidia-container-cli commands
+  private handleNvidiaContainerCli(
+    parsed: ParsedCommand,
+    context: CommandContext,
+  ): CommandResult {
+    const command = parsed.subcommands[0];
+
+    if (command === "info") {
+      const node = this.getNode(context);
+      const driverVersion = node?.nvidiaDriverVersion || "535.129.03";
+      const cudaVersion = node?.cudaVersion || "12.2";
+      const gpus = node?.gpus || [];
+
+      let output = `NVRM version:   ${driverVersion}\n`;
+      output += `CUDA version:   ${cudaVersion}\n\n`;
+
+      if (gpus.length === 0) {
+        output += `No GPU devices found.\n`;
+      } else {
+        gpus.forEach((gpu, idx) => {
+          output += `Device Index:   ${idx}\n`;
+          output += `Device Minor:   ${idx}\n`;
+          output += `Model:          ${gpu.name}\n`;
+          output += `Brand:          NVIDIA\n`;
+          output += `GPU UUID:       ${gpu.uuid || `GPU-${idx.toString().padStart(8, "0")}-abcd-1234-abcd-123456789012`}\n`;
+          if (idx < gpus.length - 1) output += `\n`;
+        });
+      }
+
+      return this.createSuccess(output);
+    }
+
+    if (command === "list") {
+      let output = "/dev/nvidiactl\n";
+      output += "/dev/nvidia-uvm\n";
+      output += "/dev/nvidia-uvm-tools\n";
+      output += "/dev/nvidia-modeset\n";
+
+      const node = this.getNode(context);
+      const gpuCount = node?.gpus.length || 8;
+      for (let i = 0; i < gpuCount; i++) {
+        output += `/dev/nvidia${i}\n`;
+      }
+
+      return this.createSuccess(output);
+    }
+
+    if (command === "configure") {
+      return this.createSuccess(
+        "nvidia-container-cli: configuration updated successfully",
+      );
+    }
+
+    // No subcommand or --help
+    if (!command || this.hasAnyFlag(parsed, ["help", "h"])) {
+      let output = "Usage: nvidia-container-cli COMMAND [OPTIONS]\n\n";
+      output += "Commands:\n";
+      output += "  info        Show GPU and driver information\n";
+      output += "  list        List GPU device files\n";
+      output += "  configure   Configure container GPU support\n";
+      return this.createSuccess(output);
+    }
+
+    return this.createError(
+      `nvidia-container-cli: unknown command '${command}'`,
     );
   }
 }

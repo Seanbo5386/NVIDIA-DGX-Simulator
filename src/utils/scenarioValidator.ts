@@ -9,6 +9,14 @@ import type { ScenarioStep } from "@/types/scenarios";
 import type { CommandContext } from "@/types/commands";
 import type { ValidationRule, ValidationResult } from "@/types/validation";
 
+/**
+ * Expand $(command) shell substitutions to fixed values so that
+ * both expected and actual commands normalize to the same form.
+ */
+function expandShellSubstitutions(cmd: string): string {
+  return cmd.replace(/\$\([^)]+\)/g, "12345");
+}
+
 export class ScenarioValidator {
   /**
    * Validates a command execution against scenario step requirements
@@ -132,7 +140,9 @@ export class ScenarioValidator {
             // Create more flexible patterns for command matching
             if (commandsToValidate && commandsToValidate.length > 0) {
               // Build regex that matches the base command more intelligently
-              const patterns = commandsToValidate.map((cmd) => {
+              const patterns = commandsToValidate.map((rawCmd) => {
+                // Expand shell substitutions before building regex
+                const cmd = expandShellSubstitutions(rawCmd);
                 // Split command into parts for better matching
                 const parts = cmd.trim().split(/\s+/);
                 const baseCmd = parts[0];
@@ -288,13 +298,18 @@ export class ScenarioValidator {
 
       for (const expected of expectedCommands) {
         // Create a flexible pattern for matching
-        const expectedNormalized = expected.trim().toLowerCase();
+        // Expand shell substitutions so "$(pgrep hpl)" normalizes to "12345"
+        const expectedNormalized = expandShellSubstitutions(
+          expected.trim().toLowerCase(),
+        );
         const expectedParts = expectedNormalized.split(/\s+/);
         const baseCmd = expectedParts[0];
 
         // Check if any command in history matches this expected command
         const wasExecuted = allCommands.some((cmd) => {
-          const cmdNormalized = cmd.trim().toLowerCase();
+          const cmdNormalized = expandShellSubstitutions(
+            cmd.trim().toLowerCase(),
+          );
           const cmdParts = cmdNormalized.split(/\s+/);
 
           // Base command must match
@@ -359,11 +374,13 @@ export class ScenarioValidator {
       return { ruleId: rule.id, passed: false, message: "No pattern defined" };
     }
 
-    // Check if current command matches
-    const currentMatch = pattern.test(command);
+    // Check if current command matches (expand shell substitutions for matching)
+    const currentMatch = pattern.test(expandShellSubstitutions(command));
 
     // Also check if any previous command matched (for multi-step validation)
-    const previousMatch = allCommands.some((cmd) => pattern.test(cmd));
+    const previousMatch = allCommands.some((cmd) =>
+      pattern.test(expandShellSubstitutions(cmd)),
+    );
 
     const passed = currentMatch || previousMatch;
 

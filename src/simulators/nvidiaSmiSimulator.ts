@@ -70,6 +70,8 @@ export class NvidiaSmiSimulator extends BaseSimulator {
       "boost-slider",
       "clocks",
       "pci",
+      "dmon",
+      "pmon",
     ]);
   }
 
@@ -83,8 +85,17 @@ export class NvidiaSmiSimulator extends BaseSimulator {
       usage: "nvidia-smi nvlink [OPTIONS]",
       flags: [
         { long: "status", short: "s", description: "Display NVLink status" },
+        {
+          long: "error-counters",
+          short: "e",
+          description: "Display NVLink error counters",
+        },
       ],
-      examples: ["nvidia-smi nvlink --status", "nvidia-smi nvlink -s"],
+      examples: [
+        "nvidia-smi nvlink --status",
+        "nvidia-smi nvlink -s",
+        "nvidia-smi nvlink -e",
+      ],
     });
 
     this.registerCommand("topo", this.handleTopo.bind(this), {
@@ -95,6 +106,36 @@ export class NvidiaSmiSimulator extends BaseSimulator {
         { long: "matrix", short: "m", description: "Display topology matrix" },
       ],
       examples: ["nvidia-smi topo -m"],
+    });
+
+    this.registerCommand("dmon", this.handleDmon.bind(this), {
+      name: "dmon",
+      description: "Display device monitoring stats",
+      usage: "nvidia-smi dmon [OPTIONS]",
+      flags: [
+        { long: "select", short: "s", description: "Select stats to display" },
+        { long: "delay", short: "d", description: "Display delay in seconds" },
+        { long: "count", short: "c", description: "Collect count" },
+        { long: "id", short: "i", description: "Target GPU" },
+      ],
+      examples: ["nvidia-smi dmon", "nvidia-smi dmon -s pucm"],
+    });
+
+    this.registerCommand("pmon", this.handlePmon.bind(this), {
+      name: "pmon",
+      description: "Display process monitoring stats",
+      usage: "nvidia-smi pmon [OPTIONS]",
+      flags: [
+        {
+          long: "select",
+          short: "s",
+          description: "Select stats to display (u=util, m=mem)",
+        },
+        { long: "delay", short: "d", description: "Display delay in seconds" },
+        { long: "count", short: "c", description: "Collect count" },
+        { long: "id", short: "i", description: "Target GPU" },
+      ],
+      examples: ["nvidia-smi pmon", "nvidia-smi pmon -s m"],
     });
 
     this.registerCommand("mig", this.handleMig.bind(this), {
@@ -1326,6 +1367,85 @@ export class NvidiaSmiSimulator extends BaseSimulator {
   }
 
   /**
+   * Handle dmon subcommand — device monitoring
+   */
+  private handleDmon(
+    _parsed: ParsedCommand,
+    context: CommandContext,
+  ): CommandResult {
+    const node = this.getNode(context);
+    if (!node) {
+      return this.createError("Error: Unable to determine current node");
+    }
+
+    let header =
+      "# gpu   pwr  gtemp  mtemp    sm   mem   enc   dec  mclk  pclk\n";
+    header += "# Idx     W      C      C     %     %     %     %   MHz   MHz\n";
+
+    let output = header;
+    const visibleGPUs = node.gpus.filter((g) => !this.hasGPUFallenOffBus(g));
+    visibleGPUs.forEach((gpu, idx) => {
+      const pwr = Math.round(gpu.powerDraw);
+      const temp = Math.round(gpu.temperature);
+      const sm = Math.round(gpu.utilization);
+      const mem = Math.round((gpu.memoryUsed / gpu.memoryTotal) * 100);
+      const mclk = Math.round(gpu.clocksSM * 0.5);
+      const pclk = gpu.clocksSM;
+      output += `    ${idx}   ${String(pwr).padStart(3)}    ${String(temp).padStart(3)}      -    ${String(sm).padStart(3)}    ${String(mem).padStart(3)}     0     0  ${mclk}  ${pclk}\n`;
+    });
+
+    return this.createSuccess(output);
+  }
+
+  /**
+   * Handle pmon subcommand — process monitoring
+   */
+  private handlePmon(
+    parsed: ParsedCommand,
+    context: CommandContext,
+  ): CommandResult {
+    const node = this.getNode(context);
+    if (!node) {
+      return this.createError("Error: Unable to determine current node");
+    }
+
+    const showMem = this.getFlagString(parsed, ["s"]) === "m";
+
+    let header: string;
+    if (showMem) {
+      header = "# gpu        pid  type    fb   command\n";
+      header += "# Idx          #   C/G    MB   name\n";
+    } else {
+      header =
+        "# gpu        pid  type    sm   mem   enc   dec    fb   command\n";
+      header += "# Idx          #   C/G     %     %     %     %    MB   name\n";
+    }
+
+    let output = header;
+    const visibleGPUs = node.gpus.filter((g) => !this.hasGPUFallenOffBus(g));
+    visibleGPUs.forEach((gpu, idx) => {
+      if (gpu.allocatedJobId) {
+        const fb = Math.round(gpu.memoryUsed);
+        if (showMem) {
+          output += `    ${idx}      ${12345 + idx}     C  ${String(fb).padStart(5)}   python\n`;
+        } else {
+          const sm = Math.round(gpu.utilization);
+          const mem = Math.round((gpu.memoryUsed / gpu.memoryTotal) * 100);
+          output += `    ${idx}      ${12345 + idx}     C    ${String(sm).padStart(3)}    ${String(mem).padStart(3)}     0     0  ${String(fb).padStart(5)}   python\n`;
+        }
+      } else {
+        if (showMem) {
+          output += `    ${idx}          -     -     -   -\n`;
+        } else {
+          output += `    ${idx}          -     -      -      -     -     -      -   -\n`;
+        }
+      }
+    });
+
+    return this.createSuccess(output);
+  }
+
+  /**
    * Handle nvlink subcommand
    */
   private handleNvlink(
@@ -1345,6 +1465,16 @@ export class NvidiaSmiSimulator extends BaseSimulator {
       let output = `GPU 0: ${node.gpus[0].name}\n`;
       node.gpus[0].nvlinks.forEach((link) => {
         output += `\tLink ${link.linkId}: ${link.status} (${link.speed} GB/s)\n`;
+      });
+      return this.createSuccess(output);
+    }
+
+    // Error counters (-e flag)
+    if (this.hasAnyFlag(parsed, ["e"])) {
+      let output = `GPU 0: ${node.gpus[0].name}\n`;
+      output += `NVLink Error Counters:\n`;
+      node.gpus[0].nvlinks.forEach((link) => {
+        output += `  Link ${link.linkId}: CRC Errors: ${link.txErrors + link.rxErrors}, Replay Errors: ${link.replayErrors}\n`;
       });
       return this.createSuccess(output);
     }

@@ -302,6 +302,34 @@ For more information: man lfs
 `);
       }
 
+      case "getstripe": {
+        const path = parsed.positionalArgs[1] || "/data/training";
+        return this.createSuccess(`lmm_stripe_count:  4
+lmm_stripe_size:   1048576
+lmm_pattern:       raid0
+lmm_layout_gen:    0
+lmm_stripe_offset: 0
+        obdidx           objid           objid           group
+             0          389120       0x5f000                0
+             1          389121       0x5f001                0
+             2          389122       0x5f002                0
+             3          389123       0x5f003                0
+
+${path}: stripe_count=4, stripe_size=1048576, stripe_offset=0
+`);
+      }
+
+      case "setstripe": {
+        const path = parsed.positionalArgs[1] || "/data/output";
+        const stripeCount =
+          this.getFlagString(parsed, ["c", "stripe-count"]) || "4";
+        const stripeSize =
+          this.getFlagString(parsed, ["S", "stripe-size"]) || "1M";
+        return this.createSuccess(
+          `lfs setstripe: ${path} configured with stripe_count=${stripeCount}, stripe_size=${stripeSize}`,
+        );
+      }
+
       default: {
         return this.createError(
           `lfs: unknown command '${subcommand}'\n\nTry 'lfs help' for more information`,

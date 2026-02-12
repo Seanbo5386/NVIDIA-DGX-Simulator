@@ -133,6 +133,79 @@ export class BenchmarkSimulator extends BaseSimulator {
       ],
     });
 
+    this.registerCommand(
+      "all_reduce_perf",
+      this.handleAllReducePerf.bind(this),
+      {
+        name: "all_reduce_perf",
+        description: "NCCL all-reduce performance benchmark",
+        usage: "all_reduce_perf [-b minbytes] [-e maxbytes] [-g ngpus]",
+        flags: [
+          {
+            short: "b",
+            long: "minbytes",
+            description: "Minimum message size (default: 8B)",
+            takesValue: true,
+          },
+          {
+            short: "e",
+            long: "maxbytes",
+            description: "Maximum message size (default: 128MB)",
+            takesValue: true,
+          },
+          {
+            short: "g",
+            long: "ngpus",
+            description: "Number of GPUs per node (default: 8)",
+            takesValue: true,
+          },
+          {
+            short: "f",
+            long: "stepfactor",
+            description: "Step factor for message sizes (default: 2)",
+            takesValue: true,
+          },
+        ],
+        examples: [
+          "all_reduce_perf -b 8 -e 128M",
+          "all_reduce_perf -b 8 -e 128M -g 8",
+        ],
+      },
+    );
+
+    this.registerCommand("mpirun", this.handleMpirun.bind(this), {
+      name: "mpirun",
+      description: "Launch parallel jobs across nodes via MPI",
+      usage: "mpirun [-np N] [-H hostlist] <command> [args...]",
+      flags: [
+        {
+          long: "np",
+          description: "Number of processes (default: 1)",
+          takesValue: true,
+        },
+        {
+          short: "H",
+          long: "host",
+          description: "Comma-separated host list",
+          takesValue: true,
+        },
+        {
+          long: "bind-to",
+          description: "Binding policy (none, core, socket)",
+          takesValue: true,
+        },
+        {
+          long: "map-by",
+          description: "Mapping policy (slot, node, socket)",
+          takesValue: true,
+        },
+      ],
+      examples: [
+        "mpirun -np 16 -H node1,node2 all_reduce_perf",
+        "mpirun -np 8 ./hpl",
+      ],
+    });
+
     this.registerCommand("gpu-burn", this.handleGPUBurn.bind(this), {
       name: "gpu-burn",
       description: "GPU stress test for thermal and stability validation",
@@ -748,6 +821,152 @@ Testing ${gpusToTest.length} GPU(s) for ${duration} seconds
         });
       });
     }, 2000);
+
+    return this.createSuccess(output);
+  }
+
+  private handleAllReducePerf(
+    parsed: ParsedCommand,
+    context: CommandContext,
+  ): CommandResult {
+    const minBytesStr = parsed.flags.get("minbytes") || parsed.flags.get("b");
+    const maxBytesStr = parsed.flags.get("maxbytes") || parsed.flags.get("e");
+    const ngpusStr = parsed.flags.get("ngpus") || parsed.flags.get("g");
+
+    const minBytes = this.parseSize(
+      typeof minBytesStr === "string" ? minBytesStr : "8",
+    );
+    const maxBytes = this.parseSize(
+      typeof maxBytesStr === "string" ? maxBytesStr : "134217728",
+    );
+    const ngpus = parseInt(typeof ngpusStr === "string" ? ngpusStr : "8");
+
+    const node = this.getNode(context);
+    if (!node) {
+      return this.createError("No node selected");
+    }
+
+    const gpuName = node.gpus[0]?.name || "NVIDIA A100-SXM4-80GB";
+
+    let output = `# nThread 1 nGpus 1 minBytes ${minBytes} maxBytes ${maxBytes} step: 2(factor) warmup iters: 5 iters: 20 agg iters: 1 validation: 1 graph: 0\n`;
+    output += `#\n`;
+    output += `# Using devices\n`;
+
+    for (let i = 0; i < Math.min(ngpus, node.gpus.length); i++) {
+      const pci =
+        node.gpus[i]?.pciAddress ||
+        `0x${(7 + i * 3).toString(16).padStart(2, "0")}`;
+      output += `#  Rank  ${i} Group  0 Pid  ${12345 + i} on ${node.hostname || node.id} device  ${i} [${pci.substring(pci.length - 4, pci.length - 2)}] ${gpuName}\n`;
+    }
+
+    output += `#\n`;
+    output += `#                                                              out-of-place                       in-place\n`;
+    output += `#       size         count      type   redop    root     time   algbw   busbw #wrong     time   algbw   busbw #wrong\n`;
+    output += `#        (B)    (elements)                               (us)  (GB/s)  (GB/s)            (us)  (GB/s)  (GB/s)\n`;
+
+    const sizes: number[] = [];
+    let size = minBytes;
+    while (size <= maxBytes) {
+      sizes.push(size);
+      size *= 2;
+    }
+
+    let totalBusBW = 0;
+    sizes.forEach((sizeBytes) => {
+      const bandwidth = this.calculateNCCLBandwidthMultiNode(
+        sizeBytes,
+        ngpus,
+        1,
+        node.systemType,
+      );
+      const latency = this.calculateNCCLLatencyMultiNode(sizeBytes, ngpus, 1);
+      const busBW = (bandwidth * 2 * (ngpus - 1)) / ngpus;
+      totalBusBW += busBW;
+
+      const sizeStr = sizeBytes.toString().padStart(12);
+      const countStr = Math.floor(sizeBytes / 4)
+        .toString()
+        .padStart(12);
+      const timeStr = latency.toFixed(2).padStart(9);
+      const algbwStr = bandwidth.toFixed(2).padStart(7);
+      const busbwStr = busBW.toFixed(2).padStart(7);
+
+      output += `${sizeStr} ${countStr}     float     sum      -1  ${timeStr} ${algbwStr} ${busbwStr}      0  ${timeStr} ${algbwStr} ${busbwStr}      0\n`;
+    });
+
+    const avgBusBW = totalBusBW / sizes.length;
+    output += `# Out of bounds values : 0 OK\n`;
+    output += `# Avg bus bandwidth    : ${avgBusBW.toFixed(4)}\n`;
+
+    return this.createSuccess(output);
+  }
+
+  private handleMpirun(
+    parsed: ParsedCommand,
+    context: CommandContext,
+  ): CommandResult {
+    const npStr = parsed.flags.get("np");
+    const hostStr = parsed.flags.get("H") || parsed.flags.get("host");
+    const np = parseInt(typeof npStr === "string" ? npStr : "1");
+
+    // Determine the underlying command from positional args
+    const args = parsed.positionalArgs;
+    if (args.length === 0) {
+      return this.createError("mpirun: no executable specified");
+    }
+
+    const executable = args[0].replace("./", "");
+
+    const node = this.getNode(context);
+    if (!node) {
+      return this.createError("No node selected");
+    }
+
+    // Build mpirun header
+    let output = `--------------------------------------------------------------------------\n`;
+    output += `mpirun: launching ${np} process(es)`;
+    if (hostStr) {
+      output += ` on hosts: ${typeof hostStr === "string" ? hostStr : "localhost"}`;
+    }
+    output += `\n--------------------------------------------------------------------------\n\n`;
+
+    // Determine what the wrapped command should produce
+    if (executable === "all_reduce_perf" || executable.includes("all_reduce")) {
+      // Delegate to all_reduce_perf handler, passing remaining args
+      const innerParsed = { ...parsed, baseCommand: "all_reduce_perf" };
+      const innerResult = this.handleAllReducePerf(innerParsed, context);
+      output += innerResult.output;
+    } else if (executable === "hpl" || executable.includes("hpl")) {
+      // Delegate to HPL handler
+      const innerParsed = {
+        ...parsed,
+        baseCommand: "hpl",
+        flags: new Map(parsed.flags),
+      };
+      // Set nodes based on np / gpus-per-node
+      if (!innerParsed.flags.has("nodes")) {
+        innerParsed.flags.set("nodes", "1");
+      }
+      if (!innerParsed.flags.has("gpus-per-node")) {
+        innerParsed.flags.set("gpus-per-node", String(np));
+      }
+      const innerResult = this.handleHPL(innerParsed, context);
+      output += innerResult.output;
+    } else {
+      // Generic wrapped command
+      output += `Executing: ${args.join(" ")}\n`;
+      output += `Process 0 completed successfully\n`;
+      for (let i = 1; i < Math.min(np, 4); i++) {
+        output += `Process ${i} completed successfully\n`;
+      }
+      if (np > 4) {
+        output += `... (${np - 4} more processes completed)\n`;
+      }
+    }
+
+    output += `\n--------------------------------------------------------------------------\n`;
+    output += `mpirun: all ${np} process(es) completed successfully\n`;
+    output += `--------------------------------------------------------------------------\n`;
 
     return this.createSuccess(output);
   }
