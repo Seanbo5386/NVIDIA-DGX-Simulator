@@ -121,6 +121,9 @@ const TERMINAL_COMMANDS = new Set([
   "clusterkit",
   "nemo",
 
+  // Shell builtins
+  "cd",
+
   // Linux utilities (LinuxUtilsSimulator)
   "cat",
   "pwd",

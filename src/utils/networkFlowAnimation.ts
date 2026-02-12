@@ -13,7 +13,7 @@ export interface FlowParticle {
   targetX: number;
   targetY: number;
   progress: number; // 0 to 1
-  speed: number;    // progress per frame
+  speed: number; // progress per frame
   linkId: string;
   color: string;
   size?: number;
@@ -32,7 +32,9 @@ export interface CreateParticleOptions {
 
 let particleCounter = 0;
 
-export function createFlowParticle(options: CreateParticleOptions): FlowParticle {
+export function createFlowParticle(
+  options: CreateParticleOptions,
+): FlowParticle {
   const {
     sourceX,
     sourceY,
@@ -40,8 +42,8 @@ export function createFlowParticle(options: CreateParticleOptions): FlowParticle
     targetY,
     speed = 0.02,
     linkId,
-    color = '#76b900',
-    size = 4,
+    color = "#76b900",
+    size = 2.5,
   } = options;
 
   return {
@@ -60,15 +62,19 @@ export function createFlowParticle(options: CreateParticleOptions): FlowParticle
   };
 }
 
-export function updateParticlePosition(particle: FlowParticle): FlowParticle | null {
+export function updateParticlePosition(
+  particle: FlowParticle,
+): FlowParticle | null {
   const newProgress = particle.progress + particle.speed;
 
   if (newProgress >= 1) {
     return null; // Particle reached destination
   }
 
-  const x = particle.sourceX + (particle.targetX - particle.sourceX) * newProgress;
-  const y = particle.sourceY + (particle.targetY - particle.sourceY) * newProgress;
+  const x =
+    particle.sourceX + (particle.targetX - particle.sourceX) * newProgress;
+  const y =
+    particle.sourceY + (particle.targetY - particle.sourceY) * newProgress;
 
   return {
     ...particle,
@@ -83,7 +89,7 @@ export function calculatePathPoints(
   sourceY: number,
   targetX: number,
   targetY: number,
-  numPoints: number
+  numPoints: number,
 ): Array<{ x: number; y: number }> {
   const points: Array<{ x: number; y: number }> = [];
 
@@ -106,13 +112,16 @@ export function generateTrafficIntensity(utilization: number): number {
  * Calculate how many particles should be spawned per second based on traffic intensity.
  * Higher utilization = more particles.
  */
-export function calculateSpawnRate(intensity: number, baseRate: number = 2): number {
-  return Math.floor(baseRate + intensity * 8); // 2-10 particles per second
+export function calculateSpawnRate(
+  intensity: number,
+  baseRate: number = 0.4,
+): number {
+  return baseRate + intensity * 1.6; // 0.4-2 particles per second per link
 }
 
 /**
  * Generate a random offset for particles to avoid perfect alignment.
  */
-export function generateParticleOffset(maxOffset: number = 3): number {
+export function generateParticleOffset(maxOffset: number = 1.5): number {
   return (Math.random() - 0.5) * 2 * maxOffset;
 }

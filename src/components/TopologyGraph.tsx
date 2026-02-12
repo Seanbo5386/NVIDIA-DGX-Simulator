@@ -95,9 +95,10 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
       }
     };
 
-    // Use mousedown for immediate response
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    // Use click (not mousedown) so D3's stopPropagation() on node clicks
+    // prevents this handler from firing when switching between nodes
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, [selectedNode]);
 
   // Get layout for this system type
@@ -142,9 +143,10 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
   }, [node, layout]);
 
   // Disable particle animations when user prefers reduced motion
-  const { particles } = useNetworkAnimation({
+  const { particleCount } = useNetworkAnimation({
     enabled: isRunning && !reducedMotion,
     links: animationLinks,
+    renderTarget: particleGroupRef,
   });
 
   // Memoize STATIC layout data - only recalculate when layout or GPU count changes
@@ -525,10 +527,12 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
     // Click on background to deselect
     svg.on("click", () => setSelectedNode(null));
 
-    // Add particle container group for animations
+    // Add particle container group for animations (pointer-events: none so
+    // particles don't intercept clicks on nodes/links beneath them)
     particleGroupRef.current = svg
       .append("g")
       .attr("class", "particles")
+      .attr("pointer-events", "none")
       .node();
   }, [
     nodes,
@@ -538,32 +542,6 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
     stableHighlightedGpus,
     stableHighlightedLinks,
   ]);
-
-  // Particle animation render effect
-  useEffect(() => {
-    if (!particleGroupRef.current) return;
-
-    const group = d3.select(particleGroupRef.current);
-
-    // Data join for particles
-    const particleSelection = group
-      .selectAll<SVGCircleElement, (typeof particles)[0]>("circle")
-      .data(particles, (d) => d.id);
-
-    // Enter new particles
-    particleSelection
-      .enter()
-      .append("circle")
-      .attr("r", (d) => d.size || 4)
-      .attr("fill", (d) => d.color)
-      .attr("opacity", 0.8)
-      .merge(particleSelection)
-      .attr("cx", (d) => d.x)
-      .attr("cy", (d) => d.y);
-
-    // Remove old particles
-    particleSelection.exit().remove();
-  }, [particles]);
 
   // Update dynamic visual attributes (colors, temperature text) without rebuilding SVG
   // This runs on every simulation tick but only updates attributes, preserving click handlers
@@ -732,7 +710,7 @@ export const TopologyGraph: React.FC<TopologyGraphProps> = ({
             ? "Live data flow"
             : "Paused"}
         {isRunning && !reducedMotion && (
-          <span>({particles.length} active flows)</span>
+          <span>({particleCount} active flows)</span>
         )}
       </div>
 

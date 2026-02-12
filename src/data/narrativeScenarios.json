@@ -33,12 +33,13 @@
         {
           "id": "step-2",
           "type": "concept",
-          "situation": "Your mentor asks: 'Do you know where you are right now?'",
+          "situation": "Your mentor asks: 'Do you know where you are right now?' Try it yourself.",
           "task": "Where Am I? (pwd)",
-          "expectedCommands": [],
-          "hints": [],
+          "expectedCommands": ["pwd"],
+          "hints": ["Type: pwd"],
           "validation": {
-            "type": "none"
+            "type": "command",
+            "command": "pwd"
           },
           "conceptContent": "pwd (print working directory) shows your current location in the filesystem.\n\nWhen you first log into a DGX node you'll typically land in your home directory:\n\n$ pwd\n/home/admin\n\nKnowing where you are is critical before running relative commands like cd .. or ls logs/.",
           "tips": [
@@ -62,12 +63,13 @@
         {
           "id": "step-4",
           "type": "concept",
-          "situation": "Your mentor explains how to move between directories.",
+          "situation": "Your mentor explains how to move between directories. Try navigating to the log directory.",
           "task": "Changing Directories (cd)",
-          "expectedCommands": [],
-          "hints": [],
+          "expectedCommands": ["cd /var/log"],
+          "hints": ["Type: cd /var/log"],
           "validation": {
-            "type": "none"
+            "type": "command",
+            "command": "cd"
           },
           "conceptContent": "cd changes your working directory. There are several ways to specify where to go:\n\ncd /var/log — Absolute path, go directly there\ncd logs — Relative path, enter a subdirectory\ncd .. — Go up one level\ncd ~ — Go to your home directory\ncd - — Go back to previous directory\n\nAbsolute paths start with / and work from anywhere. Relative paths start from your current location.",
           "tips": [
@@ -84,12 +86,13 @@
         {
           "id": "step-5",
           "type": "concept",
-          "situation": "Now your mentor teaches you how to read files — critical for checking configs and logs.",
+          "situation": "Now your mentor teaches you how to read files — critical for checking configs and logs. Try reading the hostname file.",
           "task": "Dumping Files with cat",
-          "expectedCommands": [],
-          "hints": [],
+          "expectedCommands": ["cat /etc/hostname"],
+          "hints": ["Type: cat /etc/hostname"],
           "validation": {
-            "type": "none"
+            "type": "command",
+            "command": "cat"
           },
           "conceptContent": "cat (concatenate) outputs the entire contents of a file. It's great for short files like configs:\n\n$ cat /etc/hostname\ndgx-node-01\n\nWhen to use cat:\n- Short config files (/etc/hostname, /etc/hosts)\n- Checking a single setting quickly\n\nWhen NOT to use cat:\n- Large log files (thousands of lines will flood your terminal)\n- Binary files (produces garbage output)\n\nFor large files, use head, tail, or less instead.",
           "tips": [
@@ -112,12 +115,13 @@
         {
           "id": "step-7",
           "type": "concept",
-          "situation": "Your mentor warns: 'Never cat a huge log file. Use head and tail instead.'",
+          "situation": "Your mentor warns: 'Never cat a huge log file. Use head and tail instead.' Try viewing the last 20 lines of the syslog.",
           "task": "Previewing with head and tail",
-          "expectedCommands": [],
-          "hints": [],
+          "expectedCommands": ["tail -20 /var/log/syslog"],
+          "hints": ["Type: tail -20 /var/log/syslog"],
           "validation": {
-            "type": "none"
+            "type": "command",
+            "command": "tail"
           },
           "conceptContent": "When files are too large for cat, use head or tail to see just part of the file:\n\nhead -20 file — First 20 lines\ntail -20 file — Last 20 lines\ntail -f file — Follow new lines in real-time\n\ntail -f is especially powerful for watching live logs — for example, monitoring GPU errors as a training job runs:\n\n$ tail -f /var/log/syslog\n\nPress Ctrl+C to stop following.",
           "tips": [

@@ -1,8 +1,25 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useNetworkAnimation } from '../useNetworkAnimation';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { renderHook, act } from "@testing-library/react";
+import { useNetworkAnimation } from "../useNetworkAnimation";
 
-describe('useNetworkAnimation', () => {
+// Mock d3 — the hook uses it for direct SVG rendering
+vi.mock("d3", () => {
+  const mockSelection = {
+    selectAll: vi.fn().mockReturnThis(),
+    data: vi.fn().mockReturnThis(),
+    enter: vi.fn().mockReturnThis(),
+    append: vi.fn().mockReturnThis(),
+    attr: vi.fn().mockReturnThis(),
+    merge: vi.fn().mockReturnThis(),
+    exit: vi.fn().mockReturnThis(),
+    remove: vi.fn().mockReturnThis(),
+  };
+  return {
+    select: vi.fn(() => mockSelection),
+  };
+});
+
+describe("useNetworkAnimation", () => {
   let rafCallbacks: Array<(time: number) => void> = [];
   let rafId = 0;
   const originalRAF = global.requestAnimationFrame;
@@ -39,21 +56,30 @@ describe('useNetworkAnimation', () => {
     }
   };
 
-  it('should start with empty particles array', () => {
+  it("should start with empty particles", () => {
     const { result } = renderHook(() =>
-      useNetworkAnimation({ enabled: false, links: [] })
+      useNetworkAnimation({ enabled: false, links: [] }),
     );
 
     expect(result.current.particles).toEqual([]);
+    expect(result.current.particleCount).toBe(0);
   });
 
-  it('should not spawn particles when disabled', () => {
+  it("should not spawn particles when disabled", () => {
     const links = [
-      { id: 'link-1', sourceX: 0, sourceY: 0, targetX: 100, targetY: 0, active: true, utilization: 50 },
+      {
+        id: "link-1",
+        sourceX: 0,
+        sourceY: 0,
+        targetX: 100,
+        targetY: 0,
+        active: true,
+        utilization: 50,
+      },
     ];
 
     const { result } = renderHook(() =>
-      useNetworkAnimation({ enabled: false, links })
+      useNetworkAnimation({ enabled: false, links }),
     );
 
     act(() => {
@@ -63,13 +89,21 @@ describe('useNetworkAnimation', () => {
     expect(result.current.particles).toEqual([]);
   });
 
-  it('should spawn particles when enabled', () => {
+  it("should spawn particles when enabled", () => {
     const links = [
-      { id: 'link-1', sourceX: 0, sourceY: 0, targetX: 100, targetY: 0, active: true, utilization: 50 },
+      {
+        id: "link-1",
+        sourceX: 0,
+        sourceY: 0,
+        targetX: 100,
+        targetY: 0,
+        active: true,
+        utilization: 50,
+      },
     ];
 
     const { result } = renderHook(() =>
-      useNetworkAnimation({ enabled: true, links })
+      useNetworkAnimation({ enabled: true, links }),
     );
 
     act(() => {
@@ -79,13 +113,21 @@ describe('useNetworkAnimation', () => {
     expect(result.current.particles.length).toBeGreaterThan(0);
   });
 
-  it('should clean up on unmount', () => {
+  it("should clean up on unmount", () => {
     const links = [
-      { id: 'link-1', sourceX: 0, sourceY: 0, targetX: 100, targetY: 0, active: true, utilization: 50 },
+      {
+        id: "link-1",
+        sourceX: 0,
+        sourceY: 0,
+        targetX: 100,
+        targetY: 0,
+        active: true,
+        utilization: 50,
+      },
     ];
 
     const { unmount } = renderHook(() =>
-      useNetworkAnimation({ enabled: true, links })
+      useNetworkAnimation({ enabled: true, links }),
     );
 
     unmount();
@@ -94,13 +136,21 @@ describe('useNetworkAnimation', () => {
     expect(global.cancelAnimationFrame).toHaveBeenCalled();
   });
 
-  it('should provide pause and resume controls', () => {
+  it("should provide pause and resume controls", () => {
     const links = [
-      { id: 'link-1', sourceX: 0, sourceY: 0, targetX: 100, targetY: 0, active: true, utilization: 50 },
+      {
+        id: "link-1",
+        sourceX: 0,
+        sourceY: 0,
+        targetX: 100,
+        targetY: 0,
+        active: true,
+        utilization: 50,
+      },
     ];
 
     const { result } = renderHook(() =>
-      useNetworkAnimation({ enabled: true, links })
+      useNetworkAnimation({ enabled: true, links }),
     );
 
     expect(result.current.isPaused).toBe(false);
@@ -118,13 +168,21 @@ describe('useNetworkAnimation', () => {
     expect(result.current.isPaused).toBe(false);
   });
 
-  it('should reset particles when reset is called', () => {
+  it("should reset particles when reset is called", () => {
     const links = [
-      { id: 'link-1', sourceX: 0, sourceY: 0, targetX: 100, targetY: 0, active: true, utilization: 50 },
+      {
+        id: "link-1",
+        sourceX: 0,
+        sourceY: 0,
+        targetX: 100,
+        targetY: 0,
+        active: true,
+        utilization: 50,
+      },
     ];
 
     const { result } = renderHook(() =>
-      useNetworkAnimation({ enabled: true, links })
+      useNetworkAnimation({ enabled: true, links }),
     );
 
     // Generate some particles

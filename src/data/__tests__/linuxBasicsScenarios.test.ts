@@ -86,13 +86,30 @@ describe("Linux Basics Scenarios (domain 0)", () => {
     });
   });
 
-  it("concept/observe steps should have validation.type of 'none'", () => {
+  it("concept/observe steps without expectedCommands should have validation.type of 'none'", () => {
     linuxScenarios.forEach((s) => {
       s.steps
-        .filter((step) => step.type === "concept" || step.type === "observe")
+        .filter(
+          (step) =>
+            (step.type === "concept" || step.type === "observe") &&
+            step.expectedCommands.length === 0,
+        )
         .forEach((step) => {
           expect(step.validation.type).toBe("none");
-          expect(step.expectedCommands).toEqual([]);
+        });
+    });
+  });
+
+  it("concept/observe steps with expectedCommands should have validation", () => {
+    linuxScenarios.forEach((s) => {
+      s.steps
+        .filter(
+          (step) =>
+            (step.type === "concept" || step.type === "observe") &&
+            step.expectedCommands.length > 0,
+        )
+        .forEach((step) => {
+          expect(step.validation.type).not.toBe("none");
         });
     });
   });

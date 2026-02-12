@@ -61,9 +61,9 @@ function getSwitchModel(bandwidth: number): string {
 
 // Helper to convert bandwidth to line width
 const bandwidthToWidth = (bandwidth: number): number => {
-  if (bandwidth >= 800) return 6; // XDR
-  if (bandwidth >= 400) return 4; // NDR
-  if (bandwidth >= 200) return 3; // HDR
+  if (bandwidth >= 800) return 4; // XDR
+  if (bandwidth >= 400) return 3; // NDR
+  if (bandwidth >= 200) return 2.5; // HDR
   return 2; // EDR
 };
 
@@ -172,9 +172,10 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
       }
     };
 
-    // Use mousedown for immediate response
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    // Use click (not mousedown) so D3's stopPropagation() on node clicks
+    // prevents this handler from firing when switching between nodes
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, [selectedNode]);
 
   // Calculate animation links from fabric topology
@@ -247,9 +248,10 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
   }, [cluster, fabricConfig]);
 
   // Disable particle animations when user prefers reduced motion
-  const { particles } = useNetworkAnimation({
+  const { particleCount } = useNetworkAnimation({
     enabled: isRunning && !reducedMotion,
     links: animationLinks,
+    renderTarget: particleGroupRef,
   });
 
   useEffect(() => {
@@ -811,10 +813,12 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
       .attr("font-weight", "bold")
       .text("Host Tier");
 
-    // Add particle container group for animations
+    // Add particle container group for animations (pointer-events: none so
+    // particles don't intercept clicks on nodes/links beneath them)
     particleGroupRef.current = svg
       .append("g")
       .attr("class", "particles")
+      .attr("pointer-events", "none")
       .node();
     // Only depend on structural changes (node count, config), NOT on metrics that change every tick
     // Dynamic data updates are handled by clusterRef in click handlers
@@ -825,32 +829,6 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
     stableHighlightedNodes,
     stableHighlightedSwitches,
   ]);
-
-  // Particle animation render effect
-  useEffect(() => {
-    if (!particleGroupRef.current) return;
-
-    const group = d3.select(particleGroupRef.current);
-
-    // Data join for particles
-    const particleSelection = group
-      .selectAll<SVGCircleElement, (typeof particles)[0]>("circle")
-      .data(particles, (d) => d.id);
-
-    // Enter new particles
-    particleSelection
-      .enter()
-      .append("circle")
-      .attr("r", (d) => d.size || 4)
-      .attr("fill", (d) => d.color)
-      .attr("opacity", 0.8)
-      .merge(particleSelection)
-      .attr("cx", (d) => d.x)
-      .attr("cy", (d) => d.y);
-
-    // Remove old particles
-    particleSelection.exit().remove();
-  }, [particles]);
 
   // Dynamic update effect: update link/node colors when HCA state changes
   useEffect(() => {
@@ -989,7 +967,7 @@ export const InfiniBandMap: React.FC<InfiniBandMapProps> = ({
             ? "Live data flow"
             : "Paused"}
         {isRunning && !reducedMotion && (
-          <span>({particles.length} active flows)</span>
+          <span>({particleCount} active flows)</span>
         )}
       </div>
 
