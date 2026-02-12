@@ -23,6 +23,7 @@ import { FabricManagerSimulator } from "@/simulators/fabricManagerSimulator";
 import { NvidiaBugReportSimulator } from "@/simulators/nvidiaBugReportSimulator";
 import { ClusterKitSimulator } from "@/simulators/clusterKitSimulator";
 import { NeMoSimulator } from "@/simulators/nemoSimulator";
+import { LinuxUtilsSimulator } from "@/simulators/linuxUtilsSimulator";
 import { useSimulationStore } from "@/store/simulationStore";
 import { scenarioContextManager } from "@/store/scenarioContext";
 import { ScenarioValidator } from "@/utils/scenarioValidator";
@@ -140,6 +141,7 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
   const nvidiaBugReportSimulator = useRef(new NvidiaBugReportSimulator());
   const clusterKitSimulator = useRef(new ClusterKitSimulator());
   const nemoSimulator = useRef(new NeMoSimulator());
+  const linuxUtilsSimulator = useRef(new LinuxUtilsSimulator());
 
   const currentContext = useRef<CommandContext>({
     currentNode: selectedNode || cluster.nodes[0]?.id || "dgx-00",
@@ -637,6 +639,31 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
     );
     router.register("clusterkit", simHandler(clusterKitSimulator.current));
     router.register("nemo", simHandler(nemoSimulator.current));
+
+    // Linux utility commands
+    router.registerMany(
+      [
+        "cat",
+        "pwd",
+        "ls",
+        "head",
+        "tail",
+        "echo",
+        "wc",
+        "grep",
+        "ip",
+        "env",
+        "dpkg",
+        "apt",
+        "nvcc",
+        "iostat",
+        "efibootmgr",
+        "nfsstat",
+        "ldconfig",
+        "taskset",
+      ],
+      simHandler(linuxUtilsSimulator.current),
+    );
 
     const executeCommand = async (cmdLine: string) => {
       if (!cmdLine.trim()) {
