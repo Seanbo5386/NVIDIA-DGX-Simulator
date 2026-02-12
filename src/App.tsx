@@ -310,6 +310,11 @@ function App() {
             <span>NCP-AII Training Environment</span>
           </div>
         </div>
+        <div className="text-center text-[10px] text-gray-600 mt-1">
+          Not affiliated with or endorsed by NVIDIA Corporation. All NVIDIA
+          trademarks are property of NVIDIA Corporation. For educational use
+          only.
+        </div>
       </footer>
 
       {/* Lab Workspace Overlay */}

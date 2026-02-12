@@ -7,6 +7,7 @@ import {
   ExternalLink,
   Sparkles,
   Linkedin,
+  Shield,
 } from "lucide-react";
 
 const CHANGELOG = [
@@ -272,6 +273,72 @@ export function About() {
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* Legal Disclaimer */}
+        <section>
+          <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-3">
+            <Shield className="w-5 h-5 text-nvidia-green" />
+            Legal Disclaimer
+          </h3>
+          <div className="bg-gray-800 rounded-lg p-5 text-sm text-gray-400 leading-relaxed space-y-3">
+            <p>
+              NVIDIA, the NVIDIA logo, DGX, DGX A100, DGX H100, DGX H200, DGX
+              B200, A100, H100, H200, B200, NVLink, NVSwitch, InfiniBand,
+              Mellanox, ConnectX, BlueField, CUDA, DCGM, NCCL, and NVSM are
+              trademarks and/or registered trademarks of{" "}
+              <span className="text-white font-medium">NVIDIA Corporation</span>{" "}
+              in the United States and other countries.
+            </p>
+            <p>
+              This project is an{" "}
+              <span className="text-white font-medium">
+                independent, community-built educational tool
+              </span>{" "}
+              and is <span className="text-white font-medium">not</span>{" "}
+              developed, endorsed, certified, or affiliated with NVIDIA
+              Corporation in any way. The NCP-AII certification exam is
+              administered solely by NVIDIA, and this simulator makes no
+              guarantees about exam content, accuracy, or outcomes.
+            </p>
+            <p>
+              All simulated command outputs, hardware specifications, and
+              diagnostic data are approximations created for{" "}
+              <span className="text-white font-medium">
+                educational purposes only
+              </span>{" "}
+              and may not reflect the exact behavior of real NVIDIA hardware or
+              software. Users should always refer to official NVIDIA
+              documentation for authoritative technical information.
+            </p>
+            <p>
+              Exam content, format, and objectives may be updated by NVIDIA at
+              any time. This simulator may not reflect the most current exam
+              material and is intended to{" "}
+              <span className="text-white font-medium">
+                supplement, not replace
+              </span>
+              , official NVIDIA training materials and documentation.
+            </p>
+            <p>
+              This software is provided{" "}
+              <span className="text-white font-medium">
+                &quot;as is&quot; without warranty of any kind
+              </span>
+              , express or implied, including but not limited to the warranties
+              of merchantability, fitness for a particular purpose, and
+              noninfringement. In no event shall the authors or copyright
+              holders be liable for any claim, damages, or other liability
+              arising from the use of this software, including but not limited
+              to exam results or certification outcomes.
+            </p>
+            <p>
+              All other trademarks referenced herein are the property of their
+              respective owners. Slurm is a trademark of SchedMD LLC. Linux is a
+              registered trademark of Linus Torvalds. Docker is a trademark of
+              Docker, Inc.
+            </p>
           </div>
         </section>
 
