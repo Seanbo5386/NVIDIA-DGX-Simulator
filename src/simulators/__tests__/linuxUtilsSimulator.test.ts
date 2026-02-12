@@ -129,6 +129,27 @@ describe("LinuxUtilsSimulator", () => {
       expect(result.exitCode).toBe(0);
       expect(result.output).toMatch(/1/);
     });
+
+    it("should resolve relative path from cwd", () => {
+      context.currentPath = "/etc/slurm";
+      const result = simulator.execute(parse("cat gres.conf"), context);
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toMatch(/gpu/i);
+    });
+
+    it("should resolve .. in relative path", () => {
+      context.currentPath = "/etc/slurm";
+      const result = simulator.execute(parse("cat ../hostname"), context);
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toContain("dgx-00");
+    });
+
+    it("should resolve ./file relative path", () => {
+      context.currentPath = "/etc/slurm";
+      const result = simulator.execute(parse("cat ./slurm.conf"), context);
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toContain("ClusterName");
+    });
   });
 
   // ============================================
@@ -181,6 +202,37 @@ describe("LinuxUtilsSimulator", () => {
     it("should return generic listing for unknown directory", () => {
       const result = simulator.execute(parse("ls /unknown"), context);
       expect(result.exitCode).toBe(0);
+    });
+
+    it("should resolve relative directory path from cwd", () => {
+      context.currentPath = "/root";
+      const result = simulator.execute(parse("ls scripts"), context);
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toContain("setup.sh");
+    });
+
+    it("should list /root/scripts with script files", () => {
+      const result = simulator.execute(parse("ls /root/scripts"), context);
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toContain("setup.sh");
+      expect(result.output).toContain("backup.sh");
+    });
+
+    it("should list /home/admin/scripts with monitor.sh", () => {
+      const result = simulator.execute(
+        parse("ls /home/admin/scripts"),
+        context,
+      );
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toContain("monitor.sh");
+    });
+
+    it("should resolve .. in ls path", () => {
+      context.currentPath = "/root/scripts";
+      const result = simulator.execute(parse("ls .."), context);
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toContain("scripts");
+      expect(result.output).toContain("HPL.dat");
     });
   });
 

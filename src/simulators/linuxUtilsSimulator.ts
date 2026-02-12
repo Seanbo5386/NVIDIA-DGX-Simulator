@@ -121,6 +121,34 @@ export class LinuxUtilsSimulator extends BaseSimulator {
   // =========================================================================
 
   /**
+   * Resolve a file or directory path against the current working directory.
+   * Handles relative paths, `.`, and `..`.
+   */
+  private resolvePath(rawPath: string, context: CommandContext): string {
+    let target = rawPath;
+
+    // Resolve relative paths against cwd
+    if (!target.startsWith("/")) {
+      const base = context.currentPath || "/root";
+      target = base === "/" ? `/${target}` : `${base}/${target}`;
+    }
+
+    // Normalize . and ..
+    const parts = target.split("/").filter(Boolean);
+    const resolved: string[] = [];
+    for (const p of parts) {
+      if (p === ".") continue;
+      if (p === "..") {
+        resolved.pop();
+      } else {
+        resolved.push(p);
+      }
+    }
+
+    return "/" + resolved.join("/");
+  }
+
+  /**
    * Returns simulated file contents for known paths.
    * Unknown paths return undefined (triggering a "No such file" error).
    */
@@ -128,6 +156,7 @@ export class LinuxUtilsSimulator extends BaseSimulator {
     filePath: string,
     context: CommandContext,
   ): string | undefined {
+    const resolved = this.resolvePath(filePath, context);
     const hostname = context.currentNode || "dgx-node-01";
 
     const files: Record<string, string> = {
@@ -211,7 +240,7 @@ Permanent HW addr: 00:11:22:33:44:56
 Slave queue ID: 0
 Aggregator ID: 1`,
 
-      "HPL.dat": `HPLinpack benchmark input file
+      "/root/HPL.dat": `HPLinpack benchmark input file
 Innovative Computing Laboratory, University of Tennessee
 HPL.out      output file name (if any)
 6            device out (6=stdout,7=stderr,file)
@@ -242,6 +271,73 @@ HPL.out      output file name (if any)
 0            U  in (0=transposed,1=no-transposed) form
 1            Equilibration (0=no,1=yes)
 8            memory alignment in double (> 0)`,
+
+      "/home/admin/HPL.dat": `HPLinpack benchmark input file
+Innovative Computing Laboratory, University of Tennessee
+HPL.out      output file name (if any)
+6            device out (6=stdout,7=stderr,file)
+1            # of problems sizes (N)
+131072       Ns
+1            # of NBs
+384          NBs
+0            PMAP process mapping (0=Row-,1=Column-major)
+1            # of process grids (P x Q)
+2            Ps
+4            Qs
+16.0         threshold
+1            # of panel fact
+2            PFACTs (0=left, 1=Crout, 2=Right)
+1            # of recursive stopping criterium
+4            NBMINs (>= 1)
+1            # of panels in recursion
+2            NDIVs
+1            # of recursive panel fact.
+1            RFACTs (0=left, 1=Crout, 2=Right)
+1            # of broadcast
+1            BCASTs (0=1rg,1=1rM,2=2rg,3=2rM,4=Lng,5=LnM)
+1            # of lookahead depth
+1            DEPTHs (>=0)
+2            SWAP (0=bin-exch,1=long,2=mix)
+64           swapping threshold
+0            L1 in (0=transposed,1=no-transposed) form
+0            U  in (0=transposed,1=no-transposed) form
+1            Equilibration (0=no,1=yes)
+8            memory alignment in double (> 0)`,
+
+      "/root/scripts/setup.sh": `#!/bin/bash
+# DGX System Setup Script
+set -e
+
+echo "Configuring NVIDIA drivers..."
+nvidia-smi -pm 1
+nvidia-smi -ac 1215,1410
+
+echo "Verifying GPU topology..."
+nvidia-smi topo -m
+
+echo "Setup complete."`,
+
+      "/root/scripts/backup.sh": `#!/bin/bash
+# Cluster Backup Script
+set -e
+
+BACKUP_DIR="/data/backups/$(date +%Y%m%d)"
+mkdir -p "$BACKUP_DIR"
+
+echo "Backing up Slurm configuration..."
+cp /etc/slurm/*.conf "$BACKUP_DIR/"
+
+echo "Backing up NCCL configuration..."
+cp /etc/nccl.conf "$BACKUP_DIR/"
+
+echo "Backup complete: $BACKUP_DIR"`,
+
+      "/home/admin/scripts/monitor.sh": `#!/bin/bash
+# GPU Health Monitor Script
+while true; do
+  nvidia-smi --query-gpu=index,temperature.gpu,utilization.gpu,memory.used --format=csv,noheader
+  sleep 5
+done`,
 
       "/etc/nccl.conf": `# NCCL Configuration
 NCCL_DEBUG=INFO
@@ -296,7 +392,7 @@ tmpfs                      /dev/shm        tmpfs   defaults,size=64g 0       0`,
 }`,
     };
 
-    return files[filePath];
+    return files[resolved];
   }
 
   // =========================================================================
@@ -368,11 +464,10 @@ tmpfs                      /dev/shm        tmpfs   defaults,size=64g 0       0`,
   ): CommandResult {
     const longFormat = this.hasAnyFlag(parsed, ["l"]);
     const all = this.hasAnyFlag(parsed, ["a"]);
-    const dirPath =
-      parsed.subcommands[0] ||
-      parsed.positionalArgs[0] ||
-      context.currentPath ||
-      "/root";
+    const rawPath = parsed.subcommands[0] || parsed.positionalArgs[0];
+    const dirPath = rawPath
+      ? this.resolvePath(rawPath, context)
+      : context.currentPath || "/root";
 
     // Simulated directory listings
     const directories: Record<string, string[][]> = {
@@ -418,6 +513,29 @@ tmpfs                      /dev/shm        tmpfs   defaults,size=64g 0       0`,
           "2048",
           "Jan 10 12:00",
           "HPL.dat",
+        ],
+      ],
+      "/root/scripts": [
+        ["-rwxr-xr-x", "1", "root", "root", "1024", "Jan 10 12:00", "setup.sh"],
+        [
+          "-rwxr-xr-x",
+          "1",
+          "root",
+          "root",
+          "2048",
+          "Jan 10 12:00",
+          "backup.sh",
+        ],
+      ],
+      "/home/admin/scripts": [
+        [
+          "-rwxr-xr-x",
+          "1",
+          "admin",
+          "admin",
+          "1536",
+          "Jan 10 12:00",
+          "monitor.sh",
         ],
       ],
       "/etc/slurm": [
