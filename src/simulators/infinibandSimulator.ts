@@ -60,7 +60,7 @@ export class InfiniBandSimulator extends BaseSimulator {
   executeIbstat(parsed: ParsedCommand, context: CommandContext): CommandResult {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       return (
-        this.getHelpFromRegistry("ibstat") ||
+        this.getHelpFromRegistry("ibstat", parsed) ||
         this.createSuccess(`Usage: ibstat [options] [<ca_name>] [portnum]
 Options:
   -d, --debug          increase debug level
@@ -123,7 +123,7 @@ Options:
   ): CommandResult {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       return (
-        this.getHelpFromRegistry("ibportstate") ||
+        this.getHelpFromRegistry("ibportstate", parsed) ||
         this.createSuccess(`Usage: ibportstate [options] <lid|guid> <portnum>
 Options:
   -d, --debug          increase debug level
@@ -158,7 +158,7 @@ Options:
   ): CommandResult {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       return (
-        this.getHelpFromRegistry("ibporterrors") ||
+        this.getHelpFromRegistry("ibporterrors", parsed) ||
         this.createSuccess(`Usage: ibporterrors [options]
 Options:
   -C, --Ca <ca>        CA name
@@ -209,7 +209,7 @@ Options:
   ): CommandResult {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       return (
-        this.getHelpFromRegistry("iblinkinfo") ||
+        this.getHelpFromRegistry("iblinkinfo", parsed) ||
         this.createSuccess(`Usage: iblinkinfo [options]
 Options:
   -v, --verbose        verbose output
@@ -260,7 +260,7 @@ Options:
   ): CommandResult {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       return (
-        this.getHelpFromRegistry("perfquery") ||
+        this.getHelpFromRegistry("perfquery", parsed) ||
         this
           .createSuccess(`Usage: perfquery [options] [<lid|guid> [[port(s)] [reset_mask]]]
 Options:
@@ -327,7 +327,7 @@ Options:
   ): CommandResult {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       return (
-        this.getHelpFromRegistry("ibdiagnet") ||
+        this.getHelpFromRegistry("ibdiagnet", parsed) ||
         this.createSuccess(`Usage: ibdiagnet [options]
 Options:
   -o, --output <dir>   output directory
@@ -412,7 +412,7 @@ Options:
   ): CommandResult {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       return (
-        this.getHelpFromRegistry("ibnetdiscover") ||
+        this.getHelpFromRegistry("ibnetdiscover", parsed) ||
         this.createSuccess(`Usage: ibnetdiscover [options]
 Options:
   -l, --list           list of connected endpoints
@@ -535,7 +535,7 @@ Options:
   ): CommandResult {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       return (
-        this.getHelpFromRegistry("ibdev2netdev") ||
+        this.getHelpFromRegistry("ibdev2netdev", parsed) ||
         this.createSuccess(`Usage: ibdev2netdev [options]
 Options:
   -v, --verbose        verbose output with PCI addresses
@@ -578,7 +578,7 @@ Options:
   ): CommandResult {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       return (
-        this.getHelpFromRegistry("ibhosts") ||
+        this.getHelpFromRegistry("ibhosts", parsed) ||
         this.createSuccess(`Usage: ibhosts [options]
 Options:
   -C, --Ca <ca>        CA name to use
@@ -616,7 +616,7 @@ Options:
   ): CommandResult {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       return (
-        this.getHelpFromRegistry("ibswitches") ||
+        this.getHelpFromRegistry("ibswitches", parsed) ||
         this.createSuccess(`Usage: ibswitches [options]
 Options:
   -C, --Ca <ca>        CA name to use
@@ -670,7 +670,7 @@ Options:
   ): CommandResult {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       return (
-        this.getHelpFromRegistry("ibcableerrors") ||
+        this.getHelpFromRegistry("ibcableerrors", parsed) ||
         this.createSuccess(`Usage: ibcableerrors [options]
 Options:
   -C, --Ca <ca>        CA name to use
@@ -725,7 +725,7 @@ Options:
   executeIbping(parsed: ParsedCommand, context: CommandContext): CommandResult {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       return (
-        this.getHelpFromRegistry("ibping") ||
+        this.getHelpFromRegistry("ibping", parsed) ||
         this.createSuccess(`Usage: ibping [options] -L <lid> | -G <guid>
 Options:
   -L, --Lid <lid>      destination LID
@@ -780,7 +780,7 @@ Options:
   ): CommandResult {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       return (
-        this.getHelpFromRegistry("ibtracert") ||
+        this.getHelpFromRegistry("ibtracert", parsed) ||
         this.createSuccess(`Usage: ibtracert [options] <src-lid> <dest-lid>
 Options:
   -n, --no-resolve     don't resolve names
@@ -837,7 +837,7 @@ Options:
   ): CommandResult {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       return (
-        this.getHelpFromRegistry("ib_write_bw") ||
+        this.getHelpFromRegistry("ib_write_bw", parsed) ||
         this.createSuccess(`Usage: ib_write_bw [options] [server]
 Options:
   -d, --ib-dev <dev>   IB device
@@ -893,7 +893,7 @@ Options:
   ): CommandResult {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       return (
-        this.getHelpFromRegistry("ib_read_bw") ||
+        this.getHelpFromRegistry("ib_read_bw", parsed) ||
         this.createSuccess(`Usage: ib_read_bw [options] [server]
 Options:
   -d, --ib-dev <dev>   IB device
@@ -946,7 +946,7 @@ Options:
   executeSminfo(parsed: ParsedCommand, context: CommandContext): CommandResult {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       return (
-        this.getHelpFromRegistry("sminfo") ||
+        this.getHelpFromRegistry("sminfo", parsed) ||
         this.createSuccess(`Usage: sminfo [options] [<lid> [<port>]]
 Options:
   -C, --Ca <ca>        CA name to use
@@ -983,7 +983,7 @@ Options:
   ): CommandResult {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       return (
-        this.getHelpFromRegistry("smpquery") ||
+        this.getHelpFromRegistry("smpquery", parsed) ||
         this.createSuccess(`Usage: smpquery [options] <op> <lid> [port]
 Operations:
   nodeinfo         Node information
@@ -1064,7 +1064,7 @@ Options:
   ): CommandResult {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       return (
-        this.getHelpFromRegistry("ofed_info") ||
+        this.getHelpFromRegistry("ofed_info", parsed) ||
         this.createSuccess(`Usage: ofed_info [options]
 Options:
   -s               print short version string

@@ -122,7 +122,7 @@ export class SlurmSimulator extends BaseSimulator {
     // Handle --help
     if (this.hasAnyFlag(parsed, ["help"])) {
       return (
-        this.getHelpFromRegistry("sinfo") ||
+        this.getHelpFromRegistry("sinfo", parsed) ||
         this.createError("Help not available")
       );
     }
@@ -350,7 +350,7 @@ export class SlurmSimulator extends BaseSimulator {
     // Handle --help
     if (this.hasAnyFlag(parsed, ["help"])) {
       return (
-        this.getHelpFromRegistry("squeue") ||
+        this.getHelpFromRegistry("squeue", parsed) ||
         this.createError("Help not available")
       );
     }
@@ -680,7 +680,7 @@ export class SlurmSimulator extends BaseSimulator {
     // Handle --help
     if (this.hasAnyFlag(parsed, ["help"])) {
       return (
-        this.getHelpFromRegistry("scontrol") ||
+        this.getHelpFromRegistry("scontrol", parsed) ||
         this.createError("Help not available")
       );
     }
@@ -939,7 +939,7 @@ export class SlurmSimulator extends BaseSimulator {
     // Handle --help
     if (this.hasAnyFlag(parsed, ["help"])) {
       return (
-        this.getHelpFromRegistry("sbatch") ||
+        this.getHelpFromRegistry("sbatch", parsed) ||
         this.createError("Help not available")
       );
     }
@@ -1118,7 +1118,7 @@ export class SlurmSimulator extends BaseSimulator {
     // Handle --help
     if (this.hasAnyFlag(parsed, ["help"])) {
       return (
-        this.getHelpFromRegistry("srun") ||
+        this.getHelpFromRegistry("srun", parsed) ||
         this.createError("Help not available")
       );
     }
@@ -1174,7 +1174,7 @@ export class SlurmSimulator extends BaseSimulator {
     // Handle --help
     if (this.hasAnyFlag(parsed, ["help"])) {
       return (
-        this.getHelpFromRegistry("scancel") ||
+        this.getHelpFromRegistry("scancel", parsed) ||
         this.createError("Help not available")
       );
     }
@@ -1441,7 +1441,7 @@ export class SlurmSimulator extends BaseSimulator {
     // Handle --help
     if (this.hasAnyFlag(parsed, ["help"])) {
       return (
-        this.getHelpFromRegistry("sacct") ||
+        this.getHelpFromRegistry("sacct", parsed) ||
         this.createError("Help not available")
       );
     }

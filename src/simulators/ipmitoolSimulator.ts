@@ -302,7 +302,8 @@ export class IpmitoolSimulator extends BaseSimulator {
           ? parsed.subcommands[1]
           : parsed.subcommands[0];
       return (
-        this.getHelpFromRegistry("ipmitool") || this.handleHelp(subcommand)
+        this.getHelpFromRegistry("ipmitool", parsed) ||
+        this.handleHelp(subcommand)
       );
     }
 

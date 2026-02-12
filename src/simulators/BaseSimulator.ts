@@ -586,14 +586,18 @@ export abstract class BaseSimulator {
    * @param commandName - Command name (uses metadata name if not provided)
    * @returns CommandResult with help text, or null if not found
    */
-  protected getHelpFromRegistry(commandName?: string): CommandResult | null {
+  protected getHelpFromRegistry(
+    commandName?: string,
+    parsed?: ParsedCommand,
+  ): CommandResult | null {
     if (!this.definitionRegistry) return null;
 
     const name = commandName || this.getMetadata().name;
     const def = this.definitionRegistry.getDefinition(name);
     if (!def) return null;
 
-    return this.createSuccess(formatCommandHelp(def));
+    const verbose = parsed?.positionalArgs?.includes("more") ?? false;
+    return this.createSuccess(formatCommandHelp(def, verbose));
   }
 
   /**

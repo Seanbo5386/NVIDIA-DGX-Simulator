@@ -268,7 +268,9 @@ export class DcgmiSimulator extends BaseSimulator {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       // If a subcommand is specified, show help for that command
       const subcommand = parsed.subcommands[0];
-      return this.getHelpFromRegistry("dcgmi") || this.handleHelp(subcommand);
+      return (
+        this.getHelpFromRegistry("dcgmi", parsed) || this.handleHelp(subcommand)
+      );
     }
 
     // Get the subcommand

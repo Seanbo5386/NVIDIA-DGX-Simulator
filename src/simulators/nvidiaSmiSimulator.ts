@@ -294,7 +294,8 @@ export class NvidiaSmiSimulator extends BaseSimulator {
     if (this.hasAnyFlag(parsed, ["help", "h"])) {
       const subcommand = parsed.subcommands[0];
       return (
-        this.getHelpFromRegistry("nvidia-smi") || this.handleHelp(subcommand)
+        this.getHelpFromRegistry("nvidia-smi", parsed) ||
+        this.handleHelp(subcommand)
       );
     }
 
