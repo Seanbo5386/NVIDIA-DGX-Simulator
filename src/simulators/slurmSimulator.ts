@@ -1214,6 +1214,228 @@ export class SlurmSimulator extends BaseSimulator {
     return this.createSuccess(`scancel: Terminating job ${jobId}`);
   }
 
+  // sacctmgr - Accounting management
+  executeSacctmgr(
+    parsed: ParsedCommand,
+    _context: CommandContext,
+  ): CommandResult {
+    // Handle --help
+    if (this.hasAnyFlag(parsed, ["help"])) {
+      let output = "Usage: sacctmgr [COMMAND] [OPTIONS]\n\n";
+      output += "Commands:\n";
+      output += "  show    Display accounting information\n";
+      output += "  add     Add accounting entities\n";
+      output += "  modify  Modify accounting entities\n";
+      output += "  delete  Delete accounting entities\n\n";
+      output += "Entities:\n";
+      output += "  assoc|associations  Account/user associations\n";
+      output += "  account             Accounts\n";
+      output += "  cluster             Clusters\n";
+      output += "  qos                 Quality of Service\n";
+      output += "  user                Users\n";
+      return this.createSuccess(output);
+    }
+
+    // Handle --version / -V
+    if (this.hasAnyFlag(parsed, ["version", "V"])) {
+      return this.createSuccess("slurm 23.02.6");
+    }
+
+    const command = parsed.subcommands[0];
+
+    if (command === "show") {
+      const entity = parsed.subcommands[1] || parsed.positionalArgs[0];
+
+      if (entity === "assoc" || entity === "associations") {
+        return this.showAssociations();
+      }
+
+      if (entity === "account" || entity === "accounts") {
+        return this.showAccounts();
+      }
+
+      if (entity === "qos") {
+        return this.showQos();
+      }
+
+      if (entity === "cluster" || entity === "clusters") {
+        return this.showClusters();
+      }
+
+      return this.createError(
+        "Usage: sacctmgr show <assoc|account|qos|cluster>",
+      );
+    }
+
+    if (!command) {
+      return this.createError(
+        "Usage: sacctmgr <show|add|modify|delete> <entity> [options]",
+      );
+    }
+
+    // add/modify/delete stubs
+    if (command === "add" || command === "modify" || command === "delete") {
+      const entity = parsed.subcommands[1] || parsed.positionalArgs[0] || "";
+      return this.createSuccess(
+        `sacctmgr: ${command} ${entity} - operation completed successfully`,
+      );
+    }
+
+    return this.createError(
+      `sacctmgr: unknown command '${command}'. Try 'sacctmgr --help'.`,
+    );
+  }
+
+  private showAssociations(): CommandResult {
+    const COL_CLUSTER = 11;
+    const COL_ACCOUNT = 11;
+    const COL_USER = 11;
+    const COL_PARTITION = 11;
+    const COL_SHARE = 10;
+    const COL_GRPTRES = 14;
+    const COL_GRPJOBS = 8;
+    const COL_GRPSUBMIT = 10;
+    const COL_MAXTRES = 14;
+    const COL_MAXJOBS = 8;
+    const COL_MAXSUBMIT = 10;
+
+    let output =
+      "Cluster".padEnd(COL_CLUSTER) +
+      "Account".padEnd(COL_ACCOUNT) +
+      "User".padEnd(COL_USER) +
+      "Partition".padEnd(COL_PARTITION) +
+      "Share".padEnd(COL_SHARE) +
+      "GrpTRES".padEnd(COL_GRPTRES) +
+      "GrpJobs".padEnd(COL_GRPJOBS) +
+      "GrpSubmit".padEnd(COL_GRPSUBMIT) +
+      "MaxTRES".padEnd(COL_MAXTRES) +
+      "MaxJobs".padEnd(COL_MAXJOBS) +
+      "MaxSubmit".padEnd(COL_MAXSUBMIT) +
+      "QOS\n";
+
+    output +=
+      "-".repeat(COL_CLUSTER - 1) +
+      " " +
+      "-".repeat(COL_ACCOUNT - 1) +
+      " " +
+      "-".repeat(COL_USER - 1) +
+      " " +
+      "-".repeat(COL_PARTITION - 1) +
+      " " +
+      "-".repeat(COL_SHARE - 1) +
+      " " +
+      "-".repeat(COL_GRPTRES - 1) +
+      " " +
+      "-".repeat(COL_GRPJOBS - 1) +
+      " " +
+      "-".repeat(COL_GRPSUBMIT - 1) +
+      " " +
+      "-".repeat(COL_MAXTRES - 1) +
+      " " +
+      "-".repeat(COL_MAXJOBS - 1) +
+      " " +
+      "-".repeat(COL_MAXSUBMIT - 1) +
+      " " +
+      "-".repeat(9) +
+      "\n";
+
+    // Root account
+    output +=
+      "dgx-clus".padEnd(COL_CLUSTER) +
+      "root".padEnd(COL_ACCOUNT) +
+      "".padEnd(COL_USER) +
+      "".padEnd(COL_PARTITION) +
+      "1".padEnd(COL_SHARE) +
+      "".padEnd(COL_GRPTRES) +
+      "".padEnd(COL_GRPJOBS) +
+      "".padEnd(COL_GRPSUBMIT) +
+      "".padEnd(COL_MAXTRES) +
+      "".padEnd(COL_MAXJOBS) +
+      "".padEnd(COL_MAXSUBMIT) +
+      "normal\n";
+
+    // Root user
+    output +=
+      "dgx-clus".padEnd(COL_CLUSTER) +
+      "root".padEnd(COL_ACCOUNT) +
+      "root".padEnd(COL_USER) +
+      "".padEnd(COL_PARTITION) +
+      "1".padEnd(COL_SHARE) +
+      "".padEnd(COL_GRPTRES) +
+      "".padEnd(COL_GRPJOBS) +
+      "".padEnd(COL_GRPSUBMIT) +
+      "".padEnd(COL_MAXTRES) +
+      "".padEnd(COL_MAXJOBS) +
+      "".padEnd(COL_MAXSUBMIT) +
+      "normal\n";
+
+    // Compute account
+    output +=
+      "dgx-clus".padEnd(COL_CLUSTER) +
+      "compute".padEnd(COL_ACCOUNT) +
+      "".padEnd(COL_USER) +
+      "".padEnd(COL_PARTITION) +
+      "1".padEnd(COL_SHARE) +
+      "gpu=64".padEnd(COL_GRPTRES) +
+      "".padEnd(COL_GRPJOBS) +
+      "".padEnd(COL_GRPSUBMIT) +
+      "gpu=16".padEnd(COL_MAXTRES) +
+      "".padEnd(COL_MAXJOBS) +
+      "".padEnd(COL_MAXSUBMIT) +
+      "normal\n";
+
+    // Admin user in compute account
+    output +=
+      "dgx-clus".padEnd(COL_CLUSTER) +
+      "compute".padEnd(COL_ACCOUNT) +
+      "admin".padEnd(COL_USER) +
+      "gpu-batch".padEnd(COL_PARTITION) +
+      "1".padEnd(COL_SHARE) +
+      "gpu=16".padEnd(COL_GRPTRES) +
+      "".padEnd(COL_GRPJOBS) +
+      "".padEnd(COL_GRPSUBMIT) +
+      "gpu=8".padEnd(COL_MAXTRES) +
+      "".padEnd(COL_MAXJOBS) +
+      "".padEnd(COL_MAXSUBMIT) +
+      "normal,high\n";
+
+    return { output, exitCode: 0 };
+  }
+
+  private showAccounts(): CommandResult {
+    let output = "Account                Descr                  Org\n";
+    output += "---------- -------------------- --------------------\n";
+    output += "root       root account          root\n";
+    output += "compute    GPU compute account   engineering\n";
+    output += "research   Research team          research\n";
+    output += "training   ML training account   engineering\n";
+    return { output, exitCode: 0 };
+  }
+
+  private showQos(): CommandResult {
+    let output =
+      "Name           Priority GraceTime   Preempt PreemptExemptTime PreemptMode MaxTRES     MaxTRESPerUser MaxJobsPU MaxSubmitPU MaxWall\n";
+    output +=
+      "-------------- -------- --------- --------- ----------------- ----------- ----------- -------------- --------- ----------- -----------\n";
+    output +=
+      "normal                0  00:00:00                               cluster                                                    7-00:00:00\n";
+    output +=
+      "high               100  00:00:00                               cluster     gpu=32                          10          20  1-00:00:00\n";
+    output +=
+      "low                  0  00:00:00                               cluster                                     5          10  3-00:00:00\n";
+    return { output, exitCode: 0 };
+  }
+
+  private showClusters(): CommandResult {
+    let output =
+      "Cluster    ControlHost  ControlPort   RPC     Share GrpJobs       GrpTRES GrpSubmit MaxJobs       MaxTRES MaxSubmit     MaxWall                  QOS   Def QOS\n";
+    output +=
+      "---------- ------------ ------------ ----- --------- ------- ------------- --------- ------- ------------- --------- ----------- -------------------- ---------\n";
+    output +=
+      "dgx-clus   10.0.0.1             6817  9728         1                                                                                         normal    normal\n";
+    return { output, exitCode: 0 };
+  }
+
   // sacct - Job accounting
   executeSacct(parsed: ParsedCommand, _context: CommandContext): CommandResult {
     // Handle --help

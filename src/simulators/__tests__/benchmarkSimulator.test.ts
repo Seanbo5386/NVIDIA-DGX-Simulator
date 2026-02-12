@@ -388,4 +388,136 @@ describe("BenchmarkSimulator", () => {
       expect(result.output).toContain("Testing");
     });
   });
+
+  describe("all_reduce_perf Tests", () => {
+    it("should run default all_reduce_perf benchmark", () => {
+      const parsed = parse("all_reduce_perf");
+      const result = simulator.execute(parsed, context);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toContain("nThread 1 nGpus 1");
+      expect(result.output).toContain("Using devices");
+      expect(result.output).toContain("Rank");
+      expect(result.output).toContain("float");
+      expect(result.output).toContain("busbw");
+      expect(result.output).toContain("Avg bus bandwidth");
+    });
+
+    it("should respect -b and -e flags for message sizes", () => {
+      const parsed = parse("all_reduce_perf -b 8 -e 128M");
+      const result = simulator.execute(parsed, context);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toContain("minBytes 8");
+      expect(result.output).toContain("maxBytes 134217728");
+    });
+
+    it("should show GPU device information from node", () => {
+      const parsed = parse("all_reduce_perf");
+      const result = simulator.execute(parsed, context);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toContain("NVIDIA H100 80GB HBM3");
+    });
+
+    it("should include out-of-place and in-place columns", () => {
+      const parsed = parse("all_reduce_perf -b 8 -e 128M");
+      const result = simulator.execute(parsed, context);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toContain("out-of-place");
+      expect(result.output).toContain("in-place");
+      expect(result.output).toContain("Out of bounds values : 0 OK");
+    });
+
+    it("should match validation patterns reduce|perf|bandwidth", () => {
+      const parsed = parse("all_reduce_perf -b 8 -e 128M");
+      const result = simulator.execute(parsed, context);
+
+      expect(result.exitCode).toBe(0);
+      // The output should match all validation patterns used in scenarios
+      expect(result.output).toMatch(/reduce|perf|bandwidth/i);
+    });
+  });
+
+  describe("mpirun Tests", () => {
+    it("should error when no executable is specified", () => {
+      const parsed = parse("mpirun");
+      const result = simulator.execute(parsed, context);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.output).toContain("no executable specified");
+    });
+
+    it("should wrap all_reduce_perf output", () => {
+      const parsed = parse("mpirun -np 16 all_reduce_perf");
+      // Manually set np flag since parser may treat -np differently
+      parsed.flags.set("np", "16");
+      const result = simulator.execute(parsed, context);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toContain("mpirun: launching 16 process(es)");
+      expect(result.output).toContain("Avg bus bandwidth");
+      expect(result.output).toContain("all 16 process(es) completed");
+    });
+
+    it("should wrap HPL output when executable is hpl", () => {
+      const parsed = parse("mpirun");
+      parsed.flags.set("np", "8");
+      parsed.positionalArgs = ["./hpl"];
+      const result = simulator.execute(parsed, context);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toContain("mpirun: launching 8 process(es)");
+      expect(result.output).toContain("HPL");
+      expect(result.output).toContain("Gflops");
+      expect(result.output).toContain("all 8 process(es) completed");
+    });
+
+    it("should show hosts when -H flag is provided", () => {
+      const parsed = parse("mpirun");
+      parsed.flags.set("np", "16");
+      parsed.flags.set("H", "node1,node2");
+      parsed.positionalArgs = ["all_reduce_perf"];
+      const result = simulator.execute(parsed, context);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toContain("hosts: node1,node2");
+    });
+
+    it("should handle generic wrapped command", () => {
+      const parsed = parse("mpirun");
+      parsed.flags.set("np", "4");
+      parsed.positionalArgs = ["my_benchmark"];
+      const result = simulator.execute(parsed, context);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toContain("Executing: my_benchmark");
+      expect(result.output).toContain("Process 0 completed successfully");
+      expect(result.output).toContain("all 4 process(es) completed");
+    });
+
+    it("should match validation patterns for NCCL scenario", () => {
+      const parsed = parse("mpirun");
+      parsed.flags.set("np", "16");
+      parsed.flags.set("H", "node1,node2");
+      parsed.positionalArgs = ["all_reduce_perf"];
+      const result = simulator.execute(parsed, context);
+
+      expect(result.exitCode).toBe(0);
+      // Validation pattern: "all_reduce|perf|node"
+      expect(result.output).toMatch(/reduce|perf|node/i);
+    });
+
+    it("should match validation patterns for HPL scenario", () => {
+      const parsed = parse("mpirun");
+      parsed.flags.set("np", "8");
+      parsed.positionalArgs = ["./hpl"];
+      const result = simulator.execute(parsed, context);
+
+      expect(result.exitCode).toBe(0);
+      // Validation pattern: "HPL|Gflops"
+      expect(result.output).toMatch(/HPL|Gflops/);
+    });
+  });
 });

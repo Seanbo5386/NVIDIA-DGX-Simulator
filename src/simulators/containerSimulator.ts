@@ -87,6 +87,12 @@ export class ContainerSimulator extends BaseSimulator {
             "enroot start container-name",
           ],
         },
+        {
+          name: "nvidia-container-cli",
+          description: "NVIDIA container CLI for GPU container support",
+          usage: "nvidia-container-cli [COMMAND]",
+          examples: ["nvidia-container-cli info", "nvidia-container-cli list"],
+        },
       ],
     };
   }
@@ -112,6 +118,8 @@ export class ContainerSimulator extends BaseSimulator {
         return this.handleNGC(parsed, context);
       case "enroot":
         return this.handleEnroot(parsed, context);
+      case "nvidia-container-cli":
+        return this.handleNvidiaContainerCli(parsed, context);
       default:
         return this.createError(`Unknown container tool: ${tool}`);
     }
@@ -527,6 +535,74 @@ export class ContainerSimulator extends BaseSimulator {
 
     return this.createError(
       "Usage: enroot <import|create|list|start> [options]",
+    );
+  }
+
+  // nvidia-container-cli commands
+  private handleNvidiaContainerCli(
+    parsed: ParsedCommand,
+    context: CommandContext,
+  ): CommandResult {
+    const command = parsed.subcommands[0];
+
+    if (command === "info") {
+      const node = this.getNode(context);
+      const driverVersion = node?.nvidiaDriverVersion || "535.129.03";
+      const cudaVersion = node?.cudaVersion || "12.2";
+      const gpus = node?.gpus || [];
+
+      let output = `NVRM version:   ${driverVersion}\n`;
+      output += `CUDA version:   ${cudaVersion}\n\n`;
+
+      if (gpus.length === 0) {
+        output += `No GPU devices found.\n`;
+      } else {
+        gpus.forEach((gpu, idx) => {
+          output += `Device Index:   ${idx}\n`;
+          output += `Device Minor:   ${idx}\n`;
+          output += `Model:          ${gpu.name}\n`;
+          output += `Brand:          NVIDIA\n`;
+          output += `GPU UUID:       ${gpu.uuid || `GPU-${idx.toString().padStart(8, "0")}-abcd-1234-abcd-123456789012`}\n`;
+          if (idx < gpus.length - 1) output += `\n`;
+        });
+      }
+
+      return this.createSuccess(output);
+    }
+
+    if (command === "list") {
+      let output = "/dev/nvidiactl\n";
+      output += "/dev/nvidia-uvm\n";
+      output += "/dev/nvidia-uvm-tools\n";
+      output += "/dev/nvidia-modeset\n";
+
+      const node = this.getNode(context);
+      const gpuCount = node?.gpus.length || 8;
+      for (let i = 0; i < gpuCount; i++) {
+        output += `/dev/nvidia${i}\n`;
+      }
+
+      return this.createSuccess(output);
+    }
+
+    if (command === "configure") {
+      return this.createSuccess(
+        "nvidia-container-cli: configuration updated successfully",
+      );
+    }
+
+    // No subcommand or --help
+    if (!command || this.hasAnyFlag(parsed, ["help", "h"])) {
+      let output = "Usage: nvidia-container-cli COMMAND [OPTIONS]\n\n";
+      output += "Commands:\n";
+      output += "  info        Show GPU and driver information\n";
+      output += "  list        List GPU device files\n";
+      output += "  configure   Configure container GPU support\n";
+      return this.createSuccess(output);
+    }
+
+    return this.createError(
+      `nvidia-container-cli: unknown command '${command}'`,
     );
   }
 }

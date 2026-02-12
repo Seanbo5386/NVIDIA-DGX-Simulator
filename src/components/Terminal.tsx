@@ -601,10 +601,13 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
     router.register("sacct", (cl, ctx) =>
       slurmSimulator.current.executeSacct(parseCommand(cl), ctx),
     );
+    router.register("sacctmgr", (cl, ctx) =>
+      slurmSimulator.current.executeSacctmgr(parseCommand(cl), ctx),
+    );
 
     // Container tools
     router.registerMany(
-      ["docker", "ngc", "enroot"],
+      ["docker", "ngc", "enroot", "nvidia-container-cli"],
       simHandler(containerSimulator.current),
     );
 
@@ -660,7 +663,7 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
       simHandler(nvidiaBugReportSimulator.current),
     );
     router.registerMany(
-      ["hpl", "nccl-test", "gpu-burn"],
+      ["hpl", "nccl-test", "gpu-burn", "all_reduce_perf", "mpirun"],
       simHandler(benchmarkSimulator.current),
     );
     router.registerMany(
