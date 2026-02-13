@@ -28,7 +28,6 @@ import { useSimulationStore } from "@/store/simulationStore";
 import { scenarioContextManager } from "@/store/scenarioContext";
 import { ScenarioValidator } from "@/utils/scenarioValidator";
 import { parse as parseCommand } from "@/utils/commandParser";
-import { commandTracker } from "@/utils/commandValidator";
 import {
   handleInteractiveShellInput,
   shouldEnterInteractiveMode,
@@ -1143,14 +1142,6 @@ export const Terminal: React.FC<TerminalProps> = ({ className = "" }) => {
         if (result.output) {
           term.writeln("\n" + result.output);
         }
-
-        // Track command execution for validation (use original command
-        // before shell expansion so the validator matches expected commands)
-        commandTracker.recordCommand(
-          originalCmdLine,
-          result.output,
-          result.exitCode,
-        );
 
         // Scenario Validation - Check for active scenario and validate command
         const store = useSimulationStore.getState();

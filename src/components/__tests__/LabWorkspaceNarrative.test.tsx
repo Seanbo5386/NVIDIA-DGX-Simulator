@@ -144,9 +144,6 @@ vi.mock("@/utils/hintManager", () => ({
 }));
 
 vi.mock("@/utils/commandValidator", () => ({
-  commandTracker: {
-    getExecutedCommands: vi.fn(() => []),
-  },
   validateCommandExecuted: () => false,
 }));
 

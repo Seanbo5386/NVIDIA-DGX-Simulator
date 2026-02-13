@@ -73,7 +73,6 @@ vi.mock("@/utils/hintManager", () => ({
   HintManager: { getAvailableHints: () => null },
 }));
 vi.mock("@/utils/commandValidator", () => ({
-  commandTracker: { getExecutedCommands: () => [] },
   validateCommandExecuted: () => false,
 }));
 vi.mock("@/utils/scenarioVisualizationMap", () => ({
