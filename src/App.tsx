@@ -222,7 +222,10 @@ function App() {
             }`}
           >
             <FlaskConical className="w-4 h-4" />
-            <span className="font-medium">Labs & Scenarios</span>
+            <span className="font-medium">
+              <span className="sm:hidden">Labs</span>
+              <span className="hidden sm:inline">Labs & Scenarios</span>
+            </span>
             {/* Review Notification Badge */}
             {dueReviewCount > 0 && (
               <span
@@ -253,7 +256,10 @@ function App() {
             }`}
           >
             <BookOpen className="w-4 h-4" />
-            <span className="font-medium">Documentation</span>
+            <span className="font-medium">
+              <span className="sm:hidden">Docs</span>
+              <span className="hidden sm:inline">Documentation</span>
+            </span>
           </button>
           <button
             role="tab"
