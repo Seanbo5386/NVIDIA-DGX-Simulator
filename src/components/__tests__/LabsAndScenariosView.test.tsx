@@ -103,7 +103,6 @@ function defaultProps() {
   return {
     onStartScenario: vi.fn(),
     onBeginExam: vi.fn(),
-    onOpenStudyDashboard: vi.fn(),
     onOpenExamGauntlet: vi.fn(),
   };
 }
@@ -251,19 +250,6 @@ describe("LabsAndScenariosView", () => {
     expect(props.onStartScenario).toHaveBeenCalledWith(
       "domain1-midnight-deployment",
     );
-  });
-
-  // --------------------------------------------------------------------------
-  // 10. Study Dashboard button present and calls onOpenStudyDashboard
-  // --------------------------------------------------------------------------
-
-  it("shows Study Dashboard card and calls handler on button click", () => {
-    const props = defaultProps();
-    render(<LabsAndScenariosView {...props} />);
-    expect(screen.getByText("Study Dashboard")).toBeInTheDocument();
-    const button = screen.getByRole("button", { name: /view progress/i });
-    fireEvent.click(button);
-    expect(props.onOpenStudyDashboard).toHaveBeenCalledTimes(1);
   });
 
   // --------------------------------------------------------------------------

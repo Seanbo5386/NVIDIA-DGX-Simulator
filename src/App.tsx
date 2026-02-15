@@ -294,7 +294,6 @@ function App() {
           <LabsAndScenariosView
             onStartScenario={handleStartScenario}
             onBeginExam={handleBeginExam}
-            onOpenStudyDashboard={() => setShowStudyDashboard(true)}
             onOpenExamGauntlet={() => setShowExamGauntlet(true)}
           />
         )}

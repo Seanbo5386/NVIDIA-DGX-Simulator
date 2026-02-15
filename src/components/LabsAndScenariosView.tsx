@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import { Trophy, TrendingUp, Clock, Crosshair } from "lucide-react";
+import { Trophy, Clock, Crosshair } from "lucide-react";
 import { getAllScenarios, getScenarioMetadata } from "../utils/scenarioLoader";
 
 interface LabsAndScenariosViewProps {
   onStartScenario: (scenarioId: string) => void;
   onBeginExam: () => void;
-  onOpenStudyDashboard: () => void;
   onOpenExamGauntlet: () => void;
 }
 
@@ -36,7 +35,6 @@ const DIFFICULTY_ORDER: Record<string, number> = {
 export function LabsAndScenariosView({
   onStartScenario,
   onBeginExam,
-  onOpenStudyDashboard,
   onOpenExamGauntlet,
 }: LabsAndScenariosViewProps) {
   const [domainScenarios, setDomainScenarios] = useState<
@@ -224,25 +222,6 @@ export function LabsAndScenariosView({
                 className="w-full bg-orange-600 text-white py-2 rounded-lg font-medium hover:bg-orange-700 transition-colors"
               >
                 Start Gauntlet
-              </button>
-            </div>
-
-            {/* Study Progress Dashboard */}
-            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-              <div className="text-sm text-blue-400 font-semibold mb-2 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" />
-                Track Your Progress
-              </div>
-              <h3 className="text-lg font-bold mb-3">Study Dashboard</h3>
-              <p className="text-sm text-gray-300 mb-4">
-                View exam history, track domain performance, and identify weak
-                areas to focus your study.
-              </p>
-              <button
-                onClick={onOpenStudyDashboard}
-                className="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-              >
-                View Progress
               </button>
             </div>
           </div>
